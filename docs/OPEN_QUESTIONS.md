@@ -12,9 +12,10 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 6. Approve a MAX live upload/readiness test for ten mixed media items and record observed attachment behavior separately from documented policy.
 7. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
 8. Provide Instagram professional account type, Meta app ownership, OAuth redirect domain, scopes, review status, and test-user availability.
-9. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
-10. Provide monthly budget and live-smoke sample for OpenAI `gpt-4.1-mini` text generation and `text-embedding-3-small` embeddings.
-11. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
+9. Re-check official Meta Instagram publishing docs/API version before live enablement; docs browsing returned 429 during Phase 09 implementation.
+10. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
+11. Provide monthly budget and live-smoke sample for OpenAI `gpt-4.1-mini` text generation and `text-embedding-3-small` embeddings.
+12. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
 
 ## Infrastructure and launch dependencies
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import ipaddress
+import re
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote, urlparse
@@ -48,6 +49,12 @@ TELEGRAM_DELIVERY_URL_TTL_SECONDS = 24 * 60 * 60
 MAX_CONNECTOR_KEY = "max_message"
 MAX_TEXT_LIMIT = 4000
 MAX_RATE_GUIDANCE_RPS = 30
+INSTAGRAM_CONNECTOR_KEY = "instagram_media"
+INSTAGRAM_CAPTION_LIMIT = 2200
+INSTAGRAM_HASHTAG_LIMIT = 30
+INSTAGRAM_MENTION_LIMIT = 20
+INSTAGRAM_CAROUSEL_MIN = 2
+INSTAGRAM_CAROUSEL_MAX = 10
 
 
 CAPABILITIES: dict[str, ConnectorCapability] = {
@@ -103,18 +110,31 @@ CAPABILITIES: dict[str, ConnectorCapability] = {
     ),
     "instagram": ConnectorCapability(
         platform_key="instagram",
-        connector_key="instagram_prepared",
-        name="Instagram подготовленный",
-        hard_text_limit=2200,
-        media_limit=10,
-        publication_mode="native_prepared",
+        connector_key=INSTAGRAM_CONNECTOR_KEY,
+        name="Instagram Media",
+        hard_text_limit=INSTAGRAM_CAPTION_LIMIT,
+        media_limit=INSTAGRAM_CAROUSEL_MAX,
+        publication_mode="instagram_media",
         automated_delivery=False,
         capabilities={
             "preview": True,
             "approval_required": True,
+            "single_image": True,
+            "single_video": True,
+            "reel": True,
+            "carousel": True,
+            "manual_required": True,
+            "readiness_diagnostics": True,
+            "live_feature_flag": False,
             "native_connector_phase": 9,
         },
-        hard_limits={"caption": 2200, "carousel_min": 2, "carousel_max": 10},
+        hard_limits={
+            "caption": INSTAGRAM_CAPTION_LIMIT,
+            "hashtags": INSTAGRAM_HASHTAG_LIMIT,
+            "mentions": INSTAGRAM_MENTION_LIMIT,
+            "carousel_min": INSTAGRAM_CAROUSEL_MIN,
+            "carousel_max": INSTAGRAM_CAROUSEL_MAX,
+        },
     ),
     "manual_export": ConnectorCapability(
         platform_key="manual_export",
@@ -187,6 +207,14 @@ def adapt_text_for_platform(master_text: str, platform_key: str) -> str:
     return master_text
 
 
+def _instagram_hashtags(text: str) -> list[str]:
+    return re.findall(r"(?<![\w])#[\w][\w_]*", text, flags=re.UNICODE)
+
+
+def _instagram_mentions(text: str) -> list[str]:
+    return re.findall(r"(?<![\w])@[\w][\w_.]*", text, flags=re.UNICODE)
+
+
 def validate_variant(platform_key: str, text: str, media_count: int = 0) -> dict[str, Any]:
     capability = capability_for(platform_key)
     errors: list[dict[str, Any]] = []
@@ -214,14 +242,34 @@ def validate_variant(platform_key: str, text: str, media_count: int = 0) -> dict
         warnings.append(
             {
                 "code": "instagram_single_media",
-                "message": "Instagram carousel requires 2-10 media items; single media needs a feed/Reels mode later.",
+                "message": "Instagram single media is valid for feed/Reels; carousel requires 2-10 media items.",
             }
         )
     if platform_key == "instagram":
+        hashtag_count = len(_instagram_hashtags(text))
+        mention_count = len(_instagram_mentions(text))
+        if hashtag_count > INSTAGRAM_HASHTAG_LIMIT:
+            errors.append(
+                {
+                    "code": "instagram_hashtag_limit_exceeded",
+                    "message": "Instagram captions may contain at most 30 hashtags.",
+                    "actual": hashtag_count,
+                    "limit": INSTAGRAM_HASHTAG_LIMIT,
+                }
+            )
+        if mention_count > INSTAGRAM_MENTION_LIMIT:
+            errors.append(
+                {
+                    "code": "instagram_mention_limit_exceeded",
+                    "message": "Instagram captions may contain at most 20 mentions.",
+                    "actual": mention_count,
+                    "limit": INSTAGRAM_MENTION_LIMIT,
+                }
+            )
         warnings.append(
             {
-                "code": "native_connector_deferred",
-                "message": "Native API delivery for this platform starts in a later phase.",
+                "code": "instagram_live_acceptance_pending",
+                "message": "Instagram media contract is available; live publication requires Meta readiness and remains feature-flagged.",
             }
         )
     if platform_key == "max":
@@ -689,6 +737,375 @@ def build_max_message_payload(
     }
 
 
+def _instagram_delivery_mode(configuration: dict[str, Any]) -> str:
+    raw = str(configuration.get("delivery_mode") or "manual_required").strip().lower()
+    if raw in {"manual", "manual_required", "prepared"}:
+        return "manual_required"
+    if raw != "live":
+        raise ConnectorValidationError(
+            "instagram_delivery_mode_invalid",
+            "Instagram delivery_mode must be manual_required or live.",
+            {"delivery_mode": raw},
+        )
+    return raw
+
+
+def _instagram_media_mode(configuration: dict[str, Any]) -> str:
+    mode = str(configuration.get("media_mode") or "auto").strip().lower()
+    if mode not in {"auto", "image", "video", "reel", "carousel"}:
+        raise ConnectorValidationError(
+            "instagram_media_mode_invalid",
+            "Instagram media_mode must be auto, image, video, reel, or carousel.",
+            {"media_mode": mode},
+        )
+    return mode
+
+
+def _validate_instagram_destination_configuration(
+    configuration: dict[str, Any],
+    *,
+    can_activate_live: bool = False,
+) -> None:
+    delivery_mode = _instagram_delivery_mode(configuration)
+    _instagram_media_mode(configuration)
+    base_url = str(configuration.get("media_delivery_base_url") or "").strip()
+    if base_url:
+        _validate_https_url(
+            base_url,
+            "instagram_media_delivery_https_required",
+            "Instagram media delivery base URL must use HTTPS.",
+        )
+    if delivery_mode != "live":
+        return
+    if not can_activate_live:
+        raise ConnectorValidationError(
+            "instagram_live_requires_owner_admin",
+            "Only owner/admin may activate Instagram live delivery.",
+        )
+    if configuration.get("instagram_live_enabled") is not True:
+        raise ConnectorValidationError(
+            "instagram_live_feature_flag_disabled",
+            "Instagram live publication remains feature-flagged until Meta readiness is verified.",
+        )
+    required_truthy = {
+        "professional_account": "Instagram live delivery requires a professional account.",
+        "meta_app_connected": "Instagram live delivery requires a connected Meta app.",
+        "oauth_connected": "Instagram live delivery requires OAuth connection.",
+        "permissions_ready": "Instagram live delivery requires approved publishing permissions.",
+        "app_review_ready": "Instagram live delivery requires Meta app review approval.",
+        "quota_checked": "Instagram live delivery requires a current content publishing quota check.",
+    }
+    for key, message in required_truthy.items():
+        if configuration.get(key) is not True:
+            raise ConnectorValidationError(f"instagram_{key}_required", message)
+    if not str(configuration.get("account_id") or configuration.get("ig_user_id") or "").strip():
+        raise ConnectorValidationError(
+            "instagram_account_id_required",
+            "Instagram live delivery requires an IG user/account ID.",
+        )
+    if not str(configuration.get("access_token") or configuration.get("meta_access_token") or "").strip():
+        raise ConnectorValidationError(
+            "instagram_access_token_required",
+            "Instagram live delivery requires a Meta access token.",
+        )
+    if not base_url:
+        raise ConnectorValidationError(
+            "instagram_media_delivery_url_required",
+            "Instagram live delivery requires public HTTPS media delivery URLs.",
+        )
+
+
+def _instagram_media_kind(media: dict[str, Any]) -> str:
+    kind = str(media.get("kind") or "").lower()
+    mime_type = str(media.get("mime_type") or "").lower()
+    if kind == "image" or mime_type.startswith("image/"):
+        return "image"
+    if kind == "video" or mime_type.startswith("video/"):
+        return "video"
+    raise ConnectorValidationError(
+        "instagram_unsupported_media",
+        "Instagram media connector supports image and video media.",
+        {"kind": kind, "mime_type": mime_type},
+    )
+
+
+def _instagram_media_url(media: dict[str, Any], configuration: dict[str, Any]) -> str | None:
+    explicit_url = str(media.get("public_url") or "").strip()
+    if explicit_url:
+        _validate_https_url(
+            explicit_url,
+            "instagram_media_url_https_required",
+            "Instagram media URLs must use HTTPS.",
+        )
+        return explicit_url
+    base_url = str(configuration.get("media_delivery_base_url") or "").strip().rstrip("/")
+    storage_key = str(media.get("storage_key") or "").strip().lstrip("/")
+    if not base_url or not storage_key:
+        return None
+    _validate_https_url(
+        base_url,
+        "instagram_media_delivery_https_required",
+        "Instagram media delivery base URL must use HTTPS.",
+    )
+    return f"{base_url}/{quote(storage_key)}"
+
+
+def _instagram_readiness_diagnostics(
+    configuration: dict[str, Any],
+    media_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    diagnostics: list[dict[str, Any]] = []
+    checks = [
+        ("professional_account", "instagram_professional_account_required", "Connect an Instagram professional account."),
+        ("meta_app_connected", "instagram_meta_app_required", "Connect the Meta app that owns Instagram publishing."),
+        ("oauth_connected", "instagram_oauth_required", "Complete Meta OAuth for the selected account."),
+        ("permissions_ready", "instagram_permissions_required", "Approve Instagram publishing scopes before live delivery."),
+        ("app_review_ready", "instagram_app_review_required", "Complete Meta app review before live delivery."),
+        ("quota_checked", "instagram_quota_check_required", "Check the current content publishing quota before live delivery."),
+    ]
+    for key, code, message in checks:
+        if configuration.get(key) is not True:
+            diagnostics.append({"code": code, "message": message, "blocking": True})
+    if _instagram_delivery_mode(configuration) != "live" or configuration.get("instagram_live_enabled") is not True:
+        diagnostics.append(
+            {
+                "code": "instagram_live_feature_flag_disabled",
+                "message": "Live Instagram publication is feature-flagged; use the manual package until owner approval.",
+                "blocking": True,
+            }
+        )
+    else:
+        diagnostics.append(
+            {
+                "code": "instagram_live_adapter_not_enabled",
+                "message": "Instagram live adapter requires a separate Meta live spike before automatic delivery.",
+                "blocking": True,
+            }
+        )
+    if not media_items:
+        diagnostics.append(
+            {
+                "code": "instagram_media_required",
+                "message": "Instagram publication requires at least one image or video.",
+                "blocking": True,
+            }
+        )
+    return diagnostics
+
+
+def _instagram_mode_for_media(configuration: dict[str, Any], media_items: list[dict[str, Any]]) -> str:
+    requested = _instagram_media_mode(configuration)
+    count = len(media_items)
+    if requested == "carousel":
+        if not INSTAGRAM_CAROUSEL_MIN <= count <= INSTAGRAM_CAROUSEL_MAX:
+            raise ConnectorValidationError(
+                "instagram_carousel_media_count_invalid",
+                "Instagram carousel requires 2-10 media items.",
+                {"actual": count, "min": INSTAGRAM_CAROUSEL_MIN, "max": INSTAGRAM_CAROUSEL_MAX},
+            )
+        return "carousel"
+    if requested in {"image", "video", "reel"}:
+        if count != 1:
+            raise ConnectorValidationError(
+                "instagram_single_media_count_invalid",
+                "Instagram image, video, and Reel modes require exactly one media item.",
+                {"actual": count},
+            )
+        kind = _instagram_media_kind(media_items[0])
+        if requested == "image" and kind != "image":
+            raise ConnectorValidationError(
+                "instagram_image_media_required",
+                "Instagram image mode requires an image media item.",
+            )
+        if requested in {"video", "reel"} and kind != "video":
+            raise ConnectorValidationError(
+                "instagram_video_media_required",
+                "Instagram video/Reel mode requires a video media item.",
+            )
+        return requested
+    if count == 0:
+        return "missing_media"
+    if count == 1:
+        return _instagram_media_kind(media_items[0])
+    if count > INSTAGRAM_CAROUSEL_MAX:
+        raise ConnectorValidationError(
+            "instagram_carousel_media_count_invalid",
+            "Instagram carousel supports at most 10 media items.",
+            {"actual": count, "max": INSTAGRAM_CAROUSEL_MAX},
+        )
+    return "carousel"
+
+
+def _instagram_container_body(
+    *,
+    mode: str,
+    caption: str,
+    media: dict[str, Any] | None,
+    media_url: str | None,
+    children: list[str] | None = None,
+) -> dict[str, Any]:
+    if mode == "image":
+        return {"media_type": "IMAGE", "image_url": media_url or "manual_package_reference", "caption": caption}
+    if mode == "video":
+        return {"media_type": "VIDEO", "video_url": media_url or "manual_package_reference", "caption": caption}
+    if mode == "reel":
+        return {"media_type": "REELS", "video_url": media_url or "manual_package_reference", "caption": caption}
+    if mode == "carousel":
+        return {"media_type": "CAROUSEL", "children": children or [], "caption": caption}
+    return {"media_type": "UNKNOWN", "caption": caption, "source": media}
+
+
+def build_instagram_media_payload(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    count = character_count(text)
+    if count > INSTAGRAM_CAPTION_LIMIT:
+        raise ConnectorValidationError(
+            "instagram_caption_limit_exceeded",
+            "Instagram caption exceeds the 2,200-character hard limit.",
+            {"actual": count, "limit": INSTAGRAM_CAPTION_LIMIT},
+        )
+    hashtag_count = len(_instagram_hashtags(text))
+    mention_count = len(_instagram_mentions(text))
+    if hashtag_count > INSTAGRAM_HASHTAG_LIMIT:
+        raise ConnectorValidationError(
+            "instagram_hashtag_limit_exceeded",
+            "Instagram captions may contain at most 30 hashtags.",
+            {"actual": hashtag_count, "limit": INSTAGRAM_HASHTAG_LIMIT},
+        )
+    if mention_count > INSTAGRAM_MENTION_LIMIT:
+        raise ConnectorValidationError(
+            "instagram_mention_limit_exceeded",
+            "Instagram captions may contain at most 20 mentions.",
+            {"actual": mention_count, "limit": INSTAGRAM_MENTION_LIMIT},
+        )
+    items = media_items or []
+    mode = _instagram_mode_for_media(configuration, items)
+    account_id = str(configuration.get("account_id") or configuration.get("ig_user_id") or "{ig-user-id}")
+    media_plan: list[dict[str, Any]] = []
+    for index, media in enumerate(items):
+        media_plan.append(
+            {
+                "index": index,
+                "kind": _instagram_media_kind(media),
+                "storage_key": media.get("storage_key"),
+                "mime_type": media.get("mime_type"),
+                "url": _instagram_media_url(media, configuration),
+            }
+        )
+    child_container_ids = [f"{{child-container-{index + 1}}}" for index in range(len(media_plan))]
+    containers: list[dict[str, Any]] = []
+    if mode == "carousel":
+        for child_id, media in zip(child_container_ids, media_plan, strict=False):
+            child_mode = "image" if media["kind"] == "image" else "video"
+            body = _instagram_container_body(
+                mode=child_mode,
+                caption="",
+                media=media,
+                media_url=media["url"],
+            )
+            body["is_carousel_item"] = True
+            containers.append(
+                {
+                    "id": child_id,
+                    "step": "create_carousel_child",
+                    "method": f"POST /{account_id}/media",
+                    "body": body,
+                }
+            )
+        containers.append(
+            {
+                "id": "{carousel-container-id}",
+                "step": "create_carousel_parent",
+                "method": f"POST /{account_id}/media",
+                "body": _instagram_container_body(
+                    mode="carousel",
+                    caption=text,
+                    media=None,
+                    media_url=None,
+                    children=child_container_ids,
+                ),
+            }
+        )
+        publish_container_id = "{carousel-container-id}"
+    elif mode in {"image", "video", "reel"}:
+        media = media_plan[0]
+        containers.append(
+            {
+                "id": "{container-id}",
+                "step": "create_media_container",
+                "method": f"POST /{account_id}/media",
+                "body": _instagram_container_body(
+                    mode=mode,
+                    caption=text,
+                    media=media,
+                    media_url=media["url"],
+                ),
+            }
+        )
+        publish_container_id = "{container-id}"
+    else:
+        publish_container_id = None
+    diagnostics = _instagram_readiness_diagnostics(configuration, items)
+    return {
+        "mode": mode,
+        "publication_id": publication_id,
+        "destination_id": destination_id,
+        "idempotency_key": idempotency_key,
+        "caption": text,
+        "character_count": count,
+        "hashtag_count": hashtag_count,
+        "mention_count": mention_count,
+        "media_count": len(items),
+        "media_plan": media_plan,
+        "readiness": {
+            "status": "blocked" if diagnostics else "ready",
+            "diagnostics": diagnostics,
+        },
+        "quota_check": {
+            "method": f"GET /{account_id}/content_publishing_limit",
+            "required_before_live_publish": True,
+        },
+        "container_plan": {
+            "containers": containers,
+            "status_poll": (
+                {
+                    "method": f"GET /{publish_container_id}",
+                    "fields": ["status_code"],
+                    "required_before_publish": True,
+                }
+                if publish_container_id
+                else None
+            ),
+            "publish": (
+                {
+                    "method": f"POST /{account_id}/media_publish",
+                    "body": {"creation_id": publish_container_id},
+                    "idempotency_guard": "check_existing_external_post_before_publish",
+                }
+                if publish_container_id
+                else None
+            ),
+        },
+        "manual_package": {
+            "caption": text,
+            "media": media_plan,
+            "instructions": [
+                "Download or copy the prepared media package.",
+                "Publish manually in Instagram until Meta readiness is approved.",
+                "Confirm publication manually with external URL or post ID.",
+            ],
+        },
+        "live_acceptance": "pending_meta_readiness",
+    }
+
+
 def validate_generic_webhook_url(endpoint_url: str) -> None:
     parsed = urlparse(endpoint_url)
     if parsed.scheme != "https":
@@ -749,6 +1166,9 @@ def validate_destination_configuration(
     if connector_key == MAX_CONNECTOR_KEY:
         _validate_max_destination_configuration(configuration)
         return
+    if connector_key == INSTAGRAM_CONNECTOR_KEY:
+        _validate_instagram_destination_configuration(configuration, can_activate_live=can_activate_live)
+        return
     if connector_key == "generic_webhook":
         endpoint_url = str(configuration.get("endpoint_url") or "")
         validate_generic_webhook_url(endpoint_url)
@@ -795,7 +1215,12 @@ def redacted_destination_configuration(configuration: dict[str, Any]) -> dict[st
         "secret",
         "token",
         "api_key",
+        "app_secret",
         "bot_token",
+        "client_secret",
+        "instagram_access_token",
+        "meta_access_token",
+        "meta_app_secret",
         "telegram_bot_token",
         "password",
     }
@@ -900,6 +1325,43 @@ def simulate_connector_publish(
                 "delivery_mode": "simulate",
                 "payload": payload,
                 "message": {"id": f"simulated-max-{idempotency_key}"},
+            },
+        )
+    if connector_key == INSTAGRAM_CONNECTOR_KEY:
+        validate_destination_configuration(connector_key, configuration, can_activate_live=True)
+        try:
+            payload = build_instagram_media_payload(
+                publication_id=publication_id,
+                destination_id=destination_id,
+                text=text,
+                configuration=configuration,
+                idempotency_key=idempotency_key,
+                media_items=media_items,
+            )
+        except ConnectorValidationError as exc:
+            return ConnectorResult(
+                status="failed_permanent",
+                external_id=None,
+                response_payload={
+                    "provider": "instagram",
+                    "delivery_mode": _instagram_delivery_mode(configuration),
+                    "error": {
+                        "code": exc.code,
+                        "message": exc.message,
+                        "details": exc.details,
+                    },
+                },
+                error_code=exc.code,
+                error_message=exc.message,
+            )
+        return ConnectorResult(
+            status="manual_required",
+            external_id=f"instagram:manual:{destination_id}:{idempotency_key}",
+            response_payload={
+                "provider": "instagram",
+                "delivery_mode": _instagram_delivery_mode(configuration),
+                "payload": payload,
+                "message": "Instagram package requires manual publication until Meta readiness is approved.",
             },
         )
     if connector_key == "manual_export":

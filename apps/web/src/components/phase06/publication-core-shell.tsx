@@ -22,7 +22,7 @@ import { Card } from "@/components/ui/card";
 const variants = [
   ["Telegram", "32 768", "rich_message", "tg-collage + текст"],
   ["MAX", "4 000", "message", "HTML/Markdown + uploads"],
-  ["Instagram", "2 200", "сокращён", "caption соблюдён"],
+  ["Instagram", "2 200", "instagram_media", "caption + media package"],
   ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
   ["Generic webhook", "100 000", "готов", "HTTPS + подпись"],
 ];
@@ -30,6 +30,7 @@ const variants = [
 const publicationRows = [
   ["published", "Telegram Rich Message", "контракт отправки собран, live evidence pending", "success"],
   ["failed_retryable", "MAX Message", "attachment.not.ready, retry запланирован", "warning"],
+  ["manual_required", "Instagram Media", "Meta readiness не подтверждена, пакет готов", "warning"],
   ["manual_required", "Ручной экспорт", "пакет готов, ждёт подтверждения", "warning"],
   ["published", "Generic webhook", "ответ 202", "success"],
   ["failed_retryable", "Generic webhook", "ответ 503", "warning"],
@@ -40,6 +41,7 @@ const publicationRows = [
 const attempts = [
   ["#1", "telegram_rich_message", "published", "sendRichMessage"],
   ["#1", "max_message", "failed_retryable", "attachment.not.ready"],
+  ["#1", "instagram_media", "manual_required", "container-plan"],
   ["#1", "generic_webhook", "failed_retryable", "503"],
   ["#2", "generic_webhook", "published", "202"],
   ["#1", "manual_export", "manual_required", "пакет"],
@@ -56,8 +58,8 @@ function PublicationHeader() {
           </Link>
         </Button>
       }
-      description="Варианты, approval, Telegram Rich Message, ручной экспорт, generic webhook, попытки и outbox."
-      eyebrow="Этап 08"
+      description="Варианты, approval, Telegram Rich Message, MAX, Instagram, ручной экспорт, generic webhook, попытки и outbox."
+      eyebrow="Этап 09"
       title="Публикации"
     />
   );
@@ -72,12 +74,12 @@ export function PublicationCoreShell() {
           <div>
             <Badge>Техническая сборка</Badge>
             <h1 className="mt-3 text-3xl font-semibold text-ink">
-              Публикационный контур с Telegram и MAX
+              Публикационный контур с Telegram, MAX и Instagram
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Мастер-текст превращается в неизменяемые варианты под площадки. В очередь уходит
-              только одобренный вариант, Telegram собирает rich payload, а MAX готовит message
-              payload с upload/evidence и retry для неготовых вложений.
+              только одобренный вариант, Telegram собирает rich payload, MAX готовит message
+              payload, а Instagram получает media package и Meta container-plan без ложного live-статуса.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -141,7 +143,7 @@ export function PublicationCoreShell() {
               </div>
               <div className="rounded-md border border-line p-3">
                 <div className="font-medium text-ink">Instagram</div>
-                <div className="mt-1">Вариант готовится, нативная отправка в следующей фазе.</div>
+                <div className="mt-1">Caption до 2 200, carousel 2-10, live feature-flagged до Meta readiness.</div>
               </div>
             </div>
           </Card>
