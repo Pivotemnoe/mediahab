@@ -32,6 +32,8 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 11. Approve the production PostgreSQL RLS policy set and choose where to run the RLS acceptance tests.
 12. Approve backup encryption destination, restore-drill environment, RPO/RTO targets, and restore evidence format.
 13. Confirm whether PWA offline draft queue stores only text drafts first or includes audio/media metadata in the first pilot.
+14. Choose the real payment provider for launch: YooKassa, CloudPayments, another Russian provider, international provider, or manual invoicing first.
+15. Confirm fiscal receipt, refund, cancellation, tax/legal entity, public offer, and privacy requirements before enabling live recurring payments.
 
 ## Product-owner decisions that can follow later
 
@@ -53,3 +55,4 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 16. Approve or reject adding UI Phase 01 frontend dependencies: React Hook Form, Zod, TanStack Query, dnd-kit, Playwright, and optional component-showcase tooling.
 17. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
 18. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.
+19. Confirm whether mock payment webhook simulation may remain available in staging after a real provider is added, and who can trigger it.

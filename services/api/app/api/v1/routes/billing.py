@@ -3,11 +3,12 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.base import CheckoutSession, Entitlement, Plan, Price, Subscription, utc_now
+from app.core.config import Settings, get_settings
+from app.db.base import Entitlement, Invoice, Membership, Payment, Plan, Price, Subscription, utc_now
 from app.db.session import get_session
 from app.modules.auth.dependencies import (
     Actor,
@@ -17,7 +18,14 @@ from app.modules.auth.dependencies import (
     require_workspace_membership,
 )
 from app.modules.billing.catalog import ensure_catalog, get_plan_by_key
-from app.modules.billing.service import get_workspace_subscription, usage_totals
+from app.modules.billing.service import (
+    create_checkout_session,
+    get_workspace_subscription,
+    process_payment_webhook,
+    record_audit,
+    record_subscription_event,
+    usage_snapshot,
+)
 from app.modules.shared.errors import api_error
 
 router = APIRouter()
@@ -59,6 +67,7 @@ class UsageResponse(BaseModel):
     workspace_id: UUID
     usage: dict[str, float]
     entitlements: dict[str, object]
+    limits: list[dict[str, object]]
 
 
 class CheckoutRequest(BaseModel):
@@ -78,6 +87,64 @@ class CheckoutResponse(BaseModel):
 class MessageResponse(BaseModel):
     status: str
     message: str
+
+
+class PaymentOut(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    provider_key: str
+    provider_payment_id: str | None
+    status: str
+    amount_minor: int
+    currency: str
+    payment_captured: bool
+    created_at: str
+
+
+class PaymentsResponse(BaseModel):
+    payments: list[PaymentOut]
+
+
+class InvoiceOut(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    provider_key: str
+    provider_invoice_id: str | None
+    status: str
+    amount_due_minor: int
+    amount_paid_minor: int
+    currency: str
+    invoice_url: str | None
+    created_at: str
+
+
+class InvoicesResponse(BaseModel):
+    invoices: list[InvoiceOut]
+
+
+class PaymentWebhookRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    event_id: str = Field(min_length=1, max_length=160)
+    event_type: str = Field(alias="type", min_length=1, max_length=120)
+    workspace_id: UUID
+    checkout_id: UUID | None = None
+    plan_key: str = Field(min_length=1, max_length=80)
+    provider_customer_id: str | None = Field(default=None, max_length=160)
+    provider_subscription_id: str | None = Field(default=None, max_length=160)
+    provider_payment_id: str | None = Field(default=None, max_length=160)
+    provider_invoice_id: str | None = Field(default=None, max_length=160)
+    amount_minor: int = Field(default=0, ge=0)
+    currency: str = Field(default="RUB", min_length=3, max_length=3)
+
+
+class PaymentWebhookResponse(BaseModel):
+    provider_key: str
+    event_id: str
+    status: str
+    processed: bool
+    message: str
+    subscription: SubscriptionResponse | None = None
 
 
 async def plan_out(db: AsyncSession, plan: Plan) -> PlanOut:
@@ -151,17 +218,12 @@ async def get_usage(
     db: AsyncSession = Depends(get_session),
 ) -> UsageResponse:
     await require_workspace_membership(workspace_id, request, actor, db)
-    subscription = await get_workspace_subscription(db, workspace_id)
-    if subscription is None:
-        entitlements = {}
-    else:
-        _, plan = subscription
-        rows = await db.scalars(select(Entitlement).where(Entitlement.plan_id == plan.id))
-        entitlements = {item.key: item.value_json for item in rows}
+    snapshot = await usage_snapshot(db, workspace_id)
     return UsageResponse(
         workspace_id=workspace_id,
-        usage=await usage_totals(db, workspace_id),
-        entitlements=entitlements,
+        usage=snapshot["usage"],
+        entitlements=snapshot["entitlements"],
+        limits=snapshot["limits"],
     )
 
 
@@ -171,33 +233,34 @@ async def checkout(
     payload: CheckoutRequest,
     request: Request,
     actor: Actor = Depends(require_csrf),
+    settings: Settings = Depends(get_settings),
     db: AsyncSession = Depends(get_session),
 ) -> CheckoutResponse:
     await ensure_catalog(db)
-    _, membership = await require_workspace_membership(workspace_id, request, actor, db)
+    workspace, membership = await require_workspace_membership(workspace_id, request, actor, db)
     require_role(membership, {"owner"}, request)
     plan = await get_plan_by_key(db, payload.plan_key)
     if plan is None or not plan.is_active:
         raise api_error(404, "plan_not_found", "Plan not found.", request=request)
-    checkout_session = CheckoutSession(
-        workspace_id=workspace_id,
-        plan_id=plan.id,
-        provider_key="mock",
-        status="pending_manual_contact",
-        payment_captured=False,
-        metadata_json={"mock": True, "phase": "02"},
-        created_at=utc_now(),
-    )
-    db.add(checkout_session)
+    try:
+        checkout_session, provider_result = await create_checkout_session(
+            db,
+            workspace=workspace,
+            plan=plan,
+            actor_user_id=actor.user.id,
+            settings=settings,
+        )
+    except ValueError as exc:
+        raise api_error(422, "payment_provider_not_supported", "Payment provider is not supported.", request=request) from exc
     await db.commit()
     return CheckoutResponse(
         checkout_id=checkout_session.id,
         workspace_id=workspace_id,
         plan_key=plan.key,
-        provider_key="mock",
+        provider_key=provider_result.provider_key,
         status=checkout_session.status,
-        payment_captured=False,
-        message="Mock checkout created. No payment was captured.",
+        payment_captured=provider_result.payment_captured,
+        message=provider_result.message,
     )
 
 
@@ -218,15 +281,104 @@ async def cancel_subscription(
     subscription_model.cancel_at = utc_now()
     subscription_model.updated_at = utc_now()
     subscription_model.version += 1
+    await record_subscription_event(
+        db,
+        workspace_id=workspace_id,
+        subscription_id=subscription_model.id,
+        provider_key=subscription_model.provider_key,
+        event_type="subscription.cancel_requested",
+        payload={"source": "owner_request", "payment_captured": False},
+    )
+    await record_audit(
+        db,
+        workspace_id=workspace_id,
+        actor_user_id=actor.user.id,
+        action="billing.subscription_cancel_requested",
+        resource_type="subscription",
+        resource_id=str(subscription_model.id),
+        metadata={"provider_key": subscription_model.provider_key},
+    )
     await db.commit()
     return await subscription_out(db, subscription_model)
 
 
-@router.get("/billing/payments", response_model=dict[str, list[object]])
-async def payments(_: Actor = Depends(get_current_actor)) -> dict[str, list[object]]:
-    return {"payments": []}
+@router.get("/billing/payments", response_model=PaymentsResponse)
+async def payments(
+    actor: Actor = Depends(get_current_actor),
+    db: AsyncSession = Depends(get_session),
+) -> PaymentsResponse:
+    workspace_ids = select(Membership.workspace_id).where(Membership.user_id == actor.user.id)
+    rows = await db.scalars(
+        select(Payment).where(Payment.workspace_id.in_(workspace_ids)).order_by(Payment.created_at.desc())
+    )
+    return PaymentsResponse(
+        payments=[
+            PaymentOut(
+                id=row.id,
+                workspace_id=row.workspace_id,
+                provider_key=row.provider_key,
+                provider_payment_id=row.provider_payment_id,
+                status=row.status,
+                amount_minor=row.amount_minor,
+                currency=row.currency,
+                payment_captured=row.payment_captured,
+                created_at=row.created_at.isoformat(),
+            )
+            for row in rows
+        ]
+    )
 
 
-@router.get("/billing/invoices", response_model=dict[str, list[object]])
-async def invoices(_: Actor = Depends(get_current_actor)) -> dict[str, list[object]]:
-    return {"invoices": []}
+@router.get("/billing/invoices", response_model=InvoicesResponse)
+async def invoices(
+    actor: Actor = Depends(get_current_actor),
+    db: AsyncSession = Depends(get_session),
+) -> InvoicesResponse:
+    workspace_ids = select(Membership.workspace_id).where(Membership.user_id == actor.user.id)
+    rows = await db.scalars(
+        select(Invoice).where(Invoice.workspace_id.in_(workspace_ids)).order_by(Invoice.created_at.desc())
+    )
+    return InvoicesResponse(
+        invoices=[
+            InvoiceOut(
+                id=row.id,
+                workspace_id=row.workspace_id,
+                provider_key=row.provider_key,
+                provider_invoice_id=row.provider_invoice_id,
+                status=row.status,
+                amount_due_minor=row.amount_due_minor,
+                amount_paid_minor=row.amount_paid_minor,
+                currency=row.currency,
+                invoice_url=row.invoice_url,
+                created_at=row.created_at.isoformat(),
+            )
+            for row in rows
+        ]
+    )
+
+
+@router.post("/webhooks/payments/{provider_key}", response_model=PaymentWebhookResponse)
+async def payment_webhook(
+    provider_key: str,
+    payload: PaymentWebhookRequest,
+    request: Request,
+    settings: Settings = Depends(get_settings),
+    db: AsyncSession = Depends(get_session),
+) -> PaymentWebhookResponse:
+    await ensure_catalog(db)
+    result = await process_payment_webhook(
+        db,
+        provider_key=provider_key,
+        payload=payload.model_dump(by_alias=True, mode="json"),
+        headers={key.lower(): value for key, value in request.headers.items()},
+        settings=settings,
+    )
+    await db.commit()
+    return PaymentWebhookResponse(
+        provider_key=result.provider_key,
+        event_id=result.event_id,
+        status=result.status,
+        processed=result.processed,
+        message=result.message,
+        subscription=await subscription_out(db, result.subscription) if result.subscription is not None else None,
+    )

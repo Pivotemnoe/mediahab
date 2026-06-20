@@ -5174,12 +5174,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "items": {},
-                    "type": "array"
-                  },
-                  "type": "object",
-                  "title": "Response Payments Api V1 Billing Payments Get"
+                  "$ref": "#/components/schemas/PaymentsResponse"
                 }
               }
             }
@@ -5200,12 +5195,59 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "items": {},
-                    "type": "array"
-                  },
-                  "type": "object",
-                  "title": "Response Invoices Api V1 Billing Invoices Get"
+                  "$ref": "#/components/schemas/InvoicesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/payments/{provider_key}": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Payment Webhook",
+        "operationId": "payment_webhook_api_v1_webhooks_payments__provider_key__post",
+        "parameters": [
+          {
+            "name": "provider_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentWebhookResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -7021,6 +7063,96 @@
         ],
         "title": "InvitationResponse"
       },
+      "InvoiceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key"
+          },
+          "provider_invoice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Invoice Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "amount_due_minor": {
+            "type": "integer",
+            "title": "Amount Due Minor"
+          },
+          "amount_paid_minor": {
+            "type": "integer",
+            "title": "Amount Paid Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "invoice_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Url"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "provider_key",
+          "provider_invoice_id",
+          "status",
+          "amount_due_minor",
+          "amount_paid_minor",
+          "currency",
+          "invoice_url",
+          "created_at"
+        ],
+        "title": "InvoiceOut"
+      },
+      "InvoicesResponse": {
+        "properties": {
+          "invoices": {
+            "items": {
+              "$ref": "#/components/schemas/InvoiceOut"
+            },
+            "type": "array",
+            "title": "Invoices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invoices"
+        ],
+        "title": "InvoicesResponse"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -7635,6 +7767,235 @@
           "members"
         ],
         "title": "MembersResponse"
+      },
+      "PaymentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key"
+          },
+          "provider_payment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Payment Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "payment_captured": {
+            "type": "boolean",
+            "title": "Payment Captured"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "provider_key",
+          "provider_payment_id",
+          "status",
+          "amount_minor",
+          "currency",
+          "payment_captured",
+          "created_at"
+        ],
+        "title": "PaymentOut"
+      },
+      "PaymentWebhookRequest": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Type"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "checkout_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Id"
+          },
+          "plan_key": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Plan Key"
+          },
+          "provider_customer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Customer Id"
+          },
+          "provider_subscription_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Subscription Id"
+          },
+          "provider_payment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Payment Id"
+          },
+          "provider_invoice_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Invoice Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount Minor",
+            "default": 0
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency",
+            "default": "RUB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "type",
+          "workspace_id",
+          "plan_key"
+        ],
+        "title": "PaymentWebhookRequest"
+      },
+      "PaymentWebhookResponse": {
+        "properties": {
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "processed": {
+            "type": "boolean",
+            "title": "Processed"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "subscription": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_key",
+          "event_id",
+          "status",
+          "processed",
+          "message"
+        ],
+        "title": "PaymentWebhookResponse"
+      },
+      "PaymentsResponse": {
+        "properties": {
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentOut"
+            },
+            "type": "array",
+            "title": "Payments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payments"
+        ],
+        "title": "PaymentsResponse"
       },
       "PlanOut": {
         "properties": {
@@ -9516,13 +9877,22 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Entitlements"
+          },
+          "limits": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Limits"
           }
         },
         "type": "object",
         "required": [
           "workspace_id",
           "usage",
-          "entitlements"
+          "entitlements",
+          "limits"
         ],
         "title": "UsageResponse"
       },

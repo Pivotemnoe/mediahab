@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = Field(default=True, alias="SESSION_COOKIE_SECURE")
     session_ttl_hours: int = Field(default=24 * 14, alias="SESSION_TTL_HOURS")
     admin_api_token: str = Field(default="local-admin-token", alias="ADMIN_API_TOKEN")
+    payment_provider: str = Field(default="mock", alias="PAYMENT_PROVIDER")
+    mock_payment_webhook_secret: str = Field(
+        default="local-mock-payment-secret", alias="MOCK_PAYMENT_WEBHOOK_SECRET"
+    )
     media_bucket: str = Field(default="media-hub", alias="MEDIA_BUCKET")
     media_public_base_url: str = Field(
         default="http://localhost:9100", alias="MEDIA_PUBLIC_BASE_URL"

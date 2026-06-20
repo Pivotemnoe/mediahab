@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T16:59:43.067291+00:00",
+  "generated_at": "2026-06-20T17:13:24.643003+00:00",
   "canonical_language": "en",
-  "file_count": 328,
+  "file_count": 332,
   "files": [
     {
       "path": ".dockerignore",
@@ -82,8 +82,8 @@
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
-      "size_bytes": 817,
-      "sha256": "999b622d969e1eab31dac15cf14168843566360c8e8ea9444df90cbd18e00103"
+      "size_bytes": 5064,
+      "sha256": "bb1f2547dbab661b0d9953ba7206d83ed02be749d4adbe5e24e8b0fc31f42bb1"
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
@@ -222,8 +222,8 @@
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
-      "size_bytes": 1051,
-      "sha256": "216a9c5920b8e6a52582f3240ea05b036d0f6de4c04538896eb9ae6878203417"
+      "size_bytes": 3493,
+      "sha256": "d5abc79451576cbd3d3a456a29f9fa04f5d316caa82e2944f533ea0914e26c6e"
     },
     {
       "path": "apps/web/src/app/privacy/page.tsx",
@@ -367,8 +367,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 254798,
-      "sha256": "8595f543e6c7af3bdc965e88319c3baee9f9c1026acf410712fcd91a382e8bbb"
+      "size_bytes": 263815,
+      "sha256": "2e5218801bd8edf101e5533d020e74d6b8eff2d3b830883db1f1dd985290eb82"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -454,6 +454,11 @@
       "path": "database/migrations/versions/202606200007_publication_production_decisions.py",
       "size_bytes": 1520,
       "sha256": "77af76b21edc85e45d39c8886c0b9d5339d581caf916a6a07b001418ef088ea6"
+    },
+    {
+      "path": "database/migrations/versions/202606200008_phase11_billing_launch.py",
+      "size_bytes": 7738,
+      "sha256": "f0b6319b3636e5566df4488336bdd737f89d34faaf91888b29222185478f5e8e"
     },
     {
       "path": "database/seeds/phase01_baseline.sql",
@@ -652,8 +657,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 5378,
-      "sha256": "8fadc77ac3ba1ace4351f175f6afca6138eb61f5378925c368182849203d5759"
+      "size_bytes": 5817,
+      "sha256": "d4ccfef1e5b6e7383833edab3e1f15902839e422c652cf20f2af47203fdb4623"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -881,6 +886,16 @@
       "sha256": "69bdd6fb18ad7bb6cde8cdfde7883f2322f27d0cdde1cff591c0d758ecc82ccf"
     },
     {
+      "path": "docs/exec-plans/PHASE_11_BILLING_AND_LAUNCH.md",
+      "size_bytes": 5516,
+      "sha256": "e2d50b8ef2418dbc353bcb1c024c376ae30c0fc1e386bcf427c9e3fbbb2ccfdd"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_11_REPORT_RU.md",
+      "size_bytes": 5186,
+      "sha256": "bf60b9d65d2d9ba852fdac52da38179cce3af9c048da8001a0674f91f6b4b08a"
+    },
+    {
       "path": "docs/exec-plans/README.md",
       "size_bytes": 702,
       "sha256": "09a49fbc8f9a17854cfb786d7763cf4709e101c8f05ff54431ba740c20ea7a7d"
@@ -1022,8 +1037,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 254798,
-      "sha256": "8595f543e6c7af3bdc965e88319c3baee9f9c1026acf410712fcd91a382e8bbb"
+      "size_bytes": 263815,
+      "sha256": "2e5218801bd8edf101e5533d020e74d6b8eff2d3b830883db1f1dd985290eb82"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -1307,8 +1322,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/admin.py",
-      "size_bytes": 2733,
-      "sha256": "762516e004da9543582510cd8afb9b5333431e1e7d28a8790dffe437a341c432"
+      "size_bytes": 2356,
+      "sha256": "6a9c6ecb2f222ddb9e2a87d4723dc946d7a7f6e69848825d40684030aa20629e"
     },
     {
       "path": "services/api/app/api/v1/routes/ai.py",
@@ -1322,8 +1337,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/billing.py",
-      "size_bytes": 7599,
-      "sha256": "0ec3ec1d5186b334f571ce9aa53431d60fa01351d8841cd3caa12d7567f787f5"
+      "size_bytes": 12565,
+      "sha256": "475873b185002f2bffc0947726c85e90e4f224a1841728bc8e96f3d01ce64602"
     },
     {
       "path": "services/api/app/api/v1/routes/content.py",
@@ -1362,8 +1377,8 @@
     },
     {
       "path": "services/api/app/core/config.py",
-      "size_bytes": 5048,
-      "sha256": "c506cc5a277a551e0f31b7bbbb10109e2c9038a9c687b5560d9d851fa15a3625"
+      "size_bytes": 5257,
+      "sha256": "3c22770f2b8cd980ad2e3f60fb43e1a8b5e7e3f7d4a9939a1808999d68db7412"
     },
     {
       "path": "services/api/app/core/logging.py",
@@ -1377,8 +1392,8 @@
     },
     {
       "path": "services/api/app/db/base.py",
-      "size_bytes": 56105,
-      "sha256": "ba0bd5ba930975ed1f44fb51f74af3f2ec479ac2cc1180086e391fa506c29fd1"
+      "size_bytes": 61790,
+      "sha256": "941fa8ce14d77268ea9453771b732a993a246561fc7b40bdf19b17efca4b1b19"
     },
     {
       "path": "services/api/app/db/session.py",
@@ -1442,13 +1457,18 @@
     },
     {
       "path": "services/api/app/modules/billing/catalog.py",
-      "size_bytes": 4469,
-      "sha256": "628349f237689b33650e80710b00618b02d9b0660fbddb0b601cd3472ba7fcd4"
+      "size_bytes": 5320,
+      "sha256": "3a20b8867e387ba0eaef02145f0a3d90406cedf39fcb6a53c3b1d1b33fe055d0"
+    },
+    {
+      "path": "services/api/app/modules/billing/providers.py",
+      "size_bytes": 1623,
+      "sha256": "985dad3245ddbbfa0aead53298b69706846b95a3c6eea3adcc269f5d728a494c"
     },
     {
       "path": "services/api/app/modules/billing/service.py",
-      "size_bytes": 1833,
-      "sha256": "d7f916e5a88e191a668e4043ced9a7f890a8e1b1cb2c75891b5d73a1499525e6"
+      "size_bytes": 22289,
+      "sha256": "89e20cb37e5f2eabe5cf21c4e4370b8d58a7fee2f737d1a50304bd6c48a9cec8"
     },
     {
       "path": "services/api/app/modules/content/__init__.py",
@@ -1527,8 +1547,8 @@
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",
-      "size_bytes": 7973,
-      "sha256": "c34c7ab4cea5a08b86f3c0d48fffc226a6ec2cad170567dcb31934bb71c92ddb"
+      "size_bytes": 13637,
+      "sha256": "23a25ac45824cbafc733b9bc1962de2df27c870b79c2bf41a5f8032d227b375b"
     },
     {
       "path": "services/api/tests/test_content_media_voice.py",
@@ -1617,8 +1637,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 4393,
-      "sha256": "82b0e264ba0b15be058a4c70965f6d1a9367929245a5cd30a4e62a3825fbc24a"
+      "size_bytes": 4696,
+      "sha256": "49e482b7c87797a0b06ea4981e289fe8b31b20bad2dce85239f57d751d46fbe0"
     },
     {
       "path": "tools/export_openapi.py",

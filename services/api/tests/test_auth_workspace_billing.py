@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 BASE = Path(__file__).resolve().parents[3]
@@ -15,7 +15,18 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.db.base import Base, Membership, User, utc_now  # noqa: E402
+from app.db.base import (  # noqa: E402
+    AuditLog,
+    Base,
+    Invoice,
+    Membership,
+    Payment,
+    PaymentCustomer,
+    PaymentWebhookInbox,
+    SubscriptionEvent,
+    User,
+    utc_now,
+)
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
 
@@ -66,6 +77,30 @@ class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
                 )
             )
             await session.commit()
+
+    async def _billing_count(self, model: type, workspace_id: UUID) -> int:
+        async with self.SessionLocal() as session:
+            return int(
+                await session.scalar(
+                    select(func.count()).select_from(model).where(model.workspace_id == workspace_id)
+                )
+                or 0
+            )
+
+    async def _audit_actions(self, workspace_id: UUID) -> list[str]:
+        async with self.SessionLocal() as session:
+            rows = await session.scalars(
+                select(AuditLog).where(AuditLog.workspace_id == workspace_id).order_by(AuditLog.created_at.asc())
+            )
+            return [row.action for row in rows]
+
+    async def _webhook_headers(self, event_id: str) -> dict[str, object]:
+        async with self.SessionLocal() as session:
+            inbox = await session.scalar(
+                select(PaymentWebhookInbox).where(PaymentWebhookInbox.event_id == event_id)
+            )
+            assert inbox is not None
+            return inbox.headers_json if isinstance(inbox.headers_json, dict) else {}
 
     def register(
         self,
@@ -172,7 +207,7 @@ class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
 
     def test_mock_checkout_never_captures_payment(self) -> None:
         payload = self.register(self.client)
-        workspace_id = payload["workspace"]["id"]
+        workspace_id = UUID(str(payload["workspace"]["id"]))
         response = self.client.post(
             f"/api/v1/workspaces/{workspace_id}/checkout",
             headers=self.csrf_headers(payload),
@@ -183,6 +218,87 @@ class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
         self.assertEqual(checkout["provider_key"], "mock")
         self.assertEqual(checkout["status"], "pending_manual_contact")
         self.assertFalse(checkout["payment_captured"])
+        self.assertIn("No payment was captured", checkout["message"])
+        self.assertEqual(asyncio.run(self._billing_count(PaymentCustomer, workspace_id)), 1)
+        self.assertIn("billing.checkout_created", asyncio.run(self._audit_actions(workspace_id)))
+
+    def test_admin_plan_assignment_updates_entitlements_and_audit(self) -> None:
+        payload = self.register(self.client, email="admin-plan@example.com")
+        workspace_id = UUID(str(payload["workspace"]["id"]))
+        response = self.client.post(
+            f"/api/v1/admin/workspaces/{workspace_id}/assign-plan",
+            headers={"X-Admin-Token": "local-admin-token"},
+            json={"plan_key": "pro", "status": "active"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["plan_key"], "pro")
+
+        usage = self.client.get(f"/api/v1/workspaces/{workspace_id}/usage")
+        self.assertEqual(usage.status_code, 200, usage.text)
+        usage_payload = usage.json()
+        self.assertEqual(usage_payload["entitlements"]["projects.max"], 15)
+        projects_limit = next(item for item in usage_payload["limits"] if item["key"] == "projects.max")
+        self.assertEqual(projects_limit["limit"], 15.0)
+        self.assertEqual(projects_limit["status"], "ok")
+        self.assertEqual(asyncio.run(self._billing_count(SubscriptionEvent, workspace_id)), 1)
+        self.assertIn("billing.plan_assigned", asyncio.run(self._audit_actions(workspace_id)))
+
+    def test_mock_payment_webhook_replay_is_idempotent(self) -> None:
+        payload = self.register(self.client, email="webhook-plan@example.com")
+        workspace_id = UUID(str(payload["workspace"]["id"]))
+        checkout = self.client.post(
+            f"/api/v1/workspaces/{workspace_id}/checkout",
+            headers=self.csrf_headers(payload),
+            json={"plan_key": "pro"},
+        )
+        self.assertEqual(checkout.status_code, 200, checkout.text)
+        event_payload = {
+            "event_id": "evt_phase11_webhook_1",
+            "type": "checkout.completed",
+            "workspace_id": str(workspace_id),
+            "checkout_id": checkout.json()["checkout_id"],
+            "plan_key": "pro",
+            "provider_customer_id": "mock_cus_phase11",
+            "provider_subscription_id": "mock_sub_phase11",
+            "provider_payment_id": "mock_pay_phase11",
+            "provider_invoice_id": "mock_inv_phase11",
+            "amount_minor": 0,
+            "currency": "RUB",
+        }
+        webhook = self.client.post(
+            "/api/v1/webhooks/payments/mock",
+            headers={"X-Mock-Payment-Signature": "local-mock-payment-secret"},
+            json=event_payload,
+        )
+        self.assertEqual(webhook.status_code, 200, webhook.text)
+        self.assertEqual(webhook.json()["status"], "processed")
+        self.assertTrue(webhook.json()["processed"])
+        self.assertEqual(webhook.json()["subscription"]["plan_key"], "pro")
+        self.assertFalse(webhook.json()["subscription"]["payment_captured"])
+
+        replay = self.client.post(
+            "/api/v1/webhooks/payments/mock",
+            headers={"X-Mock-Payment-Signature": "local-mock-payment-secret"},
+            json=event_payload,
+        )
+        self.assertEqual(replay.status_code, 200, replay.text)
+        self.assertEqual(replay.json()["status"], "duplicate")
+        self.assertFalse(replay.json()["processed"])
+
+        self.assertEqual(asyncio.run(self._billing_count(PaymentWebhookInbox, workspace_id)), 1)
+        self.assertEqual(asyncio.run(self._billing_count(Payment, workspace_id)), 1)
+        self.assertEqual(asyncio.run(self._billing_count(Invoice, workspace_id)), 1)
+        self.assertEqual(asyncio.run(self._billing_count(SubscriptionEvent, workspace_id)), 1)
+        stored_headers = asyncio.run(self._webhook_headers("evt_phase11_webhook_1"))
+        self.assertEqual(stored_headers["x-mock-payment-signature"], "[redacted]")
+
+        payments = self.client.get("/api/v1/billing/payments")
+        self.assertEqual(payments.status_code, 200, payments.text)
+        self.assertEqual(len(payments.json()["payments"]), 1)
+        self.assertFalse(payments.json()["payments"][0]["payment_captured"])
+        invoices = self.client.get("/api/v1/billing/invoices")
+        self.assertEqual(invoices.status_code, 200, invoices.text)
+        self.assertEqual(len(invoices.json()["invoices"]), 1)
 
 
 if __name__ == "__main__":

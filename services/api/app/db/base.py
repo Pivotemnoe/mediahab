@@ -225,6 +225,110 @@ class CheckoutSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class PaymentCustomer(Base):
+    __tablename__ = "payment_customers"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "provider_key", name="uq_payment_customers_workspace_provider"),
+        UniqueConstraint("provider_key", "provider_customer_id", name="uq_payment_customers_provider_customer"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    provider_customer_id: Mapped[str | None] = mapped_column(String(160), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True)
+    email: Mapped[str | None] = mapped_column(String(320))
+    metadata_json: Mapped[object | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+    __table_args__ = (
+        UniqueConstraint("provider_key", "provider_payment_id", name="uq_payments_provider_payment"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    subscription_id: Mapped[UUID | None] = mapped_column(ForeignKey("subscriptions.id"), index=True)
+    checkout_session_id: Mapped[UUID | None] = mapped_column(ForeignKey("checkout_sessions.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(160), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="simulated", index=True)
+    amount_minor: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="RUB")
+    payment_captured: Mapped[bool] = mapped_column(Boolean, default=False)
+    metadata_json: Mapped[object | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    __table_args__ = (
+        UniqueConstraint("provider_key", "provider_invoice_id", name="uq_invoices_provider_invoice"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    subscription_id: Mapped[UUID | None] = mapped_column(ForeignKey("subscriptions.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    provider_invoice_id: Mapped[str | None] = mapped_column(String(160), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="draft", index=True)
+    amount_due_minor: Mapped[int] = mapped_column(Integer, default=0)
+    amount_paid_minor: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="RUB")
+    invoice_url: Mapped[str | None] = mapped_column(Text)
+    metadata_json: Mapped[object | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class SubscriptionEvent(Base):
+    __tablename__ = "subscription_events"
+    __table_args__ = (
+        UniqueConstraint("provider_key", "provider_event_id", name="uq_subscription_events_provider_event"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    subscription_id: Mapped[UUID | None] = mapped_column(ForeignKey("subscriptions.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    provider_event_id: Mapped[str | None] = mapped_column(String(160), index=True)
+    event_type: Mapped[str] = mapped_column(String(120), index=True)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class PaymentWebhookInbox(Base):
+    __tablename__ = "payment_webhook_inbox"
+    __table_args__ = (
+        UniqueConstraint("provider_key", "event_id", name="uq_payment_webhook_provider_event"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID | None] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), index=True)
+    event_id: Mapped[str] = mapped_column(String(160), index=True)
+    event_type: Mapped[str] = mapped_column(String(120), index=True)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    headers_json: Mapped[object] = mapped_column(JSON)
+    signature_valid: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(40), default="received", index=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

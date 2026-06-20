@@ -7,9 +7,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.db.base import Subscription, Workspace, utc_now
+from app.db.base import Workspace
 from app.db.session import get_session
 from app.modules.billing.catalog import ensure_catalog, get_plan_by_key
+from app.modules.billing.service import assign_subscription_plan
 from app.modules.shared.errors import api_error
 
 from .billing import SubscriptionResponse, subscription_out
@@ -48,27 +49,16 @@ async def assign_plan(
     plan = await get_plan_by_key(db, payload.plan_key)
     if plan is None or not plan.is_active:
         raise api_error(404, "plan_not_found", "Plan not found.", request=request)
-    from app.modules.billing.service import get_workspace_subscription
-
-    current = await get_workspace_subscription(db, workspace_id)
-    if current is None:
-        subscription = Subscription(
-            workspace_id=workspace_id,
-            plan_id=plan.id,
-            status=payload.status,
-            provider_key="mock",
-            current_period_start=utc_now(),
-            created_at=utc_now(),
-            updated_at=utc_now(),
-            version=1,
-        )
-        db.add(subscription)
-    else:
-        subscription, _ = current
-        subscription.plan_id = plan.id
-        subscription.status = payload.status
-        subscription.provider_key = "mock"
-        subscription.updated_at = utc_now()
-        subscription.version += 1
+    subscription = await assign_subscription_plan(
+        db,
+        workspace=workspace,
+        plan=plan,
+        status=payload.status,
+        provider_key="mock",
+        actor_user_id=None,
+        source="system_admin_manual_assignment",
+        event_type="plan.assigned",
+        metadata={"admin_token_present": True},
+    )
     await db.commit()
     return await subscription_out(db, subscription)
