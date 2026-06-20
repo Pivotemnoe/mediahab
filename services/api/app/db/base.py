@@ -828,3 +828,265 @@ class GenerationStep(Base):
     error_code: Mapped[str | None] = mapped_column(String(120))
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class Platform(Base):
+    __tablename__ = "platforms"
+
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    name: Mapped[str] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True)
+    native_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class PlatformCapability(Base):
+    __tablename__ = "platform_capabilities"
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_key",
+            "connector_key",
+            "version",
+            name="uq_platform_capabilities_platform_connector_version",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    platform_key: Mapped[str] = mapped_column(ForeignKey("platforms.key"), index=True)
+    connector_key: Mapped[str] = mapped_column(String(80), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    capabilities_json: Mapped[object] = mapped_column(JSON)
+    hard_limits_json: Mapped[object] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class PlatformAccount(Base):
+    __tablename__ = "platform_accounts"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "platform_key",
+            "display_name",
+            name="uq_platform_accounts_workspace_platform_name",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    platform_key: Mapped[str] = mapped_column(ForeignKey("platforms.key"), index=True)
+    display_name: Mapped[str] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True)
+    credentials_ref: Mapped[str | None] = mapped_column(String(240))
+    configuration_json: Mapped[object] = mapped_column(JSON)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class ProjectDestination(Base):
+    __tablename__ = "project_destinations"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "project_id",
+            "name",
+            name="uq_project_destinations_workspace_project_name",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    platform_key: Mapped[str] = mapped_column(ForeignKey("platforms.key"), index=True)
+    connector_key: Mapped[str] = mapped_column(String(80), index=True)
+    platform_account_id: Mapped[UUID | None] = mapped_column(ForeignKey("platform_accounts.id"), index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True)
+    publication_mode: Mapped[str] = mapped_column(String(80), default="manual_export")
+    configuration_json: Mapped[object] = mapped_column(JSON)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class PlatformVariant(Base):
+    __tablename__ = "platform_variants"
+    __table_args__ = (
+        UniqueConstraint(
+            "content_item_id",
+            "master_revision_id",
+            "platform_key",
+            "revision_number",
+            name="uq_platform_variants_content_master_platform_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    master_revision_id: Mapped[UUID] = mapped_column(ForeignKey("content_revisions.id"), index=True)
+    platform_key: Mapped[str] = mapped_column(ForeignKey("platforms.key"), index=True)
+    revision_number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(40), default="draft", index=True)
+    text: Mapped[str] = mapped_column(Text)
+    rendered_text: Mapped[str] = mapped_column(Text)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    validation_json: Mapped[object] = mapped_column(JSON)
+    character_count: Mapped[int] = mapped_column(Integer, default=0)
+    parent_variant_id: Mapped[UUID | None] = mapped_column(ForeignKey("platform_variants.id"))
+    superseded_by_variant_id: Mapped[UUID | None] = mapped_column(ForeignKey("platform_variants.id"))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class Publication(Base):
+    __tablename__ = "publications"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "idempotency_key",
+            name="uq_publications_workspace_idempotency_key",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    platform_variant_id: Mapped[UUID] = mapped_column(ForeignKey("platform_variants.id"), index=True)
+    destination_id: Mapped[UUID] = mapped_column(ForeignKey("project_destinations.id"), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="draft", index=True)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    queued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_code: Mapped[str | None] = mapped_column(String(120))
+    last_error_message: Mapped[str | None] = mapped_column(Text)
+    idempotency_key: Mapped[str | None] = mapped_column(String(160), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class PublicationAttempt(Base):
+    __tablename__ = "publication_attempts"
+    __table_args__ = (
+        UniqueConstraint(
+            "publication_id",
+            "attempt_number",
+            name="uq_publication_attempts_publication_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    publication_id: Mapped[UUID] = mapped_column(ForeignKey("publications.id"), index=True)
+    destination_id: Mapped[UUID] = mapped_column(ForeignKey("project_destinations.id"), index=True)
+    connector_key: Mapped[str] = mapped_column(String(80), index=True)
+    attempt_number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(40), default="started", index=True)
+    retryable: Mapped[bool] = mapped_column(Boolean, default=False)
+    request_payload_json: Mapped[object | None] = mapped_column(JSON)
+    response_payload_json: Mapped[object | None] = mapped_column(JSON)
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ExternalPost(Base):
+    __tablename__ = "external_posts"
+    __table_args__ = (
+        UniqueConstraint(
+            "publication_id",
+            "idempotency_key",
+            name="uq_external_posts_publication_idempotency_key",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    publication_id: Mapped[UUID] = mapped_column(ForeignKey("publications.id"), index=True)
+    destination_id: Mapped[UUID] = mapped_column(ForeignKey("project_destinations.id"), index=True)
+    connector_key: Mapped[str] = mapped_column(String(80), index=True)
+    provider_external_id: Mapped[str] = mapped_column(String(240), index=True)
+    permalink_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(40), default="published", index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(160), index=True)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class WebhookInbox(Base):
+    __tablename__ = "webhook_inbox"
+    __table_args__ = (
+        UniqueConstraint(
+            "destination_id",
+            "dedupe_key",
+            name="uq_webhook_inbox_destination_dedupe_key",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    destination_id: Mapped[UUID | None] = mapped_column(ForeignKey("project_destinations.id"), index=True)
+    connector_key: Mapped[str] = mapped_column(String(80), index=True)
+    event_type: Mapped[str] = mapped_column(String(120), default="generic_webhook", index=True)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    headers_json: Mapped[object] = mapped_column(JSON)
+    signature_valid: Mapped[bool] = mapped_column(Boolean, default=False)
+    dedupe_key: Mapped[str | None] = mapped_column(String(160), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="received", index=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class OutboxEvent(Base):
+    __tablename__ = "outbox_events"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    aggregate_type: Mapped[str] = mapped_column(String(80), index=True)
+    aggregate_id: Mapped[UUID] = mapped_column(index=True)
+    event_type: Mapped[str] = mapped_column(String(120), index=True)
+    payload_json: Mapped[object] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=5)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    locked_by: Mapped[str | None] = mapped_column(String(120))
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )

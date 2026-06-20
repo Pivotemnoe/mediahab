@@ -64,6 +64,27 @@ def main() -> int:
         "/api/v1/ai-runs/{run_id}",
         "/api/v1/ai-runs/{run_id}/cancel",
         "/api/v1/ai-runs/{run_id}/retry",
+        "/api/v1/content-items/{content_id}/generate-variants",
+        "/api/v1/content-items/{content_id}/variants",
+        "/api/v1/platform-variants/{variant_id}",
+        "/api/v1/platform-variants/{variant_id}/validate",
+        "/api/v1/platform-variants/{variant_id}/approve",
+        "/api/v1/projects/{project_id}/destinations",
+        "/api/v1/destinations/{destination_id}",
+        "/api/v1/destinations/{destination_id}/capabilities",
+        "/api/v1/destinations/{destination_id}/test",
+        "/api/v1/platform-variants/{variant_id}/publications",
+        "/api/v1/publications",
+        "/api/v1/publications/{publication_id}",
+        "/api/v1/publications/{publication_id}/schedule",
+        "/api/v1/publications/{publication_id}/publish-now",
+        "/api/v1/publications/{publication_id}/cancel",
+        "/api/v1/publications/{publication_id}/retry",
+        "/api/v1/publications/{publication_id}/refresh-status",
+        "/api/v1/publications/{publication_id}/edit",
+        "/api/v1/publications/{publication_id}/external-post",
+        "/api/v1/publications/{publication_id}/attempts",
+        "/api/v1/webhooks/generic/{destination_id}",
     }
     missing_paths = sorted(required_paths - set(paths))
     if missing_paths:
@@ -71,7 +92,7 @@ def main() -> int:
             print(f"missing openapi path: {path}")
         return 1
 
-    print("Phase 05 smoke passed: content, media, voice, examples, and AI OpenAPI paths are present.")
+    print("Phase 06 smoke passed: publication core OpenAPI paths are present.")
     return 0
 
 

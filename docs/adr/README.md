@@ -15,6 +15,7 @@ Create numbered ADR files during Phase 00, using `reference/ARCHITECTURE_DECISIO
 0010-content-source-facts-media-and-transcription.md
 0011-examples-retrieval-and-ai-runs.md
 0012-openai-defaults-ranking-and-ai-retention.md
+0013-publication-core-outbox-and-connectors.md
 ```
 
 Each ADR contains status, context, decision, alternatives, consequences, migration/rollback implications, and evidence.

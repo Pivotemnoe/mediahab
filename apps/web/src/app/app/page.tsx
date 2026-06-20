@@ -28,6 +28,7 @@ const pipeline = [
   ["Проекты", "Конструктор проектов, рубрик и версионируемые настройки", "ready"],
   ["Контент", "Черновики, блоки, медиа и голосовая расшифровка", "ready"],
   ["ИИ", "Примеры, подбор, мастер-текст, крючки, оценки и проверка качества", "ready"],
+  ["Публикации", "Варианты под площадки, approval, outbox, retry и попытки", "ready"],
 ];
 
 const integrations = [
@@ -36,6 +37,7 @@ const integrations = [
   ["Тарифы", "В режиме заглушки оплата не списывается", "warning", "заглушка"],
   ["Голос", "OpenAI STT подключается через API, локально доступен mock", "success", "готово"],
   ["ИИ", "OpenAI выбран по умолчанию, mock остаётся для автотестов", "warning", "настройка"],
+  ["Публикации", "Manual export и generic webhook работают без нативных соцсетевых API", "success", "готово"],
 ];
 
 const navItems: Array<[string, string, LucideIcon]> = [
@@ -56,7 +58,7 @@ export default function CabinetShell() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div>
             <div className="text-sm font-semibold">Медиа-хаб</div>
-            <div className="text-xs text-muted">Техническая оболочка этапа 04</div>
+            <div className="text-xs text-muted">Техническая оболочка этапа 06</div>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="ghost">
@@ -121,7 +123,7 @@ export default function CabinetShell() {
                 <CalendarClock size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">4</div>
-              <div className="mt-1 text-sm text-muted">Маршруты контента, блоков, медиа и голоса</div>
+              <div className="mt-1 text-sm text-muted">Запланированные публикации и outbox</div>
             </Card>
             <Card>
               <div className="flex items-center justify-between">
@@ -129,7 +131,7 @@ export default function CabinetShell() {
                 <RadioTower size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">4</div>
-              <div className="mt-1 text-sm text-muted">Редактируемые тарифы-заглушки</div>
+              <div className="mt-1 text-sm text-muted">OpenAI, S3, manual export и webhook</div>
             </Card>
           </div>
 
@@ -140,7 +142,7 @@ export default function CabinetShell() {
                   <h2 className="text-lg font-semibold">Контент-пайплайн</h2>
                   <p className="text-sm text-muted">Предпросмотр границы кабинета</p>
                 </div>
-            <Badge>Этап 05</Badge>
+            <Badge>Этап 06</Badge>
               </div>
               <div className="grid gap-3">
                 {pipeline.map(([title, text, status]) => (

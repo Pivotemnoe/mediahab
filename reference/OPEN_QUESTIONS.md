@@ -27,6 +27,9 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 8. Choose the real email delivery provider for verification and password reset before production auth.
 9. Confirm final Timeweb S3 bucket naming, public delivery base URL, signed upload TTL, CORS policy, and cleanup policy for abandoned media uploads.
 10. Confirm OpenAI STT production model, Russian language default, monthly minute budget, and live-smoke audio sample.
+11. Confirm production worker polling/locking strategy for publication outbox processing after the Phase 06 inline dispatcher.
+12. Confirm whether generic webhook should perform live outbound HTTP delivery in the pilot or remain simulated until a staging target is provided.
+13. Confirm DNS-resolution and DNS-rebinding policy for generic webhook SSRF protection before live outbound delivery.
 
 ## Product-owner decisions that can follow later
 
@@ -44,3 +47,6 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 12. When mock rubric suggestions should switch to the live text provider, and what moderation/evidence requirements apply.
 13. Confirm whether raw voice notes, uploaded photos/videos, transcription text, and corrected fact blocks use one retention period or separate retention periods.
 14. Confirm recommended AI retention defaults from ADR 0012 or replace them before production cleanup jobs are implemented.
+15. Confirm final publication permission model: editors can publish in the technical slice, but production may require owner/admin approval.
+16. Confirm publication payload retention period, including rendered variants, attempts, redacted webhook evidence, and manual export packages.
+17. Confirm whether manual export should be treated as `manual_required` until a human confirms external posting, or as a completed publication after package generation.

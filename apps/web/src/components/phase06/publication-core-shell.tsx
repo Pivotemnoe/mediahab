@@ -1,0 +1,226 @@
+import Link from "next/link";
+import {
+  ArrowLeft,
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  Download,
+  FileCheck2,
+  History,
+  RotateCcw,
+  Send,
+  ShieldCheck,
+  TriangleAlert,
+  Webhook,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+const variants = [
+  ["Telegram", "32 768", "готов к approval", "Telegram API позже"],
+  ["MAX", "4 000", "сокращён", "лимит соблюдён"],
+  ["Instagram", "2 200", "сокращён", "caption соблюдён"],
+  ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
+  ["Generic webhook", "100 000", "готов", "HTTPS + подпись"],
+];
+
+const publicationRows = [
+  ["manual_required", "Ручной экспорт", "пакет готов", "success"],
+  ["published", "Generic webhook", "ответ 202", "success"],
+  ["failed_retryable", "Generic webhook", "ответ 503", "warning"],
+  ["scheduled", "Отложенная публикация", "outbox ждёт время", "neutral"],
+  ["cancelled", "Отмена", "pending job закрыт", "danger"],
+];
+
+const attempts = [
+  ["#1", "generic_webhook", "failed_retryable", "503"],
+  ["#2", "generic_webhook", "published", "202"],
+  ["#1", "manual_export", "manual_required", "пакет"],
+];
+
+function PublicationHeader() {
+  return (
+    <header className="border-b border-line bg-white">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+        <div>
+          <div className="text-sm font-semibold text-ink">Публикации</div>
+          <div className="text-xs text-muted">Варианты, approval, destinations и outbox</div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge tone="success">Этап 06</Badge>
+          <Button asChild variant="ghost">
+            <Link href="/app">
+              <ArrowLeft size={16} />
+              Кабинет
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function PublicationCoreShell() {
+  return (
+    <main className="min-h-screen bg-surface">
+      <PublicationHeader />
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Badge>Техническая сборка</Badge>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
+              Публикационный контур перед нативными коннекторами
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              Мастер-текст превращается в неизменяемые варианты под площадки. В очередь уходит
+              только одобренный вариант, а результат фиксируется в попытках и внешних записях.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button">
+              <FileCheck2 size={16} />
+              Одобрить вариант
+            </Button>
+            <Button type="button" variant="secondary">
+              <Send size={16} />
+              Поставить в очередь
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <Card className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Платформенные варианты</h2>
+                <p className="mt-1 text-sm text-muted">Лимиты разные, общего лимита нет.</p>
+              </div>
+              <ShieldCheck size={20} className="text-success" />
+            </div>
+            <div className="grid gap-2">
+              {variants.map(([platform, limit, status, note]) => (
+                <div className="grid gap-2 rounded-md border border-line p-3" key={platform}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm font-medium text-ink">{platform}</div>
+                    <Badge tone="success">{status}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-muted">
+                    <div>Лимит: {limit}</div>
+                    <div>{note}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="grid content-start gap-3">
+            <div className="flex items-center gap-2">
+              <Webhook size={18} className="text-accent" />
+              <h2 className="text-lg font-semibold">Destinations</h2>
+            </div>
+            <div className="grid gap-2 text-sm text-muted">
+              <div className="rounded-md border border-line p-3">
+                <div className="font-medium text-ink">Ручной экспорт</div>
+                <div className="mt-1">Статус публикации: manual_required.</div>
+              </div>
+              <div className="rounded-md border border-line p-3">
+                <div className="font-medium text-ink">Generic webhook</div>
+                <div className="mt-1">Только HTTPS, локальные и private адреса запрещены.</div>
+              </div>
+              <div className="rounded-md border border-line p-3">
+                <div className="font-medium text-ink">Telegram, MAX, Instagram</div>
+                <div className="mt-1">Варианты готовятся, нативная отправка в следующих фазах.</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <Card className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Badge>Публикации</Badge>
+                <h2 className="mt-3 text-lg font-semibold">Состояния очереди</h2>
+              </div>
+              <CalendarClock size={18} className="text-accent" />
+            </div>
+            {publicationRows.map(([status, destination, note, tone]) => (
+              <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-line p-3" key={`${status}-${destination}`}>
+                <div>
+                  <div className="text-sm font-medium text-ink">{destination}</div>
+                  <div className="mt-1 text-sm text-muted">{note}</div>
+                </div>
+                <Badge tone={tone as "success" | "warning" | "danger" | "neutral"}>{status}</Badge>
+              </div>
+            ))}
+          </Card>
+
+          <Card className="grid content-start gap-3">
+            <div className="flex items-center gap-2">
+              <Clock3 size={18} className="text-accent" />
+              <h2 className="text-lg font-semibold">Outbox</h2>
+            </div>
+            <div className="grid gap-2 text-sm text-muted">
+              <div className="flex items-center gap-2 rounded-md border border-line p-3">
+                <CheckCircle2 size={16} className="text-success" />
+                <span>PostgreSQL хранит intent публикации.</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-line p-3">
+                <RotateCcw size={16} className="text-accent" />
+                <span>Retry не создаёт дубль при успешной публикации.</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-line p-3">
+                <TriangleAlert size={16} className="text-warning" />
+                <span>Ошибка одной площадки не блокирует остальные.</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="grid content-start gap-3">
+            <div className="flex items-center gap-2">
+              <History size={18} className="text-accent" />
+              <h2 className="text-lg font-semibold">Попытки</h2>
+            </div>
+            {attempts.map(([number, connector, status, result]) => (
+              <div className="grid grid-cols-[56px_1fr_auto] items-center gap-3 rounded-md border border-line p-3 text-sm" key={`${number}-${connector}-${status}`}>
+                <Badge>{number}</Badge>
+                <div>
+                  <div className="font-medium text-ink">{connector}</div>
+                  <div className="mt-1 text-muted">Результат: {result}</div>
+                </div>
+                <Badge tone={status === "published" || status === "manual_required" ? "success" : "warning"}>
+                  {status}
+                </Badge>
+              </div>
+            ))}
+          </Card>
+
+          <Card className="grid content-start gap-3">
+            <div className="flex items-center gap-2">
+              <Download size={18} className="text-accent" />
+              <h2 className="text-lg font-semibold">Ручной пакет</h2>
+            </div>
+            <div className="rounded-md border border-line p-3 text-sm leading-6 text-muted">
+              В пакете сохраняются текст варианта, порядок медиа, destination, idempotency key и
+              проверочные предупреждения. Секреты webhook не показываются в интерфейсе.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary">
+                <Download size={16} />
+                Скачать пакет
+              </Button>
+              <Button type="button" variant="ghost">
+                <RotateCcw size={16} />
+                Повторить
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </section>
+    </main>
+  );
+}
