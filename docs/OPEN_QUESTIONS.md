@@ -22,6 +22,9 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 3. Confirm whether the first deployment uses one VPS plus external object storage or a managed database/object-storage split.
 4. Confirm where encryption keys and connector secrets will be stored for personal pilot and production.
 5. Confirm staging channel/account separation so automated tests never target production public channels.
+6. Replace Phase 02 local `ADMIN_API_TOKEN` plan-assignment placeholder with a real system-operator identity model before public SaaS.
+7. Replace Phase 02 in-process auth rate limiter with Redis/shared rate limiting before multi-instance or public deployment.
+8. Choose the real email delivery provider for verification and password reset before production auth.
 
 ## Product-owner decisions that can follow later
 

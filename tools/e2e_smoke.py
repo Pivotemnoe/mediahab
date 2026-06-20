@@ -21,14 +21,25 @@ def main() -> int:
 
     schema = json.loads(openapi.read_text(encoding="utf-8"))
     paths = schema.get("paths", {})
-    required_paths = {"/api/v1/health/live", "/api/v1/health/ready"}
+    required_paths = {
+        "/api/v1/health/live",
+        "/api/v1/health/ready",
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
+        "/api/v1/me",
+        "/api/v1/me/sessions",
+        "/api/v1/workspaces",
+        "/api/v1/plans",
+        "/api/v1/workspaces/{workspace_id}/subscription",
+        "/api/v1/workspaces/{workspace_id}/checkout",
+    }
     missing_paths = sorted(required_paths - set(paths))
     if missing_paths:
         for path in missing_paths:
             print(f"missing openapi path: {path}")
         return 1
 
-    print("Phase 01 smoke passed: web, api, and OpenAPI skeleton are present.")
+    print("Phase 02 smoke passed: SaaS shell and OpenAPI auth/workspace/billing paths are present.")
     return 0
 
 

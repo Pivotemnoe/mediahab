@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T09:56:17.543040+00:00",
+  "generated_at": "2026-06-20T10:25:49.681013+00:00",
   "canonical_language": "en",
-  "file_count": 157,
+  "file_count": 199,
   "files": [
     {
       "path": ".dockerignore",
@@ -12,8 +12,8 @@
     },
     {
       "path": ".env.example",
-      "size_bytes": 333,
-      "sha256": "50fc57f2ee9c5427cc339e1f1495d1452a50863fef12d8fe6d2fa5753fb44e3a"
+      "size_bytes": 474,
+      "sha256": "8b8716b1d9fb7ac425548b933189dca64d448e9bceba71e84827542387b3b79e"
     },
     {
       "path": ".gitignore",
@@ -66,9 +66,44 @@
       "sha256": "1064f548b4ca8f366944ce974fa1a38398788a76f63ca1c503071248d0867e99"
     },
     {
+      "path": "apps/web/src/app/app/account/page.tsx",
+      "size_bytes": 570,
+      "sha256": "75465b2e68de4c39a6014b9513c54f3031a87b1f325861402e8d1524da15de40"
+    },
+    {
+      "path": "apps/web/src/app/app/billing/page.tsx",
+      "size_bytes": 600,
+      "sha256": "c337fa35ba067a02d0552b0404b0beb7fdc2477aa745c4ede6e5544c4118e830"
+    },
+    {
+      "path": "apps/web/src/app/app/dashboard/page.tsx",
+      "size_bytes": 35,
+      "sha256": "ed1e1f74060b6ecdcb1b4bd6fc8cb85bb63e3d9305d17e8523d5f7a575cb2bde"
+    },
+    {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 5588,
-      "sha256": "b03a519d5228ecfd29b9a6ffb45730f73f6e7e42b9e67c93b5486d1faaef95c3"
+      "size_bytes": 5910,
+      "sha256": "8ff3db4980c783850d63216a29e533032b4601c9e57177e541fd65d4fee74701"
+    },
+    {
+      "path": "apps/web/src/app/app/workspace/page.tsx",
+      "size_bytes": 609,
+      "sha256": "5e301e6194de57f675c092d796d014051bc39d4d70cf386c6ddf29b6e6d31564"
+    },
+    {
+      "path": "apps/web/src/app/contacts/page.tsx",
+      "size_bytes": 888,
+      "sha256": "eaf377837d03abbf6fb04383fed66a33045f7f00514b948b3e12c976a5181d3b"
+    },
+    {
+      "path": "apps/web/src/app/features/page.tsx",
+      "size_bytes": 866,
+      "sha256": "9c7115bece7fd1fdd6b6769c4b9355282ff4c956b446d1eda8eff7531ac14740"
+    },
+    {
+      "path": "apps/web/src/app/forgot-password/page.tsx",
+      "size_bytes": 515,
+      "sha256": "0a725e7c1f0a33b32f72cfd1b986726f0ebc93661d7fccccb70c6e5a804e002a"
     },
     {
       "path": "apps/web/src/app/globals.css",
@@ -81,9 +116,64 @@
       "sha256": "c40370ba74e3132ee1db37be0e35bac56433046fb99f62cb576858d07b14e38f"
     },
     {
+      "path": "apps/web/src/app/login/page.tsx",
+      "size_bytes": 553,
+      "sha256": "064a3884dce824c097c2ce05308188f1d12d62e240e72e302d02265e5807cf53"
+    },
+    {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 3508,
-      "sha256": "ac8115a5cc239a9307e9332cc9e4b843e36cda31267a500d91a231a82e8a7b7a"
+      "size_bytes": 929,
+      "sha256": "c40e499819b06621b6613825ecbd7ecb9c8bd99dca295636aeac78a3c52348a5"
+    },
+    {
+      "path": "apps/web/src/app/pricing/page.tsx",
+      "size_bytes": 960,
+      "sha256": "5e0e471648adcbae8b38b472c1a8369c8b2709bf8c269002304c3a4f941f9c9f"
+    },
+    {
+      "path": "apps/web/src/app/privacy/page.tsx",
+      "size_bytes": 753,
+      "sha256": "95988b3d4558456727ab0643357cb9aece3f964493bba37d8fb0bf1c9b277297"
+    },
+    {
+      "path": "apps/web/src/app/register/page.tsx",
+      "size_bytes": 544,
+      "sha256": "129e827904c32b6f1ed62b983efa0b50fac4b83c0b7a884bcc2ed5584e2c1ebb"
+    },
+    {
+      "path": "apps/web/src/app/reset-password/page.tsx",
+      "size_bytes": 483,
+      "sha256": "95c2c01e0f891c7e63e55c86dec4f2581bdd4690d1aa2d6b696a69be85eda300"
+    },
+    {
+      "path": "apps/web/src/app/security/page.tsx",
+      "size_bytes": 768,
+      "sha256": "0355a50e3775829c3ce91b49361b037a40832c635d4284edd9b4fffb82d9ef41"
+    },
+    {
+      "path": "apps/web/src/app/terms/page.tsx",
+      "size_bytes": 848,
+      "sha256": "1056da0a0b3e1a5f6f8b667dd0f306598a6710590c1694804a583b53765c5cb6"
+    },
+    {
+      "path": "apps/web/src/app/verify-email/page.tsx",
+      "size_bytes": 504,
+      "sha256": "0011e4885e1abf0b2382da8cf8ffc5e3c832a57151e9ac4cecd80c539ceffa11"
+    },
+    {
+      "path": "apps/web/src/components/phase02/auth-page.tsx",
+      "size_bytes": 2037,
+      "sha256": "3488872013213ebd95589ab8b0edc4827b69f8143cddb99eb496a7485787fb2a"
+    },
+    {
+      "path": "apps/web/src/components/phase02/cabinet-page.tsx",
+      "size_bytes": 2293,
+      "sha256": "6f081529a3161ff9e4879bdd5d1cce971fbec20226b683d45b0e508b6d48d2a1"
+    },
+    {
+      "path": "apps/web/src/components/phase02/public-page.tsx",
+      "size_bytes": 2601,
+      "sha256": "43612a4368667b8fb2a0fcc6d790f77667c1f4f8c88a92865671883b4bff6982"
     },
     {
       "path": "apps/web/src/components/ui/badge.tsx",
@@ -102,8 +192,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 1978,
-      "sha256": "5ecc76036901fc842e2b598c5e599c640213f139daaf1e98120d6af61960d3fd"
+      "size_bytes": 55548,
+      "sha256": "0627a893a6aefae5c769da1f159508cbb10394bd4864481a76f33219c92d4773"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -161,9 +251,19 @@
       "sha256": "257f4319346c8653d320dabfa8b5b699dce97b421c4e9c5b138cfb5f421abf40"
     },
     {
+      "path": "database/migrations/versions/202606200002_phase02_identity_billing.py",
+      "size_bytes": 12335,
+      "sha256": "59b9c188486e0fde4b534d8dcd02f9cb8b905ff86b9f8833b29ce32f36cd471f"
+    },
+    {
       "path": "database/seeds/phase01_baseline.sql",
       "size_bytes": 130,
       "sha256": "5c7bb9180855bedf8c0d9b3ace35d72a4177b783a74b438c66ac58c517b69427"
+    },
+    {
+      "path": "database/seeds/phase02_identity_billing.sql",
+      "size_bytes": 4682,
+      "sha256": "dd5b805e82d8e8f68030bf40b91a40581bbce2872d4b8bb31b051631acfb0d44"
     },
     {
       "path": "docker-compose.yml",
@@ -172,8 +272,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 2793,
-      "sha256": "bd356a7ce7d691922ac5e2be654a701e00f7046f5845654cac4cb01cea4135e2"
+      "size_bytes": 3156,
+      "sha256": "74005822e61226f3f42290d307cccfd85cb785c36de1e22785516dacab6d4589"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -211,9 +311,14 @@
       "sha256": "d288dcb83aa5378f607aab53bad4d082c42ecf8fa0bb3d948884c4e78d7a5b2a"
     },
     {
+      "path": "docs/adr/0008-phase02-auth-abuse-and-mock-billing.md",
+      "size_bytes": 2356,
+      "sha256": "2be1f7443f5a6ece4bb0b053fbb10a75bf4e795b50616cd9df812720a50ab693"
+    },
+    {
       "path": "docs/adr/README.md",
-      "size_bytes": 497,
-      "sha256": "222200550b1a6926cd22dcae8f9afd2932002043828df739b1a7b7786d872536"
+      "size_bytes": 541,
+      "sha256": "d4d1578d0b7722e46749d47c1b43f864268090ee33fa2a2cad714a4da1f85484"
     },
     {
       "path": "docs/en/ACCEPTANCE_CRITERIA.md",
@@ -279,6 +384,16 @@
       "path": "docs/exec-plans/PHASE_01_REPORT_RU.md",
       "size_bytes": 3210,
       "sha256": "a2e740311a235c3672458f2d43bcb37bb784ae8efbb6c8e1afcbc507d872c790"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_02_AUTH_WORKSPACES_BILLING_SKELETON.md",
+      "size_bytes": 5075,
+      "sha256": "cd2d93efc2203a0f4bef83054d5ba2e908a1a94265d6dc66b00ce363d6cf3cef"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_02_REPORT_RU.md",
+      "size_bytes": 6650,
+      "sha256": "7297bbf607057e697b19d58722dce07c117087a3f14270fe7f98c1b7ca74dde8"
     },
     {
       "path": "docs/exec-plans/README.md",
@@ -377,8 +492,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 1978,
-      "sha256": "5ecc76036901fc842e2b598c5e599c640213f139daaf1e98120d6af61960d3fd"
+      "size_bytes": 55548,
+      "sha256": "0627a893a6aefae5c769da1f159508cbb10394bd4864481a76f33219c92d4773"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -582,8 +697,8 @@
     },
     {
       "path": "reference/OPEN_QUESTIONS.md",
-      "size_bytes": 2793,
-      "sha256": "bd356a7ce7d691922ac5e2be654a701e00f7046f5845654cac4cb01cea4135e2"
+      "size_bytes": 3156,
+      "sha256": "74005822e61226f3f42290d307cccfd85cb785c36de1e22785516dacab6d4589"
     },
     {
       "path": "requirements-dev.txt",
@@ -652,8 +767,8 @@
     },
     {
       "path": "services/api/app/api/v1/router.py",
-      "size_bytes": 230,
-      "sha256": "e46db49ed658ffc2885470b7eb3143a110e889fbeacde119085af80ae143244a"
+      "size_bytes": 833,
+      "sha256": "51dc88105c52eb33e18d19ae9ca16425cbb48f5ac0095ba77dde4c705fee3cde"
     },
     {
       "path": "services/api/app/api/v1/routes/__init__.py",
@@ -661,9 +776,34 @@
       "sha256": "7fcfe725a0b7bbf9b7fa9066a0d4dc8f5f9a830766b0513ed291ed76509eda11"
     },
     {
+      "path": "services/api/app/api/v1/routes/admin.py",
+      "size_bytes": 2733,
+      "sha256": "762516e004da9543582510cd8afb9b5333431e1e7d28a8790dffe437a341c432"
+    },
+    {
+      "path": "services/api/app/api/v1/routes/auth.py",
+      "size_bytes": 15878,
+      "sha256": "9ff8255caffb88e6cd18726f9e1454cb3c7d667cf4d3c8b8ecef863b2cb050ab"
+    },
+    {
+      "path": "services/api/app/api/v1/routes/billing.py",
+      "size_bytes": 7599,
+      "sha256": "0ec3ec1d5186b334f571ce9aa53431d60fa01351d8841cd3caa12d7567f787f5"
+    },
+    {
       "path": "services/api/app/api/v1/routes/health.py",
-      "size_bytes": 589,
-      "sha256": "6654a4056d8b7720eb4e288175bb178f2389c438a38d9d8b24c412990e4c94d5"
+      "size_bytes": 597,
+      "sha256": "a239ccf50bf070fd5bc2feb5e2d76e057e381099beb61a998243ef275d9034d3"
+    },
+    {
+      "path": "services/api/app/api/v1/routes/me.py",
+      "size_bytes": 3530,
+      "sha256": "2139bebd3208989717c771902a157d44accbb6499670600a1201fb1062890aeb"
+    },
+    {
+      "path": "services/api/app/api/v1/routes/workspaces.py",
+      "size_bytes": 13124,
+      "sha256": "95e2630bd65531cb3e750e27a13ba474a030f02aebd7e1572a871d47a7e51fa9"
     },
     {
       "path": "services/api/app/core/__init__.py",
@@ -672,8 +812,8 @@
     },
     {
       "path": "services/api/app/core/config.py",
-      "size_bytes": 1088,
-      "sha256": "b74ef90296409ae232b4bc228c1cc6b04fed3906a614f09fabe64a20996a22f7"
+      "size_bytes": 1793,
+      "sha256": "ffba1eee677d1e969556857a29fa2b99a0466a43acb11608bde6483ff3aff5ba"
     },
     {
       "path": "services/api/app/core/logging.py",
@@ -687,23 +827,93 @@
     },
     {
       "path": "services/api/app/db/base.py",
-      "size_bytes": 288,
-      "sha256": "65b1392d1f87ef22cd34dcc3dd55ce072f54c45c4349005497980f148549cd72"
+      "size_bytes": 10676,
+      "sha256": "5c6a325f9fa6c54e0746f60bceb0668503266bcf8f6fff44a147010aef69e694"
+    },
+    {
+      "path": "services/api/app/db/session.py",
+      "size_bytes": 507,
+      "sha256": "922b497beb2f2a3e8f7f81356f8b1fc06227cb2ce5b01c2edf3e4dbe76dca1b4"
     },
     {
       "path": "services/api/app/main.py",
-      "size_bytes": 932,
-      "sha256": "3637523b620dc4803dca51d8a34b54e9919c92a25a97c87f10a0f276ad187077"
+      "size_bytes": 1739,
+      "sha256": "8ca51064960a68abaf7613b9a47413c299d17f34d4d1415328b2b287c0ebb1b8"
+    },
+    {
+      "path": "services/api/app/modules/__init__.py",
+      "size_bytes": 23,
+      "sha256": "d66d5099ba75515418ddf5793b25dc8446cda6b0e8740c680586f56047aa209a"
+    },
+    {
+      "path": "services/api/app/modules/audit/__init__.py",
+      "size_bytes": 20,
+      "sha256": "73897f25014110e239aa6364faa3f97321c5656aff0f03b4d9a0641d31f39683"
+    },
+    {
+      "path": "services/api/app/modules/auth/__init__.py",
+      "size_bytes": 29,
+      "sha256": "aad68f5adf4c0239f15e77531cbbd531aa1ad9fa95d8610c30379229134d86b0"
+    },
+    {
+      "path": "services/api/app/modules/auth/dependencies.py",
+      "size_bytes": 3329,
+      "sha256": "1dc5936dcd6359702b8ad3130056d24ecbd9a11b21c2ae94ea56d68c3f665924"
+    },
+    {
+      "path": "services/api/app/modules/auth/rate_limit.py",
+      "size_bytes": 549,
+      "sha256": "d4953db12ade6b1bf900e46410bdbd5e5853d79d7bc77b6fc7e5f4014b57b665"
+    },
+    {
+      "path": "services/api/app/modules/auth/security.py",
+      "size_bytes": 1495,
+      "sha256": "e0c4af6b7b247e0fdf103e0c913cd6748668668364bc6f4576c61d8420fb93de"
+    },
+    {
+      "path": "services/api/app/modules/billing/__init__.py",
+      "size_bytes": 22,
+      "sha256": "4e05023524306137555c21391fd71d95cb9e497a7d7b55e81fb1e51e2046c393"
+    },
+    {
+      "path": "services/api/app/modules/billing/catalog.py",
+      "size_bytes": 4469,
+      "sha256": "628349f237689b33650e80710b00618b02d9b0660fbddb0b601cd3472ba7fcd4"
+    },
+    {
+      "path": "services/api/app/modules/billing/service.py",
+      "size_bytes": 1833,
+      "sha256": "d7f916e5a88e191a668e4043ced9a7f890a8e1b1cb2c75891b5d73a1499525e6"
+    },
+    {
+      "path": "services/api/app/modules/shared/__init__.py",
+      "size_bytes": 29,
+      "sha256": "1412aee6b82590e323814d1755e66bab558906981b776976f1b75077abd32b92"
+    },
+    {
+      "path": "services/api/app/modules/shared/errors.py",
+      "size_bytes": 628,
+      "sha256": "f7f1d0499a72cee4470b1cf07cdd2c9772dc3b059c51540adbe72f95b93cf4e1"
+    },
+    {
+      "path": "services/api/app/modules/workspaces/__init__.py",
+      "size_bytes": 24,
+      "sha256": "688eca7f09efa4f1076a71ca352bd45b1bbd4c195e6b90cf976828a699540735"
     },
     {
       "path": "services/api/pyproject.toml",
-      "size_bytes": 449,
-      "sha256": "25bcfe4e0c0a684d017b211c20cd223f696e22f73d6a4ec9c8f2886ae4611425"
+      "size_bytes": 493,
+      "sha256": "db6f6d48f259d61db90ef4cd065be3db1350cb0db74487355894a518e101c1f0"
     },
     {
       "path": "services/api/requirements.txt",
-      "size_bytes": 164,
-      "sha256": "7c847b7a761fde467670e8d8bde68ee4f3fe20d32e0309f18a71da99fcfe4669"
+      "size_bytes": 198,
+      "sha256": "6b9e892849196587644202a47f883254600ec9aa1fad4ea1eb01e69aaadd6b77"
+    },
+    {
+      "path": "services/api/tests/test_auth_workspace_billing.py",
+      "size_bytes": 7973,
+      "sha256": "c34c7ab4cea5a08b86f3c0d48fffc226a6ec2cad170567dcb31934bb71c92ddb"
     },
     {
       "path": "services/api/tests/test_health.py",
@@ -762,8 +972,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 1071,
-      "sha256": "65fe1da38c741bbfc626da593b8245887a80458b8d63811fc975a04b2eecf5ab"
+      "size_bytes": 1398,
+      "sha256": "b0291f8f36772481d94ae97ed89a8136295c1e9f85429796f5b991cdd519aa53"
     },
     {
       "path": "tools/export_openapi.py",
@@ -777,8 +987,8 @@
     },
     {
       "path": "tools/seed_baseline.py",
-      "size_bytes": 881,
-      "sha256": "9a1a5fa5f2eb2e750686c214068d6c90733b82351190d1432aaaeee27f8786dc"
+      "size_bytes": 887,
+      "sha256": "884d24b78e8910bef67e88f363523bd1e7565672f571f15036bff1fc9658af13"
     },
     {
       "path": "tools/validate_spec.py",

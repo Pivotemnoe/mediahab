@@ -1,4 +1,6 @@
 alembic>=1.16
+aiosqlite>=0.21
+argon2-cffi>=25.1
 asyncpg>=0.30
 fastapi>=0.116
 greenlet>=3.0
