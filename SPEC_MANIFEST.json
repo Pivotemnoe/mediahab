@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T13:40:27.347012+00:00",
+  "generated_at": "2026-06-20T13:56:31.300193+00:00",
   "canonical_language": "en",
-  "file_count": 254,
+  "file_count": 296,
   "files": [
     {
       "path": ".dockerignore",
@@ -376,14 +376,194 @@
       "sha256": "dd5b805e82d8e8f68030bf40b91a40581bbce2872d4b8bb31b051631acfb0d44"
     },
     {
+      "path": "design/ui-reference/00_START_HERE_EN.md",
+      "size_bytes": 3094,
+      "sha256": "114f267be14ba0c77d7909c6324cfdf61e37e1031b99387dff9cb24c86543781"
+    },
+    {
+      "path": "design/ui-reference/00_START_HERE_RU.md",
+      "size_bytes": 6148,
+      "sha256": "7674f62dfbbd062524633e508d1f89a5aa57e3af093c01a0ff8ae4f284328413"
+    },
+    {
+      "path": "design/ui-reference/00_overview.png",
+      "size_bytes": 524470,
+      "sha256": "73e1779b02a7c7ef6fde99f92001b5abb956f628e66e6f1fa88b456137e22294"
+    },
+    {
+      "path": "design/ui-reference/01_editorial_studio.html",
+      "size_bytes": 41048,
+      "sha256": "b42e4081958caf9c567e4162ceec8a275a0e2da38d227433ea3f1816ce4724d6"
+    },
+    {
+      "path": "design/ui-reference/01_editorial_studio.pdf",
+      "size_bytes": 341440,
+      "sha256": "084e187a3e93d3f3165de566ea9cf7c2c7a41067bee3441bbb5ffd2b10b4c547"
+    },
+    {
+      "path": "design/ui-reference/01_editorial_studio.png",
+      "size_bytes": 321600,
+      "sha256": "6ff0400e2b437c142029fcb33961835228d11cb23966072cd355c9af8940f752"
+    },
+    {
+      "path": "design/ui-reference/02_command_center.html",
+      "size_bytes": 41031,
+      "sha256": "ccb713bc6fa9338607dc646f762bfd5e681d790f6e487bf48a1c35be58d60673"
+    },
+    {
+      "path": "design/ui-reference/02_command_center.pdf",
+      "size_bytes": 97209,
+      "sha256": "0a41c427f9df923e2ab7f76f9efd50419b8b9785d4c2d9620afa846d48a1b589"
+    },
+    {
+      "path": "design/ui-reference/02_command_center.png",
+      "size_bytes": 140857,
+      "sha256": "464ba97c93fd53b89ec494aa6fd29f1baff6d9832f78655b006183028a70834c"
+    },
+    {
+      "path": "design/ui-reference/03_visual_builder.html",
+      "size_bytes": 41038,
+      "sha256": "cfc8e678e82b3499130095d21e24cd02aad8800e07b94d1ca4a70e2f891a9f72"
+    },
+    {
+      "path": "design/ui-reference/03_visual_builder.pdf",
+      "size_bytes": 94135,
+      "sha256": "46e5b4522ed5db506e427d7d785caff9ea630c79fbafbda16bfb75f2d8196381"
+    },
+    {
+      "path": "design/ui-reference/03_visual_builder.png",
+      "size_bytes": 159096,
+      "sha256": "09e5910887edfe35e4148cea2f9739edc28874c3fd61ddb6a23bfbde1e3ecf00"
+    },
+    {
+      "path": "design/ui-reference/04_mobile_first_pwa.html",
+      "size_bytes": 41038,
+      "sha256": "c9e4cfcb336690ee98145de2b47cecce1514440ca636fed99ab2e00f5453ef90"
+    },
+    {
+      "path": "design/ui-reference/04_mobile_first_pwa.pdf",
+      "size_bytes": 98492,
+      "sha256": "60add02b8bd8d3c66306d6024ca0324190219b201661ada8285cccd908192ff7"
+    },
+    {
+      "path": "design/ui-reference/04_mobile_first_pwa.png",
+      "size_bytes": 163207,
+      "sha256": "ecb39bc9f07ddd1d8ed5eff3a076678350c5ab258d20026aa8d04480ede1bc6c"
+    },
+    {
+      "path": "design/ui-reference/README_RU.md",
+      "size_bytes": 624,
+      "sha256": "181f667ab447c8d4d3d045311304a2df380ee65bc83bea549a7fb5bff6f41c75"
+    },
+    {
+      "path": "design/ui-reference/VERSION.txt",
+      "size_bytes": 117,
+      "sha256": "97b928894138a4781efa09d34a382fb88b0829796a6d22209422fe7dcf88ff8e"
+    },
+    {
+      "path": "design/ui-reference/assets/donika-telegram.jpeg",
+      "size_bytes": 407848,
+      "sha256": "f22611c4fb59d1982a29fb905bf3dcfd7c0ac85927e9f26de440fcabd8cbc359"
+    },
+    {
+      "path": "design/ui-reference/codex/CODEX_START_UI_EN.txt",
+      "size_bytes": 881,
+      "sha256": "c03629a665db425388367a9a22230e027d2e9175e27871712a8985b6bd270f6c"
+    },
+    {
+      "path": "design/ui-reference/codex/CODEX_START_UI_RU.txt",
+      "size_bytes": 1379,
+      "sha256": "1e382b44ff5171bbc0f808308876c6b79e4c35451e28839c8fba397e3e159151"
+    },
+    {
+      "path": "design/ui-reference/codex/UI_PHASE_00_PLAN_EN.md",
+      "size_bytes": 1780,
+      "sha256": "95b58455ce649a3e88c81a83604e98235dee5e3e2b32f9d186a2e2934eb20d27"
+    },
+    {
+      "path": "design/ui-reference/codex/UI_PHASE_00_PLAN_RU.md",
+      "size_bytes": 1761,
+      "sha256": "f8f091f4714a060962a10ded42932d4cd77a8803e495f71561077be13a144a38"
+    },
+    {
+      "path": "design/ui-reference/docs/DESIGN_SYSTEM_EN.md",
+      "size_bytes": 1160,
+      "sha256": "9968e599c7440e93f4ce5269bcf5fcd605c7f0d5827945fa8ea6b139c3a27e72"
+    },
+    {
+      "path": "design/ui-reference/docs/DESIGN_SYSTEM_RU.md",
+      "size_bytes": 2881,
+      "sha256": "5ca494c7bbca689615e260fb652b4e3c2f735485668a1b320b97defe9d143090"
+    },
+    {
+      "path": "design/ui-reference/docs/PRODUCT_NAMING_AND_BRAND_EN.md",
+      "size_bytes": 1078,
+      "sha256": "3f5d7ca69442743f43c3a633ee2be8795d86b628ca3e549b6ba8ce0ee1849c7e"
+    },
+    {
+      "path": "design/ui-reference/docs/PRODUCT_NAMING_AND_BRAND_RU.md",
+      "size_bytes": 3279,
+      "sha256": "c27f8da27f4dc28f24b59bc9bb02d53121914e7d2ee931d07c4876d6affc77aa"
+    },
+    {
+      "path": "design/ui-reference/docs/SCREEN_MAP_AND_FLOWS_EN.md",
+      "size_bytes": 1769,
+      "sha256": "44e795b3fdd08e8626aff22656ef7416f8f619319ee1a9508fc4bdf3c37335ee"
+    },
+    {
+      "path": "design/ui-reference/docs/SCREEN_MAP_AND_FLOWS_RU.md",
+      "size_bytes": 3499,
+      "sha256": "96fa0e8d810eba755feeb6465afaa8b6410cff9d36aab6b9f91eac6af4bcba9c"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_ACCEPTANCE_CHECKLIST_EN.md",
+      "size_bytes": 1616,
+      "sha256": "578946d82cdaf391ed580ed346ca6c03d24574331e83ba75c51c31680fe0460e"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_ACCEPTANCE_CHECKLIST_RU.md",
+      "size_bytes": 2981,
+      "sha256": "39654e804816f69e24fd965bb2952dd7041a7d3c9e213a7ab2e87bea8988e5c9"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_IMPLEMENTATION_ROADMAP_EN.md",
+      "size_bytes": 1951,
+      "sha256": "f024b10adf0919d035f8b883d41cf5d90659fa4086d53adae8d593d2d0101c02"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_IMPLEMENTATION_ROADMAP_RU.md",
+      "size_bytes": 3111,
+      "sha256": "64db29ff150249e0452c823e25e268dfd5f8fe3a34727467c400f89d37c34e59"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_PRODUCT_DIRECTION_EN.md",
+      "size_bytes": 1467,
+      "sha256": "35b2eff3edae4c9e7fa2c83ca75e4a55934e1a56b8ae83756a398493e17b9266"
+    },
+    {
+      "path": "design/ui-reference/docs/UI_PRODUCT_DIRECTION_RU.md",
+      "size_bytes": 4244,
+      "sha256": "5b20cac7969d5f4fad6b8187385f0652e6f506e1b473d4f6e32250b97b81d817"
+    },
+    {
+      "path": "design/ui-reference/index.html",
+      "size_bytes": 3424,
+      "sha256": "3a3f2a61d04e3a0006b25c4c2a7da8ea795a9f7e990bf6ef4dbd9b079cd64865"
+    },
+    {
+      "path": "design/ui-reference/reference_manifest.json",
+      "size_bytes": 1564,
+      "sha256": "33e308337e390370cddfc5f490e9386a7a645450688dd784f8212a25907dc42f"
+    },
+    {
       "path": "docker-compose.yml",
       "size_bytes": 2006,
       "sha256": "472393bdb15ebd1428879a062f00d63dc76f089b2148a816b12c0563b79c6e75"
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 4093,
-      "sha256": "f0864cb5230f9b7c351ae23d634c4a19a2af9654dbb384b0424bd8f4fd206ba2"
+      "size_bytes": 4807,
+      "sha256": "38c5a2fab2cb78b69d7ca75f11be7a366dfc7f6845d1492ce65c66157079c8c5"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -567,13 +747,43 @@
     },
     {
       "path": "docs/exec-plans/PHASE_06_REPORT_RU.md",
-      "size_bytes": 6196,
-      "sha256": "672ff2acf2426eb75de9849d00f8ade956a3db7e80f328e7df235fe95906dfc4"
+      "size_bytes": 6217,
+      "sha256": "18256ee8da8eae70bff068ebe1d8adb71668ac548f06b8abc2191aeb32748f4b"
     },
     {
       "path": "docs/exec-plans/README.md",
       "size_bytes": 702,
       "sha256": "09a49fbc8f9a17854cfb786d7763cf4709e101c8f05ff54431ba740c20ea7a7d"
+    },
+    {
+      "path": "docs/frontend/COMPONENT_MAP.md",
+      "size_bytes": 5113,
+      "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
+    },
+    {
+      "path": "docs/frontend/DESIGN_TOKENS.md",
+      "size_bytes": 4388,
+      "sha256": "cc7f74a52b18bd374b5845d5b90b39cbd5695a15fe307bc17024f19535487315"
+    },
+    {
+      "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
+      "size_bytes": 4640,
+      "sha256": "3ebe1337d348e9f286b4214ee5463643d70ef4fc6c35adef40d3b254b49ae9d7"
+    },
+    {
+      "path": "docs/frontend/ROUTE_MAP.md",
+      "size_bytes": 5864,
+      "sha256": "2cedffe3dfe9df48b82a8b190fd0a630b8d072866489abfa120ad36f74c94172"
+    },
+    {
+      "path": "docs/frontend/UI_ARCHITECTURE.md",
+      "size_bytes": 8121,
+      "sha256": "8c41f38ecd57e8d8818e8cbe289a5dd3c6c98651a69d3e4a60fd986b0ba19172"
+    },
+    {
+      "path": "docs/frontend/VISUAL_TEST_PLAN.md",
+      "size_bytes": 3469,
+      "sha256": "8ac426aadd69b84b3d0de65590f101db8eb553c9c7aa6ce91a14ce0cc748219d"
     },
     {
       "path": "docs/ru/ACCEPTANCE_CRITERIA.md",
@@ -872,8 +1082,8 @@
     },
     {
       "path": "reference/OPEN_QUESTIONS.md",
-      "size_bytes": 4093,
-      "sha256": "f0864cb5230f9b7c351ae23d634c4a19a2af9654dbb384b0424bd8f4fd206ba2"
+      "size_bytes": 4807,
+      "sha256": "38c5a2fab2cb78b69d7ca75f11be7a366dfc7f6845d1492ce65c66157079c8c5"
     },
     {
       "path": "requirements-dev.txt",
@@ -1132,8 +1342,8 @@
     },
     {
       "path": "services/api/app/modules/publications/connectors.py",
-      "size_bytes": 13360,
-      "sha256": "565f630c6239a7b3e23e665fff1f01240b13d29ebcdcbbfb17b1f7d01e514374"
+      "size_bytes": 13575,
+      "sha256": "9a89aaa6f4b6b1f66fbd7d947db42140d6d866e3d3220ee7a184634d742f8dfb"
     },
     {
       "path": "services/api/app/modules/publications/service.py",
@@ -1192,8 +1402,8 @@
     },
     {
       "path": "services/api/tests/test_publication_core.py",
-      "size_bytes": 22742,
-      "sha256": "28d448fda1864fc81452a1955c44f5bcc17e9431570b5d025abed72aa6b8eb6a"
+      "size_bytes": 23335,
+      "sha256": "fca15809cd8a2f4041b77e5486d4a717af3202a4aa5e470e41e530aec5768ece"
     },
     {
       "path": "services/worker/app/__init__.py",

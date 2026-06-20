@@ -1,0 +1,23 @@
+Read the entire repository and UI reference pack.
+
+Read in this order:
+1. root AGENTS.md;
+2. canonical English product specification;
+3. design/ui-reference/00_START_HERE_EN.md;
+4. all files in design/ui-reference/docs/;
+5. design/ui-reference/codex/UI_PHASE_00_PLAN_EN.md.
+
+Treat the HTML and PNG concepts as visual references, not production code.
+Use Editorial Studio for the desktop foundation, Visual Builder for project/rubric construction, Mobile-first PWA for voice capture, and Command Center later for dark mode and operations.
+
+Execute UI Phase 00 only.
+Do not start UI Phase 01 without explicit approval.
+Do not add production dependencies without approval.
+
+At completion, report in Russian:
+1. conflicts and open questions;
+2. route and component maps;
+3. files created or changed;
+4. checks run and results;
+5. exact UI Phase 01 scope;
+6. stop and request approval.

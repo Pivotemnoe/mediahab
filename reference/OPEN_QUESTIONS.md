@@ -44,3 +44,8 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 12. When mock rubric suggestions should switch to the live text provider, and what moderation/evidence requirements apply.
 13. Confirm whether raw voice notes, uploaded photos/videos, transcription text, and corrected fact blocks use one retention period or separate retention periods.
 14. Confirm recommended AI retention defaults from ADR 0012 or replace them before production cleanup jobs are implemented.
+15. Confirm the working UI brand label: keep visible "Медиа-хаб" for now or switch to configurable "Temichev PostHub" / "PostHub".
+16. Confirm whether UI Phase 01 should be completed before Product Phase 07 Telegram, or whether Telegram may start after UI Phase 00 with the current technical UI.
+17. Approve or reject adding UI Phase 01 frontend dependencies: React Hook Form, Zod, TanStack Query, dnd-kit, Playwright, and optional component-showcase tooling.
+18. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
+19. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.

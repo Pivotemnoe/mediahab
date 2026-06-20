@@ -1,0 +1,23 @@
+Изучи весь репозиторий и UI reference pack.
+
+Сначала прочитай:
+1. AGENTS.md в корне репозитория;
+2. основное каноническое ТЗ на английском;
+3. design/ui-reference/00_START_HERE_EN.md;
+4. все файлы в design/ui-reference/docs/;
+5. design/ui-reference/codex/UI_PHASE_00_PLAN_EN.md.
+
+Четыре HTML и PNG-макета являются визуальными референсами, а не production-кодом.
+Основное направление: Editorial Studio для desktop, Visual Builder для конструктора, Mobile-first PWA для диктовки. Command Center использовать позднее для dark mode и operations.
+
+Выполни только UI Phase 00.
+Не переходи к UI Phase 01 без моего подтверждения.
+Не добавляй production-зависимости без согласования.
+
+В конце предоставь на русском языке:
+1. найденные противоречия и открытые вопросы;
+2. route map и component map;
+3. список созданных и изменённых файлов;
+4. результаты проверок;
+5. точный план UI Phase 01;
+6. остановись и запроси подтверждение.

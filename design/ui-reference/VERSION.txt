@@ -1,0 +1,3 @@
+PostHub UI Reference Pack v2
+Updated: 2026-06-20
+Purpose: implementation guidance for Codex and frontend development

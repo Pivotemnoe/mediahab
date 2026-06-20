@@ -1,9 +1,9 @@
 # Specification package validation report
 
 **Status:** PASS
-**Validated:** 2026-06-20T13:40:27.347012+00:00
+**Validated:** 2026-06-20T13:56:31.300193+00:00
 
-Checks passed: 67
+Checks passed: 68
 Errors: 0
 
 ## Key checks
@@ -12,6 +12,7 @@ Errors: 0
 - PASS — `apps/web/package.json`: JSON parse
 - PASS — `apps/web/src/generated-api/openapi.json`: JSON parse
 - PASS — `apps/web/tsconfig.json`: JSON parse
+- PASS — `design/ui-reference/reference_manifest.json`: JSON parse
 - PASS — `fixtures/example-import-template.json`: JSON parse
 - PASS — `fixtures/telegram-donika.json`: JSON parse
 - PASS — `package.json`: JSON parse

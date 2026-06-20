@@ -1,0 +1,49 @@
+{
+  "product": {
+    "working_full_name": "Temichev PostHub",
+    "short_name": "PostHub",
+    "name_is_configurable": true
+  },
+  "canonical_direction": {
+    "desktop_shell": "01_editorial_studio",
+    "project_and_rubric_builder": "03_visual_builder",
+    "mobile_voice_flow": "04_mobile_first_pwa",
+    "later_dark_operations": "02_command_center"
+  },
+  "references": [
+    {
+      "id": "01_editorial_studio",
+      "html": "01_editorial_studio.html",
+      "png": "01_editorial_studio.png",
+      "pdf": "01_editorial_studio.pdf",
+      "use_for": ["desktop shell", "dashboard", "content studio", "platform preview"]
+    },
+    {
+      "id": "02_command_center",
+      "html": "02_command_center.html",
+      "png": "02_command_center.png",
+      "pdf": "02_command_center.pdf",
+      "use_for": ["later dark mode", "calendar", "publication operations", "analytics"]
+    },
+    {
+      "id": "03_visual_builder",
+      "html": "03_visual_builder.html",
+      "png": "03_visual_builder.png",
+      "pdf": "03_visual_builder.pdf",
+      "use_for": ["project builder", "rubric builder", "dynamic fields", "rules"]
+    },
+    {
+      "id": "04_mobile_first_pwa",
+      "html": "04_mobile_first_pwa.html",
+      "png": "04_mobile_first_pwa.png",
+      "pdf": "04_mobile_first_pwa.pdf",
+      "use_for": ["mobile PWA", "voice capture", "step-by-step input", "mobile review"]
+    }
+  ],
+  "visual_test_viewports": [
+    {"width": 390, "height": 844},
+    {"width": 768, "height": 1024},
+    {"width": 1280, "height": 800},
+    {"width": 1440, "height": 900}
+  ]
+}
