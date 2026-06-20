@@ -7,15 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { UsageMeter } from "@/components/ui/usage-meter";
-import {
-  dashboardStats,
-  integrationAlerts,
-  recentDrafts,
-  scheduledPublications,
-  usageRows,
-} from "@/features/dashboard/dashboard-fixtures";
+import { getDashboardViewModel } from "@/services/dashboard";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const dashboard = await getDashboardViewModel();
+
   return (
     <div className="grid gap-5">
       <PageHeader
@@ -40,8 +36,14 @@ export default function DashboardPage() {
         title="Дашборд"
       />
 
+      {dashboard.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {dashboard.notice}
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-3">
-        {dashboardStats.map((item) => (
+        {dashboard.stats.map((item) => (
           <Card key={item.label}>
             <div className="text-sm text-muted">{item.label}</div>
             <div className="mt-3 text-3xl font-semibold text-foreground">{item.value}</div>
@@ -59,7 +61,7 @@ export default function DashboardPage() {
             </div>
             <FileEdit size={20} className="text-primary" />
           </div>
-          {recentDrafts.map(([title, rubric, status]) => (
+          {dashboard.recentDrafts.map(({ rubric, status, title }) => (
             <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[1fr_auto]" key={title}>
               <div>
                 <div className="text-sm font-medium text-foreground">{title}</div>
@@ -78,9 +80,12 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-foreground">Лимиты</h2>
               <p className="mt-1 text-sm text-muted">Текущий снимок использования.</p>
             </div>
-            <Badge tone="success">Старт</Badge>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Badge tone="success">{dashboard.planLabel}</Badge>
+              <Badge>{dashboard.modeLabel}</Badge>
+            </div>
           </div>
-          {usageRows.map(([label, value, max, tone]) => (
+          {dashboard.usageRows.map(({ label, max, tone, value }) => (
             <UsageMeter key={label} label={label} max={max} tone={tone} value={value} />
           ))}
         </Card>
@@ -92,7 +97,7 @@ export default function DashboardPage() {
             <CalendarClock size={18} className="text-primary" />
             Расписание
           </div>
-          {scheduledPublications.map(([platform, time, status]) => (
+          {dashboard.scheduledPublications.map(({ platform, status, time }) => (
             <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[120px_1fr_auto]" key={platform}>
               <div className="text-sm font-medium text-foreground">{platform}</div>
               <div className="text-sm text-muted">{time}</div>
@@ -106,11 +111,13 @@ export default function DashboardPage() {
             <RadioTower size={18} className="text-primary" />
             Интеграции
           </div>
-          {integrationAlerts.map(([platform, note, tone]) => (
+          {dashboard.integrationAlerts.map(({ note, platform, tone }) => (
             <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[120px_1fr_auto]" key={platform}>
               <div className="text-sm font-medium text-foreground">{platform}</div>
               <div className="text-sm text-muted">{note}</div>
-              <StatusBadge status={tone}>{tone === "success" ? "готово" : "внимание"}</StatusBadge>
+              <StatusBadge status={tone === "success" ? "success" : "warning"}>
+                {tone === "success" ? "готово" : "внимание"}
+              </StatusBadge>
             </div>
           ))}
           <div className="flex items-start gap-2 rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">

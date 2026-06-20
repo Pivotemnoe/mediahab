@@ -18,20 +18,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  operationStates,
-  publicationAttempts,
-  publicationQueue,
-  schedulePosture,
-} from "@/features/publication-ops/publication-ops-fixtures";
-
-const variants = [
-  ["Telegram", "32 768", "расширенное сообщение", "tg-коллаж + текст"],
-  ["MAX", "4 000", "сообщение", "HTML/Markdown + загрузки"],
-  ["Instagram", "2 200", "медиа-пакет", "подпись + медиа"],
-  ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
-  ["Универсальный вебхук", "100 000", "готов", "HTTPS + подпись"],
-];
+import { type PublicationOpsViewModel } from "@/services/publications";
 
 function PublicationHeader() {
   return (
@@ -51,7 +38,7 @@ function PublicationHeader() {
   );
 }
 
-export function PublicationCoreShell() {
+export function PublicationCoreShell({ viewModel }: { viewModel: PublicationOpsViewModel }) {
   return (
     <div className="grid gap-4">
       <PublicationHeader />
@@ -69,6 +56,7 @@ export function PublicationCoreShell() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
             <Button type="button">
               <FileCheck2 size={16} />
               Одобрить вариант
@@ -80,13 +68,19 @@ export function PublicationCoreShell() {
           </div>
         </div>
 
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
         <Card className="grid gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <TriangleAlert size={18} className="text-warning" />
             Операционные состояния
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {operationStates.map(([state, text]) => (
+            {viewModel.operationStates.map(({ state, text }) => (
               <div className="rounded-md border border-border bg-surface-muted p-3" key={state}>
                 <div className="text-sm font-medium text-foreground">{state}</div>
                 <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
@@ -105,7 +99,7 @@ export function PublicationCoreShell() {
               <ShieldCheck size={20} className="text-success" />
             </div>
             <div className="grid gap-2">
-              {variants.map(([platform, limit, status, note]) => (
+              {viewModel.variants.map(({ limit, note, platform, status }) => (
                 <div className="grid gap-2 rounded-md border border-line p-3" key={platform}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-medium text-ink">{platform}</div>
@@ -126,26 +120,12 @@ export function PublicationCoreShell() {
               <h2 className="text-lg font-semibold">Каналы доставки</h2>
             </div>
             <div className="grid gap-2 text-sm text-muted">
-              <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Ручной экспорт</div>
-                <div className="mt-1">Скачивание пакета не публикует материал. Нужна ручная отметка.</div>
-              </div>
-              <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Универсальный вебхук</div>
-                <div className="mt-1">Только HTTPS, локальные и приватные адреса запрещены.</div>
-              </div>
-              <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Расширенное сообщение Telegram</div>
-                <div className="mt-1">Основной режим: tg-коллаж, расширенный HTML, подписанный URL медиа, резервный режим только после подтверждения.</div>
-              </div>
-              <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Сообщение MAX</div>
-                <div className="mt-1">Токен только в Authorization, chat_id задаётся вручную или из событий вебхука, лимит медиа ждёт боевой проверки.</div>
-              </div>
-              <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Instagram</div>
-                <div className="mt-1">Подпись до 2 200, карусель 2-10, боевой режим под флагом до готовности Meta.</div>
-              </div>
+              {viewModel.destinations.map((destination) => (
+                <div className="rounded-md border border-line p-3" key={destination.name}>
+                  <div className="font-medium text-ink">{destination.title}</div>
+                  <div className="mt-1">{destination.text}</div>
+                </div>
+              ))}
             </div>
           </Card>
         </div>
@@ -159,7 +139,7 @@ export function PublicationCoreShell() {
               </div>
               <CalendarClock size={18} className="text-accent" />
             </div>
-            {publicationQueue.map(([destination, status, note, tone]) => (
+            {viewModel.queue.map(({ destination, note, status, tone }) => (
               <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-line p-3" key={`${status}-${destination}`}>
                 <div>
                   <div className="text-sm font-medium text-ink">{destination}</div>
@@ -206,9 +186,9 @@ export function PublicationCoreShell() {
             <div className="rounded-md border border-line p-3 text-sm text-muted">
               <div className="font-medium text-ink">Положение в расписании</div>
               <div className="mt-1">
-                {schedulePosture.date} {schedulePosture.time} · {schedulePosture.timezone}
+                {viewModel.schedulePosture.date} {viewModel.schedulePosture.time} · {viewModel.schedulePosture.timezone}
               </div>
-              <div className="mt-1">Ритм повторов: {schedulePosture.retry}</div>
+              <div className="mt-1">Ритм повторов: {viewModel.schedulePosture.retry}</div>
             </div>
           </Card>
         </div>
@@ -219,7 +199,7 @@ export function PublicationCoreShell() {
               <History size={18} className="text-accent" />
               <h2 className="text-lg font-semibold">Попытки</h2>
             </div>
-            {publicationAttempts.map(([number, connector, status, result, latency]) => (
+            {viewModel.attempts.map(({ connector, latency, number, result, status }) => (
               <div className="grid grid-cols-[56px_1fr_auto] items-center gap-3 rounded-md border border-line p-3 text-sm" key={`${number}-${connector}-${status}`}>
                 <Badge>{number}</Badge>
                 <div>

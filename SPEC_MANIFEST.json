@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:54:48.866832+00:00",
+  "generated_at": "2026-06-20T19:09:20.100032+00:00",
   "canonical_language": "en",
-  "file_count": 362,
+  "file_count": 368,
   "files": [
     {
       "path": ".dockerignore",
@@ -147,8 +147,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 5459,
-      "sha256": "1fc04fa7472d404b267dc36b8d43287d4518093a97577546c828b57bd02143e2"
+      "size_bytes": 5908,
+      "sha256": "b6b1c720efc91c71e3c49b612d21e66bfcdcd609331e84adde592cfe150868da"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -182,8 +182,8 @@
     },
     {
       "path": "apps/web/src/app/app/publications/page.tsx",
-      "size_bytes": 167,
-      "sha256": "4f60809d412e91bed57986c9853ef4bcdc24819fff6707a720389e8243c54e92"
+      "size_bytes": 322,
+      "sha256": "106242f9a20c1bc2525befaf62fba72bc2028cca541522aa7a2af4d15cab02ca"
     },
     {
       "path": "apps/web/src/app/app/settings/page.tsx",
@@ -332,8 +332,8 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 12771,
-      "sha256": "0b2a977b423573fe4ab1b60f6ff734d9f5614cb4cfca0b0f00556f291829ca6f"
+      "size_bytes": 11118,
+      "sha256": "db42ddbaffc6fd4ede04a6b32260989ee3bcd59639347a09a4a6bde17474382c"
     },
     {
       "path": "apps/web/src/components/pwa/offline-status.tsx",
@@ -434,6 +434,26 @@
       "path": "apps/web/src/lib/cn.ts",
       "size_bytes": 169,
       "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+    },
+    {
+      "path": "apps/web/src/services/dashboard.ts",
+      "size_bytes": 6407,
+      "sha256": "e66d49d770c2db2a1a3adcf74006e8e67393096b230c2477276e8e5bc616986c"
+    },
+    {
+      "path": "apps/web/src/services/openapi-types.ts",
+      "size_bytes": 3231,
+      "sha256": "7ccaf27c650df205fb71c9847812ddeda001e5bb46a82a737bbf28ca7c75f7a6"
+    },
+    {
+      "path": "apps/web/src/services/publications.ts",
+      "size_bytes": 8434,
+      "sha256": "c9f3dd4f9673cc237c4b6b41e48570aea986a97fc3a486176350df56379d870d"
+    },
+    {
+      "path": "apps/web/src/services/runtime.ts",
+      "size_bytes": 1589,
+      "sha256": "65987abc21414f4cacdfee2cd9138bb3a8412a063fbb2a7075ace60f682fec92"
     },
     {
       "path": "apps/web/tailwind.config.ts",
@@ -1051,6 +1071,16 @@
       "sha256": "6420a94690b0396dc490b5f0cbd4b73b9df5f1067f6e34df24d19ca1353de6fa"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
+      "size_bytes": 3938,
+      "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10B_REPORT_RU.md",
+      "size_bytes": 3698,
+      "sha256": "dbbb52e412656426c8efa70140b4c0cd4f57e021c59e63498cff78d8764357f8"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1072,8 +1102,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 4640,
-      "sha256": "3ebe1337d348e9f286b4214ee5463643d70ef4fc6c35adef40d3b254b49ae9d7"
+      "size_bytes": 5184,
+      "sha256": "404f363331fb26c7caf4f5c6e45ca50bf7ed350138806824dbd722c1d8614ef1"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",

@@ -1,6 +1,6 @@
 # Mock Data And Service Strategy
 
-Status: UI Phase 00 planning baseline.
+Status: UI Phase 10b partial implementation. Dashboard and publication operations now use a service boundary with `NEXT_PUBLIC_DATA_MODE=api | fixtures`; the remaining feature screens still need the same migration.
 
 ## Goal
 
@@ -39,7 +39,16 @@ Selection:
 NEXT_PUBLIC_DATA_MODE=api | fixtures
 ```
 
-Default for development can stay `api` once the endpoint exists. Component showcase and visual tests should use `fixtures`.
+Default for development currently stays `fixtures` so `next build` and visual checks do not require a live backend. Component showcase and visual tests should use `fixtures`. API mode can be enabled per environment once authenticated session forwarding is ready.
+
+Implemented first slice:
+
+- `apps/web/src/services/runtime.ts`
+- `apps/web/src/services/openapi-types.ts`
+- `apps/web/src/services/dashboard.ts`
+- `apps/web/src/services/publications.ts`
+- `/app` dashboard
+- `/app/publications`
 
 ## Fixture Sources
 
