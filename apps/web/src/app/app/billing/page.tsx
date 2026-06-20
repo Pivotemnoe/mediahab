@@ -35,8 +35,8 @@ export default function BillingPage() {
             Реальная оплата выключена
           </Button>
         }
-        description="Тарифы, лимиты и mock checkout для проверки SaaS-механики без настоящего списания денег."
-        eyebrow="Этап 11"
+        description="Тарифы, лимиты, payment placeholder и invoices placeholder без настоящего списания денег."
+        eyebrow="UI Phase 09"
         title="Тариф и оплата"
       />
 
@@ -64,6 +64,7 @@ export default function BillingPage() {
           <h2 className="text-lg font-semibold text-foreground">Статус запуска</h2>
           <p className="text-sm leading-6 text-muted">
             Public launch заблокирован до RLS, backup restore drill, юридических документов и выбора реального провайдера оплаты.
+            Для MVP показываем manual-contact/payment placeholder, а не фейковый успешный checkout.
           </p>
           <Badge tone="warning" className="w-fit">
             mock provider only

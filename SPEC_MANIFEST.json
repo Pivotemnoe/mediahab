@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:30:15.444616+00:00",
+  "generated_at": "2026-06-20T18:35:17.756422+00:00",
   "canonical_language": "en",
-  "file_count": 354,
+  "file_count": 357,
   "files": [
     {
       "path": ".dockerignore",
@@ -77,8 +77,8 @@
     },
     {
       "path": "apps/web/src/app/app/account/page.tsx",
-      "size_bytes": 788,
-      "sha256": "265c1bf8277b94dbfea5260e7764f1cc6ab3ab5477df564b72d52caf751ea407"
+      "size_bytes": 3030,
+      "sha256": "3639611e5f6c000acaa3b6f508a48928247a35647bc914846c9f1cbbd0931b9b"
     },
     {
       "path": "apps/web/src/app/app/ai/page.tsx",
@@ -87,8 +87,8 @@
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
-      "size_bytes": 5064,
-      "sha256": "bb1f2547dbab661b0d9953ba7206d83ed02be749d4adbe5e24e8b0fc31f42bb1"
+      "size_bytes": 5178,
+      "sha256": "2413b1e478747a18d6791bf32691f2293c918f301e1f76ccae254562c104daa6"
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
@@ -187,8 +187,8 @@
     },
     {
       "path": "apps/web/src/app/app/workspace/page.tsx",
-      "size_bytes": 834,
-      "sha256": "a328f94ff9328b30d8a7e4b3930a8a42d6057b5fb6a3ccdee12c082b31dd86ea"
+      "size_bytes": 3029,
+      "sha256": "6bdac6d8c22d0d6a11fdf8d54ce14de9265b01bf03c7ca171c0fd431ba8347e6"
     },
     {
       "path": "apps/web/src/app/contacts/page.tsx",
@@ -369,6 +369,11 @@
       "path": "apps/web/src/config/navigation.ts",
       "size_bytes": 1719,
       "sha256": "c77c5e680851513c064bece874b181e0d97fcfe00e49803ff7a4b92e9e104129"
+    },
+    {
+      "path": "apps/web/src/features/account-workspace/account-workspace-fixtures.ts",
+      "size_bytes": 1191,
+      "sha256": "14c6ed7e7b13ac6678e7b95ead5b9e2a2c52b50ebd13701be9b6eed5653c5f4d"
     },
     {
       "path": "apps/web/src/features/content-studio/content-studio-fixtures.ts",
@@ -1019,6 +1024,16 @@
       "path": "docs/exec-plans/UI_PHASE_08_REPORT_RU.md",
       "size_bytes": 3539,
       "sha256": "39b9b2197fa928f624319708f14efccd822331843e8b4cc0777d14d14599bc68"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_09_BILLING_ACCOUNT_WORKSPACE.md",
+      "size_bytes": 2591,
+      "sha256": "e59b6bc40b612a7f627df0e9111bfb837811d41bc589f51c26847fc9f1076624"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_09_REPORT_RU.md",
+      "size_bytes": 3296,
+      "sha256": "6420a94690b0396dc490b5f0cbd4b73b9df5f1067f6e34df24d19ca1353de6fa"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
