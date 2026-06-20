@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = Field(default=True, alias="SESSION_COOKIE_SECURE")
     session_ttl_hours: int = Field(default=24 * 14, alias="SESSION_TTL_HOURS")
     admin_api_token: str = Field(default="local-admin-token", alias="ADMIN_API_TOKEN")
+    media_bucket: str = Field(default="media-hub", alias="MEDIA_BUCKET")
+    media_public_base_url: str = Field(
+        default="http://localhost:9100", alias="MEDIA_PUBLIC_BASE_URL"
+    )
+    media_presign_ttl_seconds: int = Field(default=900, alias="MEDIA_PRESIGN_TTL_SECONDS")
     auth_rate_limit_attempts: int = Field(default=5, alias="AUTH_RATE_LIMIT_ATTEMPTS")
     auth_rate_limit_window_seconds: int = Field(
         default=60, alias="AUTH_RATE_LIMIT_WINDOW_SECONDS"

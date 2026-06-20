@@ -37,6 +37,20 @@ def main() -> int:
         "/api/v1/projects/{project_id}",
         "/api/v1/projects/{project_id}/rubrics",
         "/api/v1/rubrics/{rubric_id}/form-schema",
+        "/api/v1/projects/{project_id}/content-items",
+        "/api/v1/content-items/{content_id}",
+        "/api/v1/content-items/{content_id}/guided-form",
+        "/api/v1/content-items/{content_id}/blocks",
+        "/api/v1/content-items/{content_id}/repeatable-groups/{group_key}",
+        "/api/v1/content-blocks/{block_id}",
+        "/api/v1/content-blocks/{block_id}/lock",
+        "/api/v1/content-blocks/{block_id}/unlock",
+        "/api/v1/media/presign-upload",
+        "/api/v1/media/{media_id}/complete-upload",
+        "/api/v1/content-items/{content_id}/media-order",
+        "/api/v1/content-blocks/{block_id}/transcribe",
+        "/api/v1/transcription-jobs/{job_id}",
+        "/api/v1/transcription-jobs/{job_id}/accept",
     }
     missing_paths = sorted(required_paths - set(paths))
     if missing_paths:
@@ -44,7 +58,7 @@ def main() -> int:
             print(f"missing openapi path: {path}")
         return 1
 
-    print("Phase 03 smoke passed: SaaS shell and project/rubric OpenAPI paths are present.")
+    print("Phase 04 smoke passed: content, media, and voice OpenAPI paths are present.")
     return 0
 
 

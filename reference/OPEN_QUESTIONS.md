@@ -25,10 +25,12 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 6. Replace Phase 02 local `ADMIN_API_TOKEN` plan-assignment placeholder with a real system-operator identity model before public SaaS.
 7. Replace Phase 02 in-process auth rate limiter with Redis/shared rate limiting before multi-instance or public deployment.
 8. Choose the real email delivery provider for verification and password reset before production auth.
+9. Confirm production object-storage provider, bucket naming, public delivery base URL, signed upload TTL, and cleanup policy for abandoned media uploads.
+10. Confirm which speech-to-text provider receives the first live integration credentials and what language/model defaults are acceptable for Russian dictation.
 
 ## Product-owner decisions that can follow later
 
-1. Final product name and public domain: "Temichev Media Hub" is a working name.
+1. Final product name and public domain: the Russian UI now uses "Медиа-хаб"; confirm whether this is final or a working label.
 2. Final pricing, included quotas, overage policy, and trial behavior.
 3. Whether editors may publish or only owners/admins may publish.
 4. Exact project-specific forbidden phrases and preferred CTA library.
@@ -40,3 +42,4 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 10. Retention and deletion periods for voice notes, raw media, AI logs, and publication payloads.
 11. Final visual/interaction design for the project and rubric builder before replacing the Phase 03 technical screens.
 12. When mock rubric suggestions should switch to a live AI provider, and what moderation/evidence requirements apply.
+13. Confirm whether raw voice notes, uploaded photos/videos, transcription text, and corrected fact blocks use one retention period or separate retention periods.

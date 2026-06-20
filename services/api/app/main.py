@@ -15,7 +15,7 @@ def create_app() -> FastAPI:
     configure_logging(settings.app_env)
 
     app = FastAPI(
-        title="Temichev Media Hub API",
+        title="Медиа-хаб API",
         version="0.1.0",
         openapi_url="/api/v1/openapi.json",
         docs_url="/docs",

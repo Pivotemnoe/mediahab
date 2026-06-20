@@ -27,7 +27,7 @@ export function PublicPage({
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link href="/" className="text-sm font-semibold text-ink">
-            Temichev Media Hub
+            Медиа-хаб
           </Link>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost">

@@ -240,7 +240,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
             ))}
           </Card>
           <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Canvas формы</div>
+            <div className="text-sm font-semibold">Полотно формы</div>
             {fields.map((field) => (
               <div className="rounded-md border border-line p-3" key={field}>
                 <div className="text-sm font-medium">{field}</div>

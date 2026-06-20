@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean,
+    BigInteger,
     DateTime,
     ForeignKey,
     Integer,
@@ -477,3 +478,190 @@ class RubricSuggestion(Base):
     status: Mapped[str] = mapped_column(String(32), default="draft", index=True)
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ContentItem(Base):
+    __tablename__ = "content_items"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    rubric_version_id: Mapped[UUID] = mapped_column(ForeignKey("rubric_versions.id"), index=True)
+    project_version_id: Mapped[UUID] = mapped_column(ForeignKey("project_versions.id"), index=True)
+    title_internal: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(40), default="draft", index=True)
+    current_master_revision_id: Mapped[UUID | None] = mapped_column()
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    assigned_to: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class ContentBlock(Base):
+    __tablename__ = "content_blocks"
+    __table_args__ = (
+        UniqueConstraint(
+            "content_item_id",
+            "field_key",
+            "group_key",
+            "group_index",
+            name="uq_content_blocks_item_field_group",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    field_key: Mapped[str] = mapped_column(String(160), index=True)
+    group_key: Mapped[str | None] = mapped_column(String(160), index=True)
+    group_index: Mapped[int | None] = mapped_column(Integer)
+    source_type: Mapped[str] = mapped_column(String(40), default="user_text", index=True)
+    value_json: Mapped[object] = mapped_column(JSON)
+    transcript_text: Mapped[str | None] = mapped_column(Text)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    source_media_id: Mapped[UUID | None] = mapped_column(ForeignKey("media_assets.id"), index=True)
+    revision_number: Mapped[int] = mapped_column(Integer, default=1)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class LockedFact(Base):
+    __tablename__ = "locked_facts"
+    __table_args__ = (
+        UniqueConstraint("content_item_id", "fact_key", name="uq_locked_facts_item_key"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    fact_key: Mapped[str] = mapped_column(String(200), index=True)
+    value_json: Mapped[object] = mapped_column(JSON)
+    source_block_id: Mapped[UUID] = mapped_column(ForeignKey("content_blocks.id"), index=True)
+    locked_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    locked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class ContentRevision(Base):
+    __tablename__ = "content_revisions"
+    __table_args__ = (
+        UniqueConstraint("content_item_id", "revision_number", name="uq_content_revisions_item_number"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    revision_number: Mapped[int] = mapped_column(Integer)
+    revision_type: Mapped[str] = mapped_column(String(40), default="user_edit", index=True)
+    text: Mapped[str] = mapped_column(Text, default="")
+    structured_document: Mapped[object] = mapped_column(JSON)
+    character_count: Mapped[int] = mapped_column(Integer, default=0)
+    generation_run_id: Mapped[UUID | None] = mapped_column()
+    parent_revision_id: Mapped[UUID | None] = mapped_column(ForeignKey("content_revisions.id"))
+    approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    storage_key: Mapped[str] = mapped_column(String(500), unique=True, index=True)
+    bucket: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(40), index=True)
+    mime_type: Mapped[str] = mapped_column(String(160))
+    size_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    checksum: Mapped[str | None] = mapped_column(String(128), index=True)
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    codec_metadata: Mapped[object | None] = mapped_column(JSON)
+    upload_status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    processing_status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retention_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class ContentMedia(Base):
+    __tablename__ = "content_media"
+    __table_args__ = (
+        UniqueConstraint("content_item_id", "media_asset_id", name="uq_content_media_item_asset"),
+        UniqueConstraint("content_item_id", "sort_order", name="uq_content_media_item_order"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    media_asset_id: Mapped[UUID] = mapped_column(ForeignKey("media_assets.id"), index=True)
+    role: Mapped[str] = mapped_column(String(80), default="body")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    caption: Mapped[str | None] = mapped_column(Text)
+    crop_metadata: Mapped[object | None] = mapped_column(JSON)
+    cover_metadata: Mapped[object | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class VoiceAsset(Base):
+    __tablename__ = "voice_assets"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    media_asset_id: Mapped[UUID] = mapped_column(ForeignKey("media_assets.id"), unique=True, index=True)
+    content_item_id: Mapped[UUID | None] = mapped_column(ForeignKey("content_items.id"), index=True)
+    content_block_id: Mapped[UUID | None] = mapped_column(ForeignKey("content_blocks.id"), index=True)
+    recording_metadata: Mapped[object | None] = mapped_column(JSON)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class TranscriptionRun(Base):
+    __tablename__ = "transcription_runs"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    content_block_id: Mapped[UUID] = mapped_column(ForeignKey("content_blocks.id"), index=True)
+    media_asset_id: Mapped[UUID] = mapped_column(ForeignKey("media_assets.id"), index=True)
+    voice_asset_id: Mapped[UUID | None] = mapped_column(ForeignKey("voice_assets.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock")
+    status: Mapped[str] = mapped_column(String(40), default="queued", index=True)
+    transcript_text: Mapped[str | None] = mapped_column(Text)
+    corrected_text: Mapped[str | None] = mapped_column(Text)
+    confidence_json: Mapped[object | None] = mapped_column(JSON)
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
