@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:22:11.983137+00:00",
+  "generated_at": "2026-06-20T18:30:15.444616+00:00",
   "canonical_language": "en",
-  "file_count": 351,
+  "file_count": 354,
   "files": [
     {
       "path": ".dockerignore",
@@ -92,8 +92,8 @@
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
-      "size_bytes": 2619,
-      "sha256": "addbf367096da7f7b4a30a1a434a4ac572217526d228383f1084e07b20d152f1"
+      "size_bytes": 3506,
+      "sha256": "8b0a1a773aa612e820f421d9293f6ab098806671092bd82b5c65a4da73a14516"
     },
     {
       "path": "apps/web/src/app/app/content/[contentId]/page.tsx",
@@ -117,8 +117,8 @@
     },
     {
       "path": "apps/web/src/app/app/examples/page.tsx",
-      "size_bytes": 2652,
-      "sha256": "46ffa24ca7979ea6659ce97d45ff4e8fa71a1392af462a98892c4790904a54ee"
+      "size_bytes": 3847,
+      "sha256": "c7e73ce1051b2e5d75299037c4409391967410474df27ae0374cf7f0b80a2c1b"
     },
     {
       "path": "apps/web/src/app/app/integrations/page.tsx",
@@ -312,8 +312,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 28247,
-      "sha256": "e87dccb8c89e4465d2376ba12796e8932958c32d9a65068b606d79fc300acdbc"
+      "size_bytes": 29478,
+      "sha256": "4ef48712eed9519c1e0402e4915cf5dc9622b1d801c50e5f9616d0cb03705685"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -379,6 +379,11 @@
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
       "size_bytes": 1399,
       "sha256": "71073f99ef31df9cbfb1a1356ddc240ac4ee1923533ae284ef5ad26a136cdd1e"
+    },
+    {
+      "path": "apps/web/src/features/library-planning/library-planning-fixtures.ts",
+      "size_bytes": 2290,
+      "sha256": "c10813ddc1b1baa2ebe3b9ae904c2ee0819f15c494282f24a9aad6f676bbdf2e"
     },
     {
       "path": "apps/web/src/features/mobile-capture/mobile-capture-fixtures.ts",
@@ -1004,6 +1009,16 @@
       "path": "docs/exec-plans/UI_PHASE_07_REPORT_RU.md",
       "size_bytes": 3709,
       "sha256": "f1cb52f6345d5a6450e3d6ecd7a95f5aaa56e38af43520391a0d313218c6e32d"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_08_EXAMPLES_MEDIA_CALENDAR.md",
+      "size_bytes": 2850,
+      "sha256": "96b08c222945981a4807c90dad1104e11db75f7f35416f006b5a2cc104c71745"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_08_REPORT_RU.md",
+      "size_bytes": 3539,
+      "sha256": "39b9b2197fa928f624319708f14efccd822331843e8b4cc0777d14d14599bc68"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

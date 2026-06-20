@@ -9,6 +9,7 @@ import {
   Download,
   FileCheck2,
   FileText,
+  Filter,
   GripVertical,
   History,
   ImagePlus,
@@ -53,6 +54,11 @@ import {
   resumeItems,
   reviewBlocks,
 } from "@/features/mobile-capture/mobile-capture-fixtures";
+import {
+  mediaFilters,
+  mediaLibrary,
+  mediaWarnings,
+} from "@/features/library-planning/library-planning-fixtures";
 
 const contentItems = [
   {
@@ -609,44 +615,69 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
 
 export function MediaLibraryShell() {
   return (
-    <div className="grid gap-4">
-      <StudioHeader title="Медиа" />
-      <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
+    <div className="grid min-w-0 gap-5">
+      <StudioHeader label="UI Phase 08" title="Медиа" />
+      <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
         <Card className="grid content-start gap-4">
           <div>
-            <Badge>Загрузка</Badge>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">
-              Прямая загрузка в хранилище
+            <Badge>Библиотека</Badge>
+            <h1 className="mt-3 text-2xl font-semibold text-foreground">
+              Медиа материала
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted">
-              API выдаёт подписанную ссылку, браузер отправляет файл напрямую,
-              затем подтверждает размер, длительность и метаданные.
+              Загрузка, порядок, cover, compatibility warnings и удаление из материала без удаления asset.
             </p>
           </div>
           <Button type="button">
             <ImagePlus size={16} />
             Выбрать файлы
           </Button>
-          <div className="grid gap-2 text-sm text-muted">
-            <div>Фото и видео: проверка типа, размера и готовности.</div>
-            <div>Голос: отдельный путь для расшифровки блока.</div>
+          <div className="grid gap-2">
+            {mediaFilters.map((filter) => (
+              <Button key={filter} size="sm" type="button" variant={filter === "Все" ? "primary" : "secondary"}>
+                <Filter size={14} />
+                {filter}
+              </Button>
+            ))}
+          </div>
+          <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
+            Прогресс загрузки и resumable state подключаются позже. Сейчас экран показывает целевое состояние библиотеки.
           </div>
         </Card>
 
         <Card className="grid content-start gap-3">
           <div>
-            <Badge>Библиотека</Badge>
-            <h2 className="mt-3 text-lg font-semibold text-ink">Файлы материала</h2>
+            <Badge>Порядок и совместимость</Badge>
+            <h2 className="mt-3 text-lg font-semibold text-foreground">Файлы материала</h2>
           </div>
-          {mediaItems.map(([index, title, status, role]) => (
-            <div className="grid gap-3 rounded-md border border-line p-3 md:grid-cols-[40px_1fr_140px_120px]" key={index}>
-              <div className="text-sm font-semibold text-muted">{index}</div>
+          <div className="flex flex-wrap gap-2">
+            {mediaWarnings.map(([platform, warning]) => (
+              <div className="flex gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs text-muted" key={platform}>
+                <AlertTriangle className="shrink-0 text-warning" size={14} />
+                <span>{platform}: {warning}</span>
+              </div>
+            ))}
+          </div>
+          {mediaLibrary.map(([index, title, type, status, role, compatibility]) => (
+            <div className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[40px_1fr_120px_140px]" key={index}>
+              <GripVertical size={18} className="text-muted" />
               <div>
-                <div className="text-sm font-medium text-ink">{title}</div>
-                <div className="mt-1 text-xs text-muted">Порядок можно менять перед сборкой публикаций.</div>
+                <div className="text-sm font-medium text-foreground">{index}. {title}</div>
+                <div className="mt-1 text-xs text-muted">
+                  {type} · {role} · {compatibility}
+                </div>
               </div>
               <Badge tone={status === "готово" ? "success" : "warning"}>{status}</Badge>
-              <Badge>{role}</Badge>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" type="button" variant="secondary">
+                  <FileCheck2 size={14} />
+                  Cover
+                </Button>
+                <Button size="sm" type="button" variant="ghost">
+                  <RotateCcw size={14} />
+                  Убрать
+                </Button>
+              </div>
             </div>
           ))}
         </Card>
