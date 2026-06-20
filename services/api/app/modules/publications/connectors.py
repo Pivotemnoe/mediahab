@@ -210,6 +210,19 @@ def validate_generic_webhook_url(endpoint_url: str) -> None:
             "Generic webhook endpoints must use HTTPS.",
             {"endpoint_url": endpoint_url},
         )
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ConnectorValidationError(
+            "webhook_port_forbidden",
+            "Generic webhook endpoints must use HTTPS port 443.",
+        ) from exc
+    if port not in {None, 443}:
+        raise ConnectorValidationError(
+            "webhook_port_forbidden",
+            "Generic webhook endpoints must use HTTPS port 443.",
+            {"port": port},
+        )
     if parsed.username or parsed.password:
         raise ConnectorValidationError(
             "webhook_credentials_in_url",
@@ -227,36 +240,80 @@ def validate_generic_webhook_url(endpoint_url: str) -> None:
             {"host": host},
         )
     try:
-        ip = ipaddress.ip_address(normalized_host)
+        ipaddress.ip_address(normalized_host)
     except ValueError:
         return
-    if (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_multicast
-        or ip.is_reserved
-        or ip.is_unspecified
-    ):
-        raise ConnectorValidationError(
-            "webhook_private_target",
-            "Generic webhook cannot target private or local network addresses.",
-            {"host": host},
-        )
+    raise ConnectorValidationError(
+        "webhook_ip_literal_forbidden",
+        "Generic webhook endpoints must use domain names, not IP literals.",
+        {"host": host},
+    )
 
 
-def validate_destination_configuration(connector_key: str, configuration: dict[str, Any]) -> None:
+def validate_destination_configuration(
+    connector_key: str,
+    configuration: dict[str, Any],
+    *,
+    can_activate_live: bool = False,
+) -> None:
     if connector_key == "generic_webhook":
         endpoint_url = str(configuration.get("endpoint_url") or "")
         validate_generic_webhook_url(endpoint_url)
+        delivery_mode = str(configuration.get("delivery_mode") or "simulate")
+        if delivery_mode == "live":
+            raise ConnectorValidationError(
+                "webhook_live_not_enabled",
+                "General live webhook delivery is disabled until production controls are implemented and tested.",
+            )
+        if delivery_mode not in {"simulate", "allowlisted_live"}:
+            raise ConnectorValidationError(
+                "webhook_delivery_mode_invalid",
+                "Generic webhook delivery mode must be simulate or allowlisted_live.",
+                {"delivery_mode": delivery_mode},
+            )
+        if delivery_mode == "allowlisted_live":
+            if not can_activate_live:
+                raise ConnectorValidationError(
+                    "webhook_live_requires_owner_admin",
+                    "Only owner/admin may activate a live webhook.",
+                )
+            if configuration.get("endpoint_challenge_verified") is not True:
+                raise ConnectorValidationError(
+                    "webhook_challenge_required",
+                    "Live webhook activation requires endpoint challenge verification.",
+                )
+            if not configuration.get("allowlist_id"):
+                raise ConnectorValidationError(
+                    "webhook_allowlist_required",
+                    "Staging live webhook delivery requires an allowlist entry.",
+                )
 
 
 def redacted_destination_configuration(configuration: dict[str, Any]) -> dict[str, Any]:
-    redacted = dict(configuration)
-    for key in ("shared_secret", "secret", "token", "api_key"):
-        if key in redacted:
-            redacted[key] = "***redacted***"
-    return redacted
+    secret_keys = {
+        "authorization",
+        "authorization_header",
+        "cookie",
+        "cookies",
+        "shared_secret",
+        "webhook_secret",
+        "secret",
+        "token",
+        "api_key",
+        "password",
+    }
+
+    def redact(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: "***redacted***" if str(key).lower() in secret_keys else redact(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [redact(item) for item in value]
+        return value
+
+    return redact(configuration)
 
 
 def simulate_connector_publish(
@@ -284,12 +341,14 @@ def simulate_connector_publish(
             },
         )
     if connector_key == "generic_webhook":
-        validate_destination_configuration(connector_key, configuration)
+        validate_destination_configuration(connector_key, configuration, can_activate_live=True)
         status_code = int(configuration.get("simulate_status", 202))
+        retry_after_seconds = configuration.get("retry_after_seconds")
         request = {
             "endpoint_url": configuration.get("endpoint_url"),
             "signature": "sha256=simulated",
             "idempotency_key": idempotency_key,
+            "delivery_mode": configuration.get("delivery_mode") or "simulate",
             "payload": {
                 "publication_id": publication_id,
                 "destination_id": destination_id,
@@ -307,7 +366,11 @@ def simulate_connector_publish(
         return ConnectorResult(
             status="failed_retryable" if retryable else "failed_permanent",
             external_id=None,
-            response_payload={"status_code": status_code, "request": request},
+            response_payload={
+                "status_code": status_code,
+                "request": request,
+                "retry_after_seconds": retry_after_seconds,
+            },
             retryable=retryable,
             error_code="webhook_retryable_error" if retryable else "webhook_rejected",
             error_message=f"Generic webhook simulated HTTP {status_code}.",

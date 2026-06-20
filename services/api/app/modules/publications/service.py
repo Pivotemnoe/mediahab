@@ -35,9 +35,31 @@ from app.modules.publications.connectors import (
 )
 
 
-CONTENT_PUBLICATION_ROLES = {"owner", "admin", "editor"}
+CONTENT_PREPARATION_ROLES = {"owner", "admin", "editor"}
+CONTENT_PUBLISH_ROLES = {"owner", "admin"}
 READ_ROLES = {"owner", "admin", "editor", "viewer"}
 DEFAULT_VARIANT_PLATFORMS = ["telegram", "max", "instagram", "manual_export", "generic_webhook"]
+OUTBOX_BEAT_INTERVAL_SECONDS = 2
+OUTBOX_BATCH_SIZE = 100
+OUTBOX_LEASE_SECONDS = 60
+OUTBOX_WATCHDOG_INTERVAL_SECONDS = 60
+OUTBOX_RETRY_DELAYS_SECONDS = [5, 30, 120, 600, 1800, 7200, 21600, 43200]
+OUTBOX_MAX_ATTEMPTS = len(OUTBOX_RETRY_DELAYS_SECONDS) + 1
+
+
+def retry_delay_seconds(attempt_count: int, response_payload: dict[str, Any] | None = None) -> int:
+    retry_after = None
+    if isinstance(response_payload, dict):
+        retry_after = response_payload.get("retry_after_seconds")
+    try:
+        retry_after_seconds = int(retry_after) if retry_after is not None else None
+    except (TypeError, ValueError):
+        retry_after_seconds = None
+    index = max(0, min(attempt_count - 1, len(OUTBOX_RETRY_DELAYS_SECONDS) - 1))
+    cadence_seconds = OUTBOX_RETRY_DELAYS_SECONDS[index]
+    if retry_after_seconds is None:
+        return cadence_seconds
+    return max(cadence_seconds, retry_after_seconds)
 
 
 class PublicationCoreError(RuntimeError):
@@ -337,6 +359,7 @@ async def create_project_destination(
     connector_key: str | None,
     configuration: dict[str, Any],
     publication_mode: str | None = None,
+    can_activate_live: bool = False,
 ) -> ProjectDestination:
     await ensure_publication_catalog(session)
     try:
@@ -352,7 +375,11 @@ async def create_project_destination(
             {"platform_key": platform_key, "connector_key": selected_connector},
         )
     try:
-        validate_destination_configuration(selected_connector, configuration)
+        validate_destination_configuration(
+            selected_connector,
+            configuration,
+            can_activate_live=can_activate_live,
+        )
     except ConnectorValidationError as exc:
         raise _connector_error_to_publication_error(exc) from exc
     now = utc_now()
@@ -383,6 +410,7 @@ async def update_project_destination(
     name: str | None = None,
     status: str | None = None,
     configuration: dict[str, Any] | None = None,
+    can_activate_live: bool = False,
 ) -> ProjectDestination:
     if name is not None:
         destination.name = name
@@ -390,7 +418,11 @@ async def update_project_destination(
         destination.status = status
     if configuration is not None:
         try:
-            validate_destination_configuration(destination.connector_key, configuration)
+            validate_destination_configuration(
+                destination.connector_key,
+                configuration,
+                can_activate_live=can_activate_live,
+            )
         except ConnectorValidationError as exc:
             raise _connector_error_to_publication_error(exc) from exc
         destination.configuration_json = configuration
@@ -522,7 +554,7 @@ async def enqueue_publication(
                 payload_json={"publication_id": str(publication.id)},
                 status="pending",
                 attempt_count=0,
-                max_attempts=5,
+                max_attempts=OUTBOX_MAX_ATTEMPTS,
                 available_at=scheduled_at or now,
                 created_at=now,
                 updated_at=now,
@@ -674,10 +706,17 @@ async def process_publication_outbox(
     else:
         publication.last_error_code = result.error_code
         publication.last_error_message = result.error_message
-        event.status = "failed" if result.retryable and event.attempt_count < event.max_attempts else "dead_letter"
+        if result.retryable and event.attempt_count < event.max_attempts:
+            event.status = "pending"
+            event.locked_at = None
+            event.locked_by = None
+            event.available_at = completed_at + timedelta(
+                seconds=retry_delay_seconds(event.attempt_count, result.response_payload)
+            )
+        else:
+            event.status = "dead_letter"
         event.error_code = result.error_code
         event.error_message = result.error_message
-        event.available_at = completed_at + timedelta(seconds=30 * event.attempt_count)
     event.updated_at = completed_at
     await session.flush()
     return publication
@@ -701,7 +740,7 @@ async def retry_publication(session: AsyncSession, publication: Publication) -> 
             payload_json={"publication_id": str(publication.id), "retry": True},
             status="pending",
             attempt_count=0,
-            max_attempts=5,
+            max_attempts=OUTBOX_MAX_ATTEMPTS,
             available_at=utc_now(),
             created_at=utc_now(),
             updated_at=utc_now(),
@@ -785,6 +824,44 @@ async def mark_external_post_deleted(
     publication.status = "deleted"
     publication.updated_at = now
     publication.version += 1
+    await session.flush()
+    return publication
+
+
+async def confirm_manual_publication(
+    session: AsyncSession,
+    publication: Publication,
+    actor_user_id: UUID,
+    *,
+    external_url: str | None = None,
+    external_post_id: str | None = None,
+    evidence: dict[str, Any] | None = None,
+) -> Publication:
+    if publication.status != "manual_required":
+        raise PublicationCoreError(
+            422,
+            "manual_confirmation_not_allowed",
+            "Only a manual_required publication can be confirmed manually.",
+            {"publication_status": publication.status},
+        )
+    now = utc_now()
+    publication.status = "published"
+    publication.publication_method = "manual"
+    publication.confirmed_by = actor_user_id
+    publication.confirmed_at = now
+    publication.published_at = now
+    publication.external_url = external_url
+    publication.external_post_id = external_post_id
+    publication.confirmation_evidence_json = evidence
+    publication.updated_at = now
+    publication.version += 1
+    posts = await external_posts_for_publication(session, publication)
+    for post in posts:
+        post.status = "published"
+        post.permalink_url = external_url or post.permalink_url
+        if external_post_id:
+            post.provider_external_id = external_post_id
+        post.updated_at = now
     await session.flush()
     return publication
 

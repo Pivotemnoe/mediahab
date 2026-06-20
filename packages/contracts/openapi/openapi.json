@@ -4703,6 +4703,59 @@
         }
       }
     },
+    "/api/v1/publications/{publication_id}/confirm-manual": {
+      "post": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Confirm Manual Publication Endpoint",
+        "operationId": "confirm_manual_publication_endpoint_api_v1_publications__publication_id__confirm_manual_post",
+        "parameters": [
+          {
+            "name": "publication_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Publication Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualConfirmationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/publications/{publication_id}/attempts": {
       "get": {
         "tags": [
@@ -6884,6 +6937,48 @@
         ],
         "title": "LoginRequest"
       },
+      "ManualConfirmationRequest": {
+        "properties": {
+          "external_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "external_post_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 240
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Post Id"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          }
+        },
+        "type": "object",
+        "title": "ManualConfirmationRequest"
+      },
       "MeResponse": {
         "properties": {
           "user": {
@@ -8250,6 +8345,74 @@
             ],
             "title": "Cancelled At"
           },
+          "publication_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Method"
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "external_post_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Post Id"
+          },
+          "confirmation_evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Evidence"
+          },
           "last_error_code": {
             "anyOf": [
               {
@@ -8317,6 +8480,12 @@
           "queued_at",
           "published_at",
           "cancelled_at",
+          "publication_method",
+          "confirmed_by",
+          "confirmed_at",
+          "external_url",
+          "external_post_id",
+          "confirmation_evidence",
           "last_error_code",
           "last_error_message",
           "idempotency_key",

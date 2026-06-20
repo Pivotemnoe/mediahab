@@ -27,7 +27,7 @@ const variants = [
 ];
 
 const publicationRows = [
-  ["manual_required", "Ручной экспорт", "пакет готов", "success"],
+  ["manual_required", "Ручной экспорт", "пакет готов, ждёт подтверждения", "warning"],
   ["published", "Generic webhook", "ответ 202", "success"],
   ["failed_retryable", "Generic webhook", "ответ 503", "warning"],
   ["scheduled", "Отложенная публикация", "outbox ждёт время", "neutral"],
@@ -123,7 +123,7 @@ export function PublicationCoreShell() {
             <div className="grid gap-2 text-sm text-muted">
               <div className="rounded-md border border-line p-3">
                 <div className="font-medium text-ink">Ручной экспорт</div>
-                <div className="mt-1">Статус публикации: manual_required.</div>
+                <div className="mt-1">Скачивание пакета не публикует материал. Нужна ручная отметка.</div>
               </div>
               <div className="rounded-md border border-line p-3">
                 <div className="font-medium text-ink">Generic webhook</div>
@@ -169,7 +169,7 @@ export function PublicationCoreShell() {
               </div>
               <div className="flex items-center gap-2 rounded-md border border-line p-3">
                 <RotateCcw size={16} className="text-accent" />
-                <span>Retry не создаёт дубль при успешной публикации.</span>
+                <span>Retry: 5с, 30с, 2м, 10м, 30м, 2ч, 6ч, 12ч.</span>
               </div>
               <div className="flex items-center gap-2 rounded-md border border-line p-3">
                 <TriangleAlert size={16} className="text-warning" />
@@ -206,7 +206,7 @@ export function PublicationCoreShell() {
             </div>
             <div className="rounded-md border border-line p-3 text-sm leading-6 text-muted">
               В пакете сохраняются текст варианта, порядок медиа, destination, idempotency key и
-              проверочные предупреждения. Секреты webhook не показываются в интерфейсе.
+              проверочные предупреждения. Статус остаётся manual_required до подтверждения owner/admin.
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="secondary">

@@ -83,6 +83,7 @@ def main() -> int:
         "/api/v1/publications/{publication_id}/refresh-status",
         "/api/v1/publications/{publication_id}/edit",
         "/api/v1/publications/{publication_id}/external-post",
+        "/api/v1/publications/{publication_id}/confirm-manual",
         "/api/v1/publications/{publication_id}/attempts",
         "/api/v1/webhooks/generic/{destination_id}",
     }

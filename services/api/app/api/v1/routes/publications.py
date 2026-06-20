@@ -28,12 +28,14 @@ from app.modules.auth.dependencies import (
 from app.modules.projects.service import get_active_project
 from app.modules.publications.connectors import capability_for, redacted_destination_configuration
 from app.modules.publications.service import (
-    CONTENT_PUBLICATION_ROLES,
+    CONTENT_PREPARATION_ROLES,
+    CONTENT_PUBLISH_ROLES,
     READ_ROLES,
     PublicationCoreError,
     approve_platform_variant,
     attempts_for_publication,
     cancel_publication,
+    confirm_manual_publication,
     create_project_destination,
     create_publication,
     edit_platform_variant,
@@ -148,6 +150,12 @@ class PublicationScheduleRequest(BaseModel):
     scheduled_at: datetime
 
 
+class ManualConfirmationRequest(BaseModel):
+    external_url: str | None = Field(default=None, max_length=2048)
+    external_post_id: str | None = Field(default=None, max_length=240)
+    evidence: dict[str, Any] | None = None
+
+
 class PublicationOut(BaseModel):
     id: UUID
     workspace_id: UUID
@@ -160,6 +168,12 @@ class PublicationOut(BaseModel):
     queued_at: str | None
     published_at: str | None
     cancelled_at: str | None
+    publication_method: str | None
+    confirmed_by: UUID | None
+    confirmed_at: str | None
+    external_url: str | None
+    external_post_id: str | None
+    confirmation_evidence: dict[str, Any] | None
     last_error_code: str | None
     last_error_message: str | None
     idempotency_key: str | None
@@ -292,6 +306,14 @@ async def publication_out(db: AsyncSession, publication: Publication) -> Publica
         queued_at=publication.queued_at.isoformat() if publication.queued_at else None,
         published_at=publication.published_at.isoformat() if publication.published_at else None,
         cancelled_at=publication.cancelled_at.isoformat() if publication.cancelled_at else None,
+        publication_method=publication.publication_method,
+        confirmed_by=publication.confirmed_by,
+        confirmed_at=publication.confirmed_at.isoformat() if publication.confirmed_at else None,
+        external_url=publication.external_url,
+        external_post_id=publication.external_post_id,
+        confirmation_evidence=publication.confirmation_evidence_json
+        if isinstance(publication.confirmation_evidence_json, dict)
+        else None,
         last_error_code=publication.last_error_code,
         last_error_message=publication.last_error_message,
         idempotency_key=publication.idempotency_key,
@@ -407,6 +429,43 @@ async def publication_for_actor(
     return publication, membership
 
 
+def role_can_activate_live_webhook(membership: Any) -> bool:
+    return membership.role_key in CONTENT_PUBLISH_ROLES
+
+
+def require_publish_role(membership: Any, request: Request) -> None:
+    require_role(membership, CONTENT_PUBLISH_ROLES, request)
+
+
+def require_preparation_role(membership: Any, request: Request) -> None:
+    require_role(membership, CONTENT_PREPARATION_ROLES, request)
+
+
+async def destination_for_publication_or_404(
+    publication: Publication,
+    request: Request,
+    db: AsyncSession,
+) -> ProjectDestination:
+    destination = await db.get(ProjectDestination, publication.destination_id)
+    if destination is None or destination.deleted_at is not None:
+        raise api_error(404, "destination_not_found", "Destination not found.", request=request)
+    return destination
+
+
+async def require_publication_delivery_role(
+    publication: Publication,
+    membership: Any,
+    request: Request,
+    db: AsyncSession,
+) -> ProjectDestination:
+    destination = await destination_for_publication_or_404(publication, request, db)
+    if destination.connector_key == "manual_export":
+        require_preparation_role(membership, request)
+    else:
+        require_publish_role(membership, request)
+    return destination
+
+
 @router.post("/content-items/{content_id}/generate-variants", response_model=PlatformVariantsResponse)
 async def generate_variants(
     content_id: UUID,
@@ -416,7 +475,7 @@ async def generate_variants(
     db: AsyncSession = Depends(get_session),
 ) -> PlatformVariantsResponse:
     item, membership = await item_for_actor(content_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         variants = await generate_variants_for_content(db, item, actor.user.id, payload.platform_keys)
     except PublicationCoreError as exc:
@@ -459,7 +518,7 @@ async def patch_variant(
     db: AsyncSession = Depends(get_session),
 ) -> PlatformVariantOut:
     variant, membership = await variant_for_actor(variant_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         edited = await edit_platform_variant(db, variant, actor.user.id, payload.text)
     except PublicationCoreError as exc:
@@ -476,7 +535,7 @@ async def validate_variant_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PlatformVariantOut:
     variant, membership = await variant_for_actor(variant_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         validated = await validate_platform_variant(db, variant)
     except PublicationCoreError as exc:
@@ -493,7 +552,7 @@ async def approve_variant_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PlatformVariantOut:
     variant, membership = await variant_for_actor(variant_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_publish_role(membership, request)
     try:
         approved = await approve_platform_variant(db, variant, actor.user.id)
     except PublicationCoreError as exc:
@@ -524,7 +583,7 @@ async def create_destination(
     db: AsyncSession = Depends(get_session),
 ) -> DestinationOut:
     project, membership = await project_for_actor(project_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         destination = await create_project_destination(
             db,
@@ -535,6 +594,7 @@ async def create_destination(
             connector_key=payload.connector_key,
             configuration=payload.configuration,
             publication_mode=payload.publication_mode,
+            can_activate_live=role_can_activate_live_webhook(membership),
         )
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
@@ -551,7 +611,7 @@ async def patch_destination(
     db: AsyncSession = Depends(get_session),
 ) -> DestinationOut:
     destination, membership = await destination_for_actor(destination_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         updated = await update_project_destination(
             db,
@@ -559,6 +619,7 @@ async def patch_destination(
             name=payload.name,
             status=payload.status,
             configuration=payload.configuration,
+            can_activate_live=role_can_activate_live_webhook(membership),
         )
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
@@ -574,7 +635,7 @@ async def delete_destination(
     db: AsyncSession = Depends(get_session),
 ) -> MessageResponse:
     destination, membership = await destination_for_actor(destination_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_publish_role(membership, request)
     destination.deleted_at = utc_now()
     destination.status = "disabled"
     await db.commit()
@@ -611,7 +672,7 @@ async def test_destination_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> DestinationTestResponse:
     destination, membership = await destination_for_actor(destination_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     try:
         result = test_destination(destination)
     except PublicationCoreError as exc:
@@ -628,8 +689,11 @@ async def create_publication_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     variant, membership = await variant_for_actor(variant_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
     destination, _ = await destination_for_actor(payload.destination_id, request, actor, db)
+    if destination.connector_key == "manual_export":
+        require_preparation_role(membership, request)
+    else:
+        require_publish_role(membership, request)
     key = payload.idempotency_key or request.headers.get("Idempotency-Key")
     try:
         publication = await create_publication(db, variant, destination, actor.user.id, key)
@@ -674,7 +738,7 @@ async def schedule_publication(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    await require_publication_delivery_role(publication, membership, request, db)
     try:
         scheduled = await enqueue_publication(db, publication, payload.scheduled_at)
     except PublicationCoreError as exc:
@@ -691,7 +755,7 @@ async def publish_now(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    await require_publication_delivery_role(publication, membership, request, db)
     try:
         queued = await enqueue_publication(db, publication)
     except PublicationCoreError as exc:
@@ -710,7 +774,7 @@ async def cancel_publication_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_publish_role(membership, request)
     try:
         cancelled = await cancel_publication(db, publication)
     except PublicationCoreError as exc:
@@ -727,7 +791,7 @@ async def retry_publication_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    await require_publication_delivery_role(publication, membership, request, db)
     retried = await retry_publication(db, publication)
     await db.commit()
     processed = await process_publication_outbox(db, retried)
@@ -743,7 +807,7 @@ async def refresh_publication_status(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_role(membership, READ_ROLES, request)
     return await publication_out(db, publication)
 
 
@@ -756,7 +820,7 @@ async def edit_publication_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_preparation_role(membership, request)
     variant = await db.get(PlatformVariant, publication.platform_variant_id)
     if variant is None:
         raise api_error(404, "variant_not_found", "Platform variant not found.", request=request)
@@ -778,10 +842,35 @@ async def delete_external_post_endpoint(
     db: AsyncSession = Depends(get_session),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
-    require_role(membership, CONTENT_PUBLICATION_ROLES, request)
+    require_publish_role(membership, request)
     deleted = await mark_external_post_deleted(db, publication)
     await db.commit()
     return await publication_out(db, deleted)
+
+
+@router.post("/publications/{publication_id}/confirm-manual", response_model=PublicationOut)
+async def confirm_manual_publication_endpoint(
+    publication_id: UUID,
+    payload: ManualConfirmationRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+) -> PublicationOut:
+    publication, membership = await publication_for_actor(publication_id, request, actor, db)
+    require_publish_role(membership, request)
+    try:
+        confirmed = await confirm_manual_publication(
+            db,
+            publication,
+            actor.user.id,
+            external_url=payload.external_url,
+            external_post_id=payload.external_post_id,
+            evidence=payload.evidence,
+        )
+    except PublicationCoreError as exc:
+        raise handle_publication_error(exc, request) from exc
+    await db.commit()
+    return await publication_out(db, confirmed)
 
 
 @router.get("/publications/{publication_id}/attempts", response_model=AttemptsResponse)

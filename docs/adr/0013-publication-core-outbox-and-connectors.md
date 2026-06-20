@@ -1,7 +1,7 @@
 # ADR 0013 — Publication Core, Outbox, And Connector Boundary
 
 Date: 2026-06-20
-Status: accepted for Phase 06 technical implementation
+Status: accepted, including production decisions approved by the owner on 2026-06-20
 
 ## Context
 
@@ -32,6 +32,71 @@ Use a connector capability registry in code for hard limits and validation:
 - Manual export: local package/payload generation only.
 - Generic webhook: HTTPS-only target with private-network SSRF checks.
 
+Use the following production outbox policy:
+
+- PostgreSQL is the source of truth.
+- A single Celery Beat instance polls every 2 seconds.
+- Batch size is 100.
+- Rows are claimed with `SELECT ... FOR UPDATE SKIP LOCKED`.
+- Lease duration is 60 seconds.
+- A watchdog reclaims expired leases every 60 seconds.
+- Delivery semantics are at-least-once.
+- All consumers and platform connectors must be idempotent.
+- Retry cadence is 5 seconds, 30 seconds, 2 minutes, 10 minutes, 30 minutes, 2 hours, 6 hours, 12 hours.
+- Respect `Retry-After`.
+- After the final retry, move the event to `dead_letter`.
+
+Use the following generic outbound webhook policy:
+
+- Default mode is `simulate`.
+- Staging mode is `allowlisted_live`.
+- General live delivery may be enabled only after SSRF, DNS, egress, signing, verification, timeout, rate-limit, audit, and kill-switch controls are implemented and tested.
+- Only owner/admin may activate a live webhook.
+
+Use the following SSRF policy for live webhook delivery:
+
+- HTTPS `POST` only.
+- Port 443 only.
+- Domain names only; IP literals are forbidden.
+- Redirects are disabled.
+- URLs containing userinfo are forbidden.
+- Resolve and validate all A/AAAA records before every delivery attempt.
+- Reject localhost, private, loopback, link-local, CGNAT, multicast, reserved, IPv6 ULA, and metadata addresses.
+- Connect to the validated/pinned IP while preserving Host and TLS SNI.
+- Connect timeout is 3 seconds.
+- Total timeout is 10 seconds.
+- Maximum request payload is 256 KB.
+- Maximum stored response body is 64 KB.
+- Sign requests with HMAC-SHA256.
+- Require endpoint challenge verification.
+
+Use the following production publication permission policy:
+
+- Owner and admin may publish by default.
+- Editor may create, edit, generate, preview, export, and submit for approval, but may not publish by default.
+- Implement a granular `content.publish` permission so it can later be granted to an editor per project.
+
+Use the following retention policy:
+
+- Normalized publication snapshot: for the publication lifetime, plus 30 days after deletion.
+- Raw provider request/response: 90 days.
+- Publication attempts: 180 days.
+- Webhook evidence: 180 days.
+- Successful outbox events: 30 days.
+- Failed/dead-letter outbox events: 180 days.
+- Manual export package files: 30 days.
+- Manual export metadata: 180 days.
+- Audit logs: 365 days.
+- Never store credentials, authorization headers, cookies, or webhook secrets in payload logs.
+
+Use the following manual export policy:
+
+- Keep status `manual_required` until explicit user confirmation.
+- Downloading or copying a package does not mark it as published.
+- On confirmation, set `status=published` and `publication_method=manual`.
+- Store `confirmed_by` and `confirmed_at`, with optional `external_url`, `external_post_id`, and evidence.
+- If the package expires, keep `manual_required` and allow regeneration.
+
 ## Alternatives Considered
 
 - Use Redis/Celery as the primary queue state: rejected because Redis loss or restart must not lose a committed publication intent.
@@ -46,11 +111,12 @@ Use a connector capability registry in code for hard limits and validation:
 - Native connector phases can attach to the same publication/outbox tables.
 - The Phase 06 UI can show partial success and retry history without real social APIs.
 - Generic webhook destinations are constrained from the start by SSRF validation.
-- Production worker polling and real network delivery still need hardening in later phases.
+- Production worker polling has approved timing, lease, retry, and dead-letter semantics, but Celery polling implementation still belongs to a later hardening slice.
+- Generic webhook remains simulated by default; live outbound delivery requires the approved controls before activation.
 
 ## Migration And Rollback
 
-The Phase 06 migration adds only publication-core tables. Downgrade drops those tables and does not touch users, workspaces, projects, content, media, examples, or AI runs.
+The Phase 06 migration adds only publication-core tables. The production-decision follow-up migration adds manual confirmation fields to `publications`. Downgrade removes only these publication-core additions and does not touch users, workspaces, projects, content, media, examples, or AI runs.
 
 ## Evidence
 

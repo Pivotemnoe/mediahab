@@ -16,7 +16,15 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.config import Settings, get_settings  # noqa: E402
-from app.db.base import Base, ContentItem, ContentRevision, ExternalPost, OutboxEvent  # noqa: E402
+from app.db.base import (  # noqa: E402
+    Base,
+    ContentItem,
+    ContentRevision,
+    ExternalPost,
+    Membership,
+    OutboxEvent,
+    utc_now,
+)
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
 
@@ -54,8 +62,10 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         self,
         email: str = "owner06@example.com",
         workspace_name: str = "Owner Workspace",
+        client: TestClient | None = None,
     ) -> dict[str, object]:
-        response = self.client.post(
+        target_client = client or self.client
+        response = target_client.post(
             "/api/v1/auth/register",
             json={
                 "email": email,
@@ -136,6 +146,28 @@ class Phase06PublicationCoreTest(unittest.TestCase):
             item.status = "ready_for_publication"
             await session.commit()
             return str(revision.id)
+
+    async def _add_membership(
+        self,
+        workspace_id: str,
+        user_id: str,
+        role: str = "editor",
+        publication_permission: str = "approval_required",
+    ) -> None:
+        async with self.SessionLocal() as session:
+            session.add(
+                Membership(
+                    workspace_id=UUID(workspace_id),
+                    user_id=UUID(user_id),
+                    role_key=role,
+                    publication_permission=publication_permission,
+                    accepted_at=utc_now(),
+                    created_at=utc_now(),
+                    updated_at=utc_now(),
+                    version=1,
+                )
+            )
+            await session.commit()
 
     async def _external_post_count(self, publication_id: str) -> int:
         async with self.SessionLocal() as session:
@@ -328,6 +360,20 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         )
         self.assertEqual(manual_result.status_code, 200, manual_result.text)
         self.assertEqual(manual_result.json()["status"], "manual_required")
+        self.assertIsNone(manual_result.json()["publication_method"])
+        confirmed = self.client.post(
+            f"/api/v1/publications/{manual_publication['id']}/confirm-manual",
+            headers=self.csrf_headers(auth),
+            json={
+                "external_url": "https://example.com/manual-post",
+                "external_post_id": "manual-123",
+                "evidence": {"note": "posted by owner"},
+            },
+        )
+        self.assertEqual(confirmed.status_code, 200, confirmed.text)
+        self.assertEqual(confirmed.json()["status"], "published")
+        self.assertEqual(confirmed.json()["publication_method"], "manual")
+        self.assertEqual(confirmed.json()["external_post_id"], "manual-123")
 
         failing_result = self.client.post(
             f"/api/v1/publications/{failing_publication['id']}/publish-now",
@@ -354,4 +400,135 @@ class Phase06PublicationCoreTest(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 422, response.text)
-        self.assertEqual(response.json()["error"]["code"], "webhook_private_target")
+        self.assertEqual(response.json()["error"]["code"], "webhook_ip_literal_forbidden")
+        invalid_port = self.client.post(
+            f"/api/v1/projects/{project['id']}/destinations",
+            headers=self.csrf_headers(auth),
+            json={
+                "name": "Invalid port webhook",
+                "platform_key": "generic_webhook",
+                "connector_key": "generic_webhook",
+                "configuration": {"endpoint_url": "https://example.com:abc/webhook"},
+            },
+        )
+        self.assertEqual(invalid_port.status_code, 422, invalid_port.text)
+        self.assertEqual(invalid_port.json()["error"]["code"], "webhook_port_forbidden")
+
+    def test_editor_can_prepare_and_export_but_not_publish(self) -> None:
+        owner = self.register(email="owner-permissions06@example.com", workspace_name="Permission Workspace")
+        editor_client = TestClient(self.app, base_url="https://testserver")
+        try:
+            editor_auth = self.register(
+                email="editor-permissions06b@example.com",
+                workspace_name="Editor Workspace",
+                client=editor_client,
+            )
+            asyncio.run(
+                self._add_membership(
+                    str(owner["workspace"]["id"]),
+                    str(editor_auth["user"]["id"]),
+                    role="editor",
+                    publication_permission="approval_required",
+                )
+            )
+            project, _, content, _ = self.create_content_with_master(owner)
+            generated = editor_client.post(
+                f"/api/v1/content-items/{content['id']}/generate-variants",
+                headers=self.csrf_headers(editor_auth),
+                json={"platform_keys": ["manual_export", "generic_webhook"]},
+            )
+            self.assertEqual(generated.status_code, 200, generated.text)
+            variants = {variant["platform_key"]: variant for variant in generated.json()["variants"]}
+
+            editor_approve = editor_client.post(
+                f"/api/v1/platform-variants/{variants['generic_webhook']['id']}/approve",
+                headers=self.csrf_headers(editor_auth),
+            )
+            self.assertEqual(editor_approve.status_code, 403, editor_approve.text)
+
+            manual_variant = self.approve_variant(owner, variants["manual_export"]["id"])
+            webhook_variant = self.approve_variant(owner, variants["generic_webhook"]["id"])
+            manual_destination = self.create_destination(
+                owner,
+                project["id"],
+                "Manual for editor",
+                "manual_export",
+                "manual_export",
+                {},
+            )
+            webhook_destination = self.create_destination(
+                owner,
+                project["id"],
+                "Webhook for owner",
+                "generic_webhook",
+                "generic_webhook",
+                {"endpoint_url": "https://example.com/webhook", "simulate_status": 202},
+            )
+            editor_live_destination = editor_client.post(
+                f"/api/v1/projects/{project['id']}/destinations",
+                headers=self.csrf_headers(editor_auth),
+                json={
+                    "name": "Editor live webhook",
+                    "platform_key": "generic_webhook",
+                    "connector_key": "generic_webhook",
+                    "configuration": {
+                        "endpoint_url": "https://example.com/live",
+                        "delivery_mode": "allowlisted_live",
+                        "endpoint_challenge_verified": True,
+                        "allowlist_id": "staging-example",
+                    },
+                },
+            )
+            self.assertEqual(editor_live_destination.status_code, 422, editor_live_destination.text)
+            self.assertEqual(
+                editor_live_destination.json()["error"]["code"],
+                "webhook_live_requires_owner_admin",
+            )
+            owner_unverified_live = self.client.post(
+                f"/api/v1/projects/{project['id']}/destinations",
+                headers=self.csrf_headers(owner),
+                json={
+                    "name": "Owner unverified live webhook",
+                    "platform_key": "generic_webhook",
+                    "connector_key": "generic_webhook",
+                    "configuration": {
+                        "endpoint_url": "https://example.com/live",
+                        "delivery_mode": "allowlisted_live",
+                        "allowlist_id": "staging-example",
+                    },
+                },
+            )
+            self.assertEqual(owner_unverified_live.status_code, 422, owner_unverified_live.text)
+            self.assertEqual(
+                owner_unverified_live.json()["error"]["code"],
+                "webhook_challenge_required",
+            )
+
+            manual_publication = editor_client.post(
+                f"/api/v1/platform-variants/{manual_variant['id']}/publications",
+                headers=self.csrf_headers(editor_auth),
+                json={"destination_id": manual_destination["id"], "idempotency_key": "editor-manual"},
+            )
+            self.assertEqual(manual_publication.status_code, 200, manual_publication.text)
+            manual_export = editor_client.post(
+                f"/api/v1/publications/{manual_publication.json()['id']}/publish-now",
+                headers=self.csrf_headers(editor_auth),
+            )
+            self.assertEqual(manual_export.status_code, 200, manual_export.text)
+            self.assertEqual(manual_export.json()["status"], "manual_required")
+
+            editor_confirm = editor_client.post(
+                f"/api/v1/publications/{manual_publication.json()['id']}/confirm-manual",
+                headers=self.csrf_headers(editor_auth),
+                json={"external_url": "https://example.com/manual"},
+            )
+            self.assertEqual(editor_confirm.status_code, 403, editor_confirm.text)
+
+            webhook_publication = editor_client.post(
+                f"/api/v1/platform-variants/{webhook_variant['id']}/publications",
+                headers=self.csrf_headers(editor_auth),
+                json={"destination_id": webhook_destination["id"], "idempotency_key": "editor-webhook"},
+            )
+            self.assertEqual(webhook_publication.status_code, 403, webhook_publication.text)
+        finally:
+            editor_client.close()

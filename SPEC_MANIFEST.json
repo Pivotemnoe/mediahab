@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T13:13:11.191959+00:00",
+  "generated_at": "2026-06-20T13:40:27.347012+00:00",
   "canonical_language": "en",
-  "file_count": 253,
+  "file_count": 254,
   "files": [
     {
       "path": ".dockerignore",
@@ -257,8 +257,8 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 10377,
-      "sha256": "d5e9ddbbec5ee9f3b21527e53ea9ffca6626b322f7fa90707a8dabdaebbc4efb"
+      "size_bytes": 10459,
+      "sha256": "454752c62f72153c63eb3fc53abe7fd7056c8ff0b13b05c4aada99f06efc6120"
     },
     {
       "path": "apps/web/src/components/ui/badge.tsx",
@@ -277,8 +277,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 246836,
-      "sha256": "dce41b87f6c194708ff1418704f3aa3d6496b2f9e7b23fa35da90adb5c805c25"
+      "size_bytes": 251072,
+      "sha256": "c23fefc07f9e9ae6986d583e05bc840466ee36ecc681e7ed80b905b7a6af3dd4"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -361,6 +361,11 @@
       "sha256": "d8bd0e0d4e87c636765c2ffad72d0e6ac2652a52a1d0f70de2129083d327649a"
     },
     {
+      "path": "database/migrations/versions/202606200007_publication_production_decisions.py",
+      "size_bytes": 1520,
+      "sha256": "77af76b21edc85e45d39c8886c0b9d5339d581caf916a6a07b001418ef088ea6"
+    },
+    {
       "path": "database/seeds/phase01_baseline.sql",
       "size_bytes": 130,
       "sha256": "5c7bb9180855bedf8c0d9b3ace35d72a4177b783a74b438c66ac58c517b69427"
@@ -377,8 +382,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 4918,
-      "sha256": "bac0519c6c31896d849a419f4ca79041d69c7cb6a25e23067b0d3a391cf23459"
+      "size_bytes": 4093,
+      "sha256": "f0864cb5230f9b7c351ae23d634c4a19a2af9654dbb384b0424bd8f4fd206ba2"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -442,8 +447,8 @@
     },
     {
       "path": "docs/adr/0013-publication-core-outbox-and-connectors.md",
-      "size_bytes": 3333,
-      "sha256": "432402d27ba8b6534f42354d8db0daf31967d16cffcc10495f6255b086dcf180"
+      "size_bytes": 6571,
+      "sha256": "7029eb1670a34bc87bb15b15318368d27413b797cca09414c89ef0645ea9eb22"
     },
     {
       "path": "docs/adr/README.md",
@@ -562,8 +567,8 @@
     },
     {
       "path": "docs/exec-plans/PHASE_06_REPORT_RU.md",
-      "size_bytes": 5085,
-      "sha256": "7f388312c7745e8469f73dc0646851b078ef454e9d8dc28ab6d33cb16f6445af"
+      "size_bytes": 6196,
+      "sha256": "672ff2acf2426eb75de9849d00f8ade956a3db7e80f328e7df235fe95906dfc4"
     },
     {
       "path": "docs/exec-plans/README.md",
@@ -662,8 +667,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 246836,
-      "sha256": "dce41b87f6c194708ff1418704f3aa3d6496b2f9e7b23fa35da90adb5c805c25"
+      "size_bytes": 251072,
+      "sha256": "c23fefc07f9e9ae6986d583e05bc840466ee36ecc681e7ed80b905b7a6af3dd4"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -867,8 +872,8 @@
     },
     {
       "path": "reference/OPEN_QUESTIONS.md",
-      "size_bytes": 4918,
-      "sha256": "bac0519c6c31896d849a419f4ca79041d69c7cb6a25e23067b0d3a391cf23459"
+      "size_bytes": 4093,
+      "sha256": "f0864cb5230f9b7c351ae23d634c4a19a2af9654dbb384b0424bd8f4fd206ba2"
     },
     {
       "path": "requirements-dev.txt",
@@ -972,8 +977,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/health.py",
-      "size_bytes": 601,
-      "sha256": "e925add40e2e2815c1205b76440873c3c6835530489942bc56eb2d6a22502e1a"
+      "size_bytes": 613,
+      "sha256": "04c09199c74d2028f63694df81d8cba8ff55f23a713454ca447d802235da904a"
     },
     {
       "path": "services/api/app/api/v1/routes/me.py",
@@ -987,8 +992,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/publications.py",
-      "size_bytes": 30441,
-      "sha256": "d549e3b23da04d20cc74396f07b21df948234d3dd5783d8007e8adc08a123908"
+      "size_bytes": 33655,
+      "sha256": "6f00340060f3d0c2fd448eaf7375f0df276c7b11d54154b35befd1db8f473ca9"
     },
     {
       "path": "services/api/app/api/v1/routes/workspaces.py",
@@ -1017,8 +1022,8 @@
     },
     {
       "path": "services/api/app/db/base.py",
-      "size_bytes": 55668,
-      "sha256": "82c209d0549df242ac985af24a874153e902f1ff5bbaefb560112fb01b317cc9"
+      "size_bytes": 56105,
+      "sha256": "ba0bd5ba930975ed1f44fb51f74af3f2ec479ac2cc1180086e391fa506c29fd1"
     },
     {
       "path": "services/api/app/db/session.py",
@@ -1127,13 +1132,13 @@
     },
     {
       "path": "services/api/app/modules/publications/connectors.py",
-      "size_bytes": 11095,
-      "sha256": "a5118252b31af7f49951ec201c0d409e24475ba98e6da088f71c6b8690a23dcc"
+      "size_bytes": 13360,
+      "sha256": "565f630c6239a7b3e23e665fff1f01240b13d29ebcdcbbfb17b1f7d01e514374"
     },
     {
       "path": "services/api/app/modules/publications/service.py",
-      "size_bytes": 28563,
-      "sha256": "aab7468248b358afc50d97f95e8865ef1e9609ea5c0efcad2c41fc1792759d2b"
+      "size_bytes": 31352,
+      "sha256": "48e033609433e06a777f93541dc22a733828147870f14b7b2cf8943b99759838"
     },
     {
       "path": "services/api/app/modules/shared/__init__.py",
@@ -1187,8 +1192,8 @@
     },
     {
       "path": "services/api/tests/test_publication_core.py",
-      "size_bytes": 15332,
-      "sha256": "3fc7b03d28916072874e1e522e4947f5a491501cbcab161a11b08e2ae58db9ce"
+      "size_bytes": 22742,
+      "sha256": "28d448fda1864fc81452a1955c44f5bcc17e9431570b5d025abed72aa6b8eb6a"
     },
     {
       "path": "services/worker/app/__init__.py",
@@ -1242,8 +1247,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 4220,
-      "sha256": "d66360bbdaf70d5b6ad393eb445ff100caaca400cd914f821864f918843257fb"
+      "size_bytes": 4284,
+      "sha256": "9a8f6c2e15ca506fe50af194909517fede8f08cf311cfae621bf439e9f33c156"
     },
     {
       "path": "tools/export_openapi.py",
