@@ -18,6 +18,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  operationStates,
+  publicationAttempts,
+  publicationQueue,
+  schedulePosture,
+} from "@/features/publication-ops/publication-ops-fixtures";
 
 const variants = [
   ["Telegram", "32 768", "rich_message", "tg-collage + текст"],
@@ -25,26 +31,6 @@ const variants = [
   ["Instagram", "2 200", "instagram_media", "caption + media package"],
   ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
   ["Generic webhook", "100 000", "готов", "HTTPS + подпись"],
-];
-
-const publicationRows = [
-  ["published", "Telegram Rich Message", "контракт отправки собран, live evidence pending", "success"],
-  ["failed_retryable", "MAX Message", "attachment.not.ready, retry запланирован", "warning"],
-  ["manual_required", "Instagram Media", "Meta readiness не подтверждена, пакет готов", "warning"],
-  ["manual_required", "Ручной экспорт", "пакет готов, ждёт подтверждения", "warning"],
-  ["published", "Generic webhook", "ответ 202", "success"],
-  ["failed_retryable", "Generic webhook", "ответ 503", "warning"],
-  ["scheduled", "Отложенная публикация", "outbox ждёт время", "neutral"],
-  ["cancelled", "Отмена", "pending job закрыт", "danger"],
-];
-
-const attempts = [
-  ["#1", "telegram_rich_message", "published", "sendRichMessage"],
-  ["#1", "max_message", "failed_retryable", "attachment.not.ready"],
-  ["#1", "instagram_media", "manual_required", "container-plan"],
-  ["#1", "generic_webhook", "failed_retryable", "503"],
-  ["#2", "generic_webhook", "published", "202"],
-  ["#1", "manual_export", "manual_required", "пакет"],
 ];
 
 function PublicationHeader() {
@@ -58,8 +44,8 @@ function PublicationHeader() {
           </Link>
         </Button>
       }
-      description="Варианты, approval, Telegram Rich Message, MAX, Instagram, ручной экспорт, generic webhook, попытки и outbox."
-      eyebrow="Этап 09"
+      description="Очередь публикаций, partial success, retry/cancel, schedule posture и ручной экспорт."
+      eyebrow="UI Phase 07"
       title="Публикации"
     />
   );
@@ -93,6 +79,21 @@ export function PublicationCoreShell() {
             </Button>
           </div>
         </div>
+
+        <Card className="grid gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <TriangleAlert size={18} className="text-warning" />
+            Операционные состояния
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {operationStates.map(([state, text]) => (
+              <div className="rounded-md border border-border bg-surface-muted p-3" key={state}>
+                <div className="text-sm font-medium text-foreground">{state}</div>
+                <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <Card className="grid gap-3">
@@ -158,7 +159,7 @@ export function PublicationCoreShell() {
               </div>
               <CalendarClock size={18} className="text-accent" />
             </div>
-            {publicationRows.map(([status, destination, note, tone]) => (
+            {publicationQueue.map(([destination, status, note, tone]) => (
               <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-line p-3" key={`${status}-${destination}`}>
                 <div>
                   <div className="text-sm font-medium text-ink">{destination}</div>
@@ -167,6 +168,20 @@ export function PublicationCoreShell() {
                 <Badge tone={tone as "success" | "warning" | "danger" | "neutral"}>{status}</Badge>
               </div>
             ))}
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" type="button" variant="secondary">
+                <RotateCcw size={14} />
+                Retry failed
+              </Button>
+              <Button size="sm" type="button" variant="secondary">
+                <CalendarClock size={14} />
+                Schedule
+              </Button>
+              <Button size="sm" type="button" variant="ghost">
+                <TriangleAlert size={14} />
+                Cancel pending
+              </Button>
+            </div>
           </Card>
 
           <Card className="grid content-start gap-3">
@@ -188,6 +203,13 @@ export function PublicationCoreShell() {
                 <span>Ошибка одной площадки не блокирует остальные.</span>
               </div>
             </div>
+            <div className="rounded-md border border-line p-3 text-sm text-muted">
+              <div className="font-medium text-ink">Schedule posture</div>
+              <div className="mt-1">
+                {schedulePosture.date} {schedulePosture.time} · {schedulePosture.timezone}
+              </div>
+              <div className="mt-1">Retry cadence: {schedulePosture.retry}</div>
+            </div>
           </Card>
         </div>
 
@@ -197,12 +219,12 @@ export function PublicationCoreShell() {
               <History size={18} className="text-accent" />
               <h2 className="text-lg font-semibold">Попытки</h2>
             </div>
-            {attempts.map(([number, connector, status, result]) => (
+            {publicationAttempts.map(([number, connector, status, result, latency]) => (
               <div className="grid grid-cols-[56px_1fr_auto] items-center gap-3 rounded-md border border-line p-3 text-sm" key={`${number}-${connector}-${status}`}>
                 <Badge>{number}</Badge>
                 <div>
                   <div className="font-medium text-ink">{connector}</div>
-                  <div className="mt-1 text-muted">Результат: {result}</div>
+                  <div className="mt-1 text-muted">Результат: {result} · {latency}</div>
                 </div>
                 <Badge tone={status === "published" || status === "manual_required" ? "success" : "warning"}>
                   {status}

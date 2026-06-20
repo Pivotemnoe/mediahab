@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:14:22.772143+00:00",
+  "generated_at": "2026-06-20T18:22:11.983137+00:00",
   "canonical_language": "en",
-  "file_count": 348,
+  "file_count": 351,
   "files": [
     {
       "path": ".dockerignore",
@@ -122,8 +122,8 @@
     },
     {
       "path": "apps/web/src/app/app/integrations/page.tsx",
-      "size_bytes": 2643,
-      "sha256": "a9915069de9de06c82cab49eed40e39399d76944406d618c41ef6a23fc4397a7"
+      "size_bytes": 3641,
+      "sha256": "7dfe796cb505a8aa9aea7e332af797c277628b14e2a09772e56f5c1897faf400"
     },
     {
       "path": "apps/web/src/app/app/layout.tsx",
@@ -322,8 +322,8 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 11464,
-      "sha256": "bfe24f008d622c7b0105baecc43c7431f145c123eb4f3a62c523ca918cbb53eb"
+      "size_bytes": 12094,
+      "sha256": "ffc7e7715b33e8cb0915487ce7ddbb6de414043302609cc95055b4b2b3f83f80"
     },
     {
       "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
@@ -389,6 +389,11 @@
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
       "size_bytes": 1624,
       "sha256": "7251a168311c500e641e57bb57f5dbba59642e60f428ed778a5e57a868cef968"
+    },
+    {
+      "path": "apps/web/src/features/publication-ops/publication-ops-fixtures.ts",
+      "size_bytes": 2308,
+      "sha256": "b884238b7c8d3d0ca25e57cebb28135995d27576b10a118cfb7967829d5ef8c6"
     },
     {
       "path": "apps/web/src/features/rubric-builder/rubric-builder-fixtures.ts",
@@ -989,6 +994,16 @@
       "path": "docs/exec-plans/UI_PHASE_06_REPORT_RU.md",
       "size_bytes": 3282,
       "sha256": "ae21ac4dcc174d81353e3ada6b481b3f38a3ae4bc4f9302fc4ac2620f7f50237"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_07_INTEGRATIONS_PUBLICATIONS.md",
+      "size_bytes": 2963,
+      "sha256": "cc5bd92b1c5224932ac0fda7171d3bad0f92dc3413872790b19173883005cb94"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_07_REPORT_RU.md",
+      "size_bytes": 3709,
+      "sha256": "f1cb52f6345d5a6450e3d6ecd7a95f5aaa56e38af43520391a0d313218c6e32d"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
