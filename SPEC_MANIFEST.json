@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T17:46:56.390926+00:00",
+  "generated_at": "2026-06-20T18:03:28.781844+00:00",
   "canonical_language": "en",
-  "file_count": 339,
+  "file_count": 342,
   "files": [
     {
       "path": ".dockerignore",
@@ -307,8 +307,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 16828,
-      "sha256": "c605c67bc4f9cf5deec695c565a01a888003e19cdfc504f6a97aedcfe109840d"
+      "size_bytes": 26266,
+      "sha256": "0582d4e2f6baa3303de7448eab60215c5bb4f481fb666a1460182d80dc0965c3"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
@@ -379,6 +379,11 @@
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
       "size_bytes": 1624,
       "sha256": "7251a168311c500e641e57bb57f5dbba59642e60f428ed778a5e57a868cef968"
+    },
+    {
+      "path": "apps/web/src/features/rubric-builder/rubric-builder-fixtures.ts",
+      "size_bytes": 3183,
+      "sha256": "f3d06c2acc23022d63abf5c91238e584c6364323afe5c5ac03af78693141ded7"
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
@@ -944,6 +949,16 @@
       "path": "docs/exec-plans/UI_PHASE_03_REPORT_RU.md",
       "size_bytes": 3392,
       "sha256": "40bd9ec533a3ef053021985a223127e9e05c2208543172f2106c3876bd3c8595"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_04_REPORT_RU.md",
+      "size_bytes": 3855,
+      "sha256": "fd1a02d54275c30beaebda2e4c92a5328084be266c2d8563af1a38382d66588e"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_04_RUBRIC_BUILDER.md",
+      "size_bytes": 2810,
+      "sha256": "52660edb0d4ed533ef1c0f7b6179c9173ac1cb0a9fd730c6a55edbd43c9c3dd9"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

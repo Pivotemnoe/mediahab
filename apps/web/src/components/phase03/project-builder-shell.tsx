@@ -3,14 +3,24 @@ import {
   ArrowLeft,
   Blocks,
   BookOpenCheck,
+  Braces,
   CheckCircle2,
   ClipboardCheck,
   CopyPlus,
+  Eye,
   FileJson,
   FolderPlus,
+  GripVertical,
+  ListChecks,
   MessageSquare,
+  PanelRight,
   Pencil,
+  Plus,
   RadioTower,
+  Repeat2,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Trash2,
   Upload,
@@ -23,6 +33,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  fieldPalette,
+  platformStrategies,
+  previewBlocks,
+  repeatableGroups,
+  rubricFields,
+  rubricList,
+  styleRules,
+} from "@/features/rubric-builder/rubric-builder-fixtures";
 import {
   exampleImports,
   platformOptions,
@@ -330,62 +349,241 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
 }
 
 export function RubricBuilderShell({ projectId }: { projectId: string }) {
-  const palette = [
-    "Короткий текст",
-    "Длинный текст",
-    "Цена",
-    "Оценка",
-    "Медиа",
-    "Повторяемый блок",
-    "Произвольный блок",
-  ];
-  const fields = ["название_места", "атмосфера", "блюда[]", "вывод", "медиа[]"];
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Конструктор рубрик" />
-      <section className="grid gap-4">
-        <div>
-          <Badge>Проект {projectId}</Badge>
-          <h1 className="mt-3 text-3xl font-semibold text-ink">
-            Палитра полей, canvas формы и инспектор настроек
-          </h1>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-[240px_1fr_280px]">
-          <Card className="grid content-start gap-2">
-            <div className="text-sm font-semibold">Палитра полей</div>
-            {palette.map((item) => (
-              <button
-                className="h-9 rounded-md border border-line px-3 text-left text-sm hover:bg-surface"
-                key={item}
-              >
-                {item}
-              </button>
-            ))}
-          </Card>
-          <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Полотно формы</div>
-            {fields.map((field) => (
-              <div className="rounded-md border border-line p-3" key={field}>
-                <div className="text-sm font-medium">{field}</div>
-                <div className="mt-1 text-sm text-muted">
-                  Порядок, обязательность, источник и блокировка сохраняются в JSON Schema.
-                </div>
-              </div>
-            ))}
-          </Card>
-          <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Инспектор настроек</div>
-            {["Обязательное поле", "Факт заблокирован", "Генерируется ИИ", "Мин/макс элементов", "Редакционные лимиты"].map((item) => (
-              <label className="flex items-center gap-2 text-sm" key={item}>
-                <input type="checkbox" />
-                {item}
-              </label>
-            ))}
-            <Button type="button">
-              <WandSparkles size={16} />
-              Сохранить новую версию
+      <section className="grid min-w-0 gap-5">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 max-w-full">
+            <Badge>Проект {projectId}</Badge>
+            <h1 className="mt-3 break-words text-2xl font-semibold text-foreground sm:text-3xl">
+              Рубрики, поля и версии формы
+            </h1>
+            <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-muted">
+              Visual Builder для структуры материала: обязательность, источники,
+              блокировка фактов, повторяемые группы и платформенные стратегии.
+            </p>
+          </div>
+          <div className="flex max-w-full flex-wrap gap-2">
+            <Button type="button" variant="secondary">
+              <Eye size={16} />
+              Preview формы
             </Button>
-          </Card>
+            <Button type="button">
+              <Save size={16} />
+              Сохранить версию
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ListChecks size={18} className="text-primary" />
+                Рубрики проекта
+              </div>
+              {rubricList.map(([name, status, count, version]) => (
+                <button
+                  className="grid gap-1 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
+                  key={name}
+                  type="button"
+                >
+                  <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <span className="min-w-0 break-words font-medium text-foreground">
+                      {name}
+                    </span>
+                    <Badge
+                      className="shrink-0"
+                      tone={status === "draft" ? "warning" : "success"}
+                    >
+                      {status === "draft" ? "черновик" : "активна"}
+                    </Badge>
+                  </span>
+                  <span className="text-xs text-muted">
+                    {count} · {version}
+                  </span>
+                </button>
+              ))}
+              <Button type="button" variant="secondary">
+                <Plus size={16} />
+                Добавить рубрику
+              </Button>
+            </Card>
+
+            <Card className="grid content-start gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Braces size={18} className="text-primary" />
+                Палитра полей
+              </div>
+              {fieldPalette.map(([title, text]) => (
+                <button
+                  className="grid gap-1 rounded-md border border-border px-3 py-2 text-left text-sm transition hover:bg-surface-muted"
+                  key={title}
+                  type="button"
+                >
+                  <span className="font-medium text-foreground">{title}</span>
+                  <span className="text-xs leading-5 text-muted">{text}</span>
+                </button>
+              ))}
+            </Card>
+          </div>
+
+          <div className="grid min-w-0 gap-4">
+            <Card className="grid gap-4">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Badge tone="warning">draft · v9</Badge>
+                  <h2 className="mt-3 break-words text-xl font-semibold text-foreground">
+                    Обзор недели
+                  </h2>
+                  <p className="mt-2 break-words text-sm leading-6 text-muted">
+                    Редактирование создаст новую версию. Старые материалы
+                    останутся привязаны к своей исторической версии рубрики.
+                  </p>
+                </div>
+                <Button type="button" variant="secondary">
+                  <WandSparkles size={16} />
+                  Тестовая генерация
+                </Button>
+              </div>
+
+              <div className="grid gap-3">
+                {rubricFields.map((field, index) => (
+                  <div
+                    className="grid gap-3 rounded-md border border-border p-3"
+                    key={field.key}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex min-w-0 gap-3">
+                        <GripVertical className="mt-0.5 shrink-0 text-muted" size={18} />
+                        <div className="min-w-0">
+                          <div className="break-words text-sm font-medium text-foreground">
+                            {index + 1}. {field.label}
+                          </div>
+                          <p className="mt-1 break-words text-xs leading-5 text-muted">
+                            {field.helper}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge tone={field.required ? "success" : "neutral"}>
+                          {field.required ? "обязательное" : "опционально"}
+                        </Badge>
+                        <Badge tone={field.locked ? "success" : "warning"}>
+                          {field.locked ? "lock" : "draft"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="grid min-w-0 gap-2 text-xs text-muted sm:grid-cols-3">
+                      <span className="break-words">key: {field.key}</span>
+                      <span className="break-words">источник: {field.source}</span>
+                      <span className="break-words">лимит: {field.limit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Repeat2 size={18} className="text-primary" />
+                Повторяемые группы
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {repeatableGroups.map(([name, min, max, fields]) => (
+                  <div className="rounded-md border border-border p-3" key={name}>
+                    <div className="break-words text-sm font-medium text-foreground">{name}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge>{min}</Badge>
+                      <Badge>{max}</Badge>
+                    </div>
+                    <p className="mt-2 break-words text-xs leading-5 text-muted">{fields}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <PanelRight size={18} className="text-primary" />
+                Инспектор поля
+              </div>
+              {[
+                ["label", "Атмосфера и сервис"],
+                ["source", "пользователь + голос"],
+                ["prompt", "Опишите посадку, музыку и скорость подачи"],
+              ].map(([label, value]) => (
+                <label className="grid gap-1.5 text-sm" key={label}>
+                  <span className="font-medium text-foreground">{label}</span>
+                  <input
+                    className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+                    defaultValue={value}
+                  />
+                </label>
+              ))}
+              <div className="grid gap-2">
+                {["Обязательное поле", "Факт блокируется", "AI может предлагать правку"].map((item) => (
+                  <label className="flex min-w-0 items-center gap-2 text-sm text-foreground" key={item}>
+                    <input defaultChecked={item !== "AI может предлагать правку"} type="checkbox" />
+                    <span className="min-w-0 break-words">{item}</span>
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <SlidersHorizontal size={18} className="text-primary" />
+                Площадки и лимиты
+              </div>
+              {platformStrategies.map(([platform, mode, note]) => (
+                <div className="rounded-md border border-border p-3" key={platform}>
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <div className="break-words text-sm font-medium text-foreground">{platform}</div>
+                    <Badge className="shrink-0" tone="info">{mode}</Badge>
+                  </div>
+                  <div className="mt-1 break-words text-xs leading-5 text-muted">{note}</div>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ShieldCheck size={18} className="text-primary" />
+                Правила стиля
+              </div>
+              {styleRules.map((rule) => (
+                <div className="flex min-w-0 gap-2 text-sm leading-6 text-muted" key={rule}>
+                  <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
+                  <span>{rule}</span>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Eye size={18} className="text-primary" />
+                Preview мобильной формы
+              </div>
+              {previewBlocks.map(([index, name, note]) => (
+                <div
+                  className="grid grid-cols-[28px_1fr] gap-2 rounded-md border border-border p-2"
+                  key={index}
+                >
+                  <span className="grid size-7 place-items-center rounded bg-surface-muted text-xs font-medium text-muted">
+                    {index}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{name}</span>
+                    <span className="block text-xs text-muted">{note}</span>
+                  </span>
+                </div>
+              ))}
+            </Card>
+          </div>
         </div>
       </section>
     </div>
