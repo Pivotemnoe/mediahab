@@ -1,7 +1,7 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T10:51:27.230324+00:00",
+  "generated_at": "2026-06-20T11:09:47.873720+00:00",
   "canonical_language": "en",
   "file_count": 215,
   "files": [
@@ -62,18 +62,18 @@
     },
     {
       "path": "apps/web/public/manifest.webmanifest",
-      "size_bytes": 191,
-      "sha256": "1064f548b4ca8f366944ce974fa1a38398788a76f63ca1c503071248d0867e99"
+      "size_bytes": 199,
+      "sha256": "5dee4916d7f97254e2900335968e2cc1fdb38d12fa89ea99de3816cee0bf1848"
     },
     {
       "path": "apps/web/src/app/app/account/page.tsx",
-      "size_bytes": 570,
-      "sha256": "75465b2e68de4c39a6014b9513c54f3031a87b1f325861402e8d1524da15de40"
+      "size_bytes": 788,
+      "sha256": "265c1bf8277b94dbfea5260e7764f1cc6ab3ab5477df564b72d52caf751ea407"
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
-      "size_bytes": 600,
-      "sha256": "c337fa35ba067a02d0552b0404b0beb7fdc2477aa745c4ede6e5544c4118e830"
+      "size_bytes": 817,
+      "sha256": "999b622d969e1eab31dac15cf14168843566360c8e8ea9444df90cbd18e00103"
     },
     {
       "path": "apps/web/src/app/app/dashboard/page.tsx",
@@ -82,8 +82,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 6166,
-      "sha256": "8e2113a804a01844bd042e78fdb5ee30fab2cf56386d2b8d688c5087e5e9c20c"
+      "size_bytes": 6832,
+      "sha256": "e2ad156cbc03bae1873729419df8fecaf34f3a65cf7e03c8a599c0af02ac0f62"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -112,23 +112,23 @@
     },
     {
       "path": "apps/web/src/app/app/workspace/page.tsx",
-      "size_bytes": 609,
-      "sha256": "5e301e6194de57f675c092d796d014051bc39d4d70cf386c6ddf29b6e6d31564"
+      "size_bytes": 834,
+      "sha256": "a328f94ff9328b30d8a7e4b3930a8a42d6057b5fb6a3ccdee12c082b31dd86ea"
     },
     {
       "path": "apps/web/src/app/contacts/page.tsx",
-      "size_bytes": 888,
-      "sha256": "eaf377837d03abbf6fb04383fed66a33045f7f00514b948b3e12c976a5181d3b"
+      "size_bytes": 943,
+      "sha256": "5357e305a76ca8058e1181027ffd253be5ca9b74df3152570472e6ab7f6b0dc1"
     },
     {
       "path": "apps/web/src/app/features/page.tsx",
-      "size_bytes": 866,
-      "sha256": "9c7115bece7fd1fdd6b6769c4b9355282ff4c956b446d1eda8eff7531ac14740"
+      "size_bytes": 1019,
+      "sha256": "2630d3c5e0cdabbc8cb956dbef6f5d509d09a2b1a408f335b7f6781d3867662a"
     },
     {
       "path": "apps/web/src/app/forgot-password/page.tsx",
-      "size_bytes": 515,
-      "sha256": "0a725e7c1f0a33b32f72cfd1b986726f0ebc93661d7fccccb70c6e5a804e002a"
+      "size_bytes": 576,
+      "sha256": "8de6b6acd568fca1e418e7c7e6f4f02792f83d10f8987049c5493d2011539c56"
     },
     {
       "path": "apps/web/src/app/globals.css",
@@ -142,58 +142,58 @@
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
-      "size_bytes": 553,
-      "sha256": "064a3884dce824c097c2ce05308188f1d12d62e240e72e302d02265e5807cf53"
+      "size_bytes": 645,
+      "sha256": "9fcfc7e52372f110d6e4ba4192b8b66560f39c2dbe7a4ed1570d362770611b72"
     },
     {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 929,
-      "sha256": "c40e499819b06621b6613825ecbd7ecb9c8bd99dca295636aeac78a3c52348a5"
+      "size_bytes": 1149,
+      "sha256": "d043d82a0ba45b96f3d07ef81b14f455370eae992d2a4f58681ab171fc01ab28"
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
-      "size_bytes": 960,
-      "sha256": "5e0e471648adcbae8b38b472c1a8369c8b2709bf8c269002304c3a4f941f9c9f"
+      "size_bytes": 1051,
+      "sha256": "216a9c5920b8e6a52582f3240ea05b036d0f6de4c04538896eb9ae6878203417"
     },
     {
       "path": "apps/web/src/app/privacy/page.tsx",
-      "size_bytes": 753,
-      "sha256": "95988b3d4558456727ab0643357cb9aece3f964493bba37d8fb0bf1c9b277297"
+      "size_bytes": 960,
+      "sha256": "7ea73968aef54d47d5c570db6cc015b22b6afc55ab845ff043359300af46c7b3"
     },
     {
       "path": "apps/web/src/app/register/page.tsx",
-      "size_bytes": 544,
-      "sha256": "129e827904c32b6f1ed62b983efa0b50fac4b83c0b7a884bcc2ed5584e2c1ebb"
+      "size_bytes": 687,
+      "sha256": "2e78edff46bc21c2b88bcb81d5807d97d9eecd2ec90031a7308168fbed08f1c7"
     },
     {
       "path": "apps/web/src/app/reset-password/page.tsx",
-      "size_bytes": 483,
-      "sha256": "95c2c01e0f891c7e63e55c86dec4f2581bdd4690d1aa2d6b696a69be85eda300"
+      "size_bytes": 519,
+      "sha256": "ac85904b12924703afface63aea755e2c249592de286a09ea1bdd0b10875d171"
     },
     {
       "path": "apps/web/src/app/security/page.tsx",
-      "size_bytes": 768,
-      "sha256": "0355a50e3775829c3ce91b49361b037a40832c635d4284edd9b4fffb82d9ef41"
+      "size_bytes": 898,
+      "sha256": "0f7df365f310358c6d50d6fd14e96d250d789d398b910c8ff91218dbbff96828"
     },
     {
       "path": "apps/web/src/app/terms/page.tsx",
-      "size_bytes": 848,
-      "sha256": "1056da0a0b3e1a5f6f8b667dd0f306598a6710590c1694804a583b53765c5cb6"
+      "size_bytes": 901,
+      "sha256": "04e4f0fd398198112564164a62fb19f482ff0a1100a2593ea0ebb28072b7838d"
     },
     {
       "path": "apps/web/src/app/verify-email/page.tsx",
-      "size_bytes": 504,
-      "sha256": "0011e4885e1abf0b2382da8cf8ffc5e3c832a57151e9ac4cecd80c539ceffa11"
+      "size_bytes": 595,
+      "sha256": "1cdb20c8bb591bfe8a655514b4589b8b247871c912efe29889c848fe4b5bc939"
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
-      "size_bytes": 2037,
-      "sha256": "3488872013213ebd95589ab8b0edc4827b69f8143cddb99eb496a7485787fb2a"
+      "size_bytes": 2040,
+      "sha256": "0c4c86fe84cdbf44699decd01077972c165002a90d2e9fad1e7a6386d94f0667"
     },
     {
       "path": "apps/web/src/components/phase02/cabinet-page.tsx",
-      "size_bytes": 2293,
-      "sha256": "6f081529a3161ff9e4879bdd5d1cce971fbec20226b683d45b0e508b6d48d2a1"
+      "size_bytes": 2314,
+      "sha256": "9f6a779fda23a6a081e9a42f8a555f57213ed60f1df637890f0ed9bba5c37bbf"
     },
     {
       "path": "apps/web/src/components/phase02/public-page.tsx",
@@ -202,8 +202,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 10223,
-      "sha256": "048e7f54371157108faa377e64dce4480eb9ceec7fa292c97f6034cccb714ea4"
+      "size_bytes": 11590,
+      "sha256": "3a6fb68bf8413610024f4666616a2ba8ea3972069d502f8a5dbbd08a6a042791"
     },
     {
       "path": "apps/web/src/components/ui/badge.tsx",

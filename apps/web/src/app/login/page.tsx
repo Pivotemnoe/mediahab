@@ -4,8 +4,8 @@ export default function LoginPage() {
   return (
     <AuthPage
       title="Вход"
-      description="Backend уже принимает email/password login и выдаёт отзывную cookie-сессию. Подключение живой формы будет следующим frontend шагом."
-      fields={["Email", "Password"]}
+      description="Сервер уже принимает вход по электронной почте и паролю и выдаёт отзывную cookie-сессию. Подключение живой формы будет следующим шагом интерфейса."
+      fields={["Электронная почта", "Пароль"]}
       submitLabel="Войти"
       secondaryHref="/forgot-password"
       secondaryLabel="Восстановить пароль"

@@ -3,12 +3,12 @@ import { CabinetPage } from "@/components/phase02/cabinet-page";
 export default function WorkspacePage() {
   return (
     <CabinetPage
-      title="Workspace"
-      description="Workspace boundary и роли уже есть в API. Контентные сущности появятся только после этого слоя."
+      title="Рабочее пространство"
+      description="Граница рабочего пространства и роли уже есть в API. Контентные сущности появятся только после этого слоя."
       rows={[
-        ["Roles", "owner, admin, editor, viewer."],
-        ["Tenant isolation", "Чужой workspace ID возвращает 404."],
-        ["Members", "Минимальный invitation endpoint проверяет team.seats.max."],
+        ["Роли", "Владелец, администратор, редактор и наблюдатель."],
+        ["Изоляция данных", "Чужой ID рабочего пространства возвращает 404."],
+        ["Участники", "Минимальный маршрут приглашений проверяет лимит мест команды."],
       ]}
     />
   );

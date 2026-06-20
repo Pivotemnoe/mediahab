@@ -3,12 +3,12 @@ import { CabinetPage } from "@/components/phase02/cabinet-page";
 export default function BillingPage() {
   return (
     <CabinetPage
-      title="Billing"
-      description="Mock billing нужен для backend entitlement checks. Реальная оплата в Phase 02 не подключается."
+      title="Тариф"
+      description="Биллинг-заглушка нужен для серверной проверки лимитов. Реальная оплата на этапе 02 не подключается."
       rows={[
-        ["Plans", "Free, Start, Pro, Business seeded as editable records."],
-        ["Checkout", "Mock checkout: pending_manual_contact, payment_captured=false."],
-        ["Usage", "Usage events и entitlement values доступны через API."],
+        ["Тарифы", "Free, Start, Pro и Business загружены как редактируемые записи."],
+        ["Оплата", "Оплата-заглушка создаёт состояние ожидания ручного контакта без списания."],
+        ["Расход", "События расхода и значения лимитов доступны через API."],
       ]}
     />
   );

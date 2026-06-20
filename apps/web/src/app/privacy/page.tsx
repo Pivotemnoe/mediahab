@@ -3,16 +3,16 @@ import { PublicPage } from "@/components/phase02/public-page";
 export default function PrivacyPage() {
   return (
     <PublicPage
-      eyebrow="Privacy"
+      eyebrow="Данные"
       title="Политика данных будет финализирована перед запуском"
-      description="Маршрут создан заранее, потому что продукт хранит workspace data, media, provider credentials и audit trail."
+      description="Маршрут создан заранее, потому что продукт хранит данные рабочих пространств, медиа, ключи провайдеров и журнал аудита."
       items={[
-        "Secrets не должны попадать в browser storage.",
-        "Connector tokens будут шифроваться на backend.",
-        "Workspace export/deletion идёт в hardening scope.",
+        "Секреты не должны попадать в хранилище браузера.",
+        "Токены коннекторов будут шифроваться на сервере.",
+        "Экспорт и удаление рабочего пространства входят в фазу усиления.",
       ]}
       primaryHref="/security"
-      primaryLabel="Security"
+      primaryLabel="Безопасность"
     />
   );
 }

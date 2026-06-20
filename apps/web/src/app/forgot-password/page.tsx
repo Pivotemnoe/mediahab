@@ -4,9 +4,9 @@ export default function ForgotPasswordPage() {
   return (
     <AuthPage
       title="Восстановление пароля"
-      description="API возвращает безопасный одинаковый ответ и не раскрывает, существует ли email."
-      fields={["Email"]}
-      submitLabel="Запросить reset"
+      description="API возвращает безопасный одинаковый ответ и не раскрывает, существует ли электронная почта."
+      fields={["Электронная почта"]}
+      submitLabel="Запросить сброс"
       secondaryHref="/login"
       secondaryLabel="Вспомнил пароль"
     />

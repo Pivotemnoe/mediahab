@@ -27,7 +27,7 @@ export function AuthPage({
       <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-6 px-4 py-8 lg:grid-cols-[1fr_420px]">
         <section>
           <Badge className="w-fit" tone="success">
-            Phase 02
+            Этап 02
           </Badge>
           <h1 className="mt-5 max-w-2xl text-4xl font-semibold tracking-normal text-ink">
             {title}

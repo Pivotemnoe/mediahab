@@ -15,40 +15,40 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const projectSteps = [
-  "Identity",
-  "Audience",
-  "Voice",
-  "Platforms",
-  "Examples",
-  "Rubrics",
+  "Идентичность",
+  "Аудитория",
+  "Голос",
+  "Площадки",
+  "Примеры",
+  "Рубрики",
 ];
 
 const projectEntryPoints: Array<[string, string, LucideIcon]> = [
-  ["From scratch", "Create a reusable project without preset data.", FolderPlus],
-  ["From preset", "Import a supported preset idempotently.", CopyPlus],
-  ["Import package", "Validate project/rubric JSON before activation.", FileJson],
+  ["С нуля", "Создать переиспользуемый проект без данных пресета.", FolderPlus],
+  ["Из пресета", "Идемпотентно импортировать поддерживаемый пресет.", CopyPlus],
+  ["Импорт пакета", "Проверить JSON проекта и рубрик перед активацией.", FileJson],
 ];
 
 export function ProjectIndexShell() {
   return (
     <main className="min-h-screen bg-surface">
-      <BuilderHeader title="Projects" />
+      <BuilderHeader title="Проекты" />
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge tone="success">Phase 03</Badge>
+            <Badge tone="success">Этап 03</Badge>
             <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
-              Project constructor
+              Конструктор проектов
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Projects are stable identities with immutable configuration
-              versions. Presets import as data, not code branches.
+              Проекты хранят стабильную идентичность и неизменяемые версии
+              настроек. Пресеты импортируются как данные, без ветвлений в коде.
             </p>
           </div>
           <Button asChild>
             <Link href="/app/projects/new">
               <FolderPlus size={16} />
-              New project
+              Новый проект
             </Link>
           </Button>
         </div>
@@ -71,7 +71,7 @@ export function ProjectIndexShell() {
 export function NewProjectShell() {
   return (
     <main className="min-h-screen bg-surface">
-      <BuilderHeader title="New project" />
+      <BuilderHeader title="Новый проект" />
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[260px_1fr]">
         <Card className="grid content-start gap-2">
           {projectSteps.map((step, index) => (
@@ -88,13 +88,13 @@ export function NewProjectShell() {
         </Card>
         <Card className="grid gap-4">
           <div>
-            <Badge>Wizard</Badge>
+            <Badge>Мастер</Badge>
             <h1 className="mt-3 text-2xl font-semibold tracking-normal text-ink">
-              Create from scratch, preset, clone, or import
+              Создание с нуля, из пресета, клона или пакета
             </h1>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {["Project name", "Slug", "Content domain", "Primary language"].map((label) => (
+            {["Название проекта", "URL-slug", "Тематика", "Основной язык"].map((label) => (
               <label className="grid gap-1 text-sm" key={label}>
                 <span className="font-medium text-ink">{label}</span>
                 <input className="h-10 rounded-md border border-line px-3 outline-none focus:border-accent" />
@@ -102,21 +102,21 @@ export function NewProjectShell() {
             ))}
           </div>
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-ink">Voice and tone</span>
+            <span className="font-medium text-ink">Голос и тон</span>
             <textarea className="min-h-28 rounded-md border border-line px-3 py-2 outline-none focus:border-accent" />
           </label>
           <div className="flex flex-wrap gap-2">
             <Button type="button">
               <FolderPlus size={16} />
-              Save draft project
+              Сохранить черновик проекта
             </Button>
             <Button type="button" variant="secondary">
               <CopyPlus size={16} />
-              Import preset
+              Импортировать пресет
             </Button>
             <Button type="button" variant="secondary">
               <FileJson size={16} />
-              Validate package
+              Проверить пакет
             </Button>
           </div>
         </Card>
@@ -128,39 +128,39 @@ export function NewProjectShell() {
 export function ProjectDetailShell({ projectId }: { projectId: string }) {
   return (
     <main className="min-h-screen bg-surface">
-      <BuilderHeader title="Project" />
+      <BuilderHeader title="Проект" />
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge>Project ID</Badge>
+            <Badge>ID проекта</Badge>
             <h1 className="mt-3 break-all text-3xl font-semibold tracking-normal text-ink">
               {projectId}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Stable identity with active configuration version.
+              Стабильная идентичность с активной версией настроек.
             </p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="secondary">
               <Link href={`/app/projects/${projectId}/builder`}>
                 <WandSparkles size={16} />
-                Builder
+                Конструктор
               </Link>
             </Button>
             <Button asChild>
               <Link href={`/app/projects/${projectId}/rubrics`}>
                 <Blocks size={16} />
-                Rubrics
+                Рубрики
               </Link>
             </Button>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {["Versions", "Rubrics", "Preset import"].map((title) => (
+          {["Версии", "Рубрики", "Импорт пресета"].map((title) => (
             <Card key={title}>
               <div className="text-sm font-semibold">{title}</div>
               <div className="mt-2 text-sm leading-6 text-muted">
-                Managed through Phase 03 API and immutable rows.
+                Управляется через API этапа 03 и неизменяемые записи версий.
               </div>
             </Card>
           ))}
@@ -173,7 +173,7 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
 export function ProjectBuilderShell({ projectId }: { projectId: string }) {
   return (
     <main className="min-h-screen bg-surface">
-      <BuilderHeader title="Project builder" />
+      <BuilderHeader title="Конструктор проекта" />
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[260px_1fr]">
         <Card className="grid content-start gap-2">
           {projectSteps.map((step) => (
@@ -186,16 +186,16 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
           ))}
         </Card>
         <Card className="grid gap-4">
-          <Badge>Versioned config</Badge>
+          <Badge>Версионируемые настройки</Badge>
           <h1 className="text-2xl font-semibold tracking-normal text-ink">
-            Builder for {projectId}
+            Конструктор проекта {projectId}
           </h1>
           <div className="grid gap-3 md:grid-cols-2">
-            {["Name", "Description", "AI mode", "Character policy"].map((label) => (
+            {["Название", "Описание", "AI-режим", "Политика знаков"].map((label) => (
               <div className="rounded-md border border-line p-3" key={label}>
                 <div className="text-sm font-medium">{label}</div>
                 <div className="mt-1 text-sm text-muted">
-                  Saved changes create a new project version.
+                  Сохранённые изменения создают новую версию проекта.
                 </div>
               </div>
             ))}
@@ -207,21 +207,29 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
 }
 
 export function RubricBuilderShell({ projectId }: { projectId: string }) {
-  const palette = ["Short text", "Long text", "Money", "Rating", "Media", "Repeatable group", "Custom block"];
-  const fields = ["venue_name", "atmosphere", "dishes[]", "conclusion", "media[]"];
+  const palette = [
+    "Короткий текст",
+    "Длинный текст",
+    "Цена",
+    "Оценка",
+    "Медиа",
+    "Повторяемый блок",
+    "Произвольный блок",
+  ];
+  const fields = ["название_места", "атмосфера", "блюда[]", "вывод", "медиа[]"];
   return (
     <main className="min-h-screen bg-surface">
-      <BuilderHeader title="Rubric builder" />
+      <BuilderHeader title="Конструктор рубрик" />
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
         <div>
-          <Badge>Project {projectId}</Badge>
+          <Badge>Проект {projectId}</Badge>
           <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
-            Field palette, form canvas, inspector
+            Палитра полей, canvas формы и инспектор настроек
           </h1>
         </div>
         <div className="grid gap-4 lg:grid-cols-[240px_1fr_280px]">
           <Card className="grid content-start gap-2">
-            <div className="text-sm font-semibold">Field palette</div>
+            <div className="text-sm font-semibold">Палитра полей</div>
             {palette.map((item) => (
               <button
                 className="h-9 rounded-md border border-line px-3 text-left text-sm hover:bg-surface"
@@ -232,19 +240,19 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
             ))}
           </Card>
           <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Form canvas</div>
+            <div className="text-sm font-semibold">Canvas формы</div>
             {fields.map((field) => (
               <div className="rounded-md border border-line p-3" key={field}>
                 <div className="text-sm font-medium">{field}</div>
                 <div className="mt-1 text-sm text-muted">
-                  Order, required state, source, and lock metadata persist in JSON Schema.
+                  Порядок, обязательность, источник и блокировка сохраняются в JSON Schema.
                 </div>
               </div>
             ))}
           </Card>
           <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Inspector</div>
-            {["Required", "Fact locked", "Generated", "Min/max items", "Editorial limits"].map((item) => (
+            <div className="text-sm font-semibold">Инспектор настроек</div>
+            {["Обязательное поле", "Факт заблокирован", "Генерируется AI", "Мин/макс элементов", "Редакционные лимиты"].map((item) => (
               <label className="flex items-center gap-2 text-sm" key={item}>
                 <input type="checkbox" />
                 {item}
@@ -252,7 +260,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
             ))}
             <Button type="button">
               <WandSparkles size={16} />
-              Save new version
+              Сохранить новую версию
             </Button>
           </Card>
         </div>
@@ -267,12 +275,12 @@ function BuilderHeader({ title }: { title: string }) {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
         <div>
           <div className="text-sm font-semibold">{title}</div>
-          <div className="text-xs text-muted">Phase 03 technical builder</div>
+          <div className="text-xs text-muted">Технический конструктор этапа 03</div>
         </div>
         <Button asChild variant="ghost">
           <Link href="/app">
             <ArrowLeft size={16} />
-            Cabinet
+            Кабинет
           </Link>
         </Button>
       </div>

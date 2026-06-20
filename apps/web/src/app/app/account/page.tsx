@@ -4,11 +4,11 @@ export default function AccountPage() {
   return (
     <CabinetPage
       title="Аккаунт"
-      description="Страница зарезервирована для профиля, email verification, session management и password reset."
+      description="Страница зарезервирована для профиля, подтверждения почты, управления сессиями и сброса пароля."
       rows={[
-        ["Identity", "Email/password, Argon2id, verified email timestamp."],
-        ["Sessions", "GET /me/sessions и DELETE /me/sessions/{session_id}."],
-        ["Security", "Cookie session, CSRF token, logout-all."],
+        ["Идентификация", "Электронная почта и пароль, Argon2id, отметка подтверждения почты."],
+        ["Сессии", "Просмотр и отзыв активных сессий через API."],
+        ["Безопасность", "Cookie-сессия, CSRF-токен и выход со всех устройств."],
       ]}
     />
   );

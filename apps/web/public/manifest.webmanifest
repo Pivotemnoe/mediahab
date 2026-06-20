@@ -1,6 +1,6 @@
 {
   "name": "Temichev Media Hub",
-  "short_name": "Media Hub",
+  "short_name": "Медиа-хаб",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#f7f8fa",

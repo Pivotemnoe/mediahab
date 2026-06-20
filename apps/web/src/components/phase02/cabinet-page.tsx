@@ -29,13 +29,13 @@ export function CabinetPage({ title, description, rows }: CabinetPageProps) {
             <Button asChild variant="ghost">
               <Link href="/app/workspace">
                 <Settings size={16} />
-                Workspace
+                Пространство
               </Link>
             </Button>
             <Button asChild variant="secondary">
               <Link href="/app/billing">
                 <CreditCard size={16} />
-                Billing
+                Тариф
               </Link>
             </Button>
           </div>
@@ -45,7 +45,7 @@ export function CabinetPage({ title, description, rows }: CabinetPageProps) {
       <section className="mx-auto grid max-w-5xl gap-4 px-4 py-8">
         <div>
           <Badge className="w-fit" tone="success">
-            Phase 02
+            Этап 02
           </Badge>
           <h1 className="mt-4 text-3xl font-semibold tracking-normal text-ink">
             {title}

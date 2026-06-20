@@ -14,16 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const pipeline = [
-  ["Identity", "Cookie session + CSRF + revocation", "ready"],
-  ["Workspace", "Roles and tenant isolation", "ready"],
-  ["Billing", "Mock checkout + entitlement resolver", "ready"],
-  ["Content", "Project/rubric builder and versioned configs", "ready"],
+  ["Идентификация", "Cookie-сессии, CSRF и отзыв сессий", "ready"],
+  ["Рабочее пространство", "Роли и изоляция данных", "ready"],
+  ["Тарифы", "Оплата-заглушка и проверка лимитов", "ready"],
+  ["Контент", "Конструктор проектов, рубрик и версионируемые настройки", "ready"],
 ];
 
 const integrations = [
-  ["Auth", "Register, login, logout, reset, sessions", "success"],
-  ["Workspace", "Owner/admin/editor/viewer roles", "success"],
-  ["Billing", "No captured payments in mock mode", "warning"],
+  ["Авторизация", "Регистрация, вход, выход, сброс пароля и сессии", "success", "готово"],
+  ["Рабочее пространство", "Роли владельца, администратора, редактора и наблюдателя", "success", "готово"],
+  ["Тарифы", "В режиме заглушки оплата не списывается", "warning", "заглушка"],
 ];
 
 export default function CabinetShell() {
@@ -33,13 +33,13 @@ export default function CabinetShell() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div>
             <div className="text-sm font-semibold">Temichev Media Hub</div>
-            <div className="text-xs text-muted">Phase 03 technical shell</div>
+            <div className="text-xs text-muted">Техническая оболочка этапа 03</div>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="ghost">
               <Link href="/app/projects">
                 <FileEdit size={16} />
-                Projects
+                Проекты
               </Link>
             </Button>
             <Button asChild variant="ghost">
@@ -51,7 +51,7 @@ export default function CabinetShell() {
             <Button asChild variant="secondary">
               <Link href="/app/billing">
                 <Landmark size={16} />
-                Billing
+                Тариф
               </Link>
             </Button>
           </div>
@@ -63,9 +63,9 @@ export default function CabinetShell() {
           {[
             ["Дашборд", "/app"],
             ["Аккаунт", "/app/account"],
-            ["Workspace", "/app/workspace"],
-            ["Billing", "/app/billing"],
-            ["Projects", "/app/projects"],
+            ["Пространство", "/app/workspace"],
+            ["Тариф", "/app/billing"],
+            ["Проекты", "/app/projects"],
           ].map(([item, href], index) => (
             <Link
               className={`flex h-10 w-full items-center rounded-md px-3 text-left text-sm ${
@@ -89,7 +89,7 @@ export default function CabinetShell() {
                 <FileEdit size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">0</div>
-              <div className="mt-1 text-sm text-muted">Project builder routes are mounted</div>
+              <div className="mt-1 text-sm text-muted">Маршруты конструктора проектов подключены</div>
             </Card>
             <Card>
               <div className="flex items-center justify-between">
@@ -97,7 +97,7 @@ export default function CabinetShell() {
                 <CalendarClock size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">4</div>
-              <div className="mt-1 text-sm text-muted">Roles seeded and enforced</div>
+              <div className="mt-1 text-sm text-muted">Роли загружены и проверяются сервером</div>
             </Card>
             <Card>
               <div className="flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function CabinetShell() {
                 <RadioTower size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">4</div>
-              <div className="mt-1 text-sm text-muted">Editable mock plans</div>
+              <div className="mt-1 text-sm text-muted">Редактируемые тарифы-заглушки</div>
             </Card>
           </div>
 
@@ -114,9 +114,9 @@ export default function CabinetShell() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Контент-пайплайн</h2>
-                  <p className="text-sm text-muted">SaaS boundary preview</p>
+                  <p className="text-sm text-muted">Предпросмотр границы SaaS</p>
                 </div>
-                <Badge>Phase 03</Badge>
+                <Badge>Этап 03</Badge>
               </div>
               <div className="grid gap-3">
                 {pipeline.map(([title, text, status]) => (
@@ -141,11 +141,11 @@ export default function CabinetShell() {
             <Card>
               <h2 className="text-lg font-semibold">Состояния</h2>
               <div className="mt-4 grid gap-3">
-                {integrations.map(([name, text, tone]) => (
+                {integrations.map(([name, text, tone, label]) => (
                   <div className="rounded-md border border-line p-3" key={name}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-medium">{name}</div>
-                      <Badge tone={tone as "success" | "warning"}>{tone}</Badge>
+                      <Badge tone={tone as "success" | "warning"}>{label}</Badge>
                     </div>
                     <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
                   </div>

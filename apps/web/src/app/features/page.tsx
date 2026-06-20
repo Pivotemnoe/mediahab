@@ -3,14 +3,14 @@ import { PublicPage } from "@/components/phase02/public-page";
 export default function FeaturesPage() {
   return (
     <PublicPage
-      eyebrow="Features"
+      eyebrow="Возможности"
       title="Конструктор контента, публикаций и платформ"
-      description="Phase 02 фиксирует SaaS-границу. Проекты, рубрики, контент-студия, медиа и публикации идут следующими фазами."
+      description="Этап 02 фиксирует SaaS-границу. Проекты, рубрики, контент-студия, медиа и публикации идут следующими фазами."
       items={[
-        "Единый ContentItem вместо поста под одну площадку.",
-        "Отдельные master revision и platform variants.",
-        "Backend authorization до появления tenant content.",
-        "Подготовленные extension points для Telegram, MAX, Instagram и будущих коннекторов.",
+        "Единая единица контента вместо поста под одну площадку.",
+        "Отдельные мастер-редакции и платформенные варианты.",
+        "Авторизация на сервере до появления контента рабочих пространств.",
+        "Подготовленные точки расширения для Telegram, MAX, Instagram и будущих коннекторов.",
       ]}
     />
   );

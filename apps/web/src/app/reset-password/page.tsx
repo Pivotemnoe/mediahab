@@ -4,8 +4,8 @@ export default function ResetPasswordPage() {
   return (
     <AuthPage
       title="Новый пароль"
-      description="Reset API меняет Argon2id password hash и отзывает активные сессии пользователя."
-      fields={["Reset token", "New password"]}
+      description="API сброса меняет Argon2id-хеш пароля и отзывает активные сессии пользователя."
+      fields={["Токен сброса", "Новый пароль"]}
       submitLabel="Сменить пароль"
       secondaryHref="/login"
       secondaryLabel="Войти"
