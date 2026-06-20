@@ -10,11 +10,11 @@ Phase 06 не начиналась: platform variants, публикации, out
 
 ## Найденные противоречия и открытые вопросы
 
-1. ТЗ Phase 05 требует live text provider. OpenAI adapter реализован и включается через `AI_TEXT_PROVIDER=openai`, но live-smoke на реальном тексте не выполнялся без отдельного подтверждения ключа, модели, бюджета и тестового материала.
-2. YandexGPT и GigaChat указаны в ТЗ как начальные text providers. В Phase 05 они представлены contract-complete mock adapters; live-интеграция требует credentials и отдельного решения по оплате/доступности.
+1. ТЗ Phase 05 требует live text provider. OpenAI выбран первым live provider; для запуска реального smoke ещё нужны `OPENAI_API_KEY`, месячный бюджет и тестовый материал.
+2. YandexGPT и GigaChat указаны в ТЗ как начальные text providers. В Phase 05 они представлены contract-complete mock adapters; live-интеграция отложена после выбора OpenAI первым провайдером.
 3. Embeddings хранятся как JSON-векторы для SQLite-тестов. Для production-библиотеки примеров нужен переход на pgvector index/HNSW после появления реального объёма.
 4. AI tasks записываются как durable `generation_runs`, но выполняются синхронно в API request. Для production тяжёлые задачи нужно вынести в worker queue.
-5. Финальные forbidden phrases, CTA library, ranking formula и retention для AI logs требуют подтверждения владельца продукта.
+5. Ranking formula оставлена текущей. Финальные forbidden phrases, CTA library и retention для AI logs требуют наполнения/подтверждения владельца продукта.
 6. Во время Docker-smoke найден runtime gap: API image не включал каталоги `presets` и `schemas`, из-за чего импорт проекта из preset падал в контейнере. Исправлено в `infra/docker/api.Dockerfile`.
 
 ## Созданные файлы
@@ -24,6 +24,7 @@ Phase 06 не начиналась: platform variants, публикации, out
 - `apps/web/src/components/phase05/ai-pipeline-shell.tsx`
 - `database/migrations/versions/202606200005_phase05_examples_ai_pipeline.py`
 - `docs/adr/0011-examples-retrieval-and-ai-runs.md`
+- `docs/adr/0012-openai-defaults-ranking-and-ai-retention.md`
 - `docs/exec-plans/PHASE_05_AI_AND_EXAMPLES.md`
 - `docs/exec-plans/PHASE_05_REPORT_RU.md`
 - `services/api/app/api/v1/routes/ai.py`
@@ -68,8 +69,7 @@ Phase 06 не начиналась: platform variants, публикации, out
 
 ## Решения, которые требуют подтверждения
 
-1. Подтвердить production text provider: OpenAI оставить первым или добавить live YandexGPT/GigaChat перед пилотом.
-2. Подтвердить OpenAI text model, embedding model, месячный бюджет и sample для live-smoke.
-3. Подтвердить ranking formula для примеров: веса rubric match, semantic similarity, manual quality, engagement и recency.
-4. Подтвердить forbidden phrases и CTA library для «Что поесть? Армавир».
-5. Подтвердить срок хранения AI prompts/outputs, usage metadata и embedding vectors.
+1. Передать `OPENAI_API_KEY` в runtime-окружение и подтвердить месячный бюджет для live-smoke.
+2. Выбрать sample content item и approved examples для первого OpenAI live-smoke.
+3. Наполнить forbidden phrases и CTA library для «Что поесть? Армавир».
+4. Подтвердить recommended retention из ADR 0012 или заменить сроки до реализации cleanup jobs.

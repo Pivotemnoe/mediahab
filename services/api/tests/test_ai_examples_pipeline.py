@@ -16,6 +16,7 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.core.config import Settings, get_settings  # noqa: E402
 from app.db.base import Base, ContentItem, ExampleEmbedding, GenerationRun  # noqa: E402
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
@@ -36,6 +37,10 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
                 yield session
 
         self.app.dependency_overrides[get_session] = override_session
+        self.app.dependency_overrides[get_settings] = lambda: Settings(
+            ai_text_provider="mock",
+            embedding_provider="mock",
+        )
         self.client = TestClient(self.app, base_url="https://testserver")
 
     def tearDown(self) -> None:

@@ -20,8 +20,8 @@ Build a controlled editorial pipeline for approved examples, small-set retrieval
 
 ## Assumptions And Open Questions
 
-- Default local text and embedding providers are deterministic `mock` to avoid accidental spend.
-- OpenAI text generation and embedding adapters are wired through environment variables but live quality/cost smoke requires explicit real credentials and sample content.
+- Default live text and embedding providers are OpenAI after owner confirmation; automated tests override them with deterministic `mock` providers to avoid accidental spend.
+- OpenAI text generation and embedding adapters are wired through environment variables; live quality/cost smoke still requires real credentials, budget, and sample content.
 - YandexGPT and GigaChat are contract-complete mock adapters until credentials, SDK/API decisions, and budget are approved.
 - `generation_runs` are durable records, but Phase 05 executes synchronously inside the API request. Worker orchestration can be attached later.
 - Embeddings are stored as JSON vectors in this slice so SQLite tests stay simple; production pgvector indexing can be added without changing API contracts.

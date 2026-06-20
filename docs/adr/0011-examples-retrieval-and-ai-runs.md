@@ -13,7 +13,7 @@ Store imported examples in `example_posts` with dedupe hashes, review status, la
 
 Store every AI task in `generation_runs` with provider key, model, task type, context manifest, retrieved example IDs, usage, latency, response JSON, and errors. Store stage metadata in `generation_steps`.
 
-Phase 05 adds provider interfaces for text generation and embeddings. Local defaults are deterministic mocks. OpenAI text generation and embedding adapters are implemented behind environment variables. YandexGPT and GigaChat remain contract-complete mocks until credentials and production settings are approved.
+Phase 05 adds provider interfaces for text generation and embeddings. OpenAI text generation and embedding adapters are implemented behind environment variables, with deterministic mock providers retained for automated tests. YandexGPT and GigaChat remain contract-complete mocks until credentials and production settings are approved.
 
 Master assembly creates a `content_revisions` row of type `master` only after structured output validation and deterministic fact-lock validation pass. If a locked fact is changed, the run fails and no master revision is created.
 

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T12:32:41.719474+00:00",
+  "generated_at": "2026-06-20T12:50:25.912937+00:00",
   "canonical_language": "en",
-  "file_count": 242,
+  "file_count": 243,
   "files": [
     {
       "path": ".dockerignore",
@@ -12,8 +12,8 @@
     },
     {
       "path": ".env.example",
-      "size_bytes": 941,
-      "sha256": "acf68a399523594af938407173b95bb9d85a1affe6a953424128c11e504dd507"
+      "size_bytes": 946,
+      "sha256": "09e2409af9f0831f5ed14b01cedf1d8420b8a3027e15389571cf51c02d2cd4bf"
     },
     {
       "path": ".gitignore",
@@ -107,8 +107,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 7991,
-      "sha256": "c9844ffda1f0bc70e1b868912a608aed459f227a7dde6d200aec52b69f5b981a"
+      "size_bytes": 7939,
+      "sha256": "d3b1a9a778f7334ab14eb5d41e9f97461388c00a8ff798140180c9fc5436ba2e"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -252,8 +252,8 @@
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
-      "size_bytes": 10648,
-      "sha256": "ac0b76c47825dd9074889d264ccb418476bfd8a34b0bcffda60ac9d8616a79e8"
+      "size_bytes": 10661,
+      "sha256": "659b90c3b61aac263e79d41334d9c98b56f5efdd89e6e0f2a630892a5495c294"
     },
     {
       "path": "apps/web/src/components/ui/badge.tsx",
@@ -367,8 +367,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 4139,
-      "sha256": "c481c5338b0970beb24ed26fefaed95030b4a961a25353ccc21a8b0a2875858f"
+      "size_bytes": 4069,
+      "sha256": "8cfa629ebcbb984e813fb1a9a95eae1b5898dc788f562012aab413bdc1fa1460"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -422,13 +422,18 @@
     },
     {
       "path": "docs/adr/0011-examples-retrieval-and-ai-runs.md",
-      "size_bytes": 2954,
-      "sha256": "b79739d64665bfecfbc2f960adcdaf0d9cffc7f87151a45e44343a03c7269c33"
+      "size_bytes": 2978,
+      "sha256": "0e7b225cc57eae28ec350d0719071ca245169720c9f3f382d78aa7d1b40c5fbd"
+    },
+    {
+      "path": "docs/adr/0012-openai-defaults-ranking-and-ai-retention.md",
+      "size_bytes": 3118,
+      "sha256": "d2c9c465aa8c642aa61eb7d35dd7d8fca13ed59cdeb45171da5a8335d4b5f944"
     },
     {
       "path": "docs/adr/README.md",
-      "size_bytes": 680,
-      "sha256": "0585a2fe1d2ab9ac4f040ee75c37f16d60a66eeb6eb5100b110da8515c7fca95"
+      "size_bytes": 729,
+      "sha256": "4a2604f104a0fa99057fd38501901adba7d381c823ed685093800084fb85bd20"
     },
     {
       "path": "docs/en/ACCEPTANCE_CRITERIA.md",
@@ -527,13 +532,13 @@
     },
     {
       "path": "docs/exec-plans/PHASE_05_AI_AND_EXAMPLES.md",
-      "size_bytes": 4602,
-      "sha256": "7e172b6f80f1f720e984c7fa5a40335ad82fb183dbba0bc086e59d496104fc9a"
+      "size_bytes": 4682,
+      "sha256": "3669c4b23d6d7bd9c36026a391e4f4da4db41b5ef6ae76dd1b8e303b4fc80f71"
     },
     {
       "path": "docs/exec-plans/PHASE_05_REPORT_RU.md",
-      "size_bytes": 5659,
-      "sha256": "44abdc698a8d09044efdd7da2df1aaa6f71e36eac5935fc8392f4326f991c7cd"
+      "size_bytes": 5470,
+      "sha256": "782fd7ead68bf37641098b9ff434e6892c47d8a24e6dccf8a323802f412ed086"
     },
     {
       "path": "docs/exec-plans/README.md",
@@ -837,8 +842,8 @@
     },
     {
       "path": "reference/OPEN_QUESTIONS.md",
-      "size_bytes": 4139,
-      "sha256": "c481c5338b0970beb24ed26fefaed95030b4a961a25353ccc21a8b0a2875858f"
+      "size_bytes": 4069,
+      "sha256": "8cfa629ebcbb984e813fb1a9a95eae1b5898dc788f562012aab413bdc1fa1460"
     },
     {
       "path": "requirements-dev.txt",
@@ -967,8 +972,8 @@
     },
     {
       "path": "services/api/app/core/config.py",
-      "size_bytes": 5043,
-      "sha256": "ca1c09f4285376e630b01d12334995617fc388c2b612a52759fe4ea789da2a91"
+      "size_bytes": 5048,
+      "sha256": "c506cc5a277a551e0f31b7bbbb10109e2c9038a9c687b5560d9d851fa15a3625"
     },
     {
       "path": "services/api/app/core/logging.py",
@@ -1112,8 +1117,8 @@
     },
     {
       "path": "services/api/tests/test_ai_examples_pipeline.py",
-      "size_bytes": 12638,
-      "sha256": "b5b4eb1264bbb90e344cb38f9fe6f86d5a9b50ac882fe77fdcd9870fc7a420e5"
+      "size_bytes": 12861,
+      "sha256": "c78425f68a0bfa7b41184ff0d99d8143aa741b28a862d773842463e3f827765c"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",
