@@ -4852,6 +4852,59 @@
         }
       }
     },
+    "/api/v1/webhooks/max/{destination_id}": {
+      "post": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Max Webhook Callback",
+        "operationId": "max_webhook_callback_api_v1_webhooks_max__destination_id__post",
+        "parameters": [
+          {
+            "name": "destination_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Destination Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaxWebhookCallbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookInboxOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/plans": {
       "get": {
         "tags": [
@@ -6978,6 +7031,41 @@
         },
         "type": "object",
         "title": "ManualConfirmationRequest"
+      },
+      "MaxWebhookCallbackRequest": {
+        "properties": {
+          "update_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Update Type"
+          },
+          "dedupe_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dedupe Key"
+          },
+          "update": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Update"
+          }
+        },
+        "type": "object",
+        "title": "MaxWebhookCallbackRequest"
       },
       "MeResponse": {
         "properties": {

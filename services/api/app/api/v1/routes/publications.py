@@ -6,6 +6,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import (
@@ -223,6 +225,12 @@ class WebhookCallbackRequest(BaseModel):
     dedupe_key: str | None = Field(default=None, max_length=160)
     signature_valid: bool = False
     payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class MaxWebhookCallbackRequest(BaseModel):
+    update_type: str | None = Field(default=None, max_length=160)
+    dedupe_key: str | None = Field(default=None, max_length=160)
+    update: dict[str, Any] = Field(default_factory=dict)
 
 
 class MessageResponse(BaseModel):
@@ -907,3 +915,62 @@ async def generic_webhook_callback(
     )
     await db.commit()
     return webhook_inbox_out(inbox)
+
+
+@router.post("/webhooks/max/{destination_id}", response_model=WebhookInboxOut)
+async def max_webhook_callback(
+    destination_id: UUID,
+    payload: MaxWebhookCallbackRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_session),
+) -> WebhookInboxOut:
+    destination = await db.get(ProjectDestination, destination_id)
+    if destination is None or destination.deleted_at is not None:
+        raise api_error(404, "destination_not_found", "Destination not found.", request=request)
+    if destination.connector_key != "max_message":
+        raise api_error(404, "destination_not_found", "Destination not found.", request=request)
+    configuration = destination.configuration_json if isinstance(destination.configuration_json, dict) else {}
+    expected_secret = str(configuration.get("webhook_secret") or "").strip()
+    provided_secret = request.headers.get("x-max-bot-api-secret", "")
+    if expected_secret and provided_secret != expected_secret:
+        raise api_error(401, "max_webhook_secret_invalid", "MAX webhook secret is invalid.", request=request)
+    update = payload.update
+    event_type = payload.update_type or str(update.get("update_type") or update.get("event_type") or "max")
+    dedupe_key = payload.dedupe_key or str(update.get("update_id") or update.get("id") or "")
+    dedupe_key = dedupe_key or None
+    headers = {
+        key: ("***redacted***" if key.lower() == "x-max-bot-api-secret" else value)
+        for key, value in request.headers.items()
+        if key.lower().startswith("x-max-")
+    }
+    if dedupe_key is not None:
+        existing = await db.scalar(
+            select(WebhookInbox).where(
+                WebhookInbox.destination_id == destination.id,
+                WebhookInbox.dedupe_key == dedupe_key,
+            )
+        )
+        if existing is not None:
+            return webhook_inbox_out(existing)
+    try:
+        inbox = await record_webhook_inbox(
+            db,
+            destination,
+            payload={"event_type": event_type, **update},
+            headers=headers,
+            dedupe_key=dedupe_key,
+            signature_valid=True,
+        )
+        await db.commit()
+        return webhook_inbox_out(inbox)
+    except IntegrityError:
+        await db.rollback()
+        existing = await db.scalar(
+            select(WebhookInbox).where(
+                WebhookInbox.destination_id == destination_id,
+                WebhookInbox.dedupe_key == dedupe_key,
+            )
+        )
+        if existing is None:
+            raise
+        return webhook_inbox_out(existing)

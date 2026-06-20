@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T16:25:52.088459+00:00",
+  "generated_at": "2026-06-20T16:39:21.981065+00:00",
   "canonical_language": "en",
-  "file_count": 317,
+  "file_count": 320,
   "files": [
     {
       "path": ".dockerignore",
@@ -312,8 +312,8 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 10683,
-      "sha256": "e6943e31366cae32dd54090946236304438ceece6854af8190c390fd0ce05da4"
+      "size_bytes": 11237,
+      "sha256": "adf1a144fad31b8dc3c36ff91fc8d99a36b77a105b1e8ec0316746cb634ed11e"
     },
     {
       "path": "apps/web/src/components/states/screen-state.tsx",
@@ -357,8 +357,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 251072,
-      "sha256": "c23fefc07f9e9ae6986d583e05bc840466ee36ecc681e7ed80b905b7a6af3dd4"
+      "size_bytes": 253332,
+      "sha256": "3e50b74c20e6eaf0dab6d41fdb7e2b05b952781f95930717cca06dad26d99f24"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -642,8 +642,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 4711,
-      "sha256": "13055f6fb29ce4db2be02cd0d355edde3914d0873c67034c36e80b428e152494"
+      "size_bytes": 4884,
+      "sha256": "8fe715caba5cd1a883056b6e4476f405f4145e7281c5a0426cb4d3ecd8dc7f22"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -841,6 +841,16 @@
       "sha256": "ff724eccc260ae003c90697783f23b036223e5ea01378fcf9c4d6ae793e4275a"
     },
     {
+      "path": "docs/exec-plans/PHASE_08_MAX_CONNECTOR.md",
+      "size_bytes": 5909,
+      "sha256": "ce3d4f067b0a7569533ebbccd1dde6f78093fc49cb541c711230f5a9c29a3a2a"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_08_REPORT_RU.md",
+      "size_bytes": 4703,
+      "sha256": "68ad6ad96012a788322d08ec9447adfe686ebd0dce8bbb8ba0361cfcbbd85ad6"
+    },
+    {
       "path": "docs/exec-plans/README.md",
       "size_bytes": 702,
       "sha256": "09a49fbc8f9a17854cfb786d7763cf4709e101c8f05ff54431ba740c20ea7a7d"
@@ -977,8 +987,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 251072,
-      "sha256": "c23fefc07f9e9ae6986d583e05bc840466ee36ecc681e7ed80b905b7a6af3dd4"
+      "size_bytes": 253332,
+      "sha256": "3e50b74c20e6eaf0dab6d41fdb7e2b05b952781f95930717cca06dad26d99f24"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -1302,8 +1312,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/publications.py",
-      "size_bytes": 33655,
-      "sha256": "6f00340060f3d0c2fd448eaf7375f0df276c7b11d54154b35befd1db8f473ca9"
+      "size_bytes": 36522,
+      "sha256": "45e721aa8668f2bf4a989be40425babd3011e8abde9b8890a086c6433118a85a"
     },
     {
       "path": "services/api/app/api/v1/routes/workspaces.py",
@@ -1442,8 +1452,8 @@
     },
     {
       "path": "services/api/app/modules/publications/connectors.py",
-      "size_bytes": 30424,
-      "sha256": "8b967554a181e94ec40690ae676087f50dcdc39da5cfdcda56c8fe2064acf244"
+      "size_bytes": 43672,
+      "sha256": "d6ac949f258f86beb2d26df98bddbc665828d4446edbd1b3caf2cf2d34b8ec68"
     },
     {
       "path": "services/api/app/modules/publications/service.py",
@@ -1494,6 +1504,11 @@
       "path": "services/api/tests/test_health.py",
       "size_bytes": 950,
       "sha256": "1f52fa08b69cf2813302359c2d8ac1a1605c7e01747d9dc66b64d9b3e01ceded"
+    },
+    {
+      "path": "services/api/tests/test_max_connector.py",
+      "size_bytes": 16520,
+      "sha256": "cef95ce5f38b1f3da240d218c661ccf781cf66f42188cac33fa58250c0af7888"
     },
     {
       "path": "services/api/tests/test_project_rubric_builder.py",
@@ -1562,8 +1577,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 4284,
-      "sha256": "9a8f6c2e15ca506fe50af194909517fede8f08cf311cfae621bf439e9f33c156"
+      "size_bytes": 4333,
+      "sha256": "39b03b49612dc6d9afcb698197c6c678ff658f80b9b4e49a685be68d72e145ea"
     },
     {
       "path": "tools/export_openapi.py",

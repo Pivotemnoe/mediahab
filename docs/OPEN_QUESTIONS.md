@@ -8,12 +8,13 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 2. Approve a live Telegram Rich Message test using `fixtures/telegram-donika.json` and confirm which clients must be evidenced: Android, iOS, Desktop, Web.
 3. Verify Telegram `sendRichMessage` edit/delete behavior for the chosen rich layout and record returned external IDs; Phase 07 has contract coverage only, live evidence is still pending.
 4. Provide MAX bot credentials and a safe test channel/chat.
-5. Approve a MAX live upload/readiness test for ten mixed media items and record observed attachment behavior separately from documented policy.
-6. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
-7. Provide Instagram professional account type, Meta app ownership, OAuth redirect domain, scopes, review status, and test-user availability.
-8. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
-9. Provide monthly budget and live-smoke sample for OpenAI `gpt-4.1-mini` text generation and `text-embedding-3-small` embeddings.
-10. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
+5. Provide the MAX `chat_id` for the safe test channel/chat; current MAX docs no longer support `GET /chats`, so IDs must come from webhook events or manual configuration.
+6. Approve a MAX live upload/readiness test for ten mixed media items and record observed attachment behavior separately from documented policy.
+7. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
+8. Provide Instagram professional account type, Meta app ownership, OAuth redirect domain, scopes, review status, and test-user availability.
+9. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
+10. Provide monthly budget and live-smoke sample for OpenAI `gpt-4.1-mini` text generation and `text-embedding-3-small` embeddings.
+11. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
 
 ## Infrastructure and launch dependencies
 

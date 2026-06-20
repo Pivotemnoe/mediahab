@@ -45,6 +45,9 @@ TELEGRAM_RICH_TEXT_LIMIT = 32768
 TELEGRAM_MEDIA_LIMIT = 50
 TELEGRAM_FALLBACK_MEDIA_GROUP_LIMIT = 10
 TELEGRAM_DELIVERY_URL_TTL_SECONDS = 24 * 60 * 60
+MAX_CONNECTOR_KEY = "max_message"
+MAX_TEXT_LIMIT = 4000
+MAX_RATE_GUIDANCE_RPS = 30
 
 
 CAPABILITIES: dict[str, ConnectorCapability] = {
@@ -75,18 +78,28 @@ CAPABILITIES: dict[str, ConnectorCapability] = {
     ),
     "max": ConnectorCapability(
         platform_key="max",
-        connector_key="max_prepared",
-        name="MAX подготовленный",
-        hard_text_limit=4000,
+        connector_key=MAX_CONNECTOR_KEY,
+        name="MAX Message",
+        hard_text_limit=MAX_TEXT_LIMIT,
         media_limit=None,
-        publication_mode="native_prepared",
-        automated_delivery=False,
+        publication_mode="message",
+        automated_delivery=True,
         capabilities={
             "preview": True,
             "approval_required": True,
+            "html": True,
+            "markdown": True,
+            "media_upload": True,
+            "attachment_readiness_retry": True,
+            "webhooks": True,
+            "media_count": "unknown_requires_live_spike",
             "native_connector_phase": 8,
         },
-        hard_limits={"text": 4000},
+        hard_limits={
+            "text": MAX_TEXT_LIMIT,
+            "documented_request_rate_per_second": MAX_RATE_GUIDANCE_RPS,
+            "media_count": "unknown_requires_live_spike",
+        },
     ),
     "instagram": ConnectorCapability(
         platform_key="instagram",
@@ -204,11 +217,18 @@ def validate_variant(platform_key: str, text: str, media_count: int = 0) -> dict
                 "message": "Instagram carousel requires 2-10 media items; single media needs a feed/Reels mode later.",
             }
         )
-    if platform_key in {"max", "instagram"}:
+    if platform_key == "instagram":
         warnings.append(
             {
                 "code": "native_connector_deferred",
                 "message": "Native API delivery for this platform starts in a later phase.",
+            }
+        )
+    if platform_key == "max":
+        warnings.append(
+            {
+                "code": "max_live_acceptance_pending",
+                "message": "MAX message contract is available; live mixed-media evidence is pending credentials.",
             }
         )
     if platform_key == "telegram":
@@ -480,6 +500,195 @@ def build_telegram_fallback_payload(
     }
 
 
+def _max_delivery_mode(configuration: dict[str, Any]) -> str:
+    mode = str(configuration.get("delivery_mode") or "simulate").strip().lower()
+    if mode not in {"simulate", "live"}:
+        raise ConnectorValidationError(
+            "max_delivery_mode_invalid",
+            "MAX delivery_mode must be simulate or live.",
+            {"delivery_mode": mode},
+        )
+    return mode
+
+
+def _max_format(configuration: dict[str, Any]) -> str:
+    value = str(configuration.get("format") or "html").strip().lower()
+    if value not in {"html", "markdown"}:
+        raise ConnectorValidationError(
+            "max_format_invalid",
+            "MAX format must be html or markdown.",
+            {"format": value},
+        )
+    return value
+
+
+def _max_chat_id(configuration: dict[str, Any]) -> str:
+    raw = configuration.get("chat_id")
+    value = str(raw or "").strip()
+    if not value:
+        raise ConnectorValidationError(
+            "max_chat_id_required",
+            "MAX destination requires chat_id; current MAX API no longer lists chats.",
+        )
+    if not value.lstrip("-").isdigit():
+        raise ConnectorValidationError(
+            "max_chat_id_invalid",
+            "MAX chat_id must be an integer ID.",
+            {"chat_id": value},
+        )
+    return value
+
+
+def _validate_max_webhook_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ConnectorValidationError(
+            "max_webhook_https_required",
+            "MAX webhook URL must use HTTPS.",
+            {"url": url},
+        )
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ConnectorValidationError(
+            "max_webhook_port_forbidden",
+            "MAX webhook URL must use port 443.",
+        ) from exc
+    if port not in {None, 443}:
+        raise ConnectorValidationError(
+            "max_webhook_port_forbidden",
+            "MAX webhook URL must use port 443.",
+            {"port": port},
+        )
+    if parsed.username or parsed.password:
+        raise ConnectorValidationError(
+            "max_webhook_credentials_in_url",
+            "MAX webhook URL must not contain credentials.",
+        )
+    query = parsed.query.lower()
+    if "token=" in query or "access_token=" in query:
+        raise ConnectorValidationError(
+            "max_token_in_query_forbidden",
+            "MAX tokens must be sent only in the Authorization header.",
+        )
+
+
+def _validate_max_secret(secret: str) -> None:
+    if not 5 <= len(secret) <= 256:
+        raise ConnectorValidationError(
+            "max_webhook_secret_invalid",
+            "MAX webhook secret must be 5-256 characters.",
+        )
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+    if any(character not in allowed for character in secret):
+        raise ConnectorValidationError(
+            "max_webhook_secret_invalid",
+            "MAX webhook secret may contain only letters, digits, underscore, and hyphen.",
+        )
+
+
+def _validate_max_destination_configuration(configuration: dict[str, Any]) -> None:
+    _max_chat_id(configuration)
+    _max_format(configuration)
+    delivery_mode = _max_delivery_mode(configuration)
+    webhook_url = str(configuration.get("webhook_url") or "").strip()
+    if webhook_url:
+        _validate_max_webhook_url(webhook_url)
+    webhook_secret = str(configuration.get("webhook_secret") or "").strip()
+    if webhook_secret:
+        _validate_max_secret(webhook_secret)
+    if delivery_mode == "live" and not str(configuration.get("access_token") or "").strip():
+        raise ConnectorValidationError(
+            "max_access_token_required",
+            "MAX live delivery requires an access token.",
+        )
+
+
+def _max_media_type(media: dict[str, Any]) -> str:
+    kind = str(media.get("kind") or "").lower()
+    mime_type = str(media.get("mime_type") or "").lower()
+    if kind == "image" or mime_type.startswith("image/"):
+        return "image"
+    if kind == "video" or mime_type.startswith("video/"):
+        return "video"
+    if kind == "audio" or mime_type.startswith("audio/"):
+        return "audio"
+    return "file"
+
+
+def _max_text_for_format(text: str, text_format: str) -> str:
+    if text_format == "html":
+        return html.escape(text, quote=False).replace("\n", "<br>")
+    return text
+
+
+def build_max_message_payload(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    count = character_count(text)
+    if count > MAX_TEXT_LIMIT:
+        raise ConnectorValidationError(
+            "max_text_limit_exceeded",
+            "MAX text exceeds the 4,000-character hard limit.",
+            {"actual": count, "limit": MAX_TEXT_LIMIT},
+        )
+    chat_id = _max_chat_id(configuration)
+    text_format = _max_format(configuration)
+    uploads: list[dict[str, Any]] = []
+    attachments: list[dict[str, Any]] = []
+    configured_tokens = configuration.get("media_tokens")
+    token_map = configured_tokens if isinstance(configured_tokens, dict) else {}
+    for index, media in enumerate(media_items or []):
+        media_type = _max_media_type(media)
+        media_id = str(media.get("media_id") or index)
+        token = str(token_map.get(media_id) or f"simulated-max-token-{index + 1}")
+        uploads.append(
+            {
+                "index": index,
+                "method": "POST /uploads",
+                "type": media_type,
+                "authorization": "header_only",
+                "storage_key": media.get("storage_key"),
+                "mime_type": media.get("mime_type"),
+                "readiness": "ready",
+            }
+        )
+        attachments.append({"type": media_type, "payload": {"token": token}})
+    body: dict[str, Any] = {
+        "text": _max_text_for_format(text, text_format),
+        "format": text_format,
+        "attachments": attachments,
+        "notify": bool(configuration.get("notify", True)),
+    }
+    return {
+        "mode": "message",
+        "bot_api_method": "POST /messages",
+        "publication_id": publication_id,
+        "destination_id": destination_id,
+        "idempotency_key": idempotency_key,
+        "request": {
+            "method": "POST",
+            "url": "https://platform-api.max.ru/messages",
+            "query": {"chat_id": chat_id},
+            "headers": {"Authorization": "***redacted***", "Content-Type": "application/json"},
+            "body": body,
+        },
+        "uploads": uploads,
+        "attachments": attachments,
+        "character_count": count,
+        "media_count": len(attachments),
+        "media_count_limit": "unknown_requires_live_spike",
+        "rate_guidance_rps": MAX_RATE_GUIDANCE_RPS,
+        "live_acceptance": "pending_without_credentials",
+    }
+
+
 def validate_generic_webhook_url(endpoint_url: str) -> None:
     parsed = urlparse(endpoint_url)
     if parsed.scheme != "https":
@@ -536,6 +745,9 @@ def validate_destination_configuration(
 ) -> None:
     if connector_key == TELEGRAM_CONNECTOR_KEY:
         _validate_telegram_destination_configuration(configuration)
+        return
+    if connector_key == MAX_CONNECTOR_KEY:
+        _validate_max_destination_configuration(configuration)
         return
     if connector_key == "generic_webhook":
         endpoint_url = str(configuration.get("endpoint_url") or "")
@@ -655,6 +867,41 @@ def simulate_connector_publish(
                 "message_id": f"simulated-rich-{idempotency_key}",
             },
         )
+    if connector_key == MAX_CONNECTOR_KEY:
+        validate_destination_configuration(connector_key, configuration, can_activate_live=True)
+        payload = build_max_message_payload(
+            publication_id=publication_id,
+            destination_id=destination_id,
+            text=text,
+            configuration=configuration,
+            idempotency_key=idempotency_key,
+            media_items=media_items,
+        )
+        if configuration.get("simulate_attachment_not_ready") is True and payload["media_count"] > 0:
+            return ConnectorResult(
+                status="failed_retryable",
+                external_id=None,
+                response_payload={
+                    "provider": "max",
+                    "delivery_mode": "simulate",
+                    "payload": payload,
+                    "error": {"code": "attachment.not.ready"},
+                    "retry_after_seconds": int(configuration.get("retry_after_seconds") or 30),
+                },
+                retryable=True,
+                error_code="max_attachment_not_ready",
+                error_message="MAX attachment is not ready yet.",
+            )
+        return ConnectorResult(
+            status="published",
+            external_id=f"max:message:{destination_id}:{idempotency_key}",
+            response_payload={
+                "provider": "max",
+                "delivery_mode": "simulate",
+                "payload": payload,
+                "message": {"id": f"simulated-max-{idempotency_key}"},
+            },
+        )
     if connector_key == "manual_export":
         return ConnectorResult(
             status="manual_required",
@@ -726,19 +973,46 @@ async def publish_connector(
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
 ) -> ConnectorResult:
-    if connector_key != TELEGRAM_CONNECTOR_KEY or _telegram_delivery_mode(configuration) != "live":
-        return simulate_connector_publish(
+    if connector_key == TELEGRAM_CONNECTOR_KEY and _telegram_delivery_mode(configuration) == "live":
+        return await _publish_telegram_live(
             publication_id=publication_id,
             destination_id=destination_id,
-            platform_key=platform_key,
-            connector_key=connector_key,
             text=text,
             configuration=configuration,
             idempotency_key=idempotency_key,
             media_items=media_items,
         )
+    if connector_key == MAX_CONNECTOR_KEY and _max_delivery_mode(configuration) == "live":
+        return await _publish_max_live(
+            publication_id=publication_id,
+            destination_id=destination_id,
+            text=text,
+            configuration=configuration,
+            idempotency_key=idempotency_key,
+            media_items=media_items,
+        )
+    return simulate_connector_publish(
+        publication_id=publication_id,
+        destination_id=destination_id,
+        platform_key=platform_key,
+        connector_key=connector_key,
+        text=text,
+        configuration=configuration,
+        idempotency_key=idempotency_key,
+        media_items=media_items,
+    )
 
-    validate_destination_configuration(connector_key, configuration, can_activate_live=True)
+
+async def _publish_telegram_live(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> ConnectorResult:
+    validate_destination_configuration(TELEGRAM_CONNECTOR_KEY, configuration, can_activate_live=True)
     payload_mode = _telegram_payload_mode(configuration)
     if payload_mode != "rich_message":
         raise ConnectorValidationError(
@@ -812,4 +1086,84 @@ async def publish_connector(
         retryable=retryable,
         error_code="telegram_retryable_error" if retryable else "telegram_rejected",
         error_message="Telegram Bot API rejected the Rich Message publication.",
+    )
+
+
+async def _publish_max_live(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> ConnectorResult:
+    validate_destination_configuration(MAX_CONNECTOR_KEY, configuration, can_activate_live=True)
+    payload = build_max_message_payload(
+        publication_id=publication_id,
+        destination_id=destination_id,
+        text=text,
+        configuration=configuration,
+        idempotency_key=idempotency_key,
+        media_items=media_items,
+    )
+    token = str(configuration.get("access_token") or "").strip()
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "https://platform-api.max.ru/messages",
+                params=payload["request"]["query"],
+                headers={"Authorization": token, "Content-Type": "application/json"},
+                json=payload["request"]["body"],
+            )
+    except httpx.HTTPError as exc:
+        return ConnectorResult(
+            status="failed_retryable",
+            external_id=None,
+            response_payload={
+                "provider": "max",
+                "delivery_mode": "live",
+                "payload": payload,
+                "transport_error": type(exc).__name__,
+            },
+            retryable=True,
+            error_code="max_transport_error",
+            error_message="MAX API request failed before a response was received.",
+        )
+    try:
+        body = response.json()
+    except ValueError:
+        body = {"raw": response.text[:2048]}
+    if 200 <= response.status_code < 300:
+        message = body.get("message") if isinstance(body, dict) else {}
+        message_id = str(message.get("id") if isinstance(message, dict) else response.status_code)
+        return ConnectorResult(
+            status="published",
+            external_id=f"max:message:{_max_chat_id(configuration)}:{message_id}",
+            response_payload={
+                "provider": "max",
+                "delivery_mode": "live",
+                "payload": payload,
+                "max_result": body,
+                "status_code": response.status_code,
+            },
+        )
+    error_code = None
+    if isinstance(body, dict):
+        error_code = str(body.get("code") or "")
+    retryable = response.status_code == 429 or response.status_code >= 500 or error_code == "attachment.not.ready"
+    return ConnectorResult(
+        status="failed_retryable" if retryable else "failed_permanent",
+        external_id=None,
+        response_payload={
+            "provider": "max",
+            "delivery_mode": "live",
+            "payload": payload,
+            "status_code": response.status_code,
+            "max_error": body,
+            "retry_after_seconds": 30 if error_code == "attachment.not.ready" else None,
+        },
+        retryable=retryable,
+        error_code="max_attachment_not_ready" if error_code == "attachment.not.ready" else "max_rejected",
+        error_message="MAX API rejected the publication.",
     )

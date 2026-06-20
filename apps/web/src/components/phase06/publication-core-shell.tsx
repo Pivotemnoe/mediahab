@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 
 const variants = [
   ["Telegram", "32 768", "rich_message", "tg-collage + текст"],
-  ["MAX", "4 000", "сокращён", "лимит соблюдён"],
+  ["MAX", "4 000", "message", "HTML/Markdown + uploads"],
   ["Instagram", "2 200", "сокращён", "caption соблюдён"],
   ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
   ["Generic webhook", "100 000", "готов", "HTTPS + подпись"],
@@ -29,6 +29,7 @@ const variants = [
 
 const publicationRows = [
   ["published", "Telegram Rich Message", "контракт отправки собран, live evidence pending", "success"],
+  ["failed_retryable", "MAX Message", "attachment.not.ready, retry запланирован", "warning"],
   ["manual_required", "Ручной экспорт", "пакет готов, ждёт подтверждения", "warning"],
   ["published", "Generic webhook", "ответ 202", "success"],
   ["failed_retryable", "Generic webhook", "ответ 503", "warning"],
@@ -38,6 +39,7 @@ const publicationRows = [
 
 const attempts = [
   ["#1", "telegram_rich_message", "published", "sendRichMessage"],
+  ["#1", "max_message", "failed_retryable", "attachment.not.ready"],
   ["#1", "generic_webhook", "failed_retryable", "503"],
   ["#2", "generic_webhook", "published", "202"],
   ["#1", "manual_export", "manual_required", "пакет"],
@@ -55,7 +57,7 @@ function PublicationHeader() {
         </Button>
       }
       description="Варианты, approval, Telegram Rich Message, ручной экспорт, generic webhook, попытки и outbox."
-      eyebrow="Этап 07"
+      eyebrow="Этап 08"
       title="Публикации"
     />
   );
@@ -70,11 +72,12 @@ export function PublicationCoreShell() {
           <div>
             <Badge>Техническая сборка</Badge>
             <h1 className="mt-3 text-3xl font-semibold text-ink">
-              Публикационный контур с Telegram Rich Message
+              Публикационный контур с Telegram и MAX
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Мастер-текст превращается в неизменяемые варианты под площадки. В очередь уходит
-              только одобренный вариант, а Telegram собирает единый rich payload с медиа в порядке автора.
+              только одобренный вариант, Telegram собирает rich payload, а MAX готовит message
+              payload с upload/evidence и retry для неготовых вложений.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -133,8 +136,12 @@ export function PublicationCoreShell() {
                 <div className="mt-1">Основной режим: tg-collage, rich HTML, signed media URL, fallback только после подтверждения.</div>
               </div>
               <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">MAX и Instagram</div>
-                <div className="mt-1">Варианты готовятся, нативная отправка в следующих фазах.</div>
+                <div className="font-medium text-ink">MAX Message</div>
+                <div className="mt-1">Токен только в Authorization, chat_id задаётся вручную или из webhook events, media count ждёт live spike.</div>
+              </div>
+              <div className="rounded-md border border-line p-3">
+                <div className="font-medium text-ink">Instagram</div>
+                <div className="mt-1">Вариант готовится, нативная отправка в следующей фазе.</div>
               </div>
             </div>
           </Card>

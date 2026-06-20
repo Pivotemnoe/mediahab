@@ -86,6 +86,7 @@ def main() -> int:
         "/api/v1/publications/{publication_id}/confirm-manual",
         "/api/v1/publications/{publication_id}/attempts",
         "/api/v1/webhooks/generic/{destination_id}",
+        "/api/v1/webhooks/max/{destination_id}",
     }
     missing_paths = sorted(required_paths - set(paths))
     if missing_paths:
