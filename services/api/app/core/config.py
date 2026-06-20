@@ -60,6 +60,15 @@ class Settings(BaseSettings):
     openai_stt_model: str = Field(default="gpt-4o-mini-transcribe", alias="OPENAI_STT_MODEL")
     openai_stt_language: str | None = Field(default="ru", alias="OPENAI_STT_LANGUAGE")
     openai_stt_timeout_seconds: float = Field(default=60.0, alias="OPENAI_STT_TIMEOUT_SECONDS")
+    ai_text_provider: str = Field(default="mock", alias="AI_TEXT_PROVIDER")
+    ai_text_model: str = Field(default="mock-editor-v1", alias="AI_TEXT_MODEL")
+    ai_text_timeout_seconds: float = Field(default=90.0, alias="AI_TEXT_TIMEOUT_SECONDS")
+    openai_text_model: str = Field(default="gpt-4o-mini", alias="OPENAI_TEXT_MODEL")
+    embedding_provider: str = Field(default="mock", alias="EMBEDDING_PROVIDER")
+    embedding_model: str = Field(default="mock-embedding-v1", alias="EMBEDDING_MODEL")
+    openai_embedding_model: str = Field(
+        default="text-embedding-3-small", alias="OPENAI_EMBEDDING_MODEL"
+    )
     auth_rate_limit_attempts: int = Field(default=5, alias="AUTH_RATE_LIMIT_ATTEMPTS")
     auth_rate_limit_window_seconds: int = Field(
         default=60, alias="AUTH_RATE_LIMIT_WINDOW_SECONDS"

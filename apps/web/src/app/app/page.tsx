@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  BrainCircuit,
   CalendarClock,
   CheckCircle2,
   FileEdit,
@@ -26,13 +27,15 @@ const pipeline = [
   ["Тарифы", "Оплата-заглушка и проверка лимитов", "ready"],
   ["Проекты", "Конструктор проектов, рубрик и версионируемые настройки", "ready"],
   ["Контент", "Черновики, блоки, медиа и голосовая расшифровка", "ready"],
+  ["ИИ", "Примеры, подбор, мастер-текст, крючки, оценки и проверка качества", "ready"],
 ];
 
 const integrations = [
   ["Авторизация", "Регистрация, вход, выход, сброс пароля и сессии", "success", "готово"],
   ["Рабочее пространство", "Роли владельца, администратора, редактора и наблюдателя", "success", "готово"],
   ["Тарифы", "В режиме заглушки оплата не списывается", "warning", "заглушка"],
-  ["Голос", "Live-провайдер распознавания ещё не подключён", "warning", "mock"],
+  ["Голос", "OpenAI STT подключается через API, локально доступен mock", "success", "готово"],
+  ["ИИ", "Текстовый провайдер по умолчанию mock, OpenAI включается через переменные окружения", "warning", "настройка"],
 ];
 
 const navItems: Array<[string, string, LucideIcon]> = [
@@ -40,6 +43,7 @@ const navItems: Array<[string, string, LucideIcon]> = [
   ["Создать", "/app/content/new", Plus],
   ["Проекты", "/app/projects", FolderKanban],
   ["Контент", "/app/content", FileEdit],
+  ["ИИ", "/app/ai", BrainCircuit],
   ["Публикации", "/app/publications", Send],
   ["Медиа", "/app/media", Images],
   ["Настройки", "/app/settings", Settings],
@@ -136,7 +140,7 @@ export default function CabinetShell() {
                   <h2 className="text-lg font-semibold">Контент-пайплайн</h2>
                   <p className="text-sm text-muted">Предпросмотр границы кабинета</p>
                 </div>
-                <Badge>Этап 04</Badge>
+            <Badge>Этап 05</Badge>
               </div>
               <div className="grid gap-3">
                 {pipeline.map(([title, text, status]) => (

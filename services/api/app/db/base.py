@@ -480,6 +480,92 @@ class RubricSuggestion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class ExamplePost(Base):
+    __tablename__ = "example_posts"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "project_id",
+            "dedupe_hash",
+            name="uq_example_posts_workspace_project_hash",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    source_type: Mapped[str] = mapped_column(String(40), default="manual", index=True)
+    source_external_id: Mapped[str | None] = mapped_column(String(220), index=True)
+    title: Mapped[str | None] = mapped_column(String(240))
+    text: Mapped[str] = mapped_column(Text)
+    normalized_text: Mapped[str] = mapped_column(Text)
+    character_count: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(40), default="pending_review", index=True)
+    labels_json: Mapped[object] = mapped_column(JSON)
+    manual_quality_score: Mapped[int | None] = mapped_column(Integer)
+    dedupe_hash: Mapped[str] = mapped_column(String(64), index=True)
+    reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class ExampleMetric(Base):
+    __tablename__ = "example_metrics"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    example_post_id: Mapped[UUID] = mapped_column(ForeignKey("example_posts.id"), index=True)
+    views: Mapped[int | None] = mapped_column(Integer)
+    reactions: Mapped[int | None] = mapped_column(Integer)
+    comments: Mapped[int | None] = mapped_column(Integer)
+    shares: Mapped[int | None] = mapped_column(Integer)
+    engagement_rate: Mapped[object | None] = mapped_column(Numeric(10, 4))
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ExampleEmbedding(Base):
+    __tablename__ = "example_embeddings"
+    __table_args__ = (
+        UniqueConstraint(
+            "example_post_id",
+            "provider_key",
+            "model_id",
+            "content_hash",
+            name="uq_example_embeddings_example_provider_hash",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    example_post_id: Mapped[UUID] = mapped_column(ForeignKey("example_posts.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock")
+    model_id: Mapped[str] = mapped_column(String(160), default="mock-embedding-v1")
+    dimensions: Mapped[int] = mapped_column(Integer, default=16)
+    embedding_json: Mapped[object] = mapped_column(JSON)
+    content_hash: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class RejectedPattern(Base):
+    __tablename__ = "rejected_patterns"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID | None] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    pattern_type: Mapped[str] = mapped_column(String(80), default="phrase")
+    text_or_regex: Mapped[str] = mapped_column(Text)
+    explanation: Mapped[str | None] = mapped_column(Text)
+    severity: Mapped[str] = mapped_column(String(40), default="warning")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
 class ContentItem(Base):
     __tablename__ = "content_items"
 
@@ -665,3 +751,80 @@ class TranscriptionRun(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
+
+
+class ProviderConfig(Base):
+    __tablename__ = "provider_configs"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "provider_family",
+            "provider_key",
+            name="uq_provider_configs_workspace_family_key",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID | None] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    provider_family: Mapped[str] = mapped_column(String(80), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), index=True)
+    encrypted_credentials_json: Mapped[object | None] = mapped_column(JSON)
+    configuration_json: Mapped[object] = mapped_column(JSON)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class GenerationRun(Base):
+    __tablename__ = "generation_runs"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    task_type: Mapped[str] = mapped_column(String(80), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    model_id: Mapped[str] = mapped_column(String(160), default="mock-editor-v1")
+    status: Mapped[str] = mapped_column(String(40), default="queued", index=True)
+    context_manifest_json: Mapped[object] = mapped_column(JSON)
+    request_metadata_json: Mapped[object | None] = mapped_column(JSON)
+    response_json: Mapped[object | None] = mapped_column(JSON)
+    retrieved_example_ids: Mapped[object] = mapped_column(JSON)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    input_characters: Mapped[int | None] = mapped_column(Integer)
+    output_characters: Mapped[int | None] = mapped_column(Integer)
+    cost_estimate_micro_usd: Mapped[int | None] = mapped_column(Integer)
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class GenerationStep(Base):
+    __tablename__ = "generation_steps"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    generation_run_id: Mapped[UUID] = mapped_column(ForeignKey("generation_runs.id"), index=True)
+    step_type: Mapped[str] = mapped_column(String(80), index=True)
+    provider_key: Mapped[str | None] = mapped_column(String(80))
+    model_id: Mapped[str | None] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(40), default="completed", index=True)
+    input_metadata_json: Mapped[object | None] = mapped_column(JSON)
+    output_metadata_json: Mapped[object | None] = mapped_column(JSON)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

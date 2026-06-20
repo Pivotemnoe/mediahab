@@ -12,7 +12,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 6. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
 7. Provide Instagram professional account type, Meta app ownership, OAuth redirect domain, scopes, review status, and test-user availability.
 8. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
-9. Choose the first live text-generation provider and embedding provider for the personal pilot. Speech-to-text MVP default is OpenAI after user confirmation.
+9. Confirm OpenAI text-generation and embedding models, budget, and live-smoke sample for the personal pilot.
 10. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
 
 ## Infrastructure and launch dependencies
@@ -41,5 +41,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 9. Payment provider and fiscal receipt requirements for the launch jurisdiction.
 10. Retention and deletion periods for voice notes, raw media, AI logs, and publication payloads.
 11. Final visual/interaction design for the project and rubric builder before replacing the Phase 03 technical screens.
-12. When mock rubric suggestions should switch to a live AI provider, and what moderation/evidence requirements apply.
+12. When mock rubric suggestions should switch to the live text provider, and what moderation/evidence requirements apply.
 13. Confirm whether raw voice notes, uploaded photos/videos, transcription text, and corrected fact blocks use one retention period or separate retention periods.
+14. Confirm final example-ranking formula: rubric match, semantic similarity, manual quality, engagement, recency, and rejected-pattern weights.
+15. Confirm AI prompt/output retention policy and whether raw prompts may be stored or only hashed/redacted diagnostics.

@@ -15,6 +15,8 @@ COPY services services
 COPY packages packages
 COPY connectors connectors
 COPY database database
+COPY presets presets
+COPY schemas schemas
 COPY tools tools
 
 WORKDIR /app/services/api

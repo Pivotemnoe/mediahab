@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Blocks,
+  BookOpenCheck,
   CheckCircle2,
   CopyPlus,
   FileJson,
@@ -142,6 +143,12 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}/examples`}>
+                <BookOpenCheck size={16} />
+                Примеры
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
               <Link href={`/app/projects/${projectId}/builder`}>
                 <WandSparkles size={16} />
                 Конструктор
@@ -191,7 +198,7 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
             Конструктор проекта {projectId}
           </h1>
           <div className="grid gap-3 md:grid-cols-2">
-            {["Название", "Описание", "AI-режим", "Политика знаков"].map((label) => (
+            {["Название", "Описание", "ИИ-режим", "Политика знаков"].map((label) => (
               <div className="rounded-md border border-line p-3" key={label}>
                 <div className="text-sm font-medium">{label}</div>
                 <div className="mt-1 text-sm text-muted">
@@ -252,7 +259,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
           </Card>
           <Card className="grid content-start gap-3">
             <div className="text-sm font-semibold">Инспектор настроек</div>
-            {["Обязательное поле", "Факт заблокирован", "Генерируется AI", "Мин/макс элементов", "Редакционные лимиты"].map((item) => (
+            {["Обязательное поле", "Факт заблокирован", "Генерируется ИИ", "Мин/макс элементов", "Редакционные лимиты"].map((item) => (
               <label className="flex items-center gap-2 text-sm" key={item}>
                 <input type="checkbox" />
                 {item}

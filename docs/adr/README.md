@@ -13,6 +13,7 @@ Create numbered ADR files during Phase 00, using `reference/ARCHITECTURE_DECISIO
 0008-phase02-auth-abuse-and-mock-billing.md
 0009-versioned-project-rubric-configuration.md
 0010-content-source-facts-media-and-transcription.md
+0011-examples-retrieval-and-ai-runs.md
 ```
 
 Each ADR contains status, context, decision, alternatives, consequences, migration/rollback implications, and evidence.

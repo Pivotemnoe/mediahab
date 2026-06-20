@@ -107,6 +107,7 @@ Advanced raw prompt editing may be role- and feature-flag restricted.
 ```text
 GET  /projects/{project_id}/examples
 POST /projects/{project_id}/examples
+POST /projects/{project_id}/examples/import
 POST /projects/{project_id}/examples/import-json
 POST /projects/{project_id}/examples/import-telegram
 POST /examples/{example_id}/approve
