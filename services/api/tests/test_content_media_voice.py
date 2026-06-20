@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -15,6 +16,7 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.core.config import Settings, get_settings  # noqa: E402
 from app.db.base import Base, ContentMedia, LockedFact  # noqa: E402
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
@@ -107,6 +109,12 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         )
         self.assertEqual(created.status_code, 200, created.text)
         return project, rubric, created.json()
+
+    def override_settings(self, settings: Settings) -> None:
+        self.app.dependency_overrides[get_settings] = lambda: settings
+
+    def clear_settings_override(self) -> None:
+        self.app.dependency_overrides.pop(get_settings, None)
 
     def test_obzor_guided_form_blocks_and_conflict_handling(self) -> None:
         auth = self.register(self.client)
@@ -254,6 +262,101 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         )
         self.assertEqual(order.status_code, 200, order.text)
         self.assertEqual(asyncio.run(self._media_order(content["id"])), [image_ids[1], image_ids[0]])
+
+    def test_s3_presign_uses_configured_storage(self) -> None:
+        auth = self.register(self.client, email="s3-04@example.com", workspace_name="S3 Workspace")
+        workspace_id = auth["workspace"]["id"]
+        settings = Settings(
+            s3_endpoint_url="https://s3.timeweb.example",
+            s3_public_base_url="https://s3.timeweb.example",
+            s3_bucket="timeweb-media",
+            s3_access_key_id="access",
+            s3_secret_access_key="secret",
+            media_presign_ttl_seconds=600,
+        )
+        fake_s3 = Mock()
+        fake_s3.generate_presigned_url.return_value = "https://s3.timeweb.example/timeweb-media/signed"
+        self.override_settings(settings)
+        try:
+            with patch("app.modules.content.service.make_s3_client", return_value=fake_s3):
+                presign = self.client.post(
+                    "/api/v1/media/presign-upload",
+                    headers=self.csrf_headers(auth),
+                    json={
+                        "workspace_id": workspace_id,
+                        "filename": "voice.webm",
+                        "kind": "voice",
+                        "mime_type": "audio/webm",
+                        "size_bytes": 10,
+                    },
+                )
+        finally:
+            self.clear_settings_override()
+        self.assertEqual(presign.status_code, 200, presign.text)
+        body = presign.json()
+        self.assertEqual(body["bucket"], "timeweb-media")
+        self.assertEqual(body["upload_url"], "https://s3.timeweb.example/timeweb-media/signed")
+        fake_s3.generate_presigned_url.assert_called_once()
+        call = fake_s3.generate_presigned_url.call_args.kwargs
+        self.assertEqual(call["Params"]["Bucket"], "timeweb-media")
+        self.assertEqual(call["Params"]["ContentType"], "audio/webm")
+
+    def test_openai_transcription_provider_updates_job(self) -> None:
+        auth = self.register(self.client, email="openai-stt04@example.com", workspace_name="OpenAI Workspace")
+        workspace_id = auth["workspace"]["id"]
+        _, _, content = self.create_obzor_content(auth)
+        block = self.client.put(
+            f"/api/v1/content-items/{content['id']}/blocks/atmosphere",
+            headers=self.csrf_headers(auth),
+            json={"value": {"text": ""}, "source_type": "voice", "version": content["version"]},
+        )
+        self.assertEqual(block.status_code, 200, block.text)
+        presign = self.client.post(
+            "/api/v1/media/presign-upload",
+            headers=self.csrf_headers(auth),
+            json={
+                "workspace_id": workspace_id,
+                "filename": "atmosphere.webm",
+                "kind": "voice",
+                "mime_type": "audio/webm",
+                "size_bytes": 100,
+                "content_item_id": content["id"],
+            },
+        )
+        self.assertEqual(presign.status_code, 200, presign.text)
+        media_id = presign.json()["media_id"]
+        settings = Settings(
+            stt_provider="openai",
+            openai_api_key="test-openai-key",
+            openai_stt_model="gpt-4o-mini-transcribe",
+        )
+
+        async def fake_openai_transcribe(
+            settings: Settings,
+            media: object,
+            audio_bytes: bytes,
+        ) -> tuple[str, dict[str, object]]:
+            self.assertEqual(audio_bytes, b"audio")
+            return "На летней площадке спокойно.", {"provider": "openai", "model": settings.openai_stt_model}
+
+        self.override_settings(settings)
+        try:
+            with (
+                patch("app.api.v1.routes.content.fetch_s3_object_bytes", return_value=b"audio"),
+                patch("app.api.v1.routes.content.transcribe_with_openai", side_effect=fake_openai_transcribe),
+            ):
+                job = self.client.post(
+                    f"/api/v1/content-blocks/{block.json()['id']}/transcribe",
+                    headers=self.csrf_headers(auth),
+                    json={"media_id": media_id, "provider_key": "openai"},
+                )
+        finally:
+            self.clear_settings_override()
+        self.assertEqual(job.status_code, 202, job.text)
+        body = job.json()
+        self.assertEqual(body["provider_key"], "openai")
+        self.assertEqual(body["status"], "completed")
+        self.assertEqual(body["transcript_text"], "На летней площадке спокойно.")
 
     def test_cross_workspace_content_access_returns_404(self) -> None:
         owner_a = self.register(self.client, email="owner-a04@example.com", workspace_name="A Workspace")

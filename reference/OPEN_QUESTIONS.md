@@ -12,21 +12,21 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 6. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
 7. Provide Instagram professional account type, Meta app ownership, OAuth redirect domain, scopes, review status, and test-user availability.
 8. Confirm whether Instagram live publication is allowed during Phase 00/09 or should remain `manual_required` until later.
-9. Choose the first live text-generation provider, speech-to-text provider, and embedding provider for the personal pilot.
+9. Choose the first live text-generation provider and embedding provider for the personal pilot. Speech-to-text MVP default is OpenAI after user confirmation.
 10. Confirm whether the Phase 00 ADRs are accepted as written or need changes before Phase 01.
 
 ## Infrastructure and launch dependencies
 
 1. Confirm production domain and sender email service for verification and password reset.
-2. Confirm initial VPS provider, S3-compatible object storage provider, region, and backup destination.
+2. Confirm initial VPS provider, Timeweb S3 region/bucket policy for production, and backup destination.
 3. Confirm whether the first deployment uses one VPS plus external object storage or a managed database/object-storage split.
 4. Confirm where encryption keys and connector secrets will be stored for personal pilot and production.
 5. Confirm staging channel/account separation so automated tests never target production public channels.
 6. Replace Phase 02 local `ADMIN_API_TOKEN` plan-assignment placeholder with a real system-operator identity model before public SaaS.
 7. Replace Phase 02 in-process auth rate limiter with Redis/shared rate limiting before multi-instance or public deployment.
 8. Choose the real email delivery provider for verification and password reset before production auth.
-9. Confirm production object-storage provider, bucket naming, public delivery base URL, signed upload TTL, and cleanup policy for abandoned media uploads.
-10. Confirm which speech-to-text provider receives the first live integration credentials and what language/model defaults are acceptable for Russian dictation.
+9. Confirm final Timeweb S3 bucket naming, public delivery base URL, signed upload TTL, CORS policy, and cleanup policy for abandoned media uploads.
+10. Confirm OpenAI STT production model, Russian language default, monthly minute budget, and live-smoke audio sample.
 
 ## Product-owner decisions that can follow later
 

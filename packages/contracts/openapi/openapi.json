@@ -6115,7 +6115,7 @@
           "provider_key": {
             "type": "string",
             "title": "Provider Key",
-            "default": "mock"
+            "default": "default"
           },
           "mock_transcript": {
             "anyOf": [

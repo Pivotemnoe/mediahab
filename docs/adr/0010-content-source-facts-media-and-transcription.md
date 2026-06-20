@@ -15,7 +15,7 @@ Confirmed facts are normalized into `locked_facts`. User correction or explicit 
 
 Media uses `media_assets` plus `content_media` ordering. The API creates upload records and returns presigned object-storage URLs; browser clients upload bytes directly to object storage. The API only receives metadata and completion confirmation.
 
-Transcription uses `transcription_runs` with provider metadata and status. Phase 04 ships a deterministic mock provider and keeps the provider boundary ready for a live STT adapter when credentials are available.
+Transcription uses `transcription_runs` with provider metadata and status. Phase 04 ships a deterministic mock provider plus an OpenAI STT adapter for the confirmed MVP live path. The adapter reads uploaded audio from S3-compatible storage server-side and stores sanitized provider metadata with the run.
 
 ## Alternatives Considered
 
@@ -28,7 +28,8 @@ Transcription uses `transcription_runs` with provider metadata and status. Phase
 - Later AI assembly can reference immutable project/rubric versions and locked facts.
 - Reload recovery is server-backed rather than only browser-local.
 - Object storage signing remains replaceable without changing content/media contracts.
-- Mock transcription is useful for workflow tests but must not be reported as a live STT test.
+- Local development uses MinIO with the same S3-compatible flow; the MVP production path can point the same settings at Timeweb S3.
+- Mock transcription is useful for workflow tests; OpenAI STT requires real credentials and controlled audio smoke before quality claims.
 
 ## Migration And Rollback
 

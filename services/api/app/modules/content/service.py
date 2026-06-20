@@ -5,6 +5,11 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
+import boto3
+import httpx
+from botocore.client import BaseClient
+from botocore.config import Config
+from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +33,13 @@ from app.db.base import (
 
 CONTENT_MUTATION_ROLES = {"owner", "admin", "editor"}
 READ_ROLES = {"owner", "admin", "editor", "viewer"}
+
+
+class ContentProviderError(RuntimeError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 
 @dataclass
@@ -281,7 +293,7 @@ def make_storage_key(workspace_id: UUID, media_id: UUID, filename: str) -> str:
     return f"workspaces/{workspace_id}/media/{media_id}/{safe_name}"
 
 
-def make_presigned_upload_url(settings: Settings, storage_key: str) -> str:
+def make_mock_presigned_upload_url(settings: Settings, storage_key: str) -> str:
     base = settings.media_public_base_url.rstrip("/")
     bucket = quote(settings.media_bucket)
     key = quote(storage_key)
@@ -290,6 +302,132 @@ def make_presigned_upload_url(settings: Settings, storage_key: str) -> str:
         f"?X-Amz-Mock-Expires={settings.media_presign_ttl_seconds}"
         "&X-Amz-Mock-SignedHeaders=content-type"
     )
+
+
+def make_s3_client(settings: Settings, endpoint_url: str | None = None) -> BaseClient:
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint_url or settings.s3_endpoint_url or settings.s3_public_base_url,
+        region_name=settings.s3_region,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_secret_access_key,
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path" if settings.s3_force_path_style else "auto"},
+        ),
+    )
+
+
+def make_presigned_upload_url(settings: Settings, storage_key: str, mime_type: str) -> str:
+    if not settings.s3_upload_enabled:
+        return make_mock_presigned_upload_url(settings, storage_key)
+    client = make_s3_client(settings, endpoint_url=settings.resolved_s3_public_base_url)
+    try:
+        return str(
+            client.generate_presigned_url(
+                ClientMethod="put_object",
+                Params={
+                    "Bucket": settings.resolved_media_bucket,
+                    "Key": storage_key,
+                    "ContentType": mime_type,
+                },
+                ExpiresIn=settings.media_presign_ttl_seconds,
+                HttpMethod="PUT",
+            )
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise ContentProviderError(
+            "s3_presign_failed",
+            "S3 presigned upload URL could not be generated.",
+        ) from exc
+
+
+def fetch_s3_object_bytes(settings: Settings, media: MediaAsset) -> bytes:
+    if not settings.s3_download_enabled:
+        raise ContentProviderError(
+            "s3_not_configured",
+            "S3 storage is not configured for server-side media reads.",
+        )
+    client = make_s3_client(
+        settings,
+        endpoint_url=settings.s3_endpoint_url or settings.s3_public_base_url,
+    )
+    try:
+        response = client.get_object(Bucket=media.bucket, Key=media.storage_key)
+    except (BotoCoreError, ClientError) as exc:
+        raise ContentProviderError(
+            "s3_object_unavailable",
+            "S3 object could not be read for transcription.",
+        ) from exc
+    body = response["Body"]
+    try:
+        return bytes(body.read())
+    finally:
+        close = getattr(body, "close", None)
+        if callable(close):
+            close()
+
+
+async def transcribe_with_openai(
+    settings: Settings,
+    media: MediaAsset,
+    audio_bytes: bytes,
+) -> tuple[str, dict[str, Any]]:
+    if not settings.openai_api_key:
+        raise ContentProviderError(
+            "openai_not_configured",
+            "OPENAI_API_KEY is not configured.",
+        )
+    endpoint = f"{settings.openai_base_url.rstrip('/')}/audio/transcriptions"
+    data: dict[str, str] = {
+        "model": settings.openai_stt_model,
+        "response_format": "json",
+    }
+    if settings.openai_stt_language:
+        data["language"] = settings.openai_stt_language
+    files = {
+        "file": (
+            media.storage_key.rsplit("/", 1)[-1] or "audio.webm",
+            audio_bytes,
+            media.mime_type,
+        )
+    }
+    try:
+        async with httpx.AsyncClient(timeout=settings.openai_stt_timeout_seconds) as client:
+            response = await client.post(
+                endpoint,
+                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                data=data,
+                files=files,
+            )
+    except httpx.HTTPError as exc:
+        raise ContentProviderError(
+            "openai_request_failed",
+            "OpenAI STT request failed before a response was received.",
+        ) from exc
+    if response.status_code >= 400:
+        raise ContentProviderError(
+            "openai_request_failed",
+            f"OpenAI STT returned HTTP {response.status_code}.",
+        )
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise ContentProviderError(
+            "openai_invalid_response",
+            "OpenAI STT response was not valid JSON.",
+        ) from exc
+    text = payload.get("text")
+    if not isinstance(text, str) or not text.strip():
+        raise ContentProviderError(
+            "openai_empty_transcript",
+            "OpenAI STT response did not contain transcript text.",
+        )
+    return text.strip(), {
+        "provider": "openai",
+        "model": settings.openai_stt_model,
+        "usage": payload.get("usage"),
+    }
 
 
 async def attach_media_order(

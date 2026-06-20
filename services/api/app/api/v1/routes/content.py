@@ -29,8 +29,10 @@ from app.modules.auth.dependencies import (
 )
 from app.modules.content.service import (
     CONTENT_MUTATION_ROLES,
+    ContentProviderError,
     attach_media_order,
     content_item_rubric_version,
+    fetch_s3_object_bytes,
     find_block,
     guided_form_from_rubric,
     lock_fact,
@@ -39,6 +41,7 @@ from app.modules.content.service import (
     mock_transcript_for,
     next_group_index,
     resolve_content_create_context,
+    transcribe_with_openai,
     unlock_fact,
     upsert_block,
     write_content_revision,
@@ -203,7 +206,7 @@ class ContentMediaResponse(BaseModel):
 
 class TranscribeRequest(BaseModel):
     media_id: UUID | None = None
-    provider_key: str = "mock"
+    provider_key: str = "default"
     mock_transcript: str | None = None
 
 
@@ -787,7 +790,7 @@ async def presign_upload(
         id=media_id,
         workspace_id=payload.workspace_id,
         storage_key=storage_key,
-        bucket=settings.media_bucket,
+        bucket=settings.resolved_media_bucket,
         kind=payload.kind,
         mime_type=payload.mime_type,
         size_bytes=payload.size_bytes,
@@ -801,11 +804,15 @@ async def presign_upload(
     )
     db.add(media)
     await db.commit()
+    try:
+        upload_url = make_presigned_upload_url(settings, storage_key, payload.mime_type)
+    except ContentProviderError as exc:
+        raise api_error(503, exc.code, exc.message, request=request) from exc
     return MediaPresignResponse(
         media_id=media.id,
         bucket=media.bucket,
         storage_key=media.storage_key,
-        upload_url=make_presigned_upload_url(settings, storage_key),
+        upload_url=upload_url,
         method="PUT",
         headers={"Content-Type": payload.mime_type},
         expires_in_seconds=settings.media_presign_ttl_seconds,
@@ -916,14 +923,10 @@ async def transcribe_block(
     request: Request,
     actor: Actor = Depends(require_csrf),
     db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> TranscriptionJobOut:
-    if payload.provider_key != "mock":
-        raise api_error(
-            503,
-            "stt_provider_unavailable",
-            "Live speech-to-text provider is not configured.",
-            request=request,
-        )
+    provider_key = settings.stt_provider if payload.provider_key == "default" else payload.provider_key
+    provider_key = provider_key.strip().lower()
     block, item = await mutable_block_for_actor(block_id, request, actor, db)
     media_id = payload.media_id or block.source_media_id
     if media_id is None:
@@ -947,7 +950,31 @@ async def transcribe_block(
         )
         db.add(voice_asset)
         await db.flush()
-    transcript = payload.mock_transcript or mock_transcript_for(block)
+    confidence_json: dict[str, Any]
+    if provider_key == "mock":
+        transcript = payload.mock_transcript or mock_transcript_for(block)
+        confidence_json = {"provider": provider_key, "mock": True}
+    elif provider_key == "openai":
+        if payload.mock_transcript:
+            raise api_error(
+                422,
+                "mock_transcript_not_allowed",
+                "mock_transcript can only be used with the mock STT provider.",
+                request=request,
+            )
+        try:
+            audio_bytes = fetch_s3_object_bytes(settings, media)
+            transcript, confidence_json = await transcribe_with_openai(settings, media, audio_bytes)
+        except ContentProviderError as exc:
+            raise api_error(503, exc.code, exc.message, request=request) from exc
+    else:
+        raise api_error(
+            503,
+            "stt_provider_unavailable",
+            "Requested speech-to-text provider is not configured.",
+            {"provider_key": provider_key},
+            request=request,
+        )
     run = TranscriptionRun(
         id=uuid4(),
         workspace_id=item.workspace_id,
@@ -955,10 +982,10 @@ async def transcribe_block(
         content_block_id=block.id,
         media_asset_id=media.id,
         voice_asset_id=voice_asset.id,
-        provider_key=payload.provider_key,
+        provider_key=provider_key,
         status="completed",
         transcript_text=transcript,
-        confidence_json={"provider": payload.provider_key, "mock": payload.provider_key == "mock"},
+        confidence_json=confidence_json,
         retry_count=0,
         started_at=utc_now(),
         completed_at=utc_now(),

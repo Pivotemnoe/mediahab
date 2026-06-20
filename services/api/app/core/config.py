@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
     app_env: str = Field(default="local", alias="APP_ENV")
     api_host: str = Field(default="0.0.0.0", alias="API_HOST")
@@ -28,6 +28,38 @@ class Settings(BaseSettings):
         default="http://localhost:9100", alias="MEDIA_PUBLIC_BASE_URL"
     )
     media_presign_ttl_seconds: int = Field(default=900, alias="MEDIA_PRESIGN_TTL_SECONDS")
+    s3_endpoint_url: str | None = Field(
+        default=None, validation_alias=AliasChoices("S3_ENDPOINT_URL", "S3_ENDPOINT")
+    )
+    s3_public_base_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("S3_PUBLIC_BASE_URL", "S3_PUBLIC_ENDPOINT_URL"),
+    )
+    s3_bucket: str | None = Field(default=None, alias="S3_BUCKET")
+    s3_region: str = Field(default="us-east-1", alias="S3_REGION")
+    s3_access_key_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "S3_ACCESS_KEY_ID",
+            "S3_ACCESS_KEY",
+            "AWS_ACCESS_KEY_ID",
+        ),
+    )
+    s3_secret_access_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "S3_SECRET_ACCESS_KEY",
+            "S3_SECRET_KEY",
+            "AWS_SECRET_ACCESS_KEY",
+        ),
+    )
+    s3_force_path_style: bool = Field(default=True, alias="S3_FORCE_PATH_STYLE")
+    stt_provider: str = Field(default="mock", alias="STT_PROVIDER")
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_base_url: str = Field(default="https://api.openai.com/v1", alias="OPENAI_BASE_URL")
+    openai_stt_model: str = Field(default="gpt-4o-mini-transcribe", alias="OPENAI_STT_MODEL")
+    openai_stt_language: str | None = Field(default="ru", alias="OPENAI_STT_LANGUAGE")
+    openai_stt_timeout_seconds: float = Field(default=60.0, alias="OPENAI_STT_TIMEOUT_SECONDS")
     auth_rate_limit_attempts: int = Field(default=5, alias="AUTH_RATE_LIMIT_ATTEMPTS")
     auth_rate_limit_window_seconds: int = Field(
         default=60, alias="AUTH_RATE_LIMIT_WINDOW_SECONDS"
@@ -44,6 +76,36 @@ class Settings(BaseSettings):
             for origin in self.cors_origins_raw.split(",")
             if origin.strip()
         ]
+
+    @property
+    def resolved_media_bucket(self) -> str:
+        return self.s3_bucket or self.media_bucket
+
+    @property
+    def resolved_s3_public_base_url(self) -> str:
+        return (
+            self.s3_public_base_url
+            or self.s3_endpoint_url
+            or self.media_public_base_url
+        ).rstrip("/")
+
+    @property
+    def s3_upload_enabled(self) -> bool:
+        return bool(
+            self.s3_bucket
+            and self.s3_access_key_id
+            and self.s3_secret_access_key
+            and (self.s3_public_base_url or self.s3_endpoint_url)
+        )
+
+    @property
+    def s3_download_enabled(self) -> bool:
+        return bool(
+            self.s3_bucket
+            and self.s3_access_key_id
+            and self.s3_secret_access_key
+            and (self.s3_endpoint_url or self.s3_public_base_url)
+        )
 
 
 @lru_cache(maxsize=1)
