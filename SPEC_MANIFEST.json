@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T17:41:38.747445+00:00",
+  "generated_at": "2026-06-20T17:46:56.390926+00:00",
   "canonical_language": "en",
-  "file_count": 336,
+  "file_count": 339,
   "files": [
     {
       "path": ".dockerignore",
@@ -307,8 +307,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 11488,
-      "sha256": "b28e2e0bda39e1352dfab87537f26b9548cc42735c80212f8476b21b543c9e0c"
+      "size_bytes": 16828,
+      "sha256": "c605c67bc4f9cf5deec695c565a01a888003e19cdfc504f6a97aedcfe109840d"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
@@ -374,6 +374,11 @@
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
       "size_bytes": 1399,
       "sha256": "71073f99ef31df9cbfb1a1356ddc240ac4ee1923533ae284ef5ad26a136cdd1e"
+    },
+    {
+      "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
+      "size_bytes": 1624,
+      "sha256": "7251a168311c500e641e57bb57f5dbba59642e60f428ed778a5e57a868cef968"
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
@@ -929,6 +934,16 @@
       "path": "docs/exec-plans/UI_PHASE_02_REPORT_RU.md",
       "size_bytes": 4825,
       "sha256": "ce3e31b980e8638543fc78c70d8dd33b7c94bd9618d5abc04ce27bb9a82f4758"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_03_PROJECT_WIZARD.md",
+      "size_bytes": 2450,
+      "sha256": "8661583c1fca09bbbba73ddd41214cace4a9cf751f831f7e0550e3dee291898f"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_03_REPORT_RU.md",
+      "size_bytes": 3392,
+      "sha256": "40bd9ec533a3ef053021985a223127e9e05c2208543172f2106c3876bd3c8595"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

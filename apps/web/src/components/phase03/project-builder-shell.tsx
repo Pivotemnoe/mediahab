@@ -4,9 +4,17 @@ import {
   Blocks,
   BookOpenCheck,
   CheckCircle2,
+  ClipboardCheck,
   CopyPlus,
   FileJson,
   FolderPlus,
+  MessageSquare,
+  Pencil,
+  RadioTower,
+  Sparkles,
+  Trash2,
+  Upload,
+  Users,
   type LucideIcon,
   WandSparkles,
 } from "lucide-react";
@@ -15,6 +23,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  exampleImports,
+  platformOptions,
+  projectWizardSteps,
+  rubricSuggestions,
+} from "@/features/project-wizard/project-wizard-fixtures";
 
 const projectSteps = [
   "Идентичность",
@@ -72,56 +86,157 @@ export function ProjectIndexShell() {
 
 export function NewProjectShell() {
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <BuilderHeader title="Новый проект" />
-      <section className="grid gap-4 lg:grid-cols-[260px_1fr]">
+      <PageHeader
+        actions={
+          <>
+            <Button type="button" variant="secondary">
+              <CopyPlus size={16} />
+              Импорт пресета
+            </Button>
+            <Button type="button">
+              <FolderPlus size={16} />
+              Сохранить черновик
+            </Button>
+          </>
+        }
+        description="Visual Builder для проекта: идентичность, аудитория, тон, площадки, примеры и AI-предложения рубрик."
+        eyebrow="UI Phase 03"
+        title="Мастер проекта"
+      />
+
+      <section className="grid gap-4 xl:grid-cols-[300px_1fr_340px]">
         <Card className="grid content-start gap-2">
-          {projectSteps.map((step, index) => (
+          {projectWizardSteps.map(([step, text, status], index) => (
             <div
-              className="flex items-center gap-2 rounded-md border border-line p-3 text-sm"
+              className="grid grid-cols-[24px_1fr] gap-3 rounded-md border border-border p-3"
               key={step}
             >
-              <CheckCircle2 size={16} className={index === 0 ? "text-success" : "text-muted"} />
-              <span className={index === 0 ? "font-medium text-ink" : "text-muted"}>
-                {step}
-              </span>
+              <CheckCircle2 size={16} className={status === "current" ? "mt-0.5 text-success" : "mt-0.5 text-muted"} />
+              <div>
+                <div className={status === "current" ? "text-sm font-medium text-foreground" : "text-sm font-medium text-muted"}>
+                  {index + 1}. {step}
+                </div>
+                <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
+              </div>
             </div>
           ))}
         </Card>
-        <Card className="grid gap-4">
-          <div>
-            <Badge>Мастер</Badge>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">
-              Создание с нуля, из пресета, клона или пакета
-            </h1>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {["Название проекта", "URL-slug", "Тематика", "Основной язык"].map((label) => (
-              <label className="grid gap-1 text-sm" key={label}>
-                <span className="font-medium text-ink">{label}</span>
-                <input className="h-10 rounded-md border border-line px-3 outline-none focus:border-accent" />
-              </label>
+
+        <div className="grid gap-4">
+          <Card className="grid gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ClipboardCheck size={18} className="text-primary" />
+              Основа проекта
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {[
+                ["Название проекта", "Что поесть? Армавир"],
+                ["URL-slug", "chto-poest-armavir"],
+                ["Тематика", "Еда, обзоры, кафе и доставка"],
+                ["Основной язык", "Русский"],
+              ].map(([label, placeholder]) => (
+                <label className="grid gap-1.5 text-sm" key={label}>
+                  <span className="font-medium text-foreground">{label}</span>
+                  <input
+                    className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
+                    placeholder={placeholder}
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-medium text-foreground">Аудитория и тон</span>
+              <textarea
+                className="min-h-28 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
+                placeholder="Локальная аудитория Армавира, живой разговорный тон, честные оценки без рекламной подачи."
+              />
+            </label>
+          </Card>
+
+          <Card className="grid gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <RadioTower size={18} className="text-primary" />
+              Площадки
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {platformOptions.map(([name, note, enabled]) => (
+                <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={name}>
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="font-medium text-foreground">{name}</span>
+                    <input defaultChecked={enabled} type="checkbox" />
+                  </span>
+                  <span className="text-xs leading-5 text-muted">{note}</span>
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="grid gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Upload size={18} className="text-primary" />
+              Примеры
+            </div>
+            <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-sm leading-6 text-muted">
+              Загрузите тексты, фото или голосовые заметки. В UI Phase 03 это fixture-блок; API-импорт подключается позже.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {exampleImports.map((item) => (
+                <Badge key={item} tone="info">
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid content-start gap-4">
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Sparkles size={18} className="text-primary" />
+              AI-предложения рубрик
+            </div>
+            {rubricSuggestions.map(([name, text, mode]) => (
+              <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
+                <div>
+                  <div className="text-sm font-medium text-foreground">{name}</div>
+                  <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
+                </div>
+                <Badge tone="neutral" className="w-fit">
+                  {mode}
+                </Badge>
+                <div className="flex gap-2">
+                  <Button size="sm" type="button">
+                    <CheckCircle2 size={14} />
+                    Принять
+                  </Button>
+                  <Button size="sm" type="button" variant="secondary">
+                    <Pencil size={14} />
+                    Изменить
+                  </Button>
+                  <Button size="icon" type="button" variant="ghost">
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              </div>
             ))}
-          </div>
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-ink">Голос и тон</span>
-            <textarea className="min-h-28 rounded-md border border-line px-3 py-2 outline-none focus:border-accent" />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button">
-              <FolderPlus size={16} />
-              Сохранить черновик проекта
-            </Button>
-            <Button type="button" variant="secondary">
-              <CopyPlus size={16} />
-              Импортировать пресет
-            </Button>
-            <Button type="button" variant="secondary">
-              <FileJson size={16} />
-              Проверить пакет
-            </Button>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Users size={18} className="text-primary" />
+              Подтверждение
+            </div>
+            <p className="text-sm leading-6 text-muted">
+              Перед созданием проекта пользователь видит итог: название, площадки, тон, импорт примеров и выбранные рубрики.
+            </p>
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <MessageSquare size={16} />
+              Черновик можно сохранить без публикаций и без автоматического создания постов.
+            </div>
+          </Card>
+        </div>
       </section>
     </div>
   );
