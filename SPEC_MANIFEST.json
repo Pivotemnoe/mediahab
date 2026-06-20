@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T10:25:49.681013+00:00",
+  "generated_at": "2026-06-20T10:51:27.230324+00:00",
   "canonical_language": "en",
-  "file_count": 199,
+  "file_count": 215,
   "files": [
     {
       "path": ".dockerignore",
@@ -82,8 +82,33 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 5910,
-      "sha256": "8ff3db4980c783850d63216a29e533032b4601c9e57177e541fd65d4fee74701"
+      "size_bytes": 6166,
+      "sha256": "8e2113a804a01844bd042e78fdb5ee30fab2cf56386d2b8d688c5087e5e9c20c"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
+      "size_bytes": 292,
+      "sha256": "afe940d88ac97b6275d5c89782b1d423a801493015252605b7dc4f37740ff0b6"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/[projectId]/page.tsx",
+      "size_bytes": 283,
+      "sha256": "9c5ed825ac76a174dd3b46390e6abd67fc877345408c238e3dc32ba2aa8a0acb"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/[projectId]/rubrics/page.tsx",
+      "size_bytes": 290,
+      "sha256": "2c760bc92a2ab7431838c0f9e3cbc6b052c8606091973236545593d43419b2a2"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/new/page.tsx",
+      "size_bytes": 154,
+      "sha256": "8ab6d8c686b83aabfc157dffb235491f0b9b0e3cbdabd62e1267381950111213"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/page.tsx",
+      "size_bytes": 156,
+      "sha256": "ef503ff5841e72c7ed791cd251fbe08e8495d581976042cf3bfb32a268b8bb94"
     },
     {
       "path": "apps/web/src/app/app/workspace/page.tsx",
@@ -176,6 +201,11 @@
       "sha256": "43612a4368667b8fb2a0fcc6d790f77667c1f4f8c88a92865671883b4bff6982"
     },
     {
+      "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
+      "size_bytes": 10223,
+      "sha256": "048e7f54371157108faa377e64dce4480eb9ceec7fa292c97f6034cccb714ea4"
+    },
+    {
       "path": "apps/web/src/components/ui/badge.tsx",
       "size_bytes": 670,
       "sha256": "5c54564e5e7e2805523e9237af64d3fda2a932abd8d9b8ff0aab63dbdec5d0a3"
@@ -192,8 +222,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 55548,
-      "sha256": "0627a893a6aefae5c769da1f159508cbb10394bd4864481a76f33219c92d4773"
+      "size_bytes": 111948,
+      "sha256": "dc652869546535eaccfc8c479a7703828d556337deee16244f7bba299203a2f8"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -256,6 +286,11 @@
       "sha256": "59b9c188486e0fde4b534d8dcd02f9cb8b905ff86b9f8833b29ce32f36cd471f"
     },
     {
+      "path": "database/migrations/versions/202606200003_phase03_project_rubric_builder.py",
+      "size_bytes": 13228,
+      "sha256": "42f60bc2a4f8b072b13464ecc1e36bc585a22619a7ab5cdae8ba90281a8a8bce"
+    },
+    {
       "path": "database/seeds/phase01_baseline.sql",
       "size_bytes": 130,
       "sha256": "5c7bb9180855bedf8c0d9b3ace35d72a4177b783a74b438c66ac58c517b69427"
@@ -272,8 +307,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 3156,
-      "sha256": "74005822e61226f3f42290d307cccfd85cb785c36de1e22785516dacab6d4589"
+      "size_bytes": 3395,
+      "sha256": "a23d886ef49efa376f0ad9f2d761aca62c3c594661fd82f9af9b1375a4a5f38e"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -316,9 +351,14 @@
       "sha256": "2be1f7443f5a6ece4bb0b053fbb10a75bf4e795b50616cd9df812720a50ab693"
     },
     {
+      "path": "docs/adr/0009-versioned-project-rubric-configuration.md",
+      "size_bytes": 2257,
+      "sha256": "c1e1736f78f9ded0ed150cb74342ee3b11ae581e46b3667a18e0eb6b35f3bce3"
+    },
+    {
       "path": "docs/adr/README.md",
-      "size_bytes": 541,
-      "sha256": "d4d1578d0b7722e46749d47c1b43f864268090ee33fa2a2cad714a4da1f85484"
+      "size_bytes": 588,
+      "sha256": "4f3a475fd6a8d42a9ba1a163e8d1708334c0d1cf566a0feb2127379f332c174b"
     },
     {
       "path": "docs/en/ACCEPTANCE_CRITERIA.md",
@@ -394,6 +434,16 @@
       "path": "docs/exec-plans/PHASE_02_REPORT_RU.md",
       "size_bytes": 6650,
       "sha256": "7297bbf607057e697b19d58722dce07c117087a3f14270fe7f98c1b7ca74dde8"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_03_PROJECT_AND_RUBRIC_BUILDER.md",
+      "size_bytes": 4852,
+      "sha256": "fa2d58c59a2bf1d5f3374df15244e2a92d713060fd5a88022c70f48af614cbc8"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_03_REPORT_RU.md",
+      "size_bytes": 6345,
+      "sha256": "693bd1edc4b4845f03342b619f559967093139b2d033b155d0fba72d8a1e541d"
     },
     {
       "path": "docs/exec-plans/README.md",
@@ -492,8 +542,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 55548,
-      "sha256": "0627a893a6aefae5c769da1f159508cbb10394bd4864481a76f33219c92d4773"
+      "size_bytes": 111948,
+      "sha256": "dc652869546535eaccfc8c479a7703828d556337deee16244f7bba299203a2f8"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -697,8 +747,8 @@
     },
     {
       "path": "reference/OPEN_QUESTIONS.md",
-      "size_bytes": 3156,
-      "sha256": "74005822e61226f3f42290d307cccfd85cb785c36de1e22785516dacab6d4589"
+      "size_bytes": 3395,
+      "sha256": "a23d886ef49efa376f0ad9f2d761aca62c3c594661fd82f9af9b1375a4a5f38e"
     },
     {
       "path": "requirements-dev.txt",
@@ -767,8 +817,8 @@
     },
     {
       "path": "services/api/app/api/v1/router.py",
-      "size_bytes": 833,
-      "sha256": "51dc88105c52eb33e18d19ae9ca16425cbb48f5ac0095ba77dde4c705fee3cde"
+      "size_bytes": 960,
+      "sha256": "d24655fbe833480c5ec6afb0a569ad9a8c42a6dd0c54af3f1ee744c0fbb639db"
     },
     {
       "path": "services/api/app/api/v1/routes/__init__.py",
@@ -792,13 +842,18 @@
     },
     {
       "path": "services/api/app/api/v1/routes/health.py",
-      "size_bytes": 597,
-      "sha256": "a239ccf50bf070fd5bc2feb5e2d76e057e381099beb61a998243ef275d9034d3"
+      "size_bytes": 603,
+      "sha256": "6be0a50be084dd492732fb7ca051253b81201ab35b4fcca3d4474f863b11a638"
     },
     {
       "path": "services/api/app/api/v1/routes/me.py",
       "size_bytes": 3530,
       "sha256": "2139bebd3208989717c771902a157d44accbb6499670600a1201fb1062890aeb"
+    },
+    {
+      "path": "services/api/app/api/v1/routes/projects.py",
+      "size_bytes": 35142,
+      "sha256": "0db2a06ffed1a0c8acc446e25cab5f72d2278b3f8b425b50dfbcbb24846c7deb"
     },
     {
       "path": "services/api/app/api/v1/routes/workspaces.py",
@@ -827,8 +882,8 @@
     },
     {
       "path": "services/api/app/db/base.py",
-      "size_bytes": 10676,
-      "sha256": "5c6a325f9fa6c54e0746f60bceb0668503266bcf8f6fff44a147010aef69e694"
+      "size_bytes": 23433,
+      "sha256": "73e0fd72ed8fc545904873cd2cb9e22311f0ccb354949b7b28d6e9a57913c530"
     },
     {
       "path": "services/api/app/db/session.py",
@@ -886,6 +941,26 @@
       "sha256": "d7f916e5a88e191a668e4043ced9a7f890a8e1b1cb2c75891b5d73a1499525e6"
     },
     {
+      "path": "services/api/app/modules/projects/__init__.py",
+      "size_bytes": 41,
+      "sha256": "fba7da007ade0e50733fd35c1e2a3e3473f58791db49665f23b535294e38137b"
+    },
+    {
+      "path": "services/api/app/modules/projects/presets.py",
+      "size_bytes": 3528,
+      "sha256": "04fe4ce25ffcfe875e801cd5118fa2b965ffd4c368645c94cb51fb33d4dd74fa"
+    },
+    {
+      "path": "services/api/app/modules/projects/schema_builder.py",
+      "size_bytes": 5804,
+      "sha256": "21935088662ed82503006b414d4a25a70a5f7788b74ab4d0a4e9fbafa1a07edd"
+    },
+    {
+      "path": "services/api/app/modules/projects/service.py",
+      "size_bytes": 10899,
+      "sha256": "6527b92038b3a1ee65127c056fdadb4485bcaf7e136a6e9fb7458cfcb045cf1c"
+    },
+    {
       "path": "services/api/app/modules/shared/__init__.py",
       "size_bytes": 29,
       "sha256": "1412aee6b82590e323814d1755e66bab558906981b776976f1b75077abd32b92"
@@ -902,13 +977,13 @@
     },
     {
       "path": "services/api/pyproject.toml",
-      "size_bytes": 493,
-      "sha256": "db6f6d48f259d61db90ef4cd065be3db1350cb0db74487355894a518e101c1f0"
+      "size_bytes": 532,
+      "sha256": "7124b09a75213c46520801debd9d2927f97dda78466d1d0146f935b955b31176"
     },
     {
       "path": "services/api/requirements.txt",
-      "size_bytes": 198,
-      "sha256": "6b9e892849196587644202a47f883254600ec9aa1fad4ea1eb01e69aaadd6b77"
+      "size_bytes": 227,
+      "sha256": "df93abd7441b3e33dded8234b8e94052a72170133d59e254d099437ea3388192"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",
@@ -919,6 +994,11 @@
       "path": "services/api/tests/test_health.py",
       "size_bytes": 950,
       "sha256": "1f52fa08b69cf2813302359c2d8ac1a1605c7e01747d9dc66b64d9b3e01ceded"
+    },
+    {
+      "path": "services/api/tests/test_project_rubric_builder.py",
+      "size_bytes": 12704,
+      "sha256": "e8babb315f68276c398e7ff2d444c4ad4f7ee075470af7b4fa4f576d951ca871"
     },
     {
       "path": "services/worker/app/__init__.py",
@@ -972,8 +1052,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 1398,
-      "sha256": "b0291f8f36772481d94ae97ed89a8136295c1e9f85429796f5b991cdd519aa53"
+      "size_bytes": 1651,
+      "sha256": "297666c7acfc9c88939f00b6d09d1c7f4e881dd1e10b8f2875a3c52336ffece7"
     },
     {
       "path": "tools/export_openapi.py",

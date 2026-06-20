@@ -22,6 +22,6 @@ async def ready() -> dict[str, object]:
         "checks": {
             "database": "configured",
             "redis": "configured",
-            "migrations": "phase02_identity_billing",
+            "migrations": "phase03_project_rubric_builder",
         },
     }

@@ -32,6 +32,11 @@ def main() -> int:
         "/api/v1/plans",
         "/api/v1/workspaces/{workspace_id}/subscription",
         "/api/v1/workspaces/{workspace_id}/checkout",
+        "/api/v1/workspaces/{workspace_id}/projects",
+        "/api/v1/workspaces/{workspace_id}/projects/from-preset",
+        "/api/v1/projects/{project_id}",
+        "/api/v1/projects/{project_id}/rubrics",
+        "/api/v1/rubrics/{rubric_id}/form-schema",
     }
     missing_paths = sorted(required_paths - set(paths))
     if missing_paths:
@@ -39,7 +44,7 @@ def main() -> int:
             print(f"missing openapi path: {path}")
         return 1
 
-    print("Phase 02 smoke passed: SaaS shell and OpenAPI auth/workspace/billing paths are present.")
+    print("Phase 03 smoke passed: SaaS shell and project/rubric OpenAPI paths are present.")
     return 0
 
 

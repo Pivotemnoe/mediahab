@@ -38,3 +38,5 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 8. Whether website publication uses a generic webhook, WordPress adapter, or project-specific connector.
 9. Payment provider and fiscal receipt requirements for the launch jurisdiction.
 10. Retention and deletion periods for voice notes, raw media, AI logs, and publication payloads.
+11. Final visual/interaction design for the project and rubric builder before replacing the Phase 03 technical screens.
+12. When mock rubric suggestions should switch to a live AI provider, and what moderation/evidence requirements apply.

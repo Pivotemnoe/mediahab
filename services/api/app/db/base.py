@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    JSON,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -224,4 +234,246 @@ class AuditLog(Base):
     resource_type: Mapped[str] = mapped_column(String(120))
     resource_id: Mapped[str | None] = mapped_column(String(120))
     metadata_json: Mapped[object | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "slug", name="uq_projects_workspace_slug"),
+        UniqueConstraint("workspace_id", "preset_key", name="uq_projects_workspace_preset_key"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(160), index=True)
+    preset_key: Mapped[str | None] = mapped_column(String(160), index=True)
+    active_version_id: Mapped[UUID | None] = mapped_column()
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class ProjectVersion(Base):
+    __tablename__ = "project_versions"
+    __table_args__ = (
+        UniqueConstraint("project_id", "version_number", name="uq_project_versions_project_number"),
+        UniqueConstraint("project_id", "checksum", name="uq_project_versions_project_checksum"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    version_number: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(String(20), default="ru-RU")
+    content_domain: Mapped[str | None] = mapped_column(String(120))
+    tone_config: Mapped[object] = mapped_column(JSON)
+    ai_mode_default: Mapped[str] = mapped_column(String(32), default="editor")
+    editing_strength: Mapped[object] = mapped_column(JSON)
+    humor_config: Mapped[object] = mapped_column(JSON)
+    cta_config: Mapped[object] = mapped_column(JSON)
+    provider_preferences: Mapped[object] = mapped_column(JSON)
+    character_count_policy: Mapped[object] = mapped_column(JSON)
+    branding: Mapped[object | None] = mapped_column(JSON)
+    connected_platform_types: Mapped[object | None] = mapped_column(JSON)
+    example_retrieval: Mapped[object | None] = mapped_column(JSON)
+    source_kind: Mapped[str] = mapped_column(String(40), default="manual")
+    source_payload: Mapped[object | None] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class InputSchema(Base):
+    __tablename__ = "input_schemas"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "checksum", name="uq_input_schemas_workspace_checksum"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    schema_version: Mapped[str] = mapped_column(String(40), default="1.0")
+    json_schema: Mapped[object] = mapped_column(JSON)
+    ui_schema: Mapped[object] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class Rubric(Base):
+    __tablename__ = "rubrics"
+    __table_args__ = (
+        UniqueConstraint("project_id", "slug", name="uq_rubrics_project_slug"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(160), index=True)
+    active_version_id: Mapped[UUID | None] = mapped_column()
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class RubricVersion(Base):
+    __tablename__ = "rubric_versions"
+    __table_args__ = (
+        UniqueConstraint("rubric_id", "version_number", name="uq_rubric_versions_rubric_number"),
+        UniqueConstraint("rubric_id", "checksum", name="uq_rubric_versions_rubric_checksum"),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    rubric_id: Mapped[UUID] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    version_number: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    input_schema_id: Mapped[UUID] = mapped_column(ForeignKey("input_schemas.id"), index=True)
+    ui_schema: Mapped[object] = mapped_column(JSON)
+    ai_mode: Mapped[str] = mapped_column(String(32), default="editor")
+    editorial_min_chars: Mapped[int | None] = mapped_column(Integer)
+    editorial_max_chars: Mapped[int | None] = mapped_column(Integer)
+    generation_pipeline: Mapped[object] = mapped_column(JSON)
+    media_policy: Mapped[object] = mapped_column(JSON)
+    rating_policy: Mapped[object] = mapped_column(JSON)
+    generated_fields: Mapped[object] = mapped_column(JSON)
+    platform_overrides: Mapped[object | None] = mapped_column(JSON)
+    source_payload: Mapped[object | None] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ProjectRule(Base):
+    __tablename__ = "project_rules"
+    __table_args__ = (UniqueConstraint("project_id", "slug", name="uq_project_rules_project_slug"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(160), index=True)
+    active_version_id: Mapped[UUID | None] = mapped_column()
+    status: Mapped[str] = mapped_column(String(32), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class RuleVersion(Base):
+    __tablename__ = "rule_versions"
+    __table_args__ = (UniqueConstraint("rule_id", "version_number", name="uq_rule_versions_rule_number"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    rule_id: Mapped[UUID] = mapped_column(ForeignKey("project_rules.id"), index=True)
+    version_number: Mapped[int] = mapped_column(Integer)
+    scope: Mapped[str] = mapped_column(String(80), default="project")
+    content: Mapped[str] = mapped_column(Text)
+    structured_settings: Mapped[object | None] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class Prompt(Base):
+    __tablename__ = "prompts"
+    __table_args__ = (UniqueConstraint("project_id", "slug", name="uq_prompts_project_slug"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(160), index=True)
+    active_version_id: Mapped[UUID | None] = mapped_column()
+    status: Mapped[str] = mapped_column(String(32), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class PromptVersion(Base):
+    __tablename__ = "prompt_versions"
+    __table_args__ = (UniqueConstraint("prompt_id", "version_number", name="uq_prompt_versions_prompt_number"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    prompt_id: Mapped[UUID] = mapped_column(ForeignKey("prompts.id"), index=True)
+    version_number: Mapped[int] = mapped_column(Integer)
+    scope: Mapped[str] = mapped_column(String(80), default="project")
+    content: Mapped[str] = mapped_column(Text)
+    structured_settings: Mapped[object | None] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class Template(Base):
+    __tablename__ = "templates"
+    __table_args__ = (UniqueConstraint("project_id", "slug", name="uq_templates_project_slug"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(160), index=True)
+    active_version_id: Mapped[UUID | None] = mapped_column()
+    status: Mapped[str] = mapped_column(String(32), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class TemplateVersion(Base):
+    __tablename__ = "template_versions"
+    __table_args__ = (UniqueConstraint("template_id", "version_number", name="uq_template_versions_template_number"),)
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    template_id: Mapped[UUID] = mapped_column(ForeignKey("templates.id"), index=True)
+    version_number: Mapped[int] = mapped_column(Integer)
+    scope: Mapped[str] = mapped_column(String(80), default="project")
+    content: Mapped[str] = mapped_column(Text)
+    structured_settings: Mapped[object | None] = mapped_column(JSON)
+    checksum: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class PlatformOverride(Base):
+    __tablename__ = "platform_overrides"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "project_id",
+            "rubric_id",
+            "platform_key",
+            name="uq_platform_overrides_scope_platform",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    platform_key: Mapped[str] = mapped_column(String(80), index=True)
+    overrides_json: Mapped[object] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class RubricSuggestion(Base):
+    __tablename__ = "rubric_suggestions"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID | None] = mapped_column(ForeignKey("projects.id"), index=True)
+    prompt: Mapped[str] = mapped_column(Text)
+    suggestions_json: Mapped[object] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(32), default="draft", index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

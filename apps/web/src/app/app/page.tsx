@@ -17,7 +17,7 @@ const pipeline = [
   ["Identity", "Cookie session + CSRF + revocation", "ready"],
   ["Workspace", "Roles and tenant isolation", "ready"],
   ["Billing", "Mock checkout + entitlement resolver", "ready"],
-  ["Content", "Project/rubric data starts in Phase 03", "blocked"],
+  ["Content", "Project/rubric builder and versioned configs", "ready"],
 ];
 
 const integrations = [
@@ -33,9 +33,15 @@ export default function CabinetShell() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div>
             <div className="text-sm font-semibold">Temichev Media Hub</div>
-            <div className="text-xs text-muted">Phase 02 SaaS shell</div>
+            <div className="text-xs text-muted">Phase 03 technical shell</div>
           </div>
           <div className="flex gap-2">
+            <Button asChild variant="ghost">
+              <Link href="/app/projects">
+                <FileEdit size={16} />
+                Projects
+              </Link>
+            </Button>
             <Button asChild variant="ghost">
               <Link href="/app/account">
                 <UserRound size={16} />
@@ -59,6 +65,7 @@ export default function CabinetShell() {
             ["Аккаунт", "/app/account"],
             ["Workspace", "/app/workspace"],
             ["Billing", "/app/billing"],
+            ["Projects", "/app/projects"],
           ].map(([item, href], index) => (
             <Link
               className={`flex h-10 w-full items-center rounded-md px-3 text-left text-sm ${
@@ -82,7 +89,7 @@ export default function CabinetShell() {
                 <FileEdit size={18} className="text-accent" />
               </div>
               <div className="mt-3 text-3xl font-semibold">0</div>
-              <div className="mt-1 text-sm text-muted">Content data in Phase 03+</div>
+              <div className="mt-1 text-sm text-muted">Project builder routes are mounted</div>
             </Card>
             <Card>
               <div className="flex items-center justify-between">
@@ -109,7 +116,7 @@ export default function CabinetShell() {
                   <h2 className="text-lg font-semibold">Контент-пайплайн</h2>
                   <p className="text-sm text-muted">SaaS boundary preview</p>
                 </div>
-                <Badge>Phase 02</Badge>
+                <Badge>Phase 03</Badge>
               </div>
               <div className="grid gap-3">
                 {pipeline.map(([title, text, status]) => (

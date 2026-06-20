@@ -804,6 +804,1181 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/projects": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Projects",
+        "operationId": "list_projects_api_v1_workspaces__workspace_id__projects_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Project",
+        "operationId": "create_project_api_v1_workspaces__workspace_id__projects_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/projects/from-preset": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Project From Preset",
+        "operationId": "create_project_from_preset_api_v1_workspaces__workspace_id__projects_from_preset_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectFromPresetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/projects/import": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Import Project",
+        "operationId": "import_project_api_v1_workspaces__workspace_id__projects_import_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/generate-suggestions": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Generate Project Suggestions",
+        "operationId": "generate_project_suggestions_api_v1_projects_generate_suggestions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project",
+        "operationId": "get_project_api_v1_projects__project_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Update Project",
+        "operationId": "update_project_api_v1_projects__project_id__patch",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectPatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/clone": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Clone Project",
+        "operationId": "clone_project_api_v1_projects__project_id__clone_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCloneRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/export": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Export Project",
+        "operationId": "export_project_api_v1_projects__project_id__export_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectImportRequest"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/archive": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Archive Project",
+        "operationId": "archive_project_api_v1_projects__project_id__archive_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__routes__projects__MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/versions": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Project Versions",
+        "operationId": "list_project_versions_api_v1_projects__project_id__versions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/versions/{version_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project Version",
+        "operationId": "get_project_version_api_v1_projects__project_id__versions__version_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectVersionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/rubrics": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Rubrics",
+        "operationId": "list_rubrics_api_v1_projects__project_id__rubrics_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Rubric",
+        "operationId": "create_rubric_api_v1_projects__project_id__rubrics_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RubricCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/rubrics/generate-suggestions": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Generate Rubric Suggestions",
+        "operationId": "generate_rubric_suggestions_api_v1_projects__project_id__rubrics_generate_suggestions_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Rubric",
+        "operationId": "get_rubric_api_v1_rubrics__rubric_id__get",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Update Rubric",
+        "operationId": "update_rubric_api_v1_rubrics__rubric_id__patch",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RubricPatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/archive": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Archive Rubric",
+        "operationId": "archive_rubric_api_v1_rubrics__rubric_id__archive_post",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__routes__projects__MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/restore": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Restore Rubric",
+        "operationId": "restore_rubric_api_v1_rubrics__rubric_id__restore_post",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__routes__projects__MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/clone": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Clone Rubric",
+        "operationId": "clone_rubric_api_v1_rubrics__rubric_id__clone_post",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/versions": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Rubric Versions",
+        "operationId": "list_rubric_versions_api_v1_rubrics__rubric_id__versions_get",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricVersionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/form-schema": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Form Schema",
+        "operationId": "get_form_schema_api_v1_rubrics__rubric_id__form_schema_get",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubrics/{rubric_id}/validate-schema": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Validate Rubric Schema",
+        "operationId": "validate_rubric_schema_api_v1_rubrics__rubric_id__validate_schema_post",
+        "parameters": [
+          {
+            "name": "rubric_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rubric Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchemaValidationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubric-suggestions/{suggestion_id}/accept": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Accept Rubric Suggestion",
+        "operationId": "accept_rubric_suggestion_api_v1_rubric_suggestions__suggestion_id__accept_post",
+        "parameters": [
+          {
+            "name": "suggestion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Suggestion Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptSuggestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rubric-suggestions/{suggestion_id}": {
+      "delete": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Delete Rubric Suggestion",
+        "operationId": "delete_rubric_suggestion_api_v1_rubric_suggestions__suggestion_id__delete",
+        "parameters": [
+          {
+            "name": "suggestion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Suggestion Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__routes__projects__MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/plans": {
       "get": {
         "tags": [
@@ -1204,6 +2379,18 @@
   },
   "components": {
     "schemas": {
+      "AcceptSuggestionRequest": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Index",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "AcceptSuggestionRequest"
+      },
       "AssignPlanRequest": {
         "properties": {
           "plan_key": {
@@ -1687,6 +2874,500 @@
         ],
         "title": "PriceOut"
       },
+      "ProjectCloneRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "title": "ProjectCloneRequest"
+      },
+      "ProjectCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 2,
+            "title": "Language",
+            "default": "ru-RU"
+          },
+          "content_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Domain"
+          },
+          "ai_mode_default": {
+            "type": "string",
+            "pattern": "^(editor|author|adapter)$",
+            "title": "Ai Mode Default",
+            "default": "editor"
+          },
+          "tone_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tone Config"
+          },
+          "editing_strength": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Editing Strength"
+          },
+          "humor_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Humor Config"
+          },
+          "cta_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Cta Config"
+          },
+          "provider_preferences": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Provider Preferences"
+          },
+          "character_count_policy": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Character Count Policy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreateRequest"
+      },
+      "ProjectFromPresetRequest": {
+        "properties": {
+          "preset_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Preset Key",
+            "default": "chto-poest-armavir"
+          }
+        },
+        "type": "object",
+        "title": "ProjectFromPresetRequest"
+      },
+      "ProjectImportRequest": {
+        "properties": {
+          "project": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Project"
+          },
+          "rubrics": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rubrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project"
+        ],
+        "title": "ProjectImportRequest"
+      },
+      "ProjectImportResponse": {
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/ProjectOut"
+          },
+          "created": {
+            "type": "boolean",
+            "title": "Created"
+          },
+          "rubric_count": {
+            "type": "integer",
+            "title": "Rubric Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project",
+          "created",
+          "rubric_count"
+        ],
+        "title": "ProjectImportResponse"
+      },
+      "ProjectListResponse": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectOut"
+            },
+            "type": "array",
+            "title": "Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "title": "ProjectListResponse"
+      },
+      "ProjectOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "preset_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Key"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "active_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Active Version Id"
+          },
+          "active_version_number": {
+            "type": "integer",
+            "title": "Active Version Number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "content_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Domain"
+          },
+          "rubric_count": {
+            "type": "integer",
+            "title": "Rubric Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "slug",
+          "preset_key",
+          "status",
+          "active_version_id",
+          "active_version_number",
+          "name",
+          "description",
+          "language",
+          "content_domain"
+        ],
+        "title": "ProjectOut"
+      },
+      "ProjectPatchRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "content_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Domain"
+          },
+          "ai_mode_default": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(editor|author|adapter)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Mode Default"
+          },
+          "tone_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tone Config"
+          },
+          "editing_strength": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editing Strength"
+          },
+          "humor_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humor Config"
+          },
+          "cta_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cta Config"
+          },
+          "provider_preferences": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Preferences"
+          },
+          "character_count_policy": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Count Policy"
+          }
+        },
+        "type": "object",
+        "title": "ProjectPatchRequest"
+      },
+      "ProjectVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "content_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Domain"
+          },
+          "ai_mode_default": {
+            "type": "string",
+            "title": "Ai Mode Default"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version_number",
+          "name",
+          "description",
+          "language",
+          "content_domain",
+          "ai_mode_default",
+          "checksum",
+          "created_at"
+        ],
+        "title": "ProjectVersionOut"
+      },
       "RegisterRequest": {
         "properties": {
           "email": {
@@ -1744,6 +3425,440 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "RubricCreateRequest": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived",
+            "default": false
+          },
+          "editorial_limits": {
+            "$ref": "#/components/schemas/RubricEditorialLimits"
+          },
+          "ai_mode": {
+            "type": "string",
+            "pattern": "^(editor|author|adapter)$",
+            "title": "Ai Mode",
+            "default": "editor"
+          },
+          "input_flow": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Flow"
+          },
+          "input_flow_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Flow Template"
+          },
+          "generated_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Generated Fields"
+          },
+          "platform_overrides": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Platform Overrides"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "editorial_limits"
+        ],
+        "title": "RubricCreateRequest"
+      },
+      "RubricEditorialLimits": {
+        "properties": {
+          "min_chars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Chars"
+          },
+          "max_chars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Chars"
+          }
+        },
+        "type": "object",
+        "title": "RubricEditorialLimits"
+      },
+      "RubricListResponse": {
+        "properties": {
+          "rubrics": {
+            "items": {
+              "$ref": "#/components/schemas/RubricOut"
+            },
+            "type": "array",
+            "title": "Rubrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubrics"
+        ],
+        "title": "RubricListResponse"
+      },
+      "RubricOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "active_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Active Version Id"
+          },
+          "active_version_number": {
+            "type": "integer",
+            "title": "Active Version Number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "ai_mode": {
+            "type": "string",
+            "title": "Ai Mode"
+          },
+          "editorial_min_chars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Min Chars"
+          },
+          "editorial_max_chars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Max Chars"
+          },
+          "generated_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Generated Fields"
+          },
+          "input_schema_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Input Schema Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "workspace_id",
+          "slug",
+          "status",
+          "sort_order",
+          "active_version_id",
+          "active_version_number",
+          "name",
+          "description",
+          "ai_mode",
+          "editorial_min_chars",
+          "editorial_max_chars",
+          "generated_fields",
+          "input_schema_id"
+        ],
+        "title": "RubricOut"
+      },
+      "RubricPatchRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "editorial_limits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RubricEditorialLimits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ai_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(editor|author|adapter)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Mode"
+          },
+          "input_flow": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Flow"
+          },
+          "input_flow_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Flow Template"
+          },
+          "generated_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated Fields"
+          },
+          "platform_overrides": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform Overrides"
+          }
+        },
+        "type": "object",
+        "title": "RubricPatchRequest"
+      },
+      "RubricVersionsResponse": {
+        "properties": {
+          "versions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "versions"
+        ],
+        "title": "RubricVersionsResponse"
+      },
+      "SchemaResponse": {
+        "properties": {
+          "rubric_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Id"
+          },
+          "rubric_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Version Id"
+          },
+          "json_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Json Schema"
+          },
+          "ui_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ui Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "rubric_version_id",
+          "json_schema",
+          "ui_schema"
+        ],
+        "title": "SchemaResponse"
+      },
+      "SchemaValidationRequest": {
+        "properties": {
+          "rubric": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rubric"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric"
+        ],
+        "title": "SchemaValidationRequest"
+      },
+      "SchemaValidationResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid",
+          "errors"
+        ],
+        "title": "SchemaValidationResponse"
       },
       "SessionOut": {
         "properties": {
@@ -1865,6 +3980,61 @@
         ],
         "title": "SubscriptionResponse"
       },
+      "SuggestionRequest": {
+        "properties": {
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "prompt": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "SuggestionRequest"
+      },
+      "SuggestionResponse": {
+        "properties": {
+          "suggestion_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suggestion Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "suggestions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Suggestions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "suggestion_id",
+          "status",
+          "suggestions"
+        ],
+        "title": "SuggestionResponse"
+      },
       "TokenRequest": {
         "properties": {
           "token": {
@@ -1976,6 +4146,22 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VersionsResponse": {
+        "properties": {
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectVersionOut"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "versions"
+        ],
+        "title": "VersionsResponse"
       },
       "WorkspaceCreateRequest": {
         "properties": {
@@ -2126,6 +4312,24 @@
         "title": "WorkspaceOut"
       },
       "app__api__v1__routes__me__MessageResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "app__api__v1__routes__projects__MessageResponse": {
         "properties": {
           "status": {
             "type": "string",
