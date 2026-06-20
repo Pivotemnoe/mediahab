@@ -1,8 +1,8 @@
 export const brand = {
-  productName: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "PostHub",
-  fullName: process.env.NEXT_PUBLIC_PRODUCT_FULL_NAME ?? "Temichev PostHub",
-  tagline: process.env.NEXT_PUBLIC_PRODUCT_TAGLINE ?? "Создавайте один раз. Публикуйте везде.",
-  logoMark: process.env.NEXT_PUBLIC_BRAND_LOGO_MARK ?? "PH",
+  productName: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "MediaHub",
+  fullName: process.env.NEXT_PUBLIC_PRODUCT_FULL_NAME ?? "Медиа-хаб",
+  tagline: process.env.NEXT_PUBLIC_PRODUCT_TAGLINE ?? "Контент, диктовка, публикации.",
+  logoMark: process.env.NEXT_PUBLIC_BRAND_LOGO_MARK ?? "MH",
   logoUrl: process.env.NEXT_PUBLIC_BRAND_LOGO_URL,
 };
 

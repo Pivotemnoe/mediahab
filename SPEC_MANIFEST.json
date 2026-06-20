@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T17:13:24.643003+00:00",
+  "generated_at": "2026-06-20T17:41:38.747445+00:00",
   "canonical_language": "en",
-  "file_count": 332,
+  "file_count": 336,
   "files": [
     {
       "path": ".dockerignore",
@@ -59,6 +59,11 @@
       "path": "apps/web/postcss.config.mjs",
       "size_bytes": 105,
       "sha256": "8c4071497479b4bb346d0ebb53b1bdeb555beb659512aaa0d6988d0d83ddeed5"
+    },
+    {
+      "path": "apps/web/public/assets/donika-telegram.jpeg",
+      "size_bytes": 407848,
+      "sha256": "f22611c4fb59d1982a29fb905bf3dcfd7c0ac85927e9f26de440fcabd8cbc359"
     },
     {
       "path": "apps/web/public/manifest.webmanifest",
@@ -132,8 +137,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 6311,
-      "sha256": "4cb926ee1117fcd111972bbe29aacea7cd68c047c2e1e77b1f8ef164fc7848da"
+      "size_bytes": 5398,
+      "sha256": "f561c4d615320b5db2bc33edbbb55e99ddda2155cf5bffc524fe40f82b2fae6d"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -187,18 +192,18 @@
     },
     {
       "path": "apps/web/src/app/contacts/page.tsx",
-      "size_bytes": 938,
-      "sha256": "3a6de24c363d93917067cad40a86ada58430bc0af5163e3c8181b97c2e52572d"
+      "size_bytes": 2165,
+      "sha256": "7bf893d39ab8c6c05022b51daaf549b5d4c1e0cd638005d226a4fe42b01dfc97"
     },
     {
       "path": "apps/web/src/app/features/page.tsx",
-      "size_bytes": 1046,
-      "sha256": "cc1a012df1d37d4c4f1a499ca01b93dcadfb0f08c4e490dde30b779fb3be3d22"
+      "size_bytes": 2617,
+      "sha256": "f1c5e61a56281afc8cb16f3f7876860f896f36b4b21f685812b29163252708d4"
     },
     {
       "path": "apps/web/src/app/forgot-password/page.tsx",
-      "size_bytes": 576,
-      "sha256": "8de6b6acd568fca1e418e7c7e6f4f02792f83d10f8987049c5493d2011539c56"
+      "size_bytes": 766,
+      "sha256": "fa30a5db367ce2a251b1772a63fe77d6bbbe96bcd85fdda121594b4bfd98ec7e"
     },
     {
       "path": "apps/web/src/app/globals.css",
@@ -212,13 +217,13 @@
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
-      "size_bytes": 645,
-      "sha256": "9fcfc7e52372f110d6e4ba4192b8b66560f39c2dbe7a4ed1570d362770611b72"
+      "size_bytes": 894,
+      "sha256": "c498b2e7f8f068671e49e6a1c9931ef55d9cc4da1eb6342077cbe4c1a65da0fa"
     },
     {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 1174,
-      "sha256": "e86a29913ae3904723fc82de68e34b8ec50d25fd11e85b9b587ab281e18875f4"
+      "size_bytes": 5243,
+      "sha256": "9020adcae8962343f96a0802fb7f62550c55e969e197f02c4843168e264768a2"
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
@@ -232,13 +237,13 @@
     },
     {
       "path": "apps/web/src/app/register/page.tsx",
-      "size_bytes": 687,
-      "sha256": "2e78edff46bc21c2b88bcb81d5807d97d9eecd2ec90031a7308168fbed08f1c7"
+      "size_bytes": 1415,
+      "sha256": "41056480d05d155a3a3ddfc1a160b65726a1097333610b6fb959b5e9f2cfc7e0"
     },
     {
       "path": "apps/web/src/app/reset-password/page.tsx",
-      "size_bytes": 519,
-      "sha256": "ac85904b12924703afface63aea755e2c249592de286a09ea1bdd0b10875d171"
+      "size_bytes": 977,
+      "sha256": "ca0c4e2c565dbb5b12fef436b313968b0f8df4c4a311d68bfdaf952de65ee31f"
     },
     {
       "path": "apps/web/src/app/security/page.tsx",
@@ -252,8 +257,8 @@
     },
     {
       "path": "apps/web/src/app/verify-email/page.tsx",
-      "size_bytes": 595,
-      "sha256": "1cdb20c8bb591bfe8a655514b4589b8b247871c912efe29889c848fe4b5bc939"
+      "size_bytes": 661,
+      "sha256": "d9748fc71f6c9ef54f615ac1b374ec3303c145732c57628471f2c294fec54792"
     },
     {
       "path": "apps/web/src/components/layout/brand-mark.tsx",
@@ -287,8 +292,8 @@
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
-      "size_bytes": 1713,
-      "sha256": "f7073f0e736d0875a91998ead52612125f17376b946bc2ceb2ae8c108288c5e9"
+      "size_bytes": 2320,
+      "sha256": "9deac4b91479bc5a8c0e9a6387bced9a73babdec4a814933a95ee4119c5c8d5f"
     },
     {
       "path": "apps/web/src/components/phase02/cabinet-page.tsx",
@@ -357,13 +362,18 @@
     },
     {
       "path": "apps/web/src/config/brand.ts",
-      "size_bytes": 643,
-      "sha256": "2bb08340ff2eb22845faeb3598b6a5157d436267bb68215fbb72dd8fedf67009"
+      "size_bytes": 630,
+      "sha256": "63c28974badbdcaba65c2d2f48ff832c4dab1e6b369d24719d726f10656a14bb"
     },
     {
       "path": "apps/web/src/config/navigation.ts",
       "size_bytes": 1719,
       "sha256": "c77c5e680851513c064bece874b181e0d97fcfe00e49803ff7a4b92e9e104129"
+    },
+    {
+      "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
+      "size_bytes": 1399,
+      "sha256": "71073f99ef31df9cbfb1a1356ddc240ac4ee1923533ae284ef5ad26a136cdd1e"
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
@@ -909,6 +919,16 @@
       "path": "docs/exec-plans/UI_PHASE_01_REPORT_RU.md",
       "size_bytes": 6071,
       "sha256": "479a8b8a7463a7469e99e89ca02763cecaff36da301796cd4db831355ca8481a"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_02_LANDING_AUTH_DASHBOARD.md",
+      "size_bytes": 3852,
+      "sha256": "7854ce48a254a613109dcec50f625efb91aa4408280199b31f44c012346a91d6"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_02_REPORT_RU.md",
+      "size_bytes": 4825,
+      "sha256": "ce3e31b980e8638543fc78c70d8dd33b7c94bd9618d5abc04ce27bb9a82f4758"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

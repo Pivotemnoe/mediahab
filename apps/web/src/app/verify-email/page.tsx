@@ -3,9 +3,16 @@ import { AuthPage } from "@/components/phase02/auth-page";
 export default function VerifyEmailPage() {
   return (
     <AuthPage
-      title="Подтверждение почты"
-      description="На этапе 02 используется токен доставки-заглушка. Реальный адаптер электронной почты подключается позже."
-      fields={["Токен подтверждения"]}
+      eyebrow="Почта"
+      title="Подтвердить почту"
+      description="Введите код подтверждения, чтобы завершить настройку аккаунта."
+      fields={[
+        {
+          label: "Код подтверждения",
+          name: "token",
+          placeholder: "Код из письма",
+        },
+      ]}
       submitLabel="Подтвердить"
       secondaryHref="/login"
       secondaryLabel="Вернуться ко входу"

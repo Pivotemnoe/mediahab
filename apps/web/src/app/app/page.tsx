@@ -1,14 +1,5 @@
-import {
-  BrainCircuit,
-  CalendarClock,
-  CheckCircle2,
-  FileEdit,
-  FolderKanban,
-  Images,
-  RadioTower,
-  Send,
-} from "lucide-react";
 import Link from "next/link";
+import { AlertTriangle, CalendarClock, FileEdit, FolderKanban, Plus, RadioTower } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -16,26 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { UsageMeter } from "@/components/ui/usage-meter";
-
-const pipeline = [
-  ["Проекты", "Конструктор проектов, рубрик и версионируемых настроек", "готово"],
-  ["Контент", "Сбор фактов, блоки источника, медиа и диктовка", "готово"],
-  ["ИИ", "Примеры, подбор, мастер-текст и проверка качества", "ожидает ключ"],
-  ["Публикации", "Варианты, approval, ручной экспорт и outbox", "технически готово"],
-] as const;
-
-const stats = [
-  ["Материалы", "2", "Черновики и тестовые обзоры", FileEdit],
-  ["Проекты", "1", "Пресет импортируется как данные", FolderKanban],
-  ["Публикации", "4", "Варианты под площадки", Send],
-] as const;
-
-const integrations = [
-  ["OpenAI STT", "первый провайдер", "success"],
-  ["TimeWeb S3", "хранилище медиа", "success"],
-  ["Generic webhook", "simulate по умолчанию", "warning"],
-  ["Manual export", "нужно подтверждение", "warning"],
-] as const;
+import {
+  dashboardStats,
+  integrationAlerts,
+  recentDrafts,
+  scheduledPublications,
+  usageRows,
+} from "@/features/dashboard/dashboard-fixtures";
 
 export default function DashboardPage() {
   return (
@@ -44,96 +22,101 @@ export default function DashboardPage() {
         actions={
           <>
             <Button asChild variant="secondary">
-              <Link href="/app/showcase">Витрина UI</Link>
+              <Link href="/app/projects">
+                <FolderKanban size={16} />
+                Проекты
+              </Link>
             </Button>
             <Button asChild>
-              <Link href="/app/content/new">Создать материал</Link>
+              <Link href="/app/content/new">
+                <Plus size={16} />
+                Новый материал
+              </Link>
             </Button>
           </>
         }
-        description="Технический кабинет для проверки дизайн-системы, навигации и уже собранных фаз."
-        eyebrow="UI Phase 01"
+        description="Рабочая сводка по проектам, черновикам, расписанию, интеграциям и лимитам."
+        eyebrow="Рабочее пространство"
         title="Дашборд"
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map(([label, value, note, Icon]) => (
-          <Card key={label}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted">{label}</span>
-              <Icon size={18} className="text-primary" />
-            </div>
-            <div className="mt-3 text-3xl font-semibold text-foreground">{value}</div>
-            <div className="mt-1 text-sm leading-6 text-muted">{note}</div>
+        {dashboardStats.map((item) => (
+          <Card key={item.label}>
+            <div className="text-sm text-muted">{item.label}</div>
+            <div className="mt-3 text-3xl font-semibold text-foreground">{item.value}</div>
+            <div className="mt-1 text-sm leading-6 text-muted">{item.note}</div>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
         <Card className="grid gap-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Контент-пайплайн</h2>
-              <p className="mt-1 text-sm text-muted">Сводка готовности технических модулей.</p>
+              <h2 className="text-lg font-semibold text-foreground">Недавние материалы</h2>
+              <p className="mt-1 text-sm text-muted">Черновики, которые требуют редакторского внимания.</p>
             </div>
-            <CalendarClock size={20} className="text-primary" />
+            <FileEdit size={20} className="text-primary" />
           </div>
-          {pipeline.map(([title, text, status]) => (
-            <div className="grid gap-2 rounded-md border border-border p-3" key={title}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <CheckCircle2 size={16} className="text-success" />
-                  {title}
-                </div>
-                <StatusBadge status={status === "ожидает ключ" ? "warning" : "success"}>
-                  {status}
-                </StatusBadge>
+          {recentDrafts.map(([title, rubric, status]) => (
+            <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[1fr_auto]" key={title}>
+              <div>
+                <div className="text-sm font-medium text-foreground">{title}</div>
+                <div className="mt-1 text-xs text-muted">{rubric}</div>
               </div>
-              <div className="text-sm leading-6 text-muted">{text}</div>
+              <Badge tone="info" className="h-fit w-fit">
+                {status}
+              </Badge>
             </div>
           ))}
         </Card>
 
         <Card className="grid content-start gap-4">
-          <div>
-            <Badge tone="info">Провайдеры</Badge>
-            <h2 className="mt-3 text-lg font-semibold text-foreground">Интеграции MVP</h2>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Лимиты</h2>
+              <p className="mt-1 text-sm text-muted">Текущий usage snapshot.</p>
+            </div>
+            <Badge tone="success">Start</Badge>
           </div>
-          <div className="grid gap-3">
-            {integrations.map(([name, note, tone]) => (
-              <div className="rounded-md border border-border p-3" key={name}>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-foreground">{name}</span>
-                  <StatusBadge status={tone}>{note}</StatusBadge>
-                </div>
-              </div>
-            ))}
-          </div>
-          <UsageMeter label="Тестовый лимит генераций" max={100} tone="warning" value={62} />
+          {usageRows.map(([label, value, max, tone]) => (
+            <UsageMeter key={label} label={label} max={max} tone={tone} value={value} />
+          ))}
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card className="grid gap-3">
-          <BrainCircuit size={20} className="text-primary" />
-          <h2 className="text-base font-semibold text-foreground">ИИ-сборка</h2>
-          <p className="text-sm leading-6 text-muted">
-            OpenAI выбран первым провайдером, mock остаётся для локальных проверок.
-          </p>
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <CalendarClock size={18} className="text-primary" />
+            Расписание
+          </div>
+          {scheduledPublications.map(([platform, time, status]) => (
+            <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[120px_1fr_auto]" key={platform}>
+              <div className="text-sm font-medium text-foreground">{platform}</div>
+              <div className="text-sm text-muted">{time}</div>
+              <StatusBadge status={status === "запланировано" ? "success" : "warning"}>{status}</StatusBadge>
+            </div>
+          ))}
         </Card>
+
         <Card className="grid gap-3">
-          <Images size={20} className="text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Медиа</h2>
-          <p className="text-sm leading-6 text-muted">
-            Файлы уходят в S3-совместимое хранилище через подписанные URL.
-          </p>
-        </Card>
-        <Card className="grid gap-3">
-          <RadioTower size={20} className="text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Публикации</h2>
-          <p className="text-sm leading-6 text-muted">
-            До нативных коннекторов используются manual export и безопасный webhook.
-          </p>
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <RadioTower size={18} className="text-primary" />
+            Интеграции
+          </div>
+          {integrationAlerts.map(([platform, note, tone]) => (
+            <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[120px_1fr_auto]" key={platform}>
+              <div className="text-sm font-medium text-foreground">{platform}</div>
+              <div className="text-sm text-muted">{note}</div>
+              <StatusBadge status={tone}>{tone === "success" ? "готово" : "внимание"}</StatusBadge>
+            </div>
+          ))}
+          <div className="flex items-start gap-2 rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
+            Instagram live остаётся feature-flagged до готовности Meta account и review.
+          </div>
         </Card>
       </div>
     </div>
