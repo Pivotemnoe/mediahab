@@ -14,6 +14,7 @@ import {
   Webhook,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,35 +43,31 @@ const attempts = [
 
 function PublicationHeader() {
   return (
-    <header className="border-b border-line bg-white">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-        <div>
-          <div className="text-sm font-semibold text-ink">Публикации</div>
-          <div className="text-xs text-muted">Варианты, approval, destinations и outbox</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge tone="success">Этап 06</Badge>
-          <Button asChild variant="ghost">
-            <Link href="/app">
-              <ArrowLeft size={16} />
-              Кабинет
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </header>
+    <PageHeader
+      actions={
+        <Button asChild variant="secondary">
+          <Link href="/app">
+            <ArrowLeft size={16} />
+            Кабинет
+          </Link>
+        </Button>
+      }
+      description="Варианты, approval, ручной экспорт, generic webhook, попытки и outbox."
+      eyebrow="Этап 06"
+      title="Публикации"
+    />
   );
 }
 
 export function PublicationCoreShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <PublicationHeader />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge>Техническая сборка</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-3xl font-semibold text-ink">
               Публикационный контур перед нативными коннекторами
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
@@ -221,6 +218,6 @@ export function PublicationCoreShell() {
           </Card>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

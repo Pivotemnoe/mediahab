@@ -15,6 +15,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,34 +52,30 @@ const mediaItems = [
 
 function StudioHeader({ title, label = "Этап 04" }: { title: string; label?: string }) {
   return (
-    <header className="border-b border-line bg-white">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-        <div>
-          <div className="text-sm font-semibold text-ink">{title}</div>
-          <div className="text-xs text-muted">Техническая контент-студия на русском языке</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge tone="success">{label}</Badge>
-          <Button asChild variant="ghost">
-            <Link href="/app">
-              <ArrowLeft size={16} />
-              Кабинет
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </header>
+    <PageHeader
+      actions={
+        <Button asChild variant="secondary">
+          <Link href="/app">
+            <ArrowLeft size={16} />
+            Кабинет
+          </Link>
+        </Button>
+      }
+      description="Editorial Studio для сбора фактов, диктовки, медиа и фиксации источников."
+      eyebrow={label}
+      title={title}
+    />
   );
 }
 
 export function ContentIndexShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <StudioHeader title="Контент" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold tracking-normal text-ink">Черновики и материалы</h1>
+            <h1 className="text-3xl font-semibold text-ink">Черновики и материалы</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               Единица работы здесь — материал, а не пост под одну площадку.
               Факты собираются отдельно от будущей сборки AI.
@@ -122,15 +119,15 @@ export function ContentIndexShell() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function NewContentShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <StudioHeader title="Создать материал" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[280px_1fr]">
+      <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="grid content-start gap-3">
           {["Проект", "Рубрика", "Факты", "Медиа", "Сборка"].map((step, index) => (
             <div
@@ -146,7 +143,7 @@ export function NewContentShell() {
         <Card className="grid gap-4">
           <div>
             <Badge>Новый черновик</Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-2xl font-semibold text-ink">
               Выбор проекта и рубрики
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted">
@@ -176,21 +173,21 @@ export function NewContentShell() {
           </div>
         </Card>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function ContentStudioShell({ contentId }: { contentId: string }) {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <StudioHeader title="Контент-студия" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
           <Card className="grid gap-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <Badge>Материал {contentId}</Badge>
-                <h1 className="mt-3 text-2xl font-semibold tracking-normal text-ink">
+                <h1 className="mt-3 text-2xl font-semibold text-ink">
                   Обзор недели · Что поесть? Армавир
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-muted">
@@ -336,19 +333,19 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
           </Card>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function MediaLibraryShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <StudioHeader title="Медиа" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[360px_1fr]">
+      <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
         <Card className="grid content-start gap-4">
           <div>
             <Badge>Загрузка</Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-2xl font-semibold text-ink">
               Прямая загрузка в хранилище
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted">
@@ -384,6 +381,6 @@ export function MediaLibraryShell() {
           ))}
         </Card>
       </section>
-    </main>
+    </div>
   );
 }

@@ -1,17 +1,19 @@
 import type { Metadata, Viewport } from "next";
 
+import { metadataBrand } from "@/config/brand";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Медиа-хаб",
-  description: "Технический каркас медиа-хаба для контент-публикаций.",
+  title: metadataBrand.title,
+  description: metadataBrand.description,
   manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f7f8fa",
+  themeColor: "#f5f7f4",
 };
 
 export default function RootLayout({

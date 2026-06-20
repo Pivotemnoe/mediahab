@@ -1,8 +1,4 @@
-import Link from "next/link";
-import { CreditCard, Settings, UserRound } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 
 type CabinetPageProps = {
@@ -13,47 +9,9 @@ type CabinetPageProps = {
 
 export function CabinetPage({ title, description, rows }: CabinetPageProps) {
   return (
-    <main className="min-h-screen bg-surface">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link href="/app" className="text-sm font-semibold text-ink">
-            Кабинет
-          </Link>
-          <div className="flex gap-2">
-            <Button asChild variant="ghost">
-              <Link href="/app/account">
-                <UserRound size={16} />
-                Аккаунт
-              </Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href="/app/workspace">
-                <Settings size={16} />
-                Пространство
-              </Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/app/billing">
-                <CreditCard size={16} />
-                Тариф
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto grid max-w-5xl gap-4 px-4 py-8">
-        <div>
-          <Badge className="w-fit" tone="success">
-            Этап 02
-          </Badge>
-          <h1 className="mt-4 text-3xl font-semibold tracking-normal text-ink">
-            {title}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            {description}
-          </p>
-        </div>
+    <div className="grid gap-4">
+      <PageHeader description={description} eyebrow="Этап 02" title={title} />
+      <section className="grid gap-4">
         <Card className="grid gap-3">
           {rows.map(([label, value]) => (
             <div
@@ -66,6 +24,6 @@ export function CabinetPage({ title, description, rows }: CabinetPageProps) {
           ))}
         </Card>
       </section>
-    </main>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
+import { MarketingShell } from "@/components/layout/shells";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,30 +24,14 @@ export function PublicPage({
   primaryLabel = "Регистрация",
 }: PublicPageProps) {
   return (
-    <main className="min-h-screen bg-white">
-      <header className="border-b border-line">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-sm font-semibold text-ink">
-            Медиа-хаб
-          </Link>
-          <nav className="flex items-center gap-2">
-            <Button asChild variant="ghost">
-              <Link href="/pricing">Тарифы</Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/login">Войти</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
-
+    <MarketingShell>
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col justify-center gap-5">
           <Badge tone="success" className="w-fit">
             {eyebrow}
           </Badge>
           <div>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-normal text-ink sm:text-5xl">
+            <h1 className="max-w-3xl text-4xl font-semibold text-ink sm:text-5xl">
               {title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
@@ -78,6 +63,6 @@ export function PublicPage({
           ))}
         </Card>
       </section>
-    </main>
+    </MarketingShell>
   );
 }

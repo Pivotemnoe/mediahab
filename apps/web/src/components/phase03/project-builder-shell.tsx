@@ -11,6 +11,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,13 +33,13 @@ const projectEntryPoints: Array<[string, string, LucideIcon]> = [
 
 export function ProjectIndexShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <BuilderHeader title="Проекты" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge tone="success">Этап 03</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-3xl font-semibold text-ink">
               Конструктор проектов
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
@@ -65,15 +66,15 @@ export function ProjectIndexShell() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function NewProjectShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <BuilderHeader title="Новый проект" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[260px_1fr]">
+      <section className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <Card className="grid content-start gap-2">
           {projectSteps.map((step, index) => (
             <div
@@ -90,7 +91,7 @@ export function NewProjectShell() {
         <Card className="grid gap-4">
           <div>
             <Badge>Мастер</Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-2xl font-semibold text-ink">
               Создание с нуля, из пресета, клона или пакета
             </h1>
           </div>
@@ -122,19 +123,19 @@ export function NewProjectShell() {
           </div>
         </Card>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function ProjectDetailShell({ projectId }: { projectId: string }) {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <BuilderHeader title="Проект" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge>ID проекта</Badge>
-            <h1 className="mt-3 break-all text-3xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 break-all text-3xl font-semibold text-ink">
               {projectId}
             </h1>
             <p className="mt-2 text-sm text-muted">
@@ -173,15 +174,15 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function ProjectBuilderShell({ projectId }: { projectId: string }) {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <BuilderHeader title="Конструктор проекта" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 lg:grid-cols-[260px_1fr]">
+      <section className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <Card className="grid content-start gap-2">
           {projectSteps.map((step) => (
             <button
@@ -194,7 +195,7 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
         </Card>
         <Card className="grid gap-4">
           <Badge>Версионируемые настройки</Badge>
-          <h1 className="text-2xl font-semibold tracking-normal text-ink">
+          <h1 className="text-2xl font-semibold text-ink">
             Конструктор проекта {projectId}
           </h1>
           <div className="grid gap-3 md:grid-cols-2">
@@ -209,7 +210,7 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
           </div>
         </Card>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -225,12 +226,12 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
   ];
   const fields = ["название_места", "атмосфера", "блюда[]", "вывод", "медиа[]"];
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <BuilderHeader title="Конструктор рубрик" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div>
           <Badge>Проект {projectId}</Badge>
-          <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
+          <h1 className="mt-3 text-3xl font-semibold text-ink">
             Палитра полей, canvas формы и инспектор настроек
           </h1>
         </div>
@@ -272,25 +273,24 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
           </Card>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 function BuilderHeader({ title }: { title: string }) {
   return (
-    <header className="border-b border-line bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-        <div>
-          <div className="text-sm font-semibold">{title}</div>
-          <div className="text-xs text-muted">Технический конструктор этапа 03</div>
-        </div>
-        <Button asChild variant="ghost">
+    <PageHeader
+      actions={
+        <Button asChild variant="secondary">
           <Link href="/app">
             <ArrowLeft size={16} />
             Кабинет
           </Link>
         </Button>
-      </div>
-    </header>
+      }
+      description="Visual Builder для проектов, рубрик, пресетов и версионируемых настроек."
+      eyebrow="Этап 03"
+      title={title}
+    />
   );
 }

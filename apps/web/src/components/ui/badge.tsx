@@ -3,7 +3,7 @@ import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
-  tone?: "neutral" | "success" | "warning" | "danger";
+  tone?: "info" | "neutral" | "success" | "warning" | "danger";
 };
 
 export function Badge({ className, tone = "neutral", ...props }: BadgeProps) {
@@ -11,10 +11,11 @@ export function Badge({ className, tone = "neutral", ...props }: BadgeProps) {
     <span
       className={cn(
         "inline-flex items-center rounded px-2 py-1 text-xs font-medium",
-        tone === "neutral" && "bg-surface text-muted",
-        tone === "success" && "bg-green-50 text-success",
-        tone === "warning" && "bg-amber-50 text-warning",
-        tone === "danger" && "bg-red-50 text-danger",
+        tone === "neutral" && "border border-border bg-surface text-muted",
+        tone === "info" && "border border-border bg-surface-muted text-foreground",
+        tone === "success" && "bg-[color-mix(in_srgb,var(--success),transparent_88%)] text-success",
+        tone === "warning" && "bg-[color-mix(in_srgb,var(--warning),transparent_88%)] text-warning",
+        tone === "danger" && "bg-[color-mix(in_srgb,var(--danger),transparent_88%)] text-danger",
         className,
       )}
       {...props}

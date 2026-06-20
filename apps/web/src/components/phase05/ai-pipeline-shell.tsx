@@ -12,6 +12,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,35 +40,31 @@ const runRows = [
 
 function AiHeader({ title, label = "Этап 05" }: { title: string; label?: string }) {
   return (
-    <header className="border-b border-line bg-white">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-        <div>
-          <div className="text-sm font-semibold text-ink">{title}</div>
-          <div className="text-xs text-muted">Примеры, подбор и ИИ-сборка на русском языке</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge tone="success">{label}</Badge>
-          <Button asChild variant="ghost">
-            <Link href="/app">
-              <ArrowLeft size={16} />
-              Кабинет
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </header>
+    <PageHeader
+      actions={
+        <Button asChild variant="secondary">
+          <Link href="/app">
+            <ArrowLeft size={16} />
+            Кабинет
+          </Link>
+        </Button>
+      }
+      description="Примеры, подбор, мастер-текст, проверка качества и журнал запусков ИИ."
+      eyebrow={label}
+      title={title}
+    />
   );
 }
 
 export function AiPipelineShell() {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <AiHeader title="ИИ-пайплайн" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge>Техническая сборка</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-ink">
+            <h1 className="mt-3 text-3xl font-semibold text-ink">
               Контролируемый редактор, а не свободный чат
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
@@ -157,19 +154,19 @@ export function AiPipelineShell() {
           </Card>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 export function ExamplesLibraryShell({ projectId }: { projectId: string }) {
   return (
-    <main className="min-h-screen bg-surface">
+    <div className="grid gap-4">
       <AiHeader title="Библиотека примеров" />
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6">
+      <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge>ID проекта</Badge>
-            <h1 className="mt-3 break-all text-3xl font-semibold tracking-normal text-ink">{projectId}</h1>
+            <h1 className="mt-3 break-all text-3xl font-semibold text-ink">{projectId}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               Примеры проходят импорт, дедупликацию, проверку, одобрение и векторизацию перед попаданием в подбор.
             </p>
@@ -217,6 +214,6 @@ export function ExamplesLibraryShell({ projectId }: { projectId: string }) {
           ))}
         </Card>
       </section>
-    </main>
+    </div>
   );
 }
