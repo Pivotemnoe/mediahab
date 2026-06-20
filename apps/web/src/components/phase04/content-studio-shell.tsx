@@ -1,16 +1,28 @@
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   AudioLines,
+  Bot,
   CheckCircle2,
+  Clock3,
+  FileCheck2,
   FileText,
   GripVertical,
+  History,
   ImagePlus,
+  ListChecks,
   LockKeyhole,
+  MessageSquareText,
   Mic,
+  PanelRight,
+  Pause,
   Plus,
+  Play,
   RotateCcw,
   Save,
+  Send,
+  Sparkles,
   Upload,
   WandSparkles,
 } from "lucide-react";
@@ -19,6 +31,16 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  aiSuggestions,
+  factLocks,
+  inputBlocks,
+  masterDraftParagraphs,
+  platformPreviews,
+  revisionEvents,
+  studioSummary,
+  transcriptReview,
+} from "@/features/content-studio/content-studio-fixtures";
 
 const contentItems = [
   {
@@ -179,158 +201,271 @@ export function NewContentShell() {
 
 export function ContentStudioShell({ contentId }: { contentId: string }) {
   return (
-    <div className="grid gap-4">
-      <StudioHeader title="Контент-студия" />
-      <section className="grid gap-4">
-        <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-          <Card className="grid gap-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <Badge>Материал {contentId}</Badge>
-                <h1 className="mt-3 text-2xl font-semibold text-ink">
-                  Обзор недели · Что поесть? Армавир
-                </h1>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Статус: сбор фактов · автосохранение: только что · диапазон: 4 500–8 000 знаков
-                </p>
+    <div className="grid min-w-0 gap-5">
+      <StudioHeader label="UI Phase 05" title="Контент-студия" />
+      <section className="grid min-w-0 gap-5">
+        <Card className="grid gap-4">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Badge>Материал {contentId}</Badge>
+              <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
+                {studioSummary.title}
+              </h1>
+              <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
+                <span>{studioSummary.project}</span>
+                <span>·</span>
+                <span>{studioSummary.rubric}</span>
+                <span>·</span>
+                <span>{studioSummary.range}</span>
               </div>
+            </div>
+            <div className="flex max-w-full flex-wrap gap-2">
+              <Button type="button" variant="secondary">
+                <Save size={16} />
+                {studioSummary.autosave}
+              </Button>
               <Button type="button">
                 <WandSparkles size={16} />
-                Собрать
+                Собрать master
               </Button>
             </div>
-          </Card>
-
-          <Card className="grid content-start gap-3">
-            <div className="text-sm font-semibold">Версия и фиксация</div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-md border border-line p-3">
-                <div className="text-muted">Версия</div>
-                <div className="mt-1 font-semibold text-ink">12</div>
+          </div>
+          <div className="grid gap-3 text-sm md:grid-cols-4">
+            {[
+              ["Статус", studioSummary.status],
+              ["Версия", studioSummary.revision],
+              ["Факт-локи", studioSummary.lockedFacts],
+              ["Публикация", "только после review"],
+            ].map(([label, value]) => (
+              <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
+                <div className="text-xs text-muted">{label}</div>
+                <div className="mt-1 font-medium text-foreground">{value}</div>
               </div>
-              <div className="rounded-md border border-line p-3">
-                <div className="text-muted">Факты</div>
-                <div className="mt-1 font-semibold text-ink">8</div>
-              </div>
-            </div>
-            <Button type="button" variant="secondary">
-              <Save size={16} />
-              Сохранить сейчас
-            </Button>
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Card>
 
-        <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-          <Card className="grid content-start gap-4">
-            <div>
-              <Badge>Пошаговый режим</Badge>
-              <h2 className="mt-3 text-lg font-semibold text-ink">Атмосфера и сервис</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Подсказка: опишите посадку, музыку, запахи, скорость подачи,
-                работу официанта и ощущение от места.
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <Button type="button">
-                <Mic size={16} />
-                Записать голос
-              </Button>
-              <Button type="button" variant="secondary">
-                <RotateCcw size={16} />
-                Перезаписать блок
-              </Button>
-            </div>
-            <textarea
-              className="min-h-40 rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
-              defaultValue="Летняя площадка, удобные столики, музыка, подача без суеты."
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary">Назад</Button>
-              <Button type="button">Далее</Button>
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ListChecks size={18} className="text-primary" />
+                Входные блоки
+              </div>
+              {inputBlocks.map(([name, status, helper, source]) => (
+                <button
+                  className="grid gap-2 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
+                  key={name}
+                  type="button"
+                >
+                  <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">{name}</span>
+                    <Badge
+                      className="shrink-0"
+                      tone={status === "готово" ? "success" : status === "активно" ? "info" : "warning"}
+                    >
+                      {status}
+                    </Badge>
+                  </span>
+                  <span className="text-xs leading-5 text-muted">{helper}</span>
+                  <span className="text-xs text-muted">Источник: {source}</span>
+                </button>
+              ))}
               <Button type="button" variant="secondary">
                 <Plus size={16} />
                 Добавить блюдо
               </Button>
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="grid content-start gap-3">
-            <div>
-              <Badge>Полный режим</Badge>
-              <h2 className="mt-3 text-lg font-semibold text-ink">Блоки источника</h2>
-            </div>
-            {sourceBlocks.map(([name, text, source, locked]) => (
-              <div className="rounded-md border border-line p-3" key={String(name)}>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-medium text-ink">{name}</div>
-                  <div className="flex gap-2">
-                    <Badge>{source}</Badge>
-                    <Badge tone={locked ? "success" : "warning"}>
-                      {locked ? "зафиксировано" : "черновик"}
-                    </Badge>
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Mic size={18} className="text-primary" />
+                Диктовка и транскрипт
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button size="sm" type="button">
+                  <Play size={14} />
+                  Запись
+                </Button>
+                <Button size="sm" type="button" variant="secondary">
+                  <Pause size={14} />
+                  Пауза
+                </Button>
+                <Button size="sm" type="button" variant="secondary">
+                  <RotateCcw size={14} />
+                  Заново
+                </Button>
+              </div>
+              <div className="rounded-md border border-border p-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2 font-medium text-foreground">
+                  <AudioLines size={16} className="text-primary" />
+                  {transcriptReview.provider}
+                  <Badge tone="warning">{transcriptReview.status}</Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                  <span>{transcriptReview.duration}</span>
+                  <span>confidence {transcriptReview.confidence}</span>
+                </div>
+              </div>
+              <textarea
+                className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+                defaultValue={transcriptReview.text}
+              />
+              <Button type="button">
+                <LockKeyhole size={16} />
+                Принять и зафиксировать
+              </Button>
+            </Card>
+          </div>
+
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-4">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <MessageSquareText size={18} className="text-primary" />
+                    Master draft
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
+                  </p>
+                </div>
+                <Badge tone="info">3 860 / 4 096</Badge>
+              </div>
+              <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
+                {masterDraftParagraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </article>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="secondary">
+                  <Sparkles size={16} />
+                  Пересобрать выбранный раздел
+                </Button>
+                <Button type="button">
+                  <FileCheck2 size={16} />
+                  Принять master
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Bot size={18} className="text-primary" />
+                AI-предложения
+              </div>
+              {aiSuggestions.map(([name, text, action]) => (
+                <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{name}</div>
+                    <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" type="button">
+                      <CheckCircle2 size={14} />
+                      {action === "принять" ? "Принять" : "Принять правку"}
+                    </Button>
+                    <Button size="sm" type="button" variant="secondary">
+                      <MessageSquareText size={14} />
+                      Изменить
+                    </Button>
                   </div>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
-                  <span>Происхождение: пользователь</span>
-                  <span>Расшифровка: доступна</span>
-                  <span>Медиа: 2 файла</span>
-                </div>
-              </div>
-            ))}
-          </Card>
-        </div>
+              ))}
+            </Card>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="grid content-start gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <Badge>Медиа</Badge>
-                <h2 className="mt-3 text-lg font-semibold text-ink">Порядок вложений</h2>
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <History size={18} className="text-primary" />
+                История версий
               </div>
-              <Button asChild variant="secondary">
-                <Link href="/app/media">
-                  <Upload size={16} />
-                  Загрузить
-                </Link>
-              </Button>
-            </div>
-            {mediaItems.map(([index, title, status, role]) => (
-              <div className="grid grid-cols-[32px_1fr_auto] items-center gap-3 rounded-md border border-line p-3" key={index}>
-                <GripVertical size={18} className="text-muted" />
-                <div>
-                  <div className="text-sm font-medium text-ink">{index}. {title}</div>
-                  <div className="text-xs text-muted">Роль: {role}</div>
+              {revisionEvents.map(([version, event, time]) => (
+                <div
+                  className="grid grid-cols-[48px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
+                  key={version}
+                >
+                  <Badge>{version}</Badge>
+                  <div>
+                    <div className="font-medium text-foreground">{event}</div>
+                    <div className="mt-1 text-xs text-muted">{time}</div>
+                  </div>
                 </div>
-                <Badge tone={status === "готово" ? "success" : "warning"}>{status}</Badge>
-              </div>
-            ))}
-          </Card>
+              ))}
+            </Card>
+          </div>
 
-          <Card className="grid content-start gap-3">
-            <div>
-              <Badge>Голос</Badge>
-              <h2 className="mt-3 text-lg font-semibold text-ink">Расшифровка и исправление</h2>
-            </div>
-            <div className="rounded-md border border-line p-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                <AudioLines size={16} className="text-accent" />
-                provider: mock · статус: готово
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <PanelRight size={18} className="text-primary" />
+                Preview площадок
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Текст расшифровки показывается рядом с аудио, затем исправленный
-                вариант можно зафиксировать как факт.
-              </p>
-            </div>
-            <textarea
-              className="min-h-28 rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
-              defaultValue="Уху принесли без пяти двенадцать, остальные блюда примерно в 12:03."
-            />
-            <Button type="button">
-              <LockKeyhole size={16} />
-              Принять и зафиксировать
-            </Button>
-          </Card>
+              {platformPreviews.map((preview) => (
+                <div className="grid gap-3 rounded-md border border-border p-3" key={preview.platform}>
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <div className="font-medium text-foreground">{preview.platform}</div>
+                    <Badge tone={preview.status === "готово к review" ? "success" : "warning"}>
+                      {preview.status}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-1 text-xs text-muted">
+                    <span>{preview.mode}</span>
+                    <span>{preview.budget}</span>
+                    <span>{preview.media}</span>
+                  </div>
+                  <div className="flex gap-2 rounded-md bg-surface-muted p-2 text-xs leading-5 text-muted">
+                    <AlertTriangle className="mt-0.5 shrink-0 text-warning" size={14} />
+                    <span>{preview.warning}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" type="button" variant="secondary">
+                      <MessageSquareText size={14} />
+                      Редактировать
+                    </Button>
+                    <Button size="sm" type="button">
+                      <Send size={14} />
+                      В review
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <LockKeyhole size={18} className="text-primary" />
+                Факт-локи
+              </div>
+              {factLocks.map(([fact, status, source]) => (
+                <div className="rounded-md border border-border p-3 text-sm" key={fact}>
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0 break-words font-medium text-foreground">{fact}</div>
+                    <Badge tone={status === "locked" ? "success" : "warning"}>
+                      {status === "locked" ? "locked" : "review"}
+                    </Badge>
+                  </div>
+                  <div className="mt-1 text-xs text-muted">{source}</div>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Clock3 size={18} className="text-primary" />
+                Проверки
+              </div>
+              {[
+                ["Ошибки", "0", "success"],
+                ["Предупреждения", "2", "warning"],
+                ["Готовность", "нужен review MAX", "warning"],
+              ].map(([label, value, tone]) => (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm" key={label}>
+                  <span className="text-muted">{label}</span>
+                  <Badge tone={tone === "success" ? "success" : "warning"}>{value}</Badge>
+                </div>
+              ))}
+            </Card>
+          </div>
         </div>
       </section>
     </div>

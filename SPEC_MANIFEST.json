@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:03:28.781844+00:00",
+  "generated_at": "2026-06-20T18:09:03.432853+00:00",
   "canonical_language": "en",
-  "file_count": 342,
+  "file_count": 345,
   "files": [
     {
       "path": ".dockerignore",
@@ -312,8 +312,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 16726,
-      "sha256": "29fd8993b91be4fb247b1401676e55dc22dde71476b7c839378c0843e2826d6e"
+      "size_bytes": 22382,
+      "sha256": "21eda800425a94caa2d773433955bc1357e34543c0fcf969d22508dd5ce5c894"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -369,6 +369,11 @@
       "path": "apps/web/src/config/navigation.ts",
       "size_bytes": 1719,
       "sha256": "c77c5e680851513c064bece874b181e0d97fcfe00e49803ff7a4b92e9e104129"
+    },
+    {
+      "path": "apps/web/src/features/content-studio/content-studio-fixtures.ts",
+      "size_bytes": 4008,
+      "sha256": "9b6c9d309ab26ec138107809d736005fe3b16f1eb5115af316ab2f779c879518"
     },
     {
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
@@ -959,6 +964,16 @@
       "path": "docs/exec-plans/UI_PHASE_04_RUBRIC_BUILDER.md",
       "size_bytes": 2810,
       "sha256": "52660edb0d4ed533ef1c0f7b6179c9173ac1cb0a9fd730c6a55edbd43c9c3dd9"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_05_DESKTOP_CONTENT_STUDIO.md",
+      "size_bytes": 3045,
+      "sha256": "58ff01875e697f69b4145455402a1be22e6e9fe3ac1481c1ff0c3f2c2d6255fe"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_05_REPORT_RU.md",
+      "size_bytes": 3761,
+      "sha256": "9026420e61be379364edd31f43dd35bd757ebab11afc6e9f08fd4d144ed876a1"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
