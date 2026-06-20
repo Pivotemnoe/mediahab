@@ -6,6 +6,7 @@ import {
   Bot,
   CheckCircle2,
   Clock3,
+  Download,
   FileCheck2,
   FileText,
   GripVertical,
@@ -22,9 +23,11 @@ import {
   RotateCcw,
   Save,
   Send,
+  Smartphone,
   Sparkles,
   Upload,
   WandSparkles,
+  WifiOff,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -41,6 +44,15 @@ import {
   studioSummary,
   transcriptReview,
 } from "@/features/content-studio/content-studio-fixtures";
+import {
+  activeCaptureBlock,
+  captureSteps,
+  compactPreviews,
+  offlineDraft,
+  recordingStates,
+  resumeItems,
+  reviewBlocks,
+} from "@/features/mobile-capture/mobile-capture-fixtures";
 
 const contentItems = [
   {
@@ -57,13 +69,6 @@ const contentItems = [
     status: "готово к сборке",
     version: "v7",
   },
-];
-
-const sourceBlocks = [
-  ["Основные сведения", "Заведение, адрес, чек и контекст посещения.", "текст", true],
-  ["Атмосфера", "Летняя площадка, музыка, сервис и ожидание подачи.", "голос", true],
-  ["Блюда", "Повторяемые блоки с названием, ценой и наблюдениями.", "смешанный", false],
-  ["Итог", "Вывод автора, рекомендация и вопрос аудитории.", "текст", false],
 ];
 
 const mediaItems = [
@@ -147,53 +152,183 @@ export function ContentIndexShell() {
 
 export function NewContentShell() {
   return (
-    <div className="grid gap-4">
-      <StudioHeader title="Создать материал" />
-      <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <Card className="grid content-start gap-3">
-          {["Проект", "Рубрика", "Факты", "Медиа", "Сборка"].map((step, index) => (
-            <div
-              className="flex items-center gap-2 rounded-md border border-line p-3 text-sm"
-              key={step}
-            >
-              <CheckCircle2 size={16} className={index < 2 ? "text-success" : "text-muted"} />
-              <span className={index < 2 ? "font-medium text-ink" : "text-muted"}>{step}</span>
+    <div className="grid min-w-0 gap-5">
+      <StudioHeader label="UI Phase 06" title="Мобильная диктовка" />
+      <section className="mx-auto grid w-full max-w-6xl min-w-0 gap-4 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="grid min-w-0 content-start gap-4">
+          <Card className="grid gap-4">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Badge tone="info">PWA capture</Badge>
+                <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
+                  Новый материал голосом
+                </h1>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Что поесть? Армавир · Обзор недели
+                </p>
+              </div>
+              <Smartphone className="shrink-0 text-primary" size={24} />
             </div>
-          ))}
-        </Card>
-
-        <Card className="grid gap-4">
-          <div>
-            <Badge>Новый черновик</Badge>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">
-              Выбор проекта и рубрики
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              После создания откроется пошаговый сбор фактов: основные сведения,
-              атмосфера, повторяемые блюда, итог и порядок медиа.
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {["Проект", "Рубрика", "Внутреннее название", "Ответственный"].map((label) => (
-              <label className="grid gap-1 text-sm" key={label}>
-                <span className="font-medium text-ink">{label}</span>
-                <input className="h-10 rounded-md border border-line px-3 outline-none focus:border-accent" />
-              </label>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button">
-              <FileText size={16} />
-              Создать черновик
+            <div className="grid gap-2 text-sm">
+              {resumeItems.map(([label, value]) => (
+                <div
+                  className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border bg-surface-muted p-3"
+                  key={label}
+                >
+                  <span className="text-muted">{label}</span>
+                  <span className="min-w-0 break-words text-right font-medium text-foreground">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Button type="button" variant="secondary">
+              <Download size={16} />
+              Установить PWA
             </Button>
+          </Card>
+
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ListChecks size={18} className="text-primary" />
+              Шаги записи
+            </div>
+            <div className="grid gap-2">
+              {captureSteps.map(([step, status], index) => (
+                <div
+                  className="grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-md border border-border p-2 text-sm"
+                  key={step}
+                >
+                  <span className="grid size-7 place-items-center rounded bg-surface-muted text-xs text-muted">
+                    {index + 1}
+                  </span>
+                  <span className="font-medium text-foreground">{step}</span>
+                  <Badge tone={status === "done" ? "success" : status === "active" ? "info" : "neutral"}>
+                    {status === "done" ? "готово" : status === "active" ? "сейчас" : "дальше"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="grid gap-4">
+            <div>
+              <Badge tone="info">{activeCaptureBlock.progress}</Badge>
+              <h2 className="mt-3 text-xl font-semibold text-foreground">
+                {activeCaptureBlock.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {activeCaptureBlock.prompt}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-muted p-4 text-center">
+              <Mic className="mx-auto text-primary" size={32} />
+              <div className="mt-3 text-2xl font-semibold text-foreground">
+                {activeCaptureBlock.duration}
+              </div>
+              <div className="mt-1 text-sm text-muted">идёт запись</div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button aria-label="Начать запись" size="sm" type="button">
+                <Play size={14} />
+                Запись
+              </Button>
+              <Button aria-label="Поставить запись на паузу" size="sm" type="button" variant="secondary">
+                <Pause size={14} />
+                Пауза
+              </Button>
+              <Button aria-label="Перезаписать блок" size="sm" type="button" variant="secondary">
+                <RotateCcw size={14} />
+                Заново
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {recordingStates.map(([state, label]) => (
+                <Badge key={state} tone={state === "recording" ? "success" : state === "error" ? "danger" : "neutral"}>
+                  {label}
+                </Badge>
+              ))}
+            </div>
+            <textarea
+              className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+              defaultValue={activeCaptureBlock.transcript}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary">
+                Назад
+              </Button>
+              <Button type="button">
+                <CheckCircle2 size={16} />
+                Зафиксировать
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid min-w-0 content-start gap-4">
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <WifiOff size={18} className="text-warning" />
+              Offline draft
+            </div>
+            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm">
+              <div className="font-medium text-foreground">{offlineDraft.status}</div>
+              <div className="mt-1 text-muted">{offlineDraft.saved}</div>
+              <div className="mt-1 text-muted">{offlineDraft.queue}</div>
+            </div>
+            <Button disabled type="button">
+              <WandSparkles size={16} />
+              Собрать после синхронизации
+            </Button>
+            <p className="text-xs leading-5 text-muted">
+              AI и публикация недоступны, пока черновик не синхронизирован.
+            </p>
+          </Card>
+
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileText size={18} className="text-primary" />
+              Review перед сборкой
+            </div>
+            {reviewBlocks.map(([name, status, text]) => (
+              <div className="rounded-md border border-border p-3" key={name}>
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <div className="font-medium text-foreground">{name}</div>
+                  <Badge tone={status === "locked" ? "success" : status === "review" ? "warning" : "neutral"}>
+                    {status === "locked" ? "locked" : status === "review" ? "review" : "empty"}
+                  </Badge>
+                </div>
+                <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
+              </div>
+            ))}
+            <Button type="button">
+              <Upload size={16} />
+              Синхронизировать черновик
+            </Button>
+          </Card>
+
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <PanelRight size={18} className="text-primary" />
+              Компактные previews
+            </div>
+            {compactPreviews.map(([platform, status, note]) => (
+              <div className="rounded-md border border-border p-3 text-sm" key={platform}>
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <div className="font-medium text-foreground">{platform}</div>
+                  <Badge tone={status === "draft" ? "info" : "warning"}>{status}</Badge>
+                </div>
+                <div className="mt-1 text-muted">{note}</div>
+              </div>
+            ))}
             <Button asChild variant="secondary">
-              <Link href="/app/projects">
-                <WandSparkles size={16} />
-                Настроить рубрики
+              <Link href="/app/content/demo-review">
+                <MessageSquareText size={16} />
+                Открыть desktop studio
               </Link>
             </Button>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </section>
     </div>
   );

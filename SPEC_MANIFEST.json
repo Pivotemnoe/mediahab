@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:09:03.432853+00:00",
+  "generated_at": "2026-06-20T18:14:22.772143+00:00",
   "canonical_language": "en",
-  "file_count": 345,
+  "file_count": 348,
   "files": [
     {
       "path": ".dockerignore",
@@ -312,8 +312,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 22382,
-      "sha256": "21eda800425a94caa2d773433955bc1357e34543c0fcf969d22508dd5ce5c894"
+      "size_bytes": 28247,
+      "sha256": "e87dccb8c89e4465d2376ba12796e8932958c32d9a65068b606d79fc300acdbc"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -379,6 +379,11 @@
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
       "size_bytes": 1399,
       "sha256": "71073f99ef31df9cbfb1a1356ddc240ac4ee1923533ae284ef5ad26a136cdd1e"
+    },
+    {
+      "path": "apps/web/src/features/mobile-capture/mobile-capture-fixtures.ts",
+      "size_bytes": 2080,
+      "sha256": "611405ade498c4cc7a0b12ccc6d03da1e9185a18be19f98a9d1d06570fbc32e4"
     },
     {
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
@@ -974,6 +979,16 @@
       "path": "docs/exec-plans/UI_PHASE_05_REPORT_RU.md",
       "size_bytes": 3761,
       "sha256": "9026420e61be379364edd31f43dd35bd757ebab11afc6e9f08fd4d144ed876a1"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_06_MOBILE_VOICE_PWA.md",
+      "size_bytes": 2932,
+      "sha256": "1720729515a20efdfc291581e32e8432cbde242c0ea7c35bc877e6df60866be5"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_06_REPORT_RU.md",
+      "size_bytes": 3282,
+      "sha256": "ae21ac4dcc174d81353e3ada6b481b3f38a3ae4bc4f9302fc4ac2620f7f50237"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
