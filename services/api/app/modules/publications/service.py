@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,6 +81,22 @@ class PublicationCoreError(RuntimeError):
 
 def _connector_error_to_publication_error(exc: ConnectorValidationError) -> PublicationCoreError:
     return PublicationCoreError(422, exc.code, exc.message, exc.details)
+
+
+def normalize_scheduled_at(value: datetime, workspace_timezone: str | None = None) -> datetime:
+    timezone_name = workspace_timezone or "UTC"
+    if value.tzinfo is None or value.utcoffset() is None:
+        try:
+            zone = ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as exc:
+            raise PublicationCoreError(
+                422,
+                "workspace_timezone_invalid",
+                "Workspace timezone is not a valid IANA timezone.",
+                {"timezone": timezone_name},
+            ) from exc
+        value = value.replace(tzinfo=zone)
+    return value.astimezone(timezone.utc)
 
 
 async def ensure_publication_catalog(session: AsyncSession) -> None:
@@ -563,14 +580,16 @@ async def enqueue_publication(
     session: AsyncSession,
     publication: Publication,
     scheduled_at: datetime | None = None,
+    workspace_timezone: str | None = None,
 ) -> Publication:
     if publication.status in {"published", "manual_required"}:
         return publication
     if publication.status == "cancelled":
         raise PublicationCoreError(422, "publication_cancelled", "Cancelled publication cannot be queued.")
     now = utc_now()
+    normalized_schedule = normalize_scheduled_at(scheduled_at, workspace_timezone) if scheduled_at else None
     publication.status = "scheduled" if scheduled_at else "queued"
-    publication.scheduled_at = scheduled_at
+    publication.scheduled_at = normalized_schedule
     publication.queued_at = None if scheduled_at else now
     publication.updated_at = now
     publication.version += 1
@@ -596,11 +615,67 @@ async def enqueue_publication(
                 status="pending",
                 attempt_count=0,
                 max_attempts=OUTBOX_MAX_ATTEMPTS,
-                available_at=scheduled_at or now,
+                available_at=normalized_schedule or now,
                 created_at=now,
                 updated_at=now,
             )
         )
+    await session.flush()
+    return publication
+
+
+async def reschedule_publication(
+    session: AsyncSession,
+    publication: Publication,
+    scheduled_at: datetime,
+    workspace_timezone: str | None = None,
+) -> Publication:
+    if publication.status == "published":
+        raise PublicationCoreError(422, "publication_already_published", "Published publication cannot be rescheduled.")
+    if publication.status == "cancelled":
+        raise PublicationCoreError(422, "publication_cancelled", "Cancelled publication cannot be rescheduled.")
+    normalized_schedule = normalize_scheduled_at(scheduled_at, workspace_timezone)
+    now = utc_now()
+    publication.status = "scheduled"
+    publication.scheduled_at = normalized_schedule
+    publication.queued_at = None
+    publication.updated_at = now
+    publication.version += 1
+    event = await session.scalar(
+        select(OutboxEvent)
+        .where(
+            OutboxEvent.aggregate_type == "publication",
+            OutboxEvent.aggregate_id == publication.id,
+            OutboxEvent.event_type == "publication.publish",
+            OutboxEvent.status == "pending",
+        )
+        .order_by(OutboxEvent.created_at.asc())
+        .limit(1)
+    )
+    if event is None:
+        session.add(
+            OutboxEvent(
+                id=uuid4(),
+                workspace_id=publication.workspace_id,
+                aggregate_type="publication",
+                aggregate_id=publication.id,
+                event_type="publication.publish",
+                payload_json={"publication_id": str(publication.id), "rescheduled": True},
+                status="pending",
+                attempt_count=0,
+                max_attempts=OUTBOX_MAX_ATTEMPTS,
+                available_at=normalized_schedule,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+    else:
+        event.available_at = normalized_schedule
+        event.locked_at = None
+        event.locked_by = None
+        event.updated_at = now
+        payload = event.payload_json if isinstance(event.payload_json, dict) else {}
+        event.payload_json = {**payload, "publication_id": str(publication.id), "rescheduled": True}
     await session.flush()
     return publication
 

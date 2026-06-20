@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { PwaRuntime } from "@/components/pwa/pwa-runtime";
 import { metadataBrand } from "@/config/brand";
 
 import "./globals.css";
@@ -23,7 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        <PwaRuntime />
+        {children}
+      </body>
     </html>
   );
 }

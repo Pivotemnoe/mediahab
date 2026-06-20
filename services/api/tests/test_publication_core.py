@@ -23,6 +23,7 @@ from app.db.base import (  # noqa: E402
     ExternalPost,
     Membership,
     OutboxEvent,
+    Publication,
     utc_now,
 )
 from app.db.session import get_session  # noqa: E402
@@ -191,6 +192,46 @@ class Phase06PublicationCoreTest(unittest.TestCase):
                 or 0
             )
 
+    async def _outbox_events(self, publication_id: str) -> list[dict[str, object]]:
+        async with self.SessionLocal() as session:
+            events = (
+                await session.scalars(
+                    select(OutboxEvent)
+                    .where(OutboxEvent.aggregate_id == UUID(publication_id))
+                    .order_by(OutboxEvent.created_at.asc())
+                )
+            ).all()
+            return [
+                {
+                    "status": event.status,
+                    "available_at": event.available_at.isoformat(),
+                    "processed_at": event.processed_at.isoformat() if event.processed_at else None,
+                }
+                for event in events
+            ]
+
+    async def _add_pending_publish_event(self, publication_id: str) -> None:
+        async with self.SessionLocal() as session:
+            row = await session.get(Publication, UUID(publication_id))
+            assert row is not None
+            session.add(
+                OutboxEvent(
+                    id=uuid4(),
+                    workspace_id=row.workspace_id,
+                    aggregate_type="publication",
+                    aggregate_id=row.id,
+                    event_type="publication.publish",
+                    payload_json={"publication_id": str(row.id), "restart_probe": True},
+                    status="pending",
+                    attempt_count=0,
+                    max_attempts=1,
+                    available_at=utc_now(),
+                    created_at=utc_now(),
+                    updated_at=utc_now(),
+                )
+            )
+            await session.commit()
+
     def generate_variants(
         self,
         auth: dict[str, object],
@@ -318,6 +359,89 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         self.assertEqual(retried.status_code, 200, retried.text)
         self.assertEqual(retried.json()["status"], "published")
         self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
+
+    def test_worker_restart_probe_does_not_duplicate_external_posts(self) -> None:
+        auth = self.register(email="restart10@example.com", workspace_name="Restart Workspace")
+        project, _, content, _ = self.create_content_with_master(auth)
+        variants = self.generate_variants(auth, content["id"], ["generic_webhook"])
+        approved = self.approve_variant(auth, variants["generic_webhook"]["id"])
+        destination = self.create_destination(
+            auth,
+            project["id"],
+            "Webhook restart",
+            "generic_webhook",
+            "generic_webhook",
+            {"endpoint_url": "https://example.com/restart", "simulate_status": 202},
+        )
+        publication = self.create_publication(auth, approved["id"], destination["id"], "phase10-restart")
+        published = self.client.post(
+            f"/api/v1/publications/{publication['id']}/publish-now",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(published.status_code, 200, published.text)
+        self.assertEqual(published.json()["status"], "published")
+        self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
+
+        asyncio.run(self._add_pending_publish_event(publication["id"]))
+        replayed = self.client.post(
+            f"/api/v1/publications/{publication['id']}/publish-now",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(replayed.status_code, 200, replayed.text)
+        self.assertEqual(replayed.json()["status"], "published")
+        self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
+        statuses = {event["status"] for event in asyncio.run(self._outbox_events(publication["id"]))}
+        self.assertEqual(statuses, {"completed"})
+
+    def test_schedule_reschedule_and_cancel_use_workspace_timezone(self) -> None:
+        auth = self.register(email="schedule10@example.com", workspace_name="Schedule Workspace")
+        project, _, content, _ = self.create_content_with_master(auth)
+        variants = self.generate_variants(auth, content["id"], ["generic_webhook"])
+        approved = self.approve_variant(auth, variants["generic_webhook"]["id"])
+        destination = self.create_destination(
+            auth,
+            project["id"],
+            "Webhook schedule",
+            "generic_webhook",
+            "generic_webhook",
+            {"endpoint_url": "https://example.com/schedule", "simulate_status": 202},
+        )
+        publication = self.create_publication(auth, approved["id"], destination["id"], "phase10-schedule")
+
+        scheduled = self.client.post(
+            f"/api/v1/publications/{publication['id']}/schedule",
+            headers=self.csrf_headers(auth),
+            json={"scheduled_at": "2026-06-21T12:00:00"},
+        )
+        self.assertEqual(scheduled.status_code, 200, scheduled.text)
+        self.assertEqual(scheduled.json()["status"], "scheduled")
+        self.assertEqual(scheduled.json()["scheduled_at"], "2026-06-21T09:00:00+00:00")
+        events = asyncio.run(self._outbox_events(publication["id"]))
+        self.assertEqual(len(events), 1)
+        self.assertTrue(str(events[0]["available_at"]).startswith("2026-06-21T09:00:00"))
+
+        rescheduled = self.client.post(
+            f"/api/v1/publications/{publication['id']}/reschedule",
+            headers=self.csrf_headers(auth),
+            json={"scheduled_at": "2026-06-22T15:30:00"},
+        )
+        self.assertEqual(rescheduled.status_code, 200, rescheduled.text)
+        self.assertEqual(rescheduled.json()["status"], "scheduled")
+        self.assertEqual(rescheduled.json()["scheduled_at"], "2026-06-22T12:30:00+00:00")
+        events = asyncio.run(self._outbox_events(publication["id"]))
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["status"], "pending")
+        self.assertTrue(str(events[0]["available_at"]).startswith("2026-06-22T12:30:00"))
+
+        cancelled = self.client.post(
+            f"/api/v1/publications/{publication['id']}/cancel",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(cancelled.status_code, 200, cancelled.text)
+        self.assertEqual(cancelled.json()["status"], "cancelled")
+        events = asyncio.run(self._outbox_events(publication["id"]))
+        self.assertEqual(events[0]["status"], "completed")
+        self.assertIsNotNone(events[0]["processed_at"])
 
     def test_partial_success_and_attempt_history_are_visible(self) -> None:
         auth = self.register(email="partial06@example.com", workspace_name="Partial Workspace")

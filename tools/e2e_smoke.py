@@ -77,6 +77,7 @@ def main() -> int:
         "/api/v1/publications",
         "/api/v1/publications/{publication_id}",
         "/api/v1/publications/{publication_id}/schedule",
+        "/api/v1/publications/{publication_id}/reschedule",
         "/api/v1/publications/{publication_id}/publish-now",
         "/api/v1/publications/{publication_id}/cancel",
         "/api/v1/publications/{publication_id}/retry",

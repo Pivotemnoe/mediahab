@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T16:50:51.082187+00:00",
+  "generated_at": "2026-06-20T16:59:43.067291+00:00",
   "canonical_language": "en",
-  "file_count": 323,
+  "file_count": 328,
   "files": [
     {
       "path": ".dockerignore",
@@ -66,6 +66,11 @@
       "sha256": "06a2131a62aeb8aad1032c1b92be3a7517f4e6c6c88666c9f74e448d5a6c0bec"
     },
     {
+      "path": "apps/web/public/sw.js",
+      "size_bytes": 978,
+      "sha256": "29d8b11f49e86c86cc657b8bd8e10bae6fa7df9af1cfc4de2a25ac53c0db7bfd"
+    },
+    {
       "path": "apps/web/src/app/app/account/page.tsx",
       "size_bytes": 788,
       "sha256": "265c1bf8277b94dbfea5260e7764f1cc6ab3ab5477df564b72d52caf751ea407"
@@ -82,8 +87,8 @@
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
-      "size_bytes": 2278,
-      "sha256": "9b1b074c991f842bb14ff24679d104ff92b7205844ee07112614c2ef23d8ae07"
+      "size_bytes": 2619,
+      "sha256": "addbf367096da7f7b4a30a1a434a4ac572217526d228383f1084e07b20d152f1"
     },
     {
       "path": "apps/web/src/app/app/content/[contentId]/page.tsx",
@@ -202,8 +207,8 @@
     },
     {
       "path": "apps/web/src/app/layout.tsx",
-      "size_bytes": 560,
-      "sha256": "0572a46ab46f8447909035d4656948c19c5f8ace116b9c34e59e075739175cf0"
+      "size_bytes": 658,
+      "sha256": "bdfd0ba16b9a61018a88d86917ad80d5893bd46ab0201b46908de09f01009816"
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
@@ -316,6 +321,11 @@
       "sha256": "bfe24f008d622c7b0105baecc43c7431f145c123eb4f3a62c523ca918cbb53eb"
     },
     {
+      "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
+      "size_bytes": 808,
+      "sha256": "c6a854e738dc1750797f751f5a762cb339cb195938bfe94b7bd6d82742206d19"
+    },
+    {
       "path": "apps/web/src/components/states/screen-state.tsx",
       "size_bytes": 3987,
       "sha256": "da9f6551679c6ddb1735be93d7b391787af4a9220f903ab0b565a88ce8f40191"
@@ -357,8 +367,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 253332,
-      "sha256": "3e50b74c20e6eaf0dab6d41fdb7e2b05b952781f95930717cca06dad26d99f24"
+      "size_bytes": 254798,
+      "sha256": "8595f543e6c7af3bdc965e88319c3baee9f9c1026acf410712fcd91a382e8bbb"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -642,8 +652,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 5032,
-      "sha256": "c8b29e15cb6a82f667f52ebb6b28aa92560eab059a144e5cd2c67f8fc6489bda"
+      "size_bytes": 5378,
+      "sha256": "8fadc77ac3ba1ace4351f175f6afca6138eb61f5378925c368182849203d5759"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -861,6 +871,16 @@
       "sha256": "792f80b667bfd7a43ae1c00c115c89d2c31c78e840a3613e12a1a3f8f2c25d01"
     },
     {
+      "path": "docs/exec-plans/PHASE_10_REPORT_RU.md",
+      "size_bytes": 4343,
+      "sha256": "f183d12b044b26fd154aa6d305a131ef30a91244479a451fa574491d51f130ef"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_10_SCHEDULING_HARDENING.md",
+      "size_bytes": 4240,
+      "sha256": "69bdd6fb18ad7bb6cde8cdfde7883f2322f27d0cdde1cff591c0d758ecc82ccf"
+    },
+    {
       "path": "docs/exec-plans/README.md",
       "size_bytes": 702,
       "sha256": "09a49fbc8f9a17854cfb786d7763cf4709e101c8f05ff54431ba740c20ea7a7d"
@@ -961,6 +981,11 @@
       "sha256": "b4f10470debec76e5b69866f20a25ad54aaf53c483fa8b86dbe145b19084bbb1"
     },
     {
+      "path": "docs/runbooks/phase10-hardening-ru.md",
+      "size_bytes": 2057,
+      "sha256": "8972548401074f36a46c803b150afa43ffbfab9d539397afaf786d7775eac3f7"
+    },
+    {
       "path": "fixtures/example-import-template.json",
       "size_bytes": 8235,
       "sha256": "747b09e237088834243b918d458cf0c0be043ae2fe46ab3a088f5c2237376af7"
@@ -997,8 +1022,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 253332,
-      "sha256": "3e50b74c20e6eaf0dab6d41fdb7e2b05b952781f95930717cca06dad26d99f24"
+      "size_bytes": 254798,
+      "sha256": "8595f543e6c7af3bdc965e88319c3baee9f9c1026acf410712fcd91a382e8bbb"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -1322,8 +1347,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/publications.py",
-      "size_bytes": 36522,
-      "sha256": "45e721aa8668f2bf4a989be40425babd3011e8abde9b8890a086c6433118a85a"
+      "size_bytes": 37918,
+      "sha256": "edc0352361e97fa3380f1b949e7e88a80673ab2fbbc11316412b831d573be4aa"
     },
     {
       "path": "services/api/app/api/v1/routes/workspaces.py",
@@ -1467,8 +1492,8 @@
     },
     {
       "path": "services/api/app/modules/publications/service.py",
-      "size_bytes": 33035,
-      "sha256": "269e95de9cfb7ae8af541f131604d4ea4fa4b9f393c4340ce07616513fbb7d50"
+      "size_bytes": 36087,
+      "sha256": "2ac0ef0230fcb0fb7000ae3abb8194f0a153057adfce61a6fb31bd329385d69b"
     },
     {
       "path": "services/api/app/modules/shared/__init__.py",
@@ -1532,8 +1557,8 @@
     },
     {
       "path": "services/api/tests/test_publication_core.py",
-      "size_bytes": 23335,
-      "sha256": "fca15809cd8a2f4041b77e5486d4a717af3202a4aa5e470e41e530aec5768ece"
+      "size_bytes": 29421,
+      "sha256": "0d7ee2765170ec1cf7dd82a79c199a0a50340baf35720673fa7620025f3a2984"
     },
     {
       "path": "services/api/tests/test_telegram_connector.py",
@@ -1592,8 +1617,8 @@
     },
     {
       "path": "tools/e2e_smoke.py",
-      "size_bytes": 4333,
-      "sha256": "39b03b49612dc6d9afcb698197c6c678ff658f80b9b4e49a685be68d72e145ea"
+      "size_bytes": 4393,
+      "sha256": "82b0e264ba0b15be058a4c70965f6d1a9367929245a5cd30a4e62a3825fbc24a"
     },
     {
       "path": "tools/export_openapi.py",

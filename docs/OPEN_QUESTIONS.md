@@ -29,6 +29,9 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 8. Choose the real email delivery provider for verification and password reset before production auth.
 9. Confirm final Timeweb S3 bucket naming, public delivery base URL, signed upload TTL, CORS policy, and cleanup policy for abandoned media uploads.
 10. Confirm OpenAI STT production model, Russian language default, monthly minute budget, and live-smoke audio sample.
+11. Approve the production PostgreSQL RLS policy set and choose where to run the RLS acceptance tests.
+12. Approve backup encryption destination, restore-drill environment, RPO/RTO targets, and restore evidence format.
+13. Confirm whether PWA offline draft queue stores only text drafts first or includes audio/media metadata in the first pilot.
 
 ## Product-owner decisions that can follow later
 

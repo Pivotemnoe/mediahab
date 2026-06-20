@@ -17,6 +17,7 @@ from app.db.base import (
     Publication,
     PublicationAttempt,
     WebhookInbox,
+    Workspace,
     utc_now,
 )
 from app.db.session import get_session
@@ -51,6 +52,7 @@ from app.modules.publications.service import (
     mark_external_post_deleted,
     process_publication_outbox,
     record_webhook_inbox,
+    reschedule_publication,
     retry_publication,
     test_destination,
     update_project_destination,
@@ -474,6 +476,11 @@ async def require_publication_delivery_role(
     return destination
 
 
+async def workspace_timezone_for_publication(publication: Publication, db: AsyncSession) -> str:
+    workspace = await db.get(Workspace, publication.workspace_id)
+    return workspace.timezone if workspace is not None else "UTC"
+
+
 @router.post("/content-items/{content_id}/generate-variants", response_model=PlatformVariantsResponse)
 async def generate_variants(
     content_id: UUID,
@@ -747,12 +754,42 @@ async def schedule_publication(
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
     await require_publication_delivery_role(publication, membership, request, db)
+    timezone_name = await workspace_timezone_for_publication(publication, db)
     try:
-        scheduled = await enqueue_publication(db, publication, payload.scheduled_at)
+        scheduled = await enqueue_publication(
+            db,
+            publication,
+            payload.scheduled_at,
+            workspace_timezone=timezone_name,
+        )
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
     await db.commit()
     return await publication_out(db, scheduled)
+
+
+@router.post("/publications/{publication_id}/reschedule", response_model=PublicationOut)
+async def reschedule_publication_endpoint(
+    publication_id: UUID,
+    payload: PublicationScheduleRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+) -> PublicationOut:
+    publication, membership = await publication_for_actor(publication_id, request, actor, db)
+    await require_publication_delivery_role(publication, membership, request, db)
+    timezone_name = await workspace_timezone_for_publication(publication, db)
+    try:
+        rescheduled = await reschedule_publication(
+            db,
+            publication,
+            payload.scheduled_at,
+            workspace_timezone=timezone_name,
+        )
+    except PublicationCoreError as exc:
+        raise handle_publication_error(exc, request) from exc
+    await db.commit()
+    return await publication_out(db, rescheduled)
 
 
 @router.post("/publications/{publication_id}/publish-now", response_model=PublicationOut)
