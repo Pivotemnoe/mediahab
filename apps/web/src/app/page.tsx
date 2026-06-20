@@ -15,7 +15,7 @@ const workflow = [
 const proof = [
   ["Проекты и рубрики", "Настройки хранятся в базе, версии можно проверять и переносить."],
   ["Медиа и голос", "Фото, видео, аудио и расшифровка работают как часть материала."],
-  ["Outbox", "Публикации идут через durable queue с retry и manual_required состояниями."],
+  ["Исходящая очередь", "Публикации идут через надёжную очередь с повторами и состоянием ручного экспорта."],
 ] as const;
 
 export default function MarketingIndex() {
@@ -37,7 +37,7 @@ export default function MarketingIndex() {
               MediaHub для обзоров и публикаций
             </h1>
             <p className="mt-5 max-w-[320px] text-base leading-7 text-sidebar-foreground/85 sm:max-w-2xl">
-              Один рабочий кабинет для проекта, рубрик, диктовки, AI-редактуры, медиа, расписания и публикаций.
+              Один рабочий кабинет для проекта, рубрик, диктовки, ИИ-редактуры, медиа, расписания и публикаций.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild>

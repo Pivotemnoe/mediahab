@@ -8,5 +8,5 @@ export const brand = {
 
 export const metadataBrand = {
   title: brand.productName,
-  description: "Контент-студия для проектов, рубрик, AI-редактуры и мультиплатформенных публикаций.",
+  description: "Контент-студия для проектов, рубрик, ИИ-редактуры и мультиплатформенных публикаций.",
 };

@@ -120,8 +120,8 @@ export function NewProjectShell() {
             </Button>
           </>
         }
-        description="Visual Builder для проекта: идентичность, аудитория, тон, площадки, примеры и AI-предложения рубрик."
-        eyebrow="UI Phase 03"
+        description="Visual Builder для проекта: идентичность, аудитория, тон, площадки, примеры и ИИ-предложения рубрик."
+        eyebrow="Этап UI 03"
         title="Мастер проекта"
       />
 
@@ -198,7 +198,7 @@ export function NewProjectShell() {
               Примеры
             </div>
             <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-sm leading-6 text-muted">
-              Загрузите тексты, фото или голосовые заметки. В UI Phase 03 это fixture-блок; API-импорт подключается позже.
+              Загрузите тексты, фото или голосовые заметки. В этапе UI 03 это демо-блок; API-импорт подключается позже.
             </div>
             <div className="flex flex-wrap gap-2">
               {exampleImports.map((item) => (
@@ -214,7 +214,7 @@ export function NewProjectShell() {
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Sparkles size={18} className="text-primary" />
-              AI-предложения рубрик
+              ИИ-предложения рубрик
             </div>
             {rubricSuggestions.map(([name, text, mode]) => (
               <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
@@ -367,7 +367,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
           <div className="flex max-w-full flex-wrap gap-2">
             <Button type="button" variant="secondary">
               <Eye size={16} />
-              Preview формы
+              Предпросмотр формы
             </Button>
             <Button type="button">
               <Save size={16} />
@@ -433,7 +433,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
             <Card className="grid gap-4">
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Badge tone="warning">draft · v9</Badge>
+                  <Badge tone="warning">черновик · v9</Badge>
                   <h2 className="mt-3 break-words text-xl font-semibold text-foreground">
                     Обзор недели
                   </h2>
@@ -471,12 +471,12 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
                           {field.required ? "обязательное" : "опционально"}
                         </Badge>
                         <Badge tone={field.locked ? "success" : "warning"}>
-                          {field.locked ? "lock" : "draft"}
+                          {field.locked ? "зафиксировано" : "черновик"}
                         </Badge>
                       </div>
                     </div>
                     <div className="grid min-w-0 gap-2 text-xs text-muted sm:grid-cols-3">
-                      <span className="break-words">key: {field.key}</span>
+                      <span className="break-words">ключ: {field.key}</span>
                       <span className="break-words">источник: {field.source}</span>
                       <span className="break-words">лимит: {field.limit}</span>
                     </div>
@@ -512,9 +512,9 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
                 Инспектор поля
               </div>
               {[
-                ["label", "Атмосфера и сервис"],
-                ["source", "пользователь + голос"],
-                ["prompt", "Опишите посадку, музыку и скорость подачи"],
+                ["подпись", "Атмосфера и сервис"],
+                ["источник", "пользователь + голос"],
+                ["подсказка", "Опишите посадку, музыку и скорость подачи"],
               ].map(([label, value]) => (
                 <label className="grid gap-1.5 text-sm" key={label}>
                   <span className="font-medium text-foreground">{label}</span>
@@ -525,9 +525,9 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
                 </label>
               ))}
               <div className="grid gap-2">
-                {["Обязательное поле", "Факт блокируется", "AI может предлагать правку"].map((item) => (
+                {["Обязательное поле", "Факт блокируется", "ИИ может предлагать правку"].map((item) => (
                   <label className="flex min-w-0 items-center gap-2 text-sm text-foreground" key={item}>
-                    <input defaultChecked={item !== "AI может предлагать правку"} type="checkbox" />
+                    <input defaultChecked={item !== "ИИ может предлагать правку"} type="checkbox" />
                     <span className="min-w-0 break-words">{item}</span>
                   </label>
                 ))}
@@ -566,7 +566,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
             <Card className="grid gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Eye size={18} className="text-primary" />
-                Preview мобильной формы
+                Предпросмотр мобильной формы
               </div>
               {previewBlocks.map(([index, name, note]) => (
                 <div

@@ -76,9 +76,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Лимиты</h2>
-              <p className="mt-1 text-sm text-muted">Текущий usage snapshot.</p>
+              <p className="mt-1 text-sm text-muted">Текущий снимок использования.</p>
             </div>
-            <Badge tone="success">Start</Badge>
+            <Badge tone="success">Старт</Badge>
           </div>
           {usageRows.map(([label, value, max, tone]) => (
             <UsageMeter key={label} label={label} max={max} tone={tone} value={value} />
@@ -115,7 +115,7 @@ export default function DashboardPage() {
           ))}
           <div className="flex items-start gap-2 rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
             <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
-            Instagram live остаётся feature-flagged до готовности Meta account и review.
+            Боевой Instagram остаётся под флагом до готовности аккаунта Meta и проверки.
           </div>
         </Card>
       </div>

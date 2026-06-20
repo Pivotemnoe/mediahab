@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const contacts = [
-  ["Email", "pivo.temnoe@gmail.com", Mail],
-  ["Telegram/MAX", "каналы проекта подключаются после production-настройки", MessageCircle],
-  ["Безопасность", "секреты, платежи и webhooks включаются только после проверок", ShieldCheck],
+  ["Почта", "pivo.temnoe@gmail.com", Mail],
+  ["Telegram/MAX", "каналы проекта подключаются после продакшен-настройки", MessageCircle],
+  ["Безопасность", "секреты, платежи и вебхуки включаются только после проверок", ShieldCheck],
 ] as const;
 
 export default function ContactsPage() {

@@ -10,7 +10,7 @@ export const fieldPalette = [
   ["Цена", "Сумма, валюта и заметка"],
   ["Медиа", "Фото, видео, роль и порядок"],
   ["Повторяемая группа", "Блюда, напитки или позиции чека"],
-  ["AI-поле", "Хук, CTA, переход или summary"],
+  ["ИИ-поле", "Хук, призыв к действию, переход или краткий вывод"],
 ] as const;
 
 export const rubricFields = [
@@ -45,7 +45,7 @@ export const rubricFields = [
     key: "hook",
     label: "Хук",
     helper: "Генерируется после сбора фактов, редактируется автором.",
-    source: "AI",
+    source: "ИИ",
     required: false,
     locked: false,
     limit: "до 120 знаков",
@@ -53,14 +53,14 @@ export const rubricFields = [
 ] as const;
 
 export const repeatableGroups = [
-  ["Блюда", "min 1", "max 12", "название, цена, вкус, жирность, острота"],
-  ["Напитки", "min 0", "max 6", "название, цена, температура, впечатление"],
+  ["Блюда", "минимум 1", "максимум 12", "название, цена, вкус, жирность, острота"],
+  ["Напитки", "минимум 0", "максимум 6", "название, цена, температура, впечатление"],
 ] as const;
 
 export const platformStrategies = [
-  ["Telegram", "rich message", "до 4096 знаков, collage media"],
-  ["MAX", "adapted text", "до 4000 знаков, ручной fallback"],
-  ["Instagram", "caption", "до 2200 знаков, media-first"],
+  ["Telegram", "расширенное сообщение", "до 4096 знаков, медиа-коллаж"],
+  ["MAX", "адаптированный текст", "до 4000 знаков, ручной резервный режим"],
+  ["Instagram", "подпись", "до 2200 знаков, сначала медиа"],
 ] as const;
 
 export const styleRules = [

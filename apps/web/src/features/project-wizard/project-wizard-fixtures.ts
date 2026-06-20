@@ -2,16 +2,16 @@ export const projectWizardSteps = [
   ["Идентичность", "Название, slug и направление проекта", "current"],
   ["Аудитория", "Для кого пишем и какой уровень деталей нужен", "upcoming"],
   ["Тон", "Юмор, резкость, оценки и стоп-фразы", "upcoming"],
-  ["Площадки", "Telegram, MAX, Instagram, webhook и ручной экспорт", "upcoming"],
+  ["Площадки", "Telegram, MAX, Instagram, вебхук и ручной экспорт", "upcoming"],
   ["Примеры", "Импорт удачных постов и медиа-референсов", "upcoming"],
-  ["Рубрики", "AI-предложения и подтверждение структуры", "upcoming"],
+  ["Рубрики", "ИИ-предложения и подтверждение структуры", "upcoming"],
 ] as const;
 
 export const platformOptions = [
-  ["Telegram", "rich message, preview, manual fallback", true],
-  ["MAX", "manual/export first, production token later", true],
-  ["Instagram", "manual_required до Meta readiness", false],
-  ["Webhook", "simulate by default, live after SSRF controls", false],
+  ["Telegram", "расширенное сообщение, превью, ручной резервный режим", true],
+  ["MAX", "сначала ручной экспорт, production-токен позже", true],
+  ["Instagram", "ручной экспорт до готовности Meta", false],
+  ["Вебхук", "по умолчанию симуляция, боевой режим только после SSRF-контролей", false],
 ] as const;
 
 export const rubricSuggestions = [

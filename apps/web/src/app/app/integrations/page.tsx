@@ -10,8 +10,8 @@ export default function IntegrationsPage() {
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
-        description="Площадки, права, capabilities и безопасный live posture без вывода секретов в клиентский интерфейс."
-        eyebrow="UI Phase 07"
+        description="Площадки, права, возможности и безопасный боевой режим без вывода секретов в клиентский интерфейс."
+        eyebrow="Этап UI 07"
         title="Интеграции"
       />
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -19,7 +19,7 @@ export default function IntegrationsPage() {
           <Card className="grid content-start gap-4" key={connector.name}>
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
-                {connector.name === "Generic webhook" ? <Webhook size={18} /> : <RadioTower size={18} />}
+                {connector.name === "Универсальный вебхук" ? <Webhook size={18} /> : <RadioTower size={18} />}
                 <span className="min-w-0 break-words">{connector.name}</span>
               </div>
               <Badge
@@ -34,7 +34,7 @@ export default function IntegrationsPage() {
                 ["Аккаунт", connector.account],
                 ["Права", connector.permissions],
                 ["Токен", connector.token],
-                ["Capability", connector.capability],
+                ["Возможность", connector.capability],
               ].map(([label, value]) => (
                 <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
                   <div className="text-xs text-muted">{label}</div>
@@ -49,11 +49,11 @@ export default function IntegrationsPage() {
               </Button>
               <Button size="sm" type="button" variant="secondary">
                 <RotateCcw size={14} />
-                Reconnect
+                Переподключить
               </Button>
               <Button size="sm" type="button" variant="ghost">
                 <Power size={14} />
-                Disable
+                Отключить
               </Button>
             </div>
           </Card>
@@ -70,7 +70,7 @@ export default function IntegrationsPage() {
             Секреты не хранятся в клиентском коде, фикстурах и логах.
           </div>
           <div className="rounded-md border border-border p-3">
-            Webhook live включается только owner/admin после SSRF controls и challenge verification.
+            Боевой вебхук включается только владельцем или администратором после SSRF-контролей и проверки endpoint.
           </div>
         </div>
       </Card>

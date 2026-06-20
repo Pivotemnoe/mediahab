@@ -25,7 +25,7 @@ export default function ShowcasePage() {
           </Button>
         }
         description="Техническая витрина токенов, примитивов, состояний и русских UI-текстов."
-        eyebrow="UI Phase 01"
+        eyebrow="Этап UI 01"
         title="Витрина дизайн-системы"
       />
 
@@ -54,10 +54,10 @@ export default function ShowcasePage() {
             <Badge tone="danger">ошибка</Badge>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            <StatusBadge status="success">published</StatusBadge>
-            <StatusBadge status="warning">manual_required</StatusBadge>
-            <StatusBadge status="danger">dead_letter</StatusBadge>
-            <StatusBadge status="info">simulate</StatusBadge>
+            <StatusBadge status="success">опубликовано</StatusBadge>
+            <StatusBadge status="warning">нужен ручной экспорт</StatusBadge>
+            <StatusBadge status="danger">ошибка без повторов</StatusBadge>
+            <StatusBadge status="info">симуляция</StatusBadge>
           </div>
         </Card>
 
@@ -65,7 +65,7 @@ export default function ShowcasePage() {
           <h2 className="text-lg font-semibold text-foreground">Лимиты</h2>
           <UsageMeter label="Генерации" max={100} value={42} />
           <UsageMeter label="Медиа" max={100} tone="success" value={28} />
-          <UsageMeter label="Webhook retry" max={100} tone="warning" value={76} />
+          <UsageMeter label="Повторы вебхука" max={100} tone="warning" value={76} />
           <UsageMeter label="Ошибки" max={100} tone="danger" value={12} />
         </Card>
       </div>

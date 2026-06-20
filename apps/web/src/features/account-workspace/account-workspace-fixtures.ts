@@ -1,25 +1,25 @@
 export const accountSettings = [
-  ["Email", "pivo.temnoe@gmail.com", "подтверждён"],
+  ["Почта", "pivo.temnoe@gmail.com", "подтверждена"],
   ["Пароль", "Argon2id", "обновлён 12 дней назад"],
   ["Сессии", "3 активные", "можно отозвать"],
   ["CSRF", "cookie + token", "активно"],
 ] as const;
 
 export const sessionRows = [
-  ["MacBook", "Codex desktop", "сейчас", "current"],
-  ["iPhone", "Mobile PWA", "2 часа назад", "active"],
-  ["Chrome", "Armavir office", "вчера", "active"],
+  ["MacBook", "Codex desktop", "сейчас", "текущая"],
+  ["iPhone", "мобильная PWA", "2 часа назад", "активна"],
+  ["Chrome", "офис Армавир", "вчера", "активна"],
 ] as const;
 
 export const workspaceRoles = [
-  ["Владелец", "konstantin", "billing, deletion, integrations, members, all content"],
-  ["Администратор", "manager", "projects, integrations, members except ownership transfer"],
-  ["Редактор", "editor", "content, media, examples, preview, export, approval submit"],
-  ["Наблюдатель", "viewer", "read-only"],
+  ["Владелец", "konstantin", "оплата, удаление, интеграции, участники, весь контент"],
+  ["Администратор", "manager", "проекты, интеграции, участники без передачи владения"],
+  ["Редактор", "editor", "контент, медиа, примеры, превью, экспорт, отправка на согласование"],
+  ["Наблюдатель", "viewer", "только чтение"],
 ] as const;
 
 export const permissionNotes = [
-  ["content.publish", "не выдан editor по умолчанию"],
-  ["workspace isolation", "чужой workspace id возвращает 404"],
-  ["team seats", "лимит проверяется перед invite"],
+  ["content.publish", "не выдан редактору по умолчанию"],
+  ["изоляция workspace", "чужой workspace id возвращает 404"],
+  ["места команды", "лимит проверяется перед приглашением"],
 ] as const;

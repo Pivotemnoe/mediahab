@@ -3,7 +3,7 @@ export const captureSteps = [
   ["Рубрика", "done"],
   ["Атмосфера", "active"],
   ["Блюда", "next"],
-  ["Review", "next"],
+  ["Проверка", "next"],
 ] as const;
 
 export const recordingStates = [
@@ -25,9 +25,9 @@ export const activeCaptureBlock = {
 } as const;
 
 export const offlineDraft = {
-  status: "offline draft",
+  status: "локальный черновик",
   saved: "локально сохранено 18 секунд назад",
-  queue: "2 текстовых правки и 1 audio metadata в очереди",
+  queue: "2 текстовых правки и 1 аудио-метаданные в очереди",
 } as const;
 
 export const resumeItems = [
@@ -43,7 +43,7 @@ export const reviewBlocks = [
 ] as const;
 
 export const compactPreviews = [
-  ["Telegram", "draft", "Rich Message, collage, 3 860 / 4 096"],
-  ["MAX", "blocked", "Нужно сократить после сборки"],
-  ["Instagram", "manual", "Caption + manual_required"],
+  ["Telegram", "черновик", "расширенное сообщение, коллаж, 3 860 / 4 096"],
+  ["MAX", "блокировано", "нужно сократить после сборки"],
+  ["Instagram", "ручной экспорт", "подпись и ручная публикация"],
 ] as const;

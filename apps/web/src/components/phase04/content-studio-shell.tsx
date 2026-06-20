@@ -94,7 +94,7 @@ function StudioHeader({ title, label = "Этап 04" }: { title: string; label?:
           </Link>
         </Button>
       }
-      description="Editorial Studio для сбора фактов, диктовки, медиа и фиксации источников."
+      description="Редакционная студия для сбора фактов, диктовки, медиа и фиксации источников."
       eyebrow={label}
       title={title}
     />
@@ -111,7 +111,7 @@ export function ContentIndexShell() {
             <h1 className="text-3xl font-semibold text-ink">Черновики и материалы</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               Единица работы здесь — материал, а не пост под одну площадку.
-              Факты собираются отдельно от будущей сборки AI.
+              Факты собираются отдельно от будущей сборки ИИ.
             </p>
           </div>
           <Button asChild>
@@ -159,13 +159,13 @@ export function ContentIndexShell() {
 export function NewContentShell() {
   return (
     <div className="grid min-w-0 gap-5">
-      <StudioHeader label="UI Phase 06" title="Мобильная диктовка" />
+      <StudioHeader label="Этап UI 06" title="Мобильная диктовка" />
       <section className="mx-auto grid w-full max-w-6xl min-w-0 gap-4 lg:grid-cols-[420px_minmax(0,1fr)]">
         <div className="grid min-w-0 content-start gap-4">
           <Card className="grid gap-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
-                <Badge tone="info">PWA capture</Badge>
+                <Badge tone="info">PWA-запись</Badge>
                 <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
                   Новый материал голосом
                 </h1>
@@ -275,7 +275,7 @@ export function NewContentShell() {
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <WifiOff size={18} className="text-warning" />
-              Offline draft
+              Локальный черновик
             </div>
             <div className="rounded-md border border-border bg-surface-muted p-3 text-sm">
               <div className="font-medium text-foreground">{offlineDraft.status}</div>
@@ -287,21 +287,21 @@ export function NewContentShell() {
               Собрать после синхронизации
             </Button>
             <p className="text-xs leading-5 text-muted">
-              AI и публикация недоступны, пока черновик не синхронизирован.
+              ИИ и публикация недоступны, пока черновик не синхронизирован.
             </p>
           </Card>
 
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <FileText size={18} className="text-primary" />
-              Review перед сборкой
+              Проверка перед сборкой
             </div>
             {reviewBlocks.map(([name, status, text]) => (
               <div className="rounded-md border border-border p-3" key={name}>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-foreground">{name}</div>
                   <Badge tone={status === "locked" ? "success" : status === "review" ? "warning" : "neutral"}>
-                    {status === "locked" ? "locked" : status === "review" ? "review" : "empty"}
+                    {status === "locked" ? "зафиксировано" : status === "review" ? "проверка" : "пусто"}
                   </Badge>
                 </div>
                 <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
@@ -316,13 +316,13 @@ export function NewContentShell() {
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <PanelRight size={18} className="text-primary" />
-              Компактные previews
+              Краткие превью
             </div>
             {compactPreviews.map(([platform, status, note]) => (
               <div className="rounded-md border border-border p-3 text-sm" key={platform}>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-foreground">{platform}</div>
-                  <Badge tone={status === "draft" ? "info" : "warning"}>{status}</Badge>
+                  <Badge tone={status === "черновик" ? "info" : "warning"}>{status}</Badge>
                 </div>
                 <div className="mt-1 text-muted">{note}</div>
               </div>
@@ -330,7 +330,7 @@ export function NewContentShell() {
             <Button asChild variant="secondary">
               <Link href="/app/content/demo-review">
                 <MessageSquareText size={16} />
-                Открыть desktop studio
+                Открыть студию на компьютере
               </Link>
             </Button>
           </Card>
@@ -343,7 +343,7 @@ export function NewContentShell() {
 export function ContentStudioShell({ contentId }: { contentId: string }) {
   return (
     <div className="grid min-w-0 gap-5">
-      <StudioHeader label="UI Phase 05" title="Контент-студия" />
+      <StudioHeader label="Этап UI 05" title="Контент-студия" />
       <section className="grid min-w-0 gap-5">
         <Card className="grid gap-4">
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
@@ -367,7 +367,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
               </Button>
               <Button type="button">
                 <WandSparkles size={16} />
-                Собрать master
+                Собрать мастер-текст
               </Button>
             </div>
           </div>
@@ -376,7 +376,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
               ["Статус", studioSummary.status],
               ["Версия", studioSummary.revision],
               ["Факт-локи", studioSummary.lockedFacts],
-              ["Публикация", "только после review"],
+              ["Публикация", "только после проверки"],
             ].map(([label, value]) => (
               <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
                 <div className="text-xs text-muted">{label}</div>
@@ -445,7 +445,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
                   <span>{transcriptReview.duration}</span>
-                  <span>confidence {transcriptReview.confidence}</span>
+                  <span>уверенность {transcriptReview.confidence}</span>
                 </div>
               </div>
               <textarea
@@ -465,7 +465,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <MessageSquareText size={18} className="text-primary" />
-                    Master draft
+                    Мастер-черновик
                   </div>
                   <p className="mt-2 text-sm leading-6 text-muted">
                     Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
@@ -485,7 +485,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
                 </Button>
                 <Button type="button">
                   <FileCheck2 size={16} />
-                  Принять master
+                  Принять мастер-текст
                 </Button>
               </div>
             </Card>
@@ -493,7 +493,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
             <Card className="grid gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Bot size={18} className="text-primary" />
-                AI-предложения
+                ИИ-предложения
               </div>
               {aiSuggestions.map(([name, text, action]) => (
                 <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
@@ -539,13 +539,13 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
             <Card className="grid gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <PanelRight size={18} className="text-primary" />
-                Preview площадок
+                Превью площадок
               </div>
               {platformPreviews.map((preview) => (
                 <div className="grid gap-3 rounded-md border border-border p-3" key={preview.platform}>
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="font-medium text-foreground">{preview.platform}</div>
-                    <Badge tone={preview.status === "готово к review" ? "success" : "warning"}>
+                    <Badge tone={preview.status === "готово к проверке" ? "success" : "warning"}>
                       {preview.status}
                     </Badge>
                   </div>
@@ -565,7 +565,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
                     </Button>
                     <Button size="sm" type="button">
                       <Send size={14} />
-                      В review
+                      На проверку
                     </Button>
                   </div>
                 </div>
@@ -582,7 +582,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0 break-words font-medium text-foreground">{fact}</div>
                     <Badge tone={status === "locked" ? "success" : "warning"}>
-                      {status === "locked" ? "locked" : "review"}
+                      {status === "locked" ? "зафиксировано" : "проверка"}
                     </Badge>
                   </div>
                   <div className="mt-1 text-xs text-muted">{source}</div>
@@ -598,7 +598,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
               {[
                 ["Ошибки", "0", "success"],
                 ["Предупреждения", "2", "warning"],
-                ["Готовность", "нужен review MAX", "warning"],
+                ["Готовность", "нужна проверка MAX", "warning"],
               ].map(([label, value, tone]) => (
                 <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm" key={label}>
                   <span className="text-muted">{label}</span>
@@ -616,7 +616,7 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
 export function MediaLibraryShell() {
   return (
     <div className="grid min-w-0 gap-5">
-      <StudioHeader label="UI Phase 08" title="Медиа" />
+      <StudioHeader label="Этап UI 08" title="Медиа" />
       <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
         <Card className="grid content-start gap-4">
           <div>
@@ -625,7 +625,7 @@ export function MediaLibraryShell() {
               Медиа материала
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Загрузка, порядок, cover, compatibility warnings и удаление из материала без удаления asset.
+              Загрузка, порядок, обложка, предупреждения совместимости и удаление из материала без удаления файла.
             </p>
           </div>
           <Button type="button">
@@ -641,7 +641,7 @@ export function MediaLibraryShell() {
             ))}
           </div>
           <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
-            Прогресс загрузки и resumable state подключаются позже. Сейчас экран показывает целевое состояние библиотеки.
+            Прогресс загрузки и возобновляемое состояние подключаются позже. Сейчас экран показывает целевое состояние библиотеки.
           </div>
         </Card>
 
@@ -667,11 +667,11 @@ export function MediaLibraryShell() {
                   {type} · {role} · {compatibility}
                 </div>
               </div>
-              <Badge tone={status === "готово" ? "success" : "warning"}>{status}</Badge>
+              <Badge tone={status === "готово" || status === "расшифровано" ? "success" : "warning"}>{status}</Badge>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" type="button" variant="secondary">
                   <FileCheck2 size={14} />
-                  Cover
+                  Обложка
                 </Button>
                 <Button size="sm" type="button" variant="ghost">
                   <RotateCcw size={14} />

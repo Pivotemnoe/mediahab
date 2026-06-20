@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/layout/brand-mark";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { OfflineStatus } from "@/components/pwa/offline-status";
 import { Button } from "@/components/ui/button";
 import { marketingNavItems } from "@/config/navigation";
 import { cn } from "@/lib/cn";
@@ -47,7 +48,7 @@ export function AuthShell({ children, className }: { children: ReactNode; classN
             Из диктовки в готовый пост для каждой площадки.
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted">
-            Настройте проект, соберите факты, проверьте AI-редактуру и подготовьте версии для Telegram, MAX и Instagram.
+            Настройте проект, соберите факты, проверьте ИИ-редактуру и подготовьте версии для Telegram, MAX и Instagram.
           </p>
         </section>
         <section className={cn("rounded-lg border border-border bg-surface p-4 shadow-panel", className)}>
@@ -68,6 +69,7 @@ export function CabinetShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <OfflineStatus />
       <MobileNav />
     </div>
   );

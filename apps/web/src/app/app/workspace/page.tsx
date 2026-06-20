@@ -16,8 +16,8 @@ export default function WorkspacePage() {
             Пригласить
           </Button>
         }
-        description="Команда, роли, изоляция данных и будущая granular permission model."
-        eyebrow="UI Phase 09"
+        description="Команда, роли, изоляция данных и будущая детальная модель прав."
+        eyebrow="Этап UI 09"
         title="Рабочее пространство"
       />
 
@@ -51,11 +51,11 @@ export default function WorkspacePage() {
       </div>
 
       <Card className="grid gap-3">
-        <div className="text-sm font-semibold text-foreground">Invite posture</div>
+        <div className="text-sm font-semibold text-foreground">Положение приглашений</div>
         <div className="grid gap-3 md:grid-cols-3">
           {[
             ["Свободные места", "4 из 10"],
-            ["Новые участники", "editor по умолчанию"],
+            ["Новые участники", "роль «редактор» по умолчанию"],
             ["Публикация", "content.publish выдаётся отдельно"],
           ].map(([label, value]) => (
             <div className="rounded-md border border-border p-3" key={label}>

@@ -8,21 +8,21 @@ import { UsageMeter } from "@/components/ui/usage-meter";
 
 const limits = [
   ["Проекты", 1, 15, "success"],
-  ["AI-генерации", 62, 250, "warning"],
+  ["ИИ-генерации", 62, 250, "warning"],
   ["Расшифровка, мин", 18, 120, "neutral"],
   ["Хранилище, ГБ", 2, 50, "neutral"],
 ] as const;
 
 const plans = [
-  ["Free", "Личный тест", "1 проект, ручные публикации", "текущий"],
-  ["Start", "Пилот", "3 проекта, базовые лимиты", "mock checkout"],
+  ["Бесплатный", "Личный тест", "1 проект, ручные публикации", "текущий"],
+  ["Старт", "Пилот", "3 проекта, базовые лимиты", "тестовая оплата"],
   ["Pro", "Рабочий режим", "15 проектов, Instagram-флаг", "ручное включение"],
   ["Business", "Команда", "расширенные лимиты", "по запросу"],
 ] as const;
 
 const history = [
-  ["mock_pay_phase11", "simulated_succeeded", "0 ₽", "платёж не списан"],
-  ["mock_inv_phase11", "mock_issued", "0 ₽", "счёт-заглушка"],
+  ["тестовый платёж", "успех в симуляции", "0 ₽", "платёж не списан"],
+  ["тестовый счёт", "счёт-заглушка создан", "0 ₽", "счёт-заглушка"],
 ] as const;
 
 export default function BillingPage() {
@@ -35,8 +35,8 @@ export default function BillingPage() {
             Реальная оплата выключена
           </Button>
         }
-        description="Тарифы, лимиты, payment placeholder и invoices placeholder без настоящего списания денег."
-        eyebrow="UI Phase 09"
+        description="Тарифы, лимиты, заглушка оплаты и заглушка счетов без настоящего списания денег."
+        eyebrow="Этап UI 09"
         title="Тариф и оплата"
       />
 
@@ -45,7 +45,7 @@ export default function BillingPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <Badge tone="success">Активен</Badge>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">Free</h2>
+              <h2 className="mt-3 text-xl font-semibold text-foreground">Бесплатный</h2>
               <p className="mt-1 text-sm leading-6 text-muted">
                 Текущий тариф используется для серверной проверки лимитов. Коммерческие цены не зашиты в код.
               </p>
@@ -63,11 +63,11 @@ export default function BillingPage() {
           <ShieldCheck size={20} className="text-primary" />
           <h2 className="text-lg font-semibold text-foreground">Статус запуска</h2>
           <p className="text-sm leading-6 text-muted">
-            Public launch заблокирован до RLS, backup restore drill, юридических документов и выбора реального провайдера оплаты.
-            Для MVP показываем manual-contact/payment placeholder, а не фейковый успешный checkout.
+            Публичный запуск заблокирован до RLS, проверки восстановления из бэкапа, юридических документов и выбора реального провайдера оплаты.
+            Для MVP показываем ручной контакт и заглушку оплаты, а не фейковый успешный платёж.
           </p>
           <Badge tone="warning" className="w-fit">
-            mock provider only
+            только тестовый провайдер
           </Badge>
         </Card>
       </div>
@@ -89,7 +89,7 @@ export default function BillingPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Платежи и счета</h2>
-            <p className="mt-1 text-sm text-muted">История отображает mock-события и явно показывает, что списания не было.</p>
+            <p className="mt-1 text-sm text-muted">История отображает тестовые события и явно показывает, что списания не было.</p>
           </div>
           <FileText size={20} className="text-primary" />
         </div>

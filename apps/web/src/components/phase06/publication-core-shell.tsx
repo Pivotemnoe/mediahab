@@ -26,11 +26,11 @@ import {
 } from "@/features/publication-ops/publication-ops-fixtures";
 
 const variants = [
-  ["Telegram", "32 768", "rich_message", "tg-collage + текст"],
-  ["MAX", "4 000", "message", "HTML/Markdown + uploads"],
-  ["Instagram", "2 200", "instagram_media", "caption + media package"],
+  ["Telegram", "32 768", "расширенное сообщение", "tg-коллаж + текст"],
+  ["MAX", "4 000", "сообщение", "HTML/Markdown + загрузки"],
+  ["Instagram", "2 200", "медиа-пакет", "подпись + медиа"],
   ["Ручной экспорт", "100 000", "готов", "пакет формируется"],
-  ["Generic webhook", "100 000", "готов", "HTTPS + подпись"],
+  ["Универсальный вебхук", "100 000", "готов", "HTTPS + подпись"],
 ];
 
 function PublicationHeader() {
@@ -44,8 +44,8 @@ function PublicationHeader() {
           </Link>
         </Button>
       }
-      description="Очередь публикаций, partial success, retry/cancel, schedule posture и ручной экспорт."
-      eyebrow="UI Phase 07"
+      description="Очередь публикаций, частичный успех, повторы, отмена, расписание и ручной экспорт."
+      eyebrow="Этап UI 07"
       title="Публикации"
     />
   );
@@ -64,8 +64,8 @@ export function PublicationCoreShell() {
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Мастер-текст превращается в неизменяемые варианты под площадки. В очередь уходит
-              только одобренный вариант, Telegram собирает rich payload, MAX готовит message
-              payload, а Instagram получает media package и Meta container-plan без ложного live-статуса.
+              только одобренный вариант, Telegram собирает расширенный пакет, MAX готовит сообщение,
+              а Instagram получает медиа-пакет и план контейнера без ложного боевого статуса.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -123,7 +123,7 @@ export function PublicationCoreShell() {
           <Card className="grid content-start gap-3">
             <div className="flex items-center gap-2">
               <Webhook size={18} className="text-accent" />
-              <h2 className="text-lg font-semibold">Destinations</h2>
+              <h2 className="text-lg font-semibold">Каналы доставки</h2>
             </div>
             <div className="grid gap-2 text-sm text-muted">
               <div className="rounded-md border border-line p-3">
@@ -131,20 +131,20 @@ export function PublicationCoreShell() {
                 <div className="mt-1">Скачивание пакета не публикует материал. Нужна ручная отметка.</div>
               </div>
               <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Generic webhook</div>
-                <div className="mt-1">Только HTTPS, локальные и private адреса запрещены.</div>
+                <div className="font-medium text-ink">Универсальный вебхук</div>
+                <div className="mt-1">Только HTTPS, локальные и приватные адреса запрещены.</div>
               </div>
               <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">Telegram Rich Message</div>
-                <div className="mt-1">Основной режим: tg-collage, rich HTML, signed media URL, fallback только после подтверждения.</div>
+                <div className="font-medium text-ink">Расширенное сообщение Telegram</div>
+                <div className="mt-1">Основной режим: tg-коллаж, расширенный HTML, подписанный URL медиа, резервный режим только после подтверждения.</div>
               </div>
               <div className="rounded-md border border-line p-3">
-                <div className="font-medium text-ink">MAX Message</div>
-                <div className="mt-1">Токен только в Authorization, chat_id задаётся вручную или из webhook events, media count ждёт live spike.</div>
+                <div className="font-medium text-ink">Сообщение MAX</div>
+                <div className="mt-1">Токен только в Authorization, chat_id задаётся вручную или из событий вебхука, лимит медиа ждёт боевой проверки.</div>
               </div>
               <div className="rounded-md border border-line p-3">
                 <div className="font-medium text-ink">Instagram</div>
-                <div className="mt-1">Caption до 2 200, carousel 2-10, live feature-flagged до Meta readiness.</div>
+                <div className="mt-1">Подпись до 2 200, карусель 2-10, боевой режим под флагом до готовности Meta.</div>
               </div>
             </div>
           </Card>
@@ -171,15 +171,15 @@ export function PublicationCoreShell() {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" type="button" variant="secondary">
                 <RotateCcw size={14} />
-                Retry failed
+                Повторить ошибки
               </Button>
               <Button size="sm" type="button" variant="secondary">
                 <CalendarClock size={14} />
-                Schedule
+                Запланировать
               </Button>
               <Button size="sm" type="button" variant="ghost">
                 <TriangleAlert size={14} />
-                Cancel pending
+                Отменить ожидание
               </Button>
             </div>
           </Card>
@@ -187,16 +187,16 @@ export function PublicationCoreShell() {
           <Card className="grid content-start gap-3">
             <div className="flex items-center gap-2">
               <Clock3 size={18} className="text-accent" />
-              <h2 className="text-lg font-semibold">Outbox</h2>
+              <h2 className="text-lg font-semibold">Исходящая очередь</h2>
             </div>
             <div className="grid gap-2 text-sm text-muted">
               <div className="flex items-center gap-2 rounded-md border border-line p-3">
                 <CheckCircle2 size={16} className="text-success" />
-                <span>PostgreSQL хранит intent публикации.</span>
+                <span>PostgreSQL хранит намерение публикации.</span>
               </div>
               <div className="flex items-center gap-2 rounded-md border border-line p-3">
                 <RotateCcw size={16} className="text-accent" />
-                <span>Retry: 5с, 30с, 2м, 10м, 30м, 2ч, 6ч, 12ч.</span>
+                <span>Повторы: 5с, 30с, 2м, 10м, 30м, 2ч, 6ч, 12ч.</span>
               </div>
               <div className="flex items-center gap-2 rounded-md border border-line p-3">
                 <TriangleAlert size={16} className="text-warning" />
@@ -204,11 +204,11 @@ export function PublicationCoreShell() {
               </div>
             </div>
             <div className="rounded-md border border-line p-3 text-sm text-muted">
-              <div className="font-medium text-ink">Schedule posture</div>
+              <div className="font-medium text-ink">Положение в расписании</div>
               <div className="mt-1">
                 {schedulePosture.date} {schedulePosture.time} · {schedulePosture.timezone}
               </div>
-              <div className="mt-1">Retry cadence: {schedulePosture.retry}</div>
+              <div className="mt-1">Ритм повторов: {schedulePosture.retry}</div>
             </div>
           </Card>
         </div>
@@ -226,7 +226,7 @@ export function PublicationCoreShell() {
                   <div className="font-medium text-ink">{connector}</div>
                   <div className="mt-1 text-muted">Результат: {result} · {latency}</div>
                 </div>
-                <Badge tone={status === "published" || status === "manual_required" ? "success" : "warning"}>
+                <Badge tone={status === "опубликовано" || status === "нужен ручной экспорт" ? "success" : "warning"}>
                   {status}
                 </Badge>
               </div>
@@ -240,7 +240,7 @@ export function PublicationCoreShell() {
             </div>
             <div className="rounded-md border border-line p-3 text-sm leading-6 text-muted">
               В пакете сохраняются текст варианта, порядок медиа, destination, idempotency key и
-              проверочные предупреждения. Статус остаётся manual_required до подтверждения owner/admin.
+              проверочные предупреждения. Статус остаётся «нужен ручной экспорт» до подтверждения владельца или администратора.
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="secondary">

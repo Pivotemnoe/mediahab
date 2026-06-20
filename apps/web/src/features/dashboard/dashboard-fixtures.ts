@@ -13,17 +13,17 @@ export const recentDrafts = [
 export const scheduledPublications = [
   ["Telegram", "Сегодня, 18:00", "запланировано"],
   ["MAX", "Завтра, 11:30", "ручной экспорт"],
-  ["Instagram", "После проверки", "manual_required"],
+  ["Instagram", "После проверки", "нужен ручной экспорт"],
 ] as const;
 
 export const integrationAlerts = [
-  ["Telegram", "готов к rich message", "success"],
-  ["MAX", "нужен production-токен", "warning"],
-  ["Instagram", "ожидает Meta readiness", "warning"],
+  ["Telegram", "готов к расширенному сообщению", "success"],
+  ["MAX", "нужен боевой токен", "warning"],
+  ["Instagram", "ожидает готовности Meta", "warning"],
 ] as const;
 
 export const usageRows = [
-  ["AI-генерации", 62, 250, "warning"],
+  ["ИИ-генерации", 62, 250, "warning"],
   ["Расшифровка, мин", 18, 120, "neutral"],
   ["Проекты", 1, 3, "success"],
 ] as const;

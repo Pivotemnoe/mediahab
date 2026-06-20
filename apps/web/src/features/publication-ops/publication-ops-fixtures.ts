@@ -3,52 +3,52 @@ export const connectorCards = [
     name: "Telegram",
     state: "подключена",
     account: "@chto_poest_armavir",
-    permissions: "publish, media, edit",
+    permissions: "публикация, медиа, правка",
     token: "активен",
-    capability: "Rich Message + tg-collage",
+    capability: "расширенное сообщение + tg-коллаж",
     tone: "success",
   },
   {
     name: "MAX",
     state: "требует внимания",
     account: "канал выбран вручную",
-    permissions: "message, media package",
+    permissions: "сообщение, медиа-пакет",
     token: "нужно проверить",
-    capability: "manual/export first",
+    capability: "сначала ручной экспорт",
     tone: "warning",
   },
   {
     name: "Instagram",
     state: "ограничено",
-    account: "professional account pending",
-    permissions: "manual_required",
+    account: "профиль ожидает проверки",
+    permissions: "нужен ручной экспорт",
     token: "Meta readiness pending",
-    capability: "caption + carousel package",
+    capability: "подпись + пакет карусели",
     tone: "warning",
   },
   {
-    name: "Generic webhook",
-    state: "simulate",
-    account: "allowlist disabled",
-    permissions: "owner/admin only",
-    token: "challenge required",
-    capability: "HMAC + HTTPS POST",
+    name: "Универсальный вебхук",
+    state: "симуляция",
+    account: "список разрешённых адресов выключен",
+    permissions: "только владелец/администратор",
+    token: "нужна проверка endpoint",
+    capability: "HMAC и HTTPS POST",
     tone: "neutral",
   },
 ] as const;
 
 export const publicationQueue = [
-  ["Telegram", "published", "external id: tg_2049", "success"],
-  ["MAX", "failed_retryable", "attachment.not.ready, retry через 30с", "warning"],
-  ["Instagram", "manual_required", "пакет готов, live connector disabled", "warning"],
-  ["Webhook", "simulated", "ответ 202 сохранён как evidence", "neutral"],
+  ["Telegram", "опубликовано", "внешний ID: tg_2049", "success"],
+  ["MAX", "ошибка, будет повтор", "вложение ещё не готово, повтор через 30с", "warning"],
+  ["Instagram", "нужен ручной экспорт", "пакет готов, боевой коннектор выключен", "warning"],
+  ["Вебхук", "симуляция", "ответ 202 сохранён как доказательство", "neutral"],
 ] as const;
 
 export const publicationAttempts = [
-  ["#1", "Telegram", "published", "sendRichMessage", "2.1s"],
-  ["#1", "MAX", "failed_retryable", "attachment.not.ready", "1.4s"],
-  ["#1", "Instagram", "manual_required", "container-plan", "0.8s"],
-  ["#1", "Webhook", "simulated", "signed payload", "0.2s"],
+  ["#1", "Telegram", "опубликовано", "расширенное сообщение отправлено", "2.1с"],
+  ["#1", "MAX", "ошибка, будет повтор", "вложение ещё не готово", "1.4с"],
+  ["#1", "Instagram", "нужен ручной экспорт", "план контейнера готов", "0.8с"],
+  ["#1", "Вебхук", "симуляция", "подписанный payload", "0.2с"],
 ] as const;
 
 export const schedulePosture = {
@@ -59,8 +59,8 @@ export const schedulePosture = {
 } as const;
 
 export const operationStates = [
-  ["partial publication success", "Telegram опубликован, MAX ждёт retry, Instagram manual_required."],
-  ["integration disconnected", "MAX token/capability нужно проверить перед live."],
-  ["permission denied", "Editor не публикует без content.publish."],
-  ["offline", "Retry и publish disabled без сети."],
+  ["частичная публикация", "Telegram опубликован, MAX ждёт повтор, Instagram требует ручной экспорт."],
+  ["интеграция отключена", "Токен и возможности MAX нужно проверить перед боевым режимом."],
+  ["нет прав", "Редактор не публикует без права content.publish."],
+  ["нет сети", "Повторы и публикация выключены без подключения."],
 ] as const;

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T18:35:17.756422+00:00",
+  "generated_at": "2026-06-20T18:54:48.866832+00:00",
   "canonical_language": "en",
-  "file_count": 357,
+  "file_count": 362,
   "files": [
     {
       "path": ".dockerignore",
@@ -77,8 +77,8 @@
     },
     {
       "path": "apps/web/src/app/app/account/page.tsx",
-      "size_bytes": 3030,
-      "sha256": "3639611e5f6c000acaa3b6f508a48928247a35647bc914846c9f1cbbd0931b9b"
+      "size_bytes": 3058,
+      "sha256": "3dd06a91c42bbf370bacd18450fd65d09260f1133d499d09c736ae4dc22f0fe5"
     },
     {
       "path": "apps/web/src/app/app/ai/page.tsx",
@@ -87,13 +87,13 @@
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
-      "size_bytes": 5178,
-      "sha256": "2413b1e478747a18d6791bf32691f2293c918f301e1f76ccae254562c104daa6"
+      "size_bytes": 5450,
+      "sha256": "e8d7ecfcc933da67d5dfa3176593d51a2b2c5dd6090046ea8d2b8884842dd60d"
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
-      "size_bytes": 3506,
-      "sha256": "8b0a1a773aa612e820f421d9293f6ab098806671092bd82b5c65a4da73a14516"
+      "size_bytes": 3727,
+      "sha256": "73f578f46d8d64ba3f1b2ac257d0edf8ce3626f836c8ab93b348cc895a63253c"
     },
     {
       "path": "apps/web/src/app/app/content/[contentId]/page.tsx",
@@ -116,19 +116,29 @@
       "sha256": "ed1e1f74060b6ecdcb1b4bd6fc8cb85bb63e3d9305d17e8523d5f7a575cb2bde"
     },
     {
+      "path": "apps/web/src/app/app/error.tsx",
+      "size_bytes": 1020,
+      "sha256": "a4cc1b18475dee4b41b68a68967fca3fbd7a77ca331fe7f3ecd88dab90f2461d"
+    },
+    {
       "path": "apps/web/src/app/app/examples/page.tsx",
-      "size_bytes": 3847,
-      "sha256": "c7e73ce1051b2e5d75299037c4409391967410474df27ae0374cf7f0b80a2c1b"
+      "size_bytes": 3888,
+      "sha256": "9d59cd377bfeb73dec12609ccffd4c0d30ef0cc6132a1a7e268e6dd9f88244d7"
     },
     {
       "path": "apps/web/src/app/app/integrations/page.tsx",
-      "size_bytes": 3641,
-      "sha256": "7dfe796cb505a8aa9aea7e332af797c277628b14e2a09772e56f5c1897faf400"
+      "size_bytes": 3804,
+      "sha256": "9f2567d33026e37bc18cf676269bd575576b6bef3adbe8bfac2d5e9050090fb0"
     },
     {
       "path": "apps/web/src/app/app/layout.tsx",
       "size_bytes": 238,
       "sha256": "1f86edae355e4a9df0673d8be251742d69942244122592db5cefc4209dfb9883"
+    },
+    {
+      "path": "apps/web/src/app/app/loading.tsx",
+      "size_bytes": 644,
+      "sha256": "bb9675c124113008268a4a2134b19f54f5db810c6526934553930a19665a3e57"
     },
     {
       "path": "apps/web/src/app/app/media/page.tsx",
@@ -137,8 +147,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 5398,
-      "sha256": "f561c4d615320b5db2bc33edbbb55e99ddda2155cf5bffc524fe40f82b2fae6d"
+      "size_bytes": 5459,
+      "sha256": "1fc04fa7472d404b267dc36b8d43287d4518093a97577546c828b57bd02143e2"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -177,28 +187,28 @@
     },
     {
       "path": "apps/web/src/app/app/settings/page.tsx",
-      "size_bytes": 695,
-      "sha256": "e02839102609e5aa89d7e81daa16126d6be75490f7e69193b1f76e3257cd6556"
+      "size_bytes": 716,
+      "sha256": "a5b7121228bc38c5045d7315778a28cb0f869f240698d1878a4b3cda7e7c8515"
     },
     {
       "path": "apps/web/src/app/app/showcase/page.tsx",
-      "size_bytes": 3297,
-      "sha256": "4a28160b9f67910a11ece768559f8ee0235c32d653402e4f224f04efcc46b5db"
+      "size_bytes": 3389,
+      "sha256": "74fa7fbb766ea3d3f5089f7049897e6421b722b4a0d697c39db19647d21fac2b"
     },
     {
       "path": "apps/web/src/app/app/workspace/page.tsx",
-      "size_bytes": 3029,
-      "sha256": "6bdac6d8c22d0d6a11fdf8d54ce14de9265b01bf03c7ca171c0fd431ba8347e6"
+      "size_bytes": 3097,
+      "sha256": "f3058b97d87a36181f3332ec52a59f1e545e4b21da08403f55ad49423d3407ba"
     },
     {
       "path": "apps/web/src/app/contacts/page.tsx",
-      "size_bytes": 2165,
-      "sha256": "7bf893d39ab8c6c05022b51daaf549b5d4c1e0cd638005d226a4fe42b01dfc97"
+      "size_bytes": 2184,
+      "sha256": "b4fb22e538de4c2aa313a95bb3fd920552c7f38a08fae341a1155c7175a54715"
     },
     {
       "path": "apps/web/src/app/features/page.tsx",
-      "size_bytes": 2617,
-      "sha256": "f1c5e61a56281afc8cb16f3f7876860f896f36b4b21f685812b29163252708d4"
+      "size_bytes": 2738,
+      "sha256": "b688d40bb5e190de6ac505eda3a0dc0e6e1a5d39ac5212b58cde53a7b6d29ae3"
     },
     {
       "path": "apps/web/src/app/forgot-password/page.tsx",
@@ -222,13 +232,13 @@
     },
     {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 5243,
-      "sha256": "9020adcae8962343f96a0802fb7f62550c55e969e197f02c4843168e264768a2"
+      "size_bytes": 5317,
+      "sha256": "517982e1c4b10b0bed31a872bf5dcd6b51dd57d4b66de59789c681f0f51874c3"
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
-      "size_bytes": 3493,
-      "sha256": "d5abc79451576cbd3d3a456a29f9fa04f5d316caa82e2944f533ea0914e26c6e"
+      "size_bytes": 3611,
+      "sha256": "af4e4e1c24a4655ea8cbf16c6052e11a9e266e1fc3ab63c2016d7c2e55882cb5"
     },
     {
       "path": "apps/web/src/app/privacy/page.tsx",
@@ -277,8 +287,8 @@
     },
     {
       "path": "apps/web/src/components/layout/shells.tsx",
-      "size_bytes": 2859,
-      "sha256": "31932ac67b3aea98584376b9a7252e110dc8274a2998eb42975e618e4c627814"
+      "size_bytes": 2950,
+      "sha256": "af2a6a7c5a62d7321838c4ae369cab62d2a2db3d2a46a19125dea7ab9d29e615"
     },
     {
       "path": "apps/web/src/components/layout/sidebar.tsx",
@@ -307,13 +317,13 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 26266,
-      "sha256": "0582d4e2f6baa3303de7448eab60215c5bb4f481fb666a1460182d80dc0965c3"
+      "size_bytes": 26397,
+      "sha256": "c9d633950176772c86301a5e1b1a7622ce292cbbc3c1f99d43bdba2724d2cf0c"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 29478,
-      "sha256": "4ef48712eed9519c1e0402e4915cf5dc9622b1d801c50e5f9616d0cb03705685"
+      "size_bytes": 29888,
+      "sha256": "d0bade5d6e08390651acc1ea9ee958bfe1f6de31342d846f276e02ba104579b8"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -322,8 +332,13 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 12094,
-      "sha256": "ffc7e7715b33e8cb0915487ce7ddbb6de414043302609cc95055b4b2b3f83f80"
+      "size_bytes": 12771,
+      "sha256": "0b2a977b423573fe4ab1b60f6ff734d9f5614cb4cfca0b0f00556f291829ca6f"
+    },
+    {
+      "path": "apps/web/src/components/pwa/offline-status.tsx",
+      "size_bytes": 1052,
+      "sha256": "19adc4ce4da2d4a865275651437c1530da34b26997f2e7e45eed67c59c5c347c"
     },
     {
       "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
@@ -332,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/states/screen-state.tsx",
-      "size_bytes": 3987,
-      "sha256": "da9f6551679c6ddb1735be93d7b391787af4a9220f903ab0b565a88ce8f40191"
+      "size_bytes": 3989,
+      "sha256": "a0cfefe4dc1543937f2af6beed5220b531cef7ed144916050684805c063ca6da"
     },
     {
       "path": "apps/web/src/components/ui/badge.tsx",
@@ -362,8 +377,8 @@
     },
     {
       "path": "apps/web/src/config/brand.ts",
-      "size_bytes": 630,
-      "sha256": "63c28974badbdcaba65c2d2f48ff832c4dab1e6b369d24719d726f10656a14bb"
+      "size_bytes": 632,
+      "sha256": "660320428e0f9404426ec8c70eaac1b3f4fc7e0e3a2950a50f93b250c1d9fddc"
     },
     {
       "path": "apps/web/src/config/navigation.ts",
@@ -372,43 +387,43 @@
     },
     {
       "path": "apps/web/src/features/account-workspace/account-workspace-fixtures.ts",
-      "size_bytes": 1191,
-      "sha256": "14c6ed7e7b13ac6678e7b95ead5b9e2a2c52b50ebd13701be9b6eed5653c5f4d"
+      "size_bytes": 1456,
+      "sha256": "034984e6a8e939659f53252c566a7f9da229ff07864b6d7943f7452e644dfcf7"
     },
     {
       "path": "apps/web/src/features/content-studio/content-studio-fixtures.ts",
-      "size_bytes": 4008,
-      "sha256": "9b6c9d309ab26ec138107809d736005fe3b16f1eb5115af316ab2f779c879518"
+      "size_bytes": 4180,
+      "sha256": "1739687ecc8cf5b96e91e04d17319aa4a35681f24831608d0a8403d8b93d81e5"
     },
     {
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
-      "size_bytes": 1399,
-      "sha256": "71073f99ef31df9cbfb1a1356ddc240ac4ee1923533ae284ef5ad26a136cdd1e"
+      "size_bytes": 1468,
+      "sha256": "1dd8ce8659b65d00b823fb5a0edf51398ab58e67d80a33bebc804642d1318396"
     },
     {
       "path": "apps/web/src/features/library-planning/library-planning-fixtures.ts",
-      "size_bytes": 2290,
-      "sha256": "c10813ddc1b1baa2ebe3b9ae904c2ee0819f15c494282f24a9aad6f676bbdf2e"
+      "size_bytes": 2613,
+      "sha256": "387d46b92c661ca8d65dc50dd0fe8e85685b274b4e68525526597e971c65fc73"
     },
     {
       "path": "apps/web/src/features/mobile-capture/mobile-capture-fixtures.ts",
-      "size_bytes": 2080,
-      "sha256": "611405ade498c4cc7a0b12ccc6d03da1e9185a18be19f98a9d1d06570fbc32e4"
+      "size_bytes": 2236,
+      "sha256": "bf96aefed39e5c7a3ca0841ad9b434d0693cdfef61d9fbd76f28622fd99e493e"
     },
     {
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
-      "size_bytes": 1624,
-      "sha256": "7251a168311c500e641e57bb57f5dbba59642e60f428ed778a5e57a868cef968"
+      "size_bytes": 1823,
+      "sha256": "2b962f436e937f217b71593017d3953fd65bd910899fad5172df5e2745380b95"
     },
     {
       "path": "apps/web/src/features/publication-ops/publication-ops-fixtures.ts",
-      "size_bytes": 2308,
-      "sha256": "b884238b7c8d3d0ca25e57cebb28135995d27576b10a118cfb7967829d5ef8c6"
+      "size_bytes": 3127,
+      "sha256": "58f9c29c732a7f65d83fb1257b8ead184618d0af4da3b2ff5e8059c8317d9b0d"
     },
     {
       "path": "apps/web/src/features/rubric-builder/rubric-builder-fixtures.ts",
-      "size_bytes": 3183,
-      "sha256": "f3d06c2acc23022d63abf5c91238e584c6364323afe5c5ac03af78693141ded7"
+      "size_bytes": 3390,
+      "sha256": "d0d4aea78dc9566704b73626fcca5650e503c35814b9aa1f01f0a45758626e9a"
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
@@ -1034,6 +1049,16 @@
       "path": "docs/exec-plans/UI_PHASE_09_REPORT_RU.md",
       "size_bytes": 3296,
       "sha256": "6420a94690b0396dc490b5f0cbd4b73b9df5f1067f6e34df24d19ca1353de6fa"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
+      "size_bytes": 2907,
+      "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10_REPORT_RU.md",
+      "size_bytes": 5783,
+      "sha256": "8096a9d533fc638876c215ac85ecf48c13666c7b6f73f8040554478b67d1a168"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

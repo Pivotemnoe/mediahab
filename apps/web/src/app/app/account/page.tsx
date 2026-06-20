@@ -17,7 +17,7 @@ export default function AccountPage() {
           </Button>
         }
         description="Профиль, подтверждение почты, безопасность и управление активными сессиями."
-        eyebrow="UI Phase 09"
+        eyebrow="Этап UI 09"
         title="Аккаунт"
       />
 
@@ -44,7 +44,7 @@ export default function AccountPage() {
           <ShieldCheck size={20} className="text-primary" />
           <h2 className="text-lg font-semibold text-foreground">Безопасность</h2>
           <p className="text-sm leading-6 text-muted">
-            Cookie-сессия, CSRF-токен, Argon2id и отзыв сессий подключаются через API auth.
+            Cookie-сессия, CSRF-токен, Argon2id и отзыв сессий подключаются через API авторизации.
           </p>
           <Button type="button" variant="secondary">
             <KeyRound size={16} />
@@ -60,7 +60,7 @@ export default function AccountPage() {
             <div className="font-medium text-foreground">{device}</div>
             <div className="text-sm text-muted">{client}</div>
             <div className="text-sm text-muted">{seen}</div>
-            <Badge tone={state === "current" ? "success" : "neutral"}>{state}</Badge>
+            <Badge tone={state === "текущая" ? "success" : "neutral"}>{state}</Badge>
           </div>
         ))}
       </Card>

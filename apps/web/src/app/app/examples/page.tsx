@@ -18,12 +18,12 @@ export default function ExamplesPage() {
             </Button>
             <Button type="button">
               <RefreshCw size={16} />
-              Reindex
+              Переиндексировать
             </Button>
           </div>
         }
         description="Библиотека примеров используется как стиль и структура, а не как источник фактов."
-        eyebrow="UI Phase 08"
+        eyebrow="Этап UI 08"
         title="Примеры"
       />
       <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
@@ -49,7 +49,7 @@ export default function ExamplesPage() {
                 <div>
                   <div className="text-sm font-medium text-foreground">{title}</div>
                   <div className="mt-1 text-xs text-muted">
-                    {rubric} · score {score} · {fragments}
+                    {rubric} · качество {score} · {fragments}
                   </div>
                 </div>
                 <Badge tone={status === "одобрено" ? "success" : status === "проверка" ? "warning" : "danger"}>

@@ -46,32 +46,32 @@ export const factLocks = [
 export const platformPreviews = [
   {
     platform: "Telegram",
-    mode: "Rich Message + collage",
-    status: "готово к review",
+    mode: "расширенное сообщение + коллаж",
+    status: "готово к проверке",
     budget: "3 860 / 4 096",
-    media: "10 media",
-    warning: "Проверить порядок фото перед approval.",
+    media: "10 медиа",
+    warning: "Проверить порядок фото перед одобрением.",
   },
   {
     platform: "MAX",
-    mode: "adapted text",
+    mode: "адаптированный текст",
     status: "нужна правка",
     budget: "4 180 / 4 000",
-    media: "manual package",
+    media: "ручной пакет",
     warning: "Текст нужно сократить перед экспортом.",
   },
   {
     platform: "Instagram",
-    mode: "caption + manual_required",
-    status: "manual_required",
+    mode: "подпись + ручной экспорт",
+    status: "нужен ручной экспорт",
     budget: "2 040 / 2 200",
-    media: "cover + carousel",
+    media: "обложка + карусель",
     warning: "Автопубликация не обещается до готовности Meta.",
   },
 ] as const;
 
 export const revisionEvents = [
-  ["v12", "AI draft assembled", "2 минуты назад"],
+  ["v12", "ИИ-черновик собран", "2 минуты назад"],
   ["v11", "Факты атмосферы зафиксированы", "6 минут назад"],
   ["v10", "Транскрипт принят после правки", "9 минут назад"],
 ] as const;

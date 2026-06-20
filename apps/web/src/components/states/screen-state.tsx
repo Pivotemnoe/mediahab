@@ -93,7 +93,7 @@ export function OfflineState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Черновики можно продолжить локально, но AI-генерация и публикация требуют соединения."
+      description="Черновики можно продолжить локально, но ИИ-генерация и публикация требуют соединения."
       icon={CloudOff}
       title="Нет соединения"
       tone="warning"
