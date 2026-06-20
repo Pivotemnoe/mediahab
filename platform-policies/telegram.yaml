@@ -1,0 +1,55 @@
+schema_version: "1.0"
+platform: telegram
+policy_checked_at: "2026-06-20"
+connector_status: initial
+account_type: bot_admin_in_channel
+character_count_unit: utf8_characters_as_defined_by_api
+capabilities:
+  publish_text: true
+  publish_images: true
+  publish_videos: true
+  publish_mixed_media: true
+  publish_rich_message: true
+  schedule_natively: false
+  edit: true
+  delete: true
+  webhooks: true
+modes:
+  rich_message:
+    primary: true
+    method: sendRichMessage
+    hard_text_max_chars: 32768
+    hard_media_max_items: 50
+    media_delivery: public_or_signed_https_url
+    layout_blocks:
+      - tg-collage
+      - tg-slideshow
+    notes:
+      - "Use for a single long post containing text and mixed media."
+      - "The product's 4,100-character rubric limit is editorial, not Telegram's Rich Message hard limit."
+  media_group_plus_text:
+    primary: false
+    method_sequence:
+      - sendMediaGroup
+      - sendMessage
+    media_items_min: 2
+    media_items_max: 10
+    requires_explicit_user_confirmation: true
+  text_only:
+    primary: false
+    method: sendMessage
+project_acceptance_fixture:
+  fixture: fixtures/telegram-donika.json
+  expected_single_publication: true
+  expected_text_chars: 4069
+  expected_media_items: 10
+  expected_media_mix: { images: 7, videos: 3 }
+source_docs:
+  - "https://core.telegram.org/bots/api#sendrichmessage"
+  - "https://core.telegram.org/bots/api#richmessage"
+  - "https://core.telegram.org/bots/api#sendmediagroup"
+  - "https://core.telegram.org/bots/api-changelog"
+implementation_notes:
+  - "Run a live Phase 00 spike with the real channel and clients before locking the renderer."
+  - "Persist external message identifiers and the exact payload revision."
+  - "Do not silently fall back to split text."

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/project.schema.json",
+  "title": "Project preset or project export",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "name",
+    "slug",
+    "locale",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "workspace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "preset_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "maxLength": 160
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 20
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 5000
+    },
+    "content_domain": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "configuration_version": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "branding": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "default_ai_policy": {
+      "$ref": "#/$defs/aiPolicy"
+    },
+    "provider_preferences": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "connected_platform_types": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "example_retrieval": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "aiPolicy": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "editor",
+            "author",
+            "adapter"
+          ]
+        },
+        "edit_strength_percent": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "min",
+            "max"
+          ],
+          "additionalProperties": false
+        },
+        "human_approval_required": {
+          "type": "boolean"
+        },
+        "forbid_fact_invention": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

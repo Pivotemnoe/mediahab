@@ -1,0 +1,4 @@
+-r requirements-phase00.txt
+-r services/api/requirements.txt
+-r services/worker/requirements.txt
+uv==0.9.18

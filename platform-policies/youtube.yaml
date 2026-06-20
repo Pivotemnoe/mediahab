@@ -1,0 +1,38 @@
+schema_version: "1.0"
+platform: youtube
+policy_checked_at: "2026-06-20"
+connector_status: prepared_future
+capabilities:
+  video_upload: true
+  video_metadata: true
+  scheduled_publish_metadata: true
+  captions: true
+  comments: true
+  comment_replies: true
+  community_post_api_verified: false
+prepared_content_types:
+  youtube_video_metadata:
+    fields:
+      - title
+      - description
+      - tags
+      - chapters
+      - pinned_comment_draft
+      - category
+      - privacy
+      - publish_at
+      - captions
+  youtube_community_draft:
+    publish_mode: manual
+    fields:
+      - text
+      - media
+      - copy_action
+source_docs:
+  - "https://developers.google.com/youtube/v3/docs/videos/insert"
+  - "https://developers.google.com/youtube/v3/docs/captions/insert"
+  - "https://developers.google.com/youtube/v3/docs/comments/insert"
+  - "https://developers.google.com/youtube/v3/docs/channels"
+implementation_notes:
+  - "Do not promise automatic Community posting until an official supported API resource is verified."
+  - "Not required for the first usable release."

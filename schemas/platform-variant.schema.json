@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/platform-variant.schema.json",
+  "title": "Immutable platform variant revision",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "content_item_id",
+    "platform",
+    "revision",
+    "text",
+    "char_count",
+    "validation"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "content_item_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "destination_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_master_revision_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "text": {
+      "type": "string"
+    },
+    "char_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "counting_policy": {
+      "type": "string"
+    },
+    "media_asset_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "formatting": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "within_hard_limit",
+        "blocking_errors"
+      ],
+      "properties": {
+        "within_editorial_target": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "within_hard_limit": {
+          "type": "boolean"
+        },
+        "blocking_errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "approval_status": {
+      "enum": [
+        "draft",
+        "needs_review",
+        "approved",
+        "rejected"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

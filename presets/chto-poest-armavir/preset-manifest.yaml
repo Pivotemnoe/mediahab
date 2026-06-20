@@ -1,0 +1,20 @@
+schema_version: "1.0"
+preset_key: chto-poest-armavir
+import_order:
+  - project.yaml
+  - project-rules.yaml
+  - rubrics.yaml
+  - platform-overrides.yaml
+  - prompts/master-editor.md
+  - prompts/hook-generator.md
+  - prompts/ratings-suggester.md
+  - prompts/platform-adapter.md
+  - prompts/quality-gate.md
+schema_refs:
+  project: ../../schemas/project.schema.json
+  rubric: ../../schemas/rubric.schema.json
+example_fixture: ../../fixtures/example-import-template.json
+idempotency:
+  natural_key: preset_key
+  version_key: schema_version
+  behavior: upsert_preset_definition_do_not_overwrite_user_modified_versions

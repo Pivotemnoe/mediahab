@@ -1,0 +1,55 @@
+schema_version: "1.0"
+preset_key: chto-poest-armavir
+name: "Что поесть? Армавир"
+slug: chto-poest-armavir
+status: active
+locale: ru-RU
+timezone: Europe/Moscow
+content_domain: local_food_media
+description: >-
+  Local food media project for restaurant reviews, budget selections,
+  new-opening reports, travel food reviews, home cooking and ratings.
+configuration_mode: database_versioned
+first_party_preset: true
+branding:
+  display_name: "Что поесть? Армавир"
+  logo_asset_key: null
+  website_url: "https://www.chto-poest-armavir.ru/"
+default_ai_policy:
+  mode: editor
+  edit_strength_percent:
+    min: 10
+    max: 15
+  humor_level: 6
+  creativity_level: conservative
+  human_approval_required: true
+  preserve_user_voice: true
+  forbid_fact_invention: true
+provider_preferences:
+  text_generation:
+    preferred: openai
+    fallbacks:
+      - yandexgpt
+      - gigachat
+  speech_to_text:
+    preferred: openai_transcription
+    fallbacks:
+      - yandex_speechkit
+  embeddings:
+    preferred: configurable
+connected_platform_types:
+  initial:
+    - telegram
+    - max
+    - instagram
+  prepared:
+    - threads
+    - youtube
+    - website_webhook
+    - manual_export
+example_retrieval:
+  enabled: true
+  approved_examples_target: 50
+  approved_examples_max_initial: 100
+  max_examples_per_generation: 8
+  include_rejected_patterns: true

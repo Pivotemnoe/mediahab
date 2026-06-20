@@ -1,0 +1,21 @@
+schema_version: "1.0"
+platform: generic_webhook
+connector_status: initial_generic
+capabilities:
+  send_json_payload: true
+  sign_requests: true
+  retry: true
+  publish_automatically: depends_on_receiver
+configuration_fields:
+  - destination_name
+  - endpoint_url
+  - secret
+  - payload_template
+  - timeout_seconds
+  - allowed_hosts
+security:
+  encrypt_secret_at_rest: true
+  prevent_private_network_ssrf: true
+  verify_destination_allowlist_or_dns_resolution: true
+notes:
+  - "A generic webhook is not equivalent to a native social connector."

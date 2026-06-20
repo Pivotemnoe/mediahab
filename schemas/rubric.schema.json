@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/rubric.schema.json",
+  "title": "Versioned rubric configuration",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "key",
+    "name",
+    "active",
+    "editorial_limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "project_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "version": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    },
+    "editorial_limits": {
+      "$ref": "#/$defs/editorialLimits"
+    },
+    "ai_mode": {
+      "enum": [
+        "editor",
+        "author",
+        "adapter"
+      ]
+    },
+    "input_flow": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "input_flow_template": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "generated_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "platform_overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/platformLimits"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "field": {
+      "type": "object",
+      "required": [
+        "key",
+        "label",
+        "type"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "enum": [
+            "short_text",
+            "long_text",
+            "voice",
+            "voice_or_long_text",
+            "number",
+            "money",
+            "date_time",
+            "address",
+            "select",
+            "multi_select",
+            "boolean",
+            "rating",
+            "media_picker",
+            "repeatable_group",
+            "object",
+            "custom_block"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "fact_locked": {
+          "type": "boolean",
+          "default": false
+        },
+        "repeatable": {
+          "type": "boolean",
+          "default": false
+        },
+        "min_items": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "max_items": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "ui": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "editorialLimits": {
+      "type": "object",
+      "required": [
+        "min_chars",
+        "max_chars"
+      ],
+      "properties": {
+        "min_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "max_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "platformLimits": {
+      "type": "object",
+      "properties": {
+        "target_min_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "target_max_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "hard_max_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "strategy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

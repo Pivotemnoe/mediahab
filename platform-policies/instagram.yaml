@@ -1,0 +1,40 @@
+schema_version: "1.0"
+platform: instagram
+policy_checked_at: "2026-06-20"
+connector_status: initial_with_external_approval_dependency
+account_type: professional_account
+character_count_unit: api_defined_characters
+capabilities:
+  publish_single_image: true
+  publish_video: true
+  publish_reel: true
+  publish_carousel: true
+  edit_caption_after_publish: connector_research_required
+  delete: connector_research_required
+  webhooks: true
+hard_limits:
+  caption_max_chars: 2200
+  hashtags_max: 30
+  mentions_max: 20
+  carousel_items_min: 2
+  carousel_items_max: 10
+publication_flow:
+  - ensure_professional_account_and_permissions
+  - expose_media_via_accessible_https_url
+  - create_media_container_or_children
+  - poll_container_status_when_required
+  - publish_container
+  - persist_external_ids
+quota:
+  strategy: query_content_publishing_limit_endpoint
+  do_not_hardcode_daily_quota: true
+fallback:
+  state: manual_required
+  provide_copy_and_download_package: true
+source_docs:
+  - "https://developers.facebook.com/docs/instagram-platform/content-publishing/"
+  - "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/"
+  - "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/content_publishing_limit/"
+implementation_notes:
+  - "Generate a separate adapted caption; never copy a 3,500–4,100-character master verbatim."
+  - "Account/app review and permissions can block live publishing; expose readiness status in UI."

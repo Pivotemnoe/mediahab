@@ -1,0 +1,279 @@
+{
+  "adaptation": {
+    "removed_points": [
+      "🟠🔥 Рекомендуйте канал друзьям! 🔥 https://t.me/+f9b_bJk9JFthN2Ji",
+      "МАКС https://max.ru/join/VT582vXBFSPm785VYD_PVgTEdrp8Y9cRsSiRb4DxdaI",
+      "🌐 Сайт: https://www.chto-poest-armavir.ru/"
+    ],
+    "strategy": "remove_cross_channel_cta_lines_then_paragraph_boundary"
+  },
+  "documented_limits": {
+    "text_max_chars": 4000
+  },
+  "evidence": {
+    "external_id": null,
+    "note": "Local contract snapshot only; no MAX API request was made."
+  },
+  "fixture_key": "telegram-donika-rich-message",
+  "live_status": "not_run_no_credentials",
+  "message_request": {
+    "body": {
+      "attachments": [
+        {
+          "payload": {
+            "token": "mock-image-01-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-02-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-03-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-04-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-05-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-06-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-image-07-token"
+          },
+          "type": "image"
+        },
+        {
+          "payload": {
+            "token": "mock-video-08-token"
+          },
+          "type": "video"
+        },
+        {
+          "payload": {
+            "token": "mock-video-09-token"
+          },
+          "type": "video"
+        },
+        {
+          "payload": {
+            "token": "mock-video-10-token"
+          },
+          "type": "video"
+        }
+      ],
+      "format": "html",
+      "text": "🔥 «У Доника»: когда жаркое вытаскивает обед, а солянка прячется в глубокой тарелке\n\n🍽 Рубрика «Обзор недели»\n📍 «У Доника», пос. Заветный, ул. Ленина, 35/1\n🧾 Чек: 2610 ₽\n\n🏠 Атмосфера\nКафе знаю давно: отмечал здесь разные мероприятия и праздники. Но персонал, обслуживание и повара периодически меняются, и это чувствуется. Пришли около 12:00, сидели одни. Мебель уже чуть подуставшая: где-то затёрлось, где-то просится обновление, но без ощущения «срочно несите ремонтную бригаду». Было жарко, включили кондиционер. Не идеально комфортно, но сидеть можно. Обслуживание неспешное: кнопок нет, официант находится внизу, блюда шли с паузами. Сначала принесли лаваш, потом остальное — через 20–30 минут. Долго, но, похоже, часть блюд готовят из-под ножа. Оплата картой, наличкой, возможно переводом. Меню обновилось, стало большим.\n\n🫓 Лаваш с сыром и зеленью — 390 ₽\nСпросили, сколько весит одна порция, в итоге взяли две. Принесли большие куски: лаваш не подгорел, внутри много расплавленного солоноватого сыра и зелени.\nПо запаху — лаваш, сырок, зелень, сразу хочется кусать. Зелень не высохла, сыр тянется, даёт сливочность и молочность. Лаваш всё это обволакивает, как нормальный хлебный плед.\nЖирненько? Да. Вкусно? Очень. Один из лучших лавашей с сыром и зеленью в Армавире.\n\n🍲 Солянка сборная — 540 ₽\nПринесли с лаймом и сметаной. И первое, что бросилось в глаза — её мало. Большая глубокая тарелка, а заполнена примерно на треть. Тут либо подавайте в другой посуде, либо честно говорите: «Солянка заканчивается, не будем изображать море в стакане».\nНо по вкусу солянка хорошая. Наваристая, мясная, не просто бульончик с нарезкой. Есть оливки, лук, зажарка, копчёности, колбаска, карбонат. Пряно, солёно, насыщенно.\nСметана сглаживает вкус, добавляет кислинку и сливочность. Лайм спорный — у него свой аромат, лимон сюда подошёл бы лучше. Но сама солянка вкусная. Просто её было прям мало.\n\n🥗 Тёплый салат с телятиной — 680 ₽\nПо ингредиентам всё хорошо: телятина мягкая, баклажаны поджаренные, с лёгкой корочкой, помидоры черри, огурец, пекинская капуста. Всё могло бы отлично собраться.\nНо сверху — дикое количество бальзамического уксуса. Не соуса, не крема, а именно кислого уксуса. Он забил мясо, баклажаны и овощи. Салат получился закисленный, хотя потенциал был хороший.\nПлюс подача в тарелке, больше подходящей для пасты. Крупные куски резать неудобно. Ингредиенты хорошие, идея понятная, но уксус взял власть и устроил кислую диктатуру.\n\n🥘 Жаркое из свинины — 550 ₽\nА вот это топ дня.\n\nПринесли на горячей чугунной сковородке, на деревянной подставке. Всё шкворчит, пахнет, выглядит так, что хочется не фотографировать, а сразу нападать вилкой.\nКартошка дольками — мягкая, отлично поджаренная. Свинина не самая жирная, но вкусная, жуется хорошо, разваливается на волокна, есть нормальный мясной вкус и жареная корочка. Шампиньоны отдельно прожарены до хрустящей корочки. Помидоры слегка припущены, лук похрустывает. Его бы чуть мягче — и вообще без вопросов.\nСоль, перец, баланс — всё на месте. Масла нет лишнего, блюдо горячее, сытное, настоящее. Прям 9 из 9.\n\n🍹 Мохито безалкогольный — 450 ₽\nОтличный лимонад. Мята, лёд, лимон, сладкая газировка, сиропы подобраны хорошо. В меру сладко, в меру кисло, освежает как надо. В жару — прям топчик.\n\n📊 Оценки\n👅 Общий вкус: 8 из 9\n🧠 Общее впечатление: 8 из 9\n🧈 Жирность: 6 толстых попок из 9\n🔥 Острота: 1 горящая попка из 9\n💬 Итог\n«У Доника» снова показал хороший уровень. Да, нужно подправить детали: не путать бальзамический уксус с соусом, не подавать полпорции солянки в большой тарелке и официантам стоит предлагать хлеб к супу и горячему.\nНо блюда в целом на уровне. Лаваш отличный, солянка вкусная, жаркое вообще шикарное. Если вы рядом в Заветном, или едете по трассе через Армавир — заехать пообедать можно. Я рекомендую.\n\n❓ Бывали у Доника? Что там у вас любимое?\n\n🔥 Поставьте реакцию для поддержки канала.\n\n🍽 Что поесть? Армавир"
+    },
+    "headers": {
+      "Authorization": "<redacted>",
+      "Content-Type": "application/json"
+    },
+    "method": "POST",
+    "path": "/messages",
+    "query": {
+      "chat_id": "<MAX_CHAT_ID>"
+    }
+  },
+  "observed_attachment_capability": {
+    "images": 7,
+    "requested_mixed_media_items": 10,
+    "status": "pending_live_test",
+    "videos": 3
+  },
+  "payload_hash": "dd528eeccd9603b0f951f62d223c72cf317d37c374b3b87dc5808f5de84ef793",
+  "platform": "max",
+  "schema_version": "1.0",
+  "text_char_count": 3893,
+  "upload_plan": [
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-01-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 1,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-02-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 2,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-03-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 3,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-04-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 4,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-05-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 5,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-06-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 6,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "image",
+      "mock_token": "mock-image-07-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "image"
+        }
+      },
+      "step": 7,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "video",
+      "mock_token": "mock-video-08-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "video"
+        }
+      },
+      "step": 8,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "video",
+      "mock_token": "mock-video-09-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "video"
+        }
+      },
+      "step": 9,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    },
+    {
+      "media_kind": "video",
+      "mock_token": "mock-video-10-token",
+      "readiness_strategy": "retry attachment.not.ready with exponential backoff",
+      "request": {
+        "headers": {
+          "Authorization": "<redacted>"
+        },
+        "method": "POST",
+        "path": "/uploads",
+        "query": {
+          "type": "video"
+        }
+      },
+      "step": 10,
+      "upload_url": "https://upload.example.invalid/max/placeholder"
+    }
+  ],
+  "within_documented_text_limit": true
+}

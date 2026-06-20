@@ -1,0 +1,19 @@
+schema_version: "1.0"
+platform: threads
+policy_checked_at: "2026-06-20"
+connector_status: prepared_future
+account_type: threads_profile
+capabilities:
+  publish_text: true
+  publish_image: true
+  publish_video: true
+  publish_carousel: true
+hard_limits:
+  text_max_chars: 500
+quota:
+  documented_publish_limit_per_rolling_24h: 250
+source_docs:
+  - "https://developers.facebook.com/docs/threads/posts/"
+implementation_notes:
+  - "Not required for the first usable release."
+  - "Use a dedicated micro-post variant, not a truncated Instagram caption."

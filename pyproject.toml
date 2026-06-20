@@ -1,0 +1,26 @@
+[project]
+name = "temichev-media-hub"
+version = "0.1.0"
+description = "Monorepo foundation for Temichev Media Hub"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+  "services/api",
+  "services/worker",
+  "packages/contracts",
+  "connectors/base"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "services/api",
+  "services/worker",
+  "packages/contracts",
+  "connectors/base"
+]

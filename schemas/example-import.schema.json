@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/example-import.schema.json",
+  "title": "Approved or rejected content example import",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_key",
+    "examples"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "project_key": {
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "telegram_export",
+        "manual",
+        "json",
+        "api"
+      ]
+    },
+    "examples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/example"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "example": {
+      "type": "object",
+      "required": [
+        "external_id",
+        "text",
+        "approval_status"
+      ],
+      "properties": {
+        "external_id": {
+          "type": "string"
+        },
+        "rubric_key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "published_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "views": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "reactions": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "comments": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "shares": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "engagement_rate": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "approval_status": {
+          "enum": [
+            "approved",
+            "rejected",
+            "needs_review"
+          ]
+        },
+        "manual_quality_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "use_for_style_retrieval": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

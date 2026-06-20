@@ -1,0 +1,38 @@
+schema_version: "1.0"
+platform: max
+policy_checked_at: "2026-06-20"
+connector_status: initial
+account_type: bot_with_channel_access
+character_count_unit: api_defined_characters
+capabilities:
+  publish_text: true
+  publish_images: true
+  publish_videos: true
+  publish_mixed_media: requires_live_spike
+  markdown: true
+  html: true
+  edit: true
+  delete: true
+  webhooks: true
+hard_limits:
+  text_max_chars: 4000
+operational_limits:
+  documented_request_rate_per_second: 30
+publication_flow:
+  - upload_media
+  - poll_or_retry_until_attachment_ready
+  - create_message
+  - persist_external_ids
+webhook_requirements:
+  https: true
+  public_port: 443
+  verify_secret_header: true
+  deduplicate_updates: true
+source_docs:
+  - "https://dev.max.ru/docs-api/methods/POST/messages"
+  - "https://dev.max.ru/docs-api/methods/POST/uploads"
+  - "https://dev.max.ru/docs-api/methods/POST/subscriptions"
+implementation_notes:
+  - "Do not encode an unverified universal attachment-count limit."
+  - "Run a live Phase 00 spike for 10 mixed media items and record actual capabilities."
+  - "Clamp project variants to 4,000 characters before connector validation."

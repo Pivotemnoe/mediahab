@@ -1,0 +1,52 @@
+schema_version: "1.0"
+project: chto-poest-armavir
+character_count_unit: unicode_code_points
+defaults:
+  telegram:
+    strategy: full_master
+    preferred_publish_mode: rich_message
+    split_text_from_media: false
+  max:
+    strategy: full_master_clamped
+    hard_max_chars: 4000
+  instagram:
+    strategy: separate_adapted_caption
+    inherited_editorial_min: false
+    hard_max_chars: 2200
+  threads:
+    strategy: micro_post
+    inherited_editorial_min: false
+    hard_max_chars: 500
+rubric_overrides:
+  obzor-nedeli:
+    telegram: { target_min_chars: 3500, target_max_chars: 4100 }
+    max: { target_min_chars: 3500, target_max_chars: 4000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  fast-obzor:
+    telegram: { target_min_chars: 2500, target_max_chars: 3000 }
+    max: { target_min_chars: 2500, target_max_chars: 3000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  poest-do-500:
+    telegram: { target_min_chars: 3000, target_max_chars: 3500 }
+    max: { target_min_chars: 3000, target_max_chars: 3500 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  chto-to-otkrylos:
+    telegram: { target_min_chars: 2500, target_max_chars: 3500 }
+    max: { target_min_chars: 2500, target_max_chars: 3500 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  gastrotravel:
+    telegram: { target_min_chars: 3000, target_max_chars: 4100 }
+    max: { target_min_chars: 3000, target_max_chars: 4000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  gotovlyu-sam:
+    telegram: { target_min_chars: 3000, target_max_chars: 4000 }
+    max: { target_min_chars: 3000, target_max_chars: 4000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  polugotovka:
+    telegram: { target_min_chars: 2500, target_max_chars: 3000 }
+    max: { target_min_chars: 2500, target_max_chars: 3000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }
+  ratings:
+    telegram: { target_min_chars: null, target_max_chars: 4000 }
+    max: { target_min_chars: null, target_max_chars: 4000 }
+    instagram: { target_min_chars: null, target_max_chars: 2200 }

@@ -1,0 +1,70 @@
+schema_version: "1.0"
+project: chto-poest-armavir
+rules:
+  factual_integrity:
+    enabled: true
+    locked_fact_fields:
+      - venue_name
+      - address
+      - total_check
+      - dish.name
+      - dish.price
+      - user_explicit_rating
+    never_invent:
+      - dishes
+      - prices
+      - addresses
+      - service_events
+      - ingredients
+      - visit_details
+      - user_conclusion
+    explicit_user_value_overrides_ai: true
+
+  editorial_voice:
+    primary_language: ru
+    tone:
+      - conversational
+      - direct
+      - vivid
+      - locally_relevant
+    humor:
+      enabled: true
+      level: 6
+      constraints:
+        - "Humor must support an observation, not replace a fact."
+        - "Avoid repetitive AI-style punchlines."
+    edit_strength_percent: { min: 10, max: 15 }
+    paragraph_style: short_mobile_readable
+    preserve_owner_voice: true
+
+  generated_fields:
+    hook:
+      source: ai_suggested
+      generated_after_all_user_blocks: true
+      editable: true
+    ratings:
+      source: ai_suggested
+      editable: true
+      scale_min: 1
+      scale_max: 9
+      dimensions:
+        - { key: overall_taste, label: "Общий вкус" }
+        - { key: overall_impression, label: "Общее впечатление" }
+        - { key: fatness, label: "Жирность", unit_label: "толстых попок" }
+        - { key: spiciness, label: "Острота", unit_label: "горящих попок" }
+    cta:
+      source: ai_suggested
+      editable: true
+
+  workflow:
+    require_human_approval_before_publish: true
+    allow_ai_autopublish: false
+    show_fact_diff_before_approval: true
+    show_platform_previews: true
+
+  content_quality:
+    disallow_empty_required_blocks: true
+    disallow_unresolved_placeholders: true
+    flag_repeated_phrases: true
+    flag_unsupported_claims: true
+    enforce_rubric_editorial_limits: true

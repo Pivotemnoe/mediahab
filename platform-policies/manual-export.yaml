@@ -1,0 +1,16 @@
+schema_version: "1.0"
+platform: manual_export
+connector_status: initial_generic
+capabilities:
+  export_text: true
+  export_media_package: true
+  copy_to_clipboard: true
+  publish_automatically: false
+configuration_fields:
+  - destination_name
+  - text_hard_max_chars
+  - formatting_profile
+  - media_requirements
+  - export_file_format
+notes:
+  - "Can be created through the frontend without custom backend social-network code."

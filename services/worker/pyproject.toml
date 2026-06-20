@@ -1,0 +1,14 @@
+[project]
+name = "temichev-media-hub-worker"
+version = "0.1.0"
+description = "Celery worker for Temichev Media Hub"
+requires-python = ">=3.13"
+dependencies = [
+  "celery>=5.5",
+  "redis>=5.2",
+  "pydantic-settings>=2.10"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

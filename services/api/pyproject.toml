@@ -1,0 +1,21 @@
+[project]
+name = "temichev-media-hub-api"
+version = "0.1.0"
+description = "FastAPI service for Temichev Media Hub"
+requires-python = ">=3.13"
+dependencies = [
+  "alembic>=1.16",
+  "asyncpg>=0.30",
+  "fastapi>=0.116",
+  "greenlet>=3.0",
+  "httpx>=0.28",
+  "pydantic>=2.11",
+  "pydantic-settings>=2.10",
+  "sqlalchemy>=2.0",
+  "structlog>=25.0",
+  "uvicorn[standard]>=0.35"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

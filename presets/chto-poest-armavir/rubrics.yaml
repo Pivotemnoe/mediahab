@@ -1,0 +1,113 @@
+schema_version: "1.0"
+project: chto-poest-armavir
+character_count_unit: unicode_code_points
+rubrics:
+  - key: obzor-nedeli
+    name: "Обзор недели"
+    active: true
+    editorial_limits:
+      min_chars: 3500
+      max_chars: 4100
+    ai_mode: editor
+    input_flow:
+      - key: basic_info
+        label: "Заведение, адрес и чек"
+        type: object
+        required: true
+        fields:
+          - { key: venue_name, label: "Заведение", type: short_text, required: true, fact_locked: true }
+          - { key: address, label: "Адрес", type: address, required: true, fact_locked: true }
+          - { key: total_check, label: "Общий чек", type: money, required: false, fact_locked: true }
+      - key: atmosphere
+        label: "Атмосфера, сервис и обстановка"
+        type: voice_or_long_text
+        required: true
+        fact_locked: true
+      - key: dishes
+        label: "Блюда, напитки и десерты"
+        type: repeatable_group
+        required: true
+        min_items: 1
+        fields:
+          - { key: name, label: "Название", type: short_text, required: true, fact_locked: true }
+          - { key: price, label: "Цена", type: money, required: false, fact_locked: true }
+          - { key: observations, label: "Описание и впечатления", type: voice_or_long_text, required: true, fact_locked: true }
+      - key: conclusion
+        label: "Итоговое впечатление"
+        type: voice_or_long_text
+        required: true
+        fact_locked: true
+      - key: media
+        label: "Фото и видео"
+        type: media_picker
+        required: false
+        repeatable: true
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: fast-obzor
+    name: "Фаст-обзор"
+    active: true
+    editorial_limits: { min_chars: 2500, max_chars: 3000 }
+    ai_mode: editor
+    input_flow_template: compact_food_review
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: poest-do-500
+    name: "Поесть до 500 ₽"
+    active: true
+    editorial_limits: { min_chars: 3000, max_chars: 3500 }
+    ai_mode: editor
+    input_flow_template: budget_food_review
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: chto-to-otkrylos
+    name: "Что-то открылось"
+    active: true
+    editorial_limits: { min_chars: 2500, max_chars: 3500 }
+    ai_mode: editor
+    input_flow_template: new_venue_review
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: gastrotravel
+    name: "Гастропутешествие / Travel-обзор"
+    active: true
+    editorial_limits: { min_chars: 3000, max_chars: 4100 }
+    ai_mode: editor
+    input_flow_template: travel_food_review
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: gotovlyu-sam
+    name: "Готовлю сам"
+    active: true
+    editorial_limits: { min_chars: 3000, max_chars: 4000 }
+    ai_mode: editor
+    input_flow_template: home_cooking
+    generated_fields: [hook, transitions, cta, master_text, platform_variants]
+
+  - key: polugotovka
+    name: "Полуготовка"
+    active: true
+    editorial_limits: { min_chars: 2500, max_chars: 3000 }
+    ai_mode: editor
+    input_flow_template: convenience_food_review
+    generated_fields: [hook, transitions, ratings, cta, master_text, platform_variants]
+
+  - key: ratings
+    name: "Рейтинги"
+    active: true
+    editorial_limits: { min_chars: null, max_chars: 4000 }
+    ai_mode: editor
+    input_flow_template: ranked_list
+    generated_fields: [hook, ranking_summary, cta, master_text, platform_variants]
+
+  - key: mimochodom
+    name: "Мимоходом"
+    active: false
+    archived: true
+    editorial_limits: { min_chars: null, max_chars: null }
+
+  - key: progrev
+    name: "Прогрев"
+    active: false
+    archived: true
+    editorial_limits: { min_chars: null, max_chars: null }

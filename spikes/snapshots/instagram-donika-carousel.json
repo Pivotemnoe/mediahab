@@ -1,0 +1,111 @@
+{
+  "caption": "🔥 «У Доника»: когда жаркое вытаскивает обед, а солянка прячется в глубокой тарелке\n\n🍽 Рубрика «Обзор недели»\n📍 «У Доника», пос. Заветный, ул. Ленина, 35/1\n🧾 Чек: 2610 ₽\n\n💬 Итог\n«У Доника» снова показал хороший уровень. Да, нужно подправить детали: не путать бальзамический уксус с соусом, не подавать полпорции солянки в большой тарелке и официантам стоит предлагать хлеб к супу и горячему.\nНо блюда в целом на уровне. Лаваш отличный, солянка вкусная, жаркое вообще шикарное. Если вы рядом в Заветном, или едете по трассе через Армавир — заехать пообедать можно. Я рекомендую.\n\n❓ Бывали у Доника? Что там у вас любимое?\n🍽 Что поесть? Армавир",
+  "caption_char_count": 641,
+  "container_plan": {
+    "children": [
+      {
+        "client_ref": "donika-01",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-01.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-02",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-02.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-03",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-03.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-04",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-04.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-05",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-05.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-06",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-06.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-07",
+        "image_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/photo-07.jpg",
+        "is_carousel_item": true,
+        "media_type": "IMAGE"
+      },
+      {
+        "client_ref": "donika-08",
+        "is_carousel_item": true,
+        "media_type": "VIDEO",
+        "video_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/video-01.mp4"
+      },
+      {
+        "client_ref": "donika-09",
+        "is_carousel_item": true,
+        "media_type": "VIDEO",
+        "video_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/video-02.mp4"
+      },
+      {
+        "client_ref": "donika-10",
+        "is_carousel_item": true,
+        "media_type": "VIDEO",
+        "video_url": "https://media.example.invalid/chto-poest-armavir/telegram-donika/video-03.mp4"
+      }
+    ],
+    "parent": {
+      "caption": "🔥 «У Доника»: когда жаркое вытаскивает обед, а солянка прячется в глубокой тарелке\n\n🍽 Рубрика «Обзор недели»\n📍 «У Доника», пос. Заветный, ул. Ленина, 35/1\n🧾 Чек: 2610 ₽\n\n💬 Итог\n«У Доника» снова показал хороший уровень. Да, нужно подправить детали: не путать бальзамический уксус с соусом, не подавать полпорции солянки в большой тарелке и официантам стоит предлагать хлеб к супу и горячему.\nНо блюда в целом на уровне. Лаваш отличный, солянка вкусная, жаркое вообще шикарное. Если вы рядом в Заветном, или едете по трассе через Армавир — заехать пообедать можно. Я рекомендую.\n\n❓ Бывали у Доника? Что там у вас любимое?\n🍽 Что поесть? Армавир",
+      "children": [
+        "<child_container_id_01>",
+        "<child_container_id_02>",
+        "<child_container_id_03>",
+        "<child_container_id_04>",
+        "<child_container_id_05>",
+        "<child_container_id_06>",
+        "<child_container_id_07>",
+        "<child_container_id_08>",
+        "<child_container_id_09>",
+        "<child_container_id_10>"
+      ],
+      "media_type": "CAROUSEL"
+    },
+    "quota_check_required": true,
+    "status_polling_required": true
+  },
+  "documented_limits": {
+    "caption_max_chars": 2200,
+    "carousel_items_max": 10,
+    "carousel_items_min": 2
+  },
+  "evidence": {
+    "external_id": null,
+    "note": "Local contract snapshot only; no Meta API request was made.",
+    "permalink": null
+  },
+  "fixture_key": "telegram-donika-rich-message",
+  "live_status": "not_run_no_credentials",
+  "payload_hash": "ad2f66c32343d2aaaa8ff22e42ccf75827c007eacbf8f25e824061ebf60dbf0d",
+  "platform": "instagram",
+  "readiness": {
+    "app_review_status": "missing",
+    "content_publishing_quota": "not_queried",
+    "meta_app": "missing",
+    "oauth_redirect": "missing",
+    "professional_account": "missing",
+    "scopes": "missing",
+    "test_user": "missing"
+  },
+  "schema_version": "1.0",
+  "within_documented_caption_limit": true
+}

@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/content-item.schema.json",
+  "title": "Content item import/export contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_id",
+    "rubric_version_id",
+    "status",
+    "blocks"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "workspace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "project_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "rubric_version_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 300
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "collecting",
+        "assembling",
+        "review",
+        "ready",
+        "scheduled",
+        "published",
+        "archived"
+      ]
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/block"
+      }
+    },
+    "generated_fields": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/generatedField"
+      }
+    },
+    "media_asset_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "uniqueItems": true
+    },
+    "master_revision_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "block": {
+      "type": "object",
+      "required": [
+        "field_key",
+        "source",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "field_key": {
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "user",
+            "voice_transcription",
+            "import",
+            "ai",
+            "system"
+          ]
+        },
+        "value": {},
+        "locked": {
+          "type": "boolean",
+          "default": false
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "generatedField": {
+      "type": "object",
+      "required": [
+        "source",
+        "status",
+        "value"
+      ],
+      "properties": {
+        "source": {
+          "enum": [
+            "ai",
+            "user",
+            "system"
+          ]
+        },
+        "status": {
+          "enum": [
+            "suggested",
+            "accepted",
+            "edited",
+            "rejected"
+          ]
+        },
+        "value": {},
+        "evidence_block_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

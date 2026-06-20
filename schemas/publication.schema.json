@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://temichev.media/schemas/publication.schema.json",
+  "title": "Publication job and attempt contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "workspace_id",
+    "variant_id",
+    "destination_id",
+    "status",
+    "idempotency_key"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "variant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "destination_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "status": {
+      "enum": [
+        "queued",
+        "scheduled",
+        "publishing",
+        "published",
+        "failed_retryable",
+        "failed_permanent",
+        "manual_required",
+        "cancelled"
+      ]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 200
+    },
+    "scheduled_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "external_post_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "external_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/attempt"
+      }
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "attempt": {
+      "type": "object",
+      "required": [
+        "attempt_number",
+        "status",
+        "started_at"
+      ],
+      "properties": {
+        "attempt_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "enum": [
+            "started",
+            "succeeded",
+            "retryable_error",
+            "permanent_error"
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "connector_error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "safe_error_message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_retry_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "request_payload_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "response_metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
