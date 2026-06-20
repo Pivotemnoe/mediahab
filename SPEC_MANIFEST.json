@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-20T16:11:32.087772+00:00",
+  "generated_at": "2026-06-20T16:25:52.088459+00:00",
   "canonical_language": "en",
-  "file_count": 314,
+  "file_count": 317,
   "files": [
     {
       "path": ".dockerignore",
@@ -312,8 +312,8 @@
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 10169,
-      "sha256": "90ca25aa09490f37021fded08453184793ce20f183d44c98203045edc057ed33"
+      "size_bytes": 10683,
+      "sha256": "e6943e31366cae32dd54090946236304438ceece6854af8190c390fd0ce05da4"
     },
     {
       "path": "apps/web/src/components/states/screen-state.tsx",
@@ -642,8 +642,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 4807,
-      "sha256": "38c5a2fab2cb78b69d7ca75f11be7a366dfc7f6845d1492ce65c66157079c8c5"
+      "size_bytes": 4711,
+      "sha256": "13055f6fb29ce4db2be02cd0d355edde3914d0873c67034c36e80b428e152494"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -829,6 +829,16 @@
       "path": "docs/exec-plans/PHASE_06_REPORT_RU.md",
       "size_bytes": 6217,
       "sha256": "18256ee8da8eae70bff068ebe1d8adb71668ac548f06b8abc2191aeb32748f4b"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_07_REPORT_RU.md",
+      "size_bytes": 4700,
+      "sha256": "e905dfe94dab76625b3b0da7fbe8d6cb5ca4f7bbed9d12fa6ccd7d62f250595d"
+    },
+    {
+      "path": "docs/exec-plans/PHASE_07_TELEGRAM_CONNECTOR.md",
+      "size_bytes": 6698,
+      "sha256": "ff724eccc260ae003c90697783f23b036223e5ea01378fcf9c4d6ae793e4275a"
     },
     {
       "path": "docs/exec-plans/README.md",
@@ -1432,13 +1442,13 @@
     },
     {
       "path": "services/api/app/modules/publications/connectors.py",
-      "size_bytes": 13575,
-      "sha256": "9a89aaa6f4b6b1f66fbd7d947db42140d6d866e3d3220ee7a184634d742f8dfb"
+      "size_bytes": 30424,
+      "sha256": "8b967554a181e94ec40690ae676087f50dcdc39da5cfdcda56c8fe2064acf244"
     },
     {
       "path": "services/api/app/modules/publications/service.py",
-      "size_bytes": 31352,
-      "sha256": "48e033609433e06a777f93541dc22a733828147870f14b7b2cf8943b99759838"
+      "size_bytes": 33035,
+      "sha256": "269e95de9cfb7ae8af541f131604d4ea4fa4b9f393c4340ce07616513fbb7d50"
     },
     {
       "path": "services/api/app/modules/shared/__init__.py",
@@ -1494,6 +1504,11 @@
       "path": "services/api/tests/test_publication_core.py",
       "size_bytes": 23335,
       "sha256": "fca15809cd8a2f4041b77e5486d4a717af3202a4aa5e470e41e530aec5768ece"
+    },
+    {
+      "path": "services/api/tests/test_telegram_connector.py",
+      "size_bytes": 16962,
+      "sha256": "03d80e06e9b8d52c7b8d899804a6d4718c09869f886ae46482ec01ce7ee9c867"
     },
     {
       "path": "services/worker/app/__init__.py",

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import html
 import ipaddress
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
+
+import httpx
 
 
 class ConnectorValidationError(ValueError):
@@ -37,21 +40,38 @@ class ConnectorResult:
     error_message: str | None = None
 
 
+TELEGRAM_CONNECTOR_KEY = "telegram_rich_message"
+TELEGRAM_RICH_TEXT_LIMIT = 32768
+TELEGRAM_MEDIA_LIMIT = 50
+TELEGRAM_FALLBACK_MEDIA_GROUP_LIMIT = 10
+TELEGRAM_DELIVERY_URL_TTL_SECONDS = 24 * 60 * 60
+
+
 CAPABILITIES: dict[str, ConnectorCapability] = {
     "telegram": ConnectorCapability(
         platform_key="telegram",
-        connector_key="telegram_prepared",
-        name="Telegram подготовленный",
-        hard_text_limit=32768,
-        media_limit=50,
-        publication_mode="native_prepared",
-        automated_delivery=False,
+        connector_key=TELEGRAM_CONNECTOR_KEY,
+        name="Telegram Rich Message",
+        hard_text_limit=TELEGRAM_RICH_TEXT_LIMIT,
+        media_limit=TELEGRAM_MEDIA_LIMIT,
+        publication_mode="rich_message",
+        automated_delivery=True,
         capabilities={
             "preview": True,
             "approval_required": True,
+            "rich_message": True,
+            "rich_html": True,
+            "fallback_requires_approval": True,
+            "fallback_modes": ["media_group_then_text"],
+            "edit_delete_supported": {"rich_message": True, "fallback": "aggregate"},
             "native_connector_phase": 7,
         },
-        hard_limits={"text": 32768, "media": 50, "rich_message": True},
+        hard_limits={
+            "rich_text": TELEGRAM_RICH_TEXT_LIMIT,
+            "media": TELEGRAM_MEDIA_LIMIT,
+            "fallback_media_group": TELEGRAM_FALLBACK_MEDIA_GROUP_LIMIT,
+            "delivery_url_ttl_seconds": TELEGRAM_DELIVERY_URL_TTL_SECONDS,
+        },
     ),
     "max": ConnectorCapability(
         platform_key="max",
@@ -184,11 +204,18 @@ def validate_variant(platform_key: str, text: str, media_count: int = 0) -> dict
                 "message": "Instagram carousel requires 2-10 media items; single media needs a feed/Reels mode later.",
             }
         )
-    if platform_key in {"telegram", "max", "instagram"}:
+    if platform_key in {"max", "instagram"}:
         warnings.append(
             {
                 "code": "native_connector_deferred",
                 "message": "Native API delivery for this platform starts in a later phase.",
+            }
+        )
+    if platform_key == "telegram":
+        warnings.append(
+            {
+                "code": "telegram_live_acceptance_pending",
+                "message": "Telegram Rich Message contract is available; live fixture evidence is pending credentials.",
             }
         )
     return {
@@ -199,6 +226,257 @@ def validate_variant(platform_key: str, text: str, media_count: int = 0) -> dict
         "hard_limit": capability.hard_text_limit,
         "media_count": media_count,
         "publication_mode": capability.publication_mode,
+    }
+
+
+def _target_chat(configuration: dict[str, Any]) -> str:
+    raw = (
+        configuration.get("channel_id")
+        or configuration.get("channel_username")
+        or configuration.get("chat_id")
+    )
+    target = str(raw or "").strip()
+    if not target:
+        raise ConnectorValidationError(
+            "telegram_channel_required",
+            "Telegram destination requires channel_id, channel_username, or chat_id.",
+        )
+    if target.startswith("@") or target.startswith("-100") or target.lstrip("-").isdigit():
+        return target
+    if " " in target:
+        raise ConnectorValidationError(
+            "telegram_channel_invalid",
+            "Telegram channel target must be an ID or username.",
+            {"target": target},
+        )
+    return f"@{target}"
+
+
+def _telegram_delivery_mode(configuration: dict[str, Any]) -> str:
+    mode = str(configuration.get("delivery_mode") or "simulate").strip().lower()
+    if mode not in {"simulate", "live"}:
+        raise ConnectorValidationError(
+            "telegram_delivery_mode_invalid",
+            "Telegram delivery_mode must be simulate or live.",
+            {"delivery_mode": mode},
+        )
+    return mode
+
+
+def _telegram_payload_mode(configuration: dict[str, Any]) -> str:
+    mode = str(configuration.get("telegram_mode") or configuration.get("payload_mode") or "rich_message")
+    mode = mode.strip().lower()
+    if mode in {"fallback", "media_group_text", "media_group_then_text"}:
+        mode = "fallback_media_group"
+    if mode not in {"rich_message", "fallback_media_group"}:
+        raise ConnectorValidationError(
+            "telegram_payload_mode_invalid",
+            "Telegram payload mode must be rich_message or fallback_media_group.",
+            {"telegram_mode": mode},
+        )
+    return mode
+
+
+def _validate_https_url(url: str, code: str, message: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise ConnectorValidationError(code, message, {"url": url})
+
+
+def _validate_telegram_destination_configuration(configuration: dict[str, Any]) -> None:
+    _target_chat(configuration)
+    delivery_mode = _telegram_delivery_mode(configuration)
+    payload_mode = _telegram_payload_mode(configuration)
+    base_url = str(configuration.get("media_delivery_base_url") or "").strip()
+    if base_url:
+        _validate_https_url(
+            base_url,
+            "telegram_media_delivery_https_required",
+            "Telegram media delivery base URL must use HTTPS.",
+        )
+    if payload_mode == "fallback_media_group" and configuration.get("fallback_approved") is not True:
+        raise ConnectorValidationError(
+            "telegram_fallback_requires_approval",
+            "Telegram media-group fallback requires explicit fallback_approved=true.",
+        )
+    if delivery_mode == "live" and not str(configuration.get("bot_token") or "").strip():
+        raise ConnectorValidationError(
+            "telegram_bot_token_required",
+            "Telegram live delivery requires a bot token.",
+        )
+
+
+def _telegram_media_kind(media: dict[str, Any]) -> str:
+    kind = str(media.get("kind") or "").lower()
+    mime_type = str(media.get("mime_type") or "").lower()
+    if kind == "image" or mime_type.startswith("image/"):
+        return "photo"
+    if kind == "video" or mime_type.startswith("video/"):
+        return "video"
+    raise ConnectorValidationError(
+        "telegram_unsupported_media",
+        "Telegram Rich Message currently supports image and video media in this connector.",
+        {"kind": kind, "mime_type": mime_type},
+    )
+
+
+def _media_delivery_url(media: dict[str, Any], configuration: dict[str, Any]) -> str:
+    explicit_url = str(media.get("public_url") or "").strip()
+    if explicit_url:
+        _validate_https_url(
+            explicit_url,
+            "telegram_media_url_https_required",
+            "Telegram media URLs must use HTTPS.",
+        )
+        return explicit_url
+    base_url = str(configuration.get("media_delivery_base_url") or "").strip().rstrip("/")
+    storage_key = str(media.get("storage_key") or "").strip().lstrip("/")
+    if not base_url or not storage_key:
+        raise ConnectorValidationError(
+            "telegram_media_delivery_url_required",
+            "Telegram publication requires HTTPS media delivery URLs.",
+            {"media_id": media.get("media_id")},
+        )
+    _validate_https_url(
+        base_url,
+        "telegram_media_delivery_https_required",
+        "Telegram media delivery base URL must use HTTPS.",
+    )
+    return f"{base_url}/{quote(storage_key, safe='/-_.~')}"
+
+
+def _telegram_media_payload(
+    media_items: list[dict[str, Any]],
+    configuration: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if len(media_items) > TELEGRAM_MEDIA_LIMIT:
+        raise ConnectorValidationError(
+            "telegram_media_limit_exceeded",
+            "Telegram Rich Message media count exceeds hard limit.",
+            {"actual": len(media_items), "limit": TELEGRAM_MEDIA_LIMIT},
+        )
+    payload: list[dict[str, Any]] = []
+    for index, media in enumerate(media_items):
+        media_type = _telegram_media_kind(media)
+        url = _media_delivery_url(media, configuration)
+        payload.append(
+            {
+                "index": index,
+                "sort_order": media.get("sort_order", index),
+                "type": media_type,
+                "url": url,
+                "mime_type": media.get("mime_type"),
+                "media_id": media.get("media_id"),
+            }
+        )
+    return payload
+
+
+def _rich_html(text: str, media_payload: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    if media_payload:
+        media_tags = []
+        for media in media_payload:
+            src = html.escape(str(media["url"]), quote=True)
+            if media["type"] == "video":
+                media_tags.append(f'<video src="{src}"></video>')
+            else:
+                media_tags.append(f'<img src="{src}"/>')
+        parts.append(f"<tg-collage>{''.join(media_tags)}</tg-collage>")
+    escaped_text = html.escape(text, quote=False).replace("\n", "<br>")
+    parts.append(f"<p>{escaped_text}</p>")
+    return "".join(parts)
+
+
+def build_telegram_rich_message_payload(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    if character_count(text) > TELEGRAM_RICH_TEXT_LIMIT:
+        raise ConnectorValidationError(
+            "telegram_text_limit_exceeded",
+            "Telegram Rich Message text exceeds hard limit.",
+            {"actual": character_count(text), "limit": TELEGRAM_RICH_TEXT_LIMIT},
+        )
+    target = _target_chat(configuration)
+    media_payload = _telegram_media_payload(media_items or [], configuration)
+    rich_html = _rich_html(text, media_payload)
+    provider_request: dict[str, Any] = {
+        "chat_id": target,
+        "rich_message": {
+            "html": rich_html,
+            "skip_entity_detection": bool(configuration.get("skip_entity_detection", False)),
+        },
+    }
+    if configuration.get("disable_notification") is not None:
+        provider_request["disable_notification"] = bool(configuration.get("disable_notification"))
+    if configuration.get("protect_content") is not None:
+        provider_request["protect_content"] = bool(configuration.get("protect_content"))
+    return {
+        "mode": "rich_message",
+        "bot_api_method": "sendRichMessage",
+        "publication_id": publication_id,
+        "destination_id": destination_id,
+        "idempotency_key": idempotency_key,
+        "request": provider_request,
+        "media": media_payload,
+        "character_count": character_count(text),
+        "media_count": len(media_payload),
+        "media_url_ttl_seconds": int(
+            configuration.get("media_delivery_ttl_seconds") or TELEGRAM_DELIVERY_URL_TTL_SECONDS
+        ),
+        "live_acceptance": "pending_without_credentials",
+    }
+
+
+def build_telegram_fallback_payload(
+    *,
+    publication_id: str,
+    destination_id: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    if configuration.get("fallback_approved") is not True:
+        raise ConnectorValidationError(
+            "telegram_fallback_requires_approval",
+            "Telegram media-group fallback requires explicit fallback_approved=true.",
+        )
+    media_payload = _telegram_media_payload(media_items or [], configuration)
+    if not 2 <= len(media_payload) <= TELEGRAM_FALLBACK_MEDIA_GROUP_LIMIT:
+        raise ConnectorValidationError(
+            "telegram_fallback_media_count_invalid",
+            "Telegram fallback media group requires 2-10 media items.",
+            {"actual": len(media_payload), "limit": TELEGRAM_FALLBACK_MEDIA_GROUP_LIMIT},
+        )
+    target = _target_chat(configuration)
+    media_group = [
+        {"type": media["type"], "media": media["url"]}
+        for media in media_payload
+    ]
+    return {
+        "mode": "fallback_media_group",
+        "bot_api_methods": ["sendMediaGroup", "sendMessage"],
+        "publication_id": publication_id,
+        "destination_id": destination_id,
+        "idempotency_key": idempotency_key,
+        "requests": [
+            {"method": "sendMediaGroup", "chat_id": target, "media": media_group},
+            {"method": "sendMessage", "chat_id": target, "text": text},
+        ],
+        "media": media_payload,
+        "character_count": character_count(text),
+        "media_count": len(media_payload),
+        "media_url_ttl_seconds": int(
+            configuration.get("media_delivery_ttl_seconds") or TELEGRAM_DELIVERY_URL_TTL_SECONDS
+        ),
+        "live_acceptance": "pending_without_credentials",
     }
 
 
@@ -256,6 +534,9 @@ def validate_destination_configuration(
     *,
     can_activate_live: bool = False,
 ) -> None:
+    if connector_key == TELEGRAM_CONNECTOR_KEY:
+        _validate_telegram_destination_configuration(configuration)
+        return
     if connector_key == "generic_webhook":
         endpoint_url = str(configuration.get("endpoint_url") or "")
         validate_generic_webhook_url(endpoint_url)
@@ -295,11 +576,15 @@ def redacted_destination_configuration(configuration: dict[str, Any]) -> dict[st
         "authorization_header",
         "cookie",
         "cookies",
+        "access_token",
+        "refresh_token",
         "shared_secret",
         "webhook_secret",
         "secret",
         "token",
         "api_key",
+        "bot_token",
+        "telegram_bot_token",
         "password",
     }
 
@@ -325,7 +610,51 @@ def simulate_connector_publish(
     text: str,
     configuration: dict[str, Any],
     idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
 ) -> ConnectorResult:
+    if connector_key == TELEGRAM_CONNECTOR_KEY:
+        validate_destination_configuration(connector_key, configuration, can_activate_live=True)
+        payload_mode = _telegram_payload_mode(configuration)
+        if payload_mode == "fallback_media_group":
+            payload = build_telegram_fallback_payload(
+                publication_id=publication_id,
+                destination_id=destination_id,
+                text=text,
+                configuration=configuration,
+                idempotency_key=idempotency_key,
+                media_items=media_items,
+            )
+            return ConnectorResult(
+                status="published",
+                external_id=f"telegram:fallback:{destination_id}:{idempotency_key}",
+                response_payload={
+                    "provider": "telegram",
+                    "delivery_mode": "simulate",
+                    "payload": payload,
+                    "message_ids": [
+                        f"simulated-media-{index + 1}" for index in range(payload["media_count"])
+                    ]
+                    + ["simulated-text"],
+                },
+            )
+        payload = build_telegram_rich_message_payload(
+            publication_id=publication_id,
+            destination_id=destination_id,
+            text=text,
+            configuration=configuration,
+            idempotency_key=idempotency_key,
+            media_items=media_items,
+        )
+        return ConnectorResult(
+            status="published",
+            external_id=f"telegram:rich:{destination_id}:{idempotency_key}",
+            response_payload={
+                "provider": "telegram",
+                "delivery_mode": "simulate",
+                "payload": payload,
+                "message_id": f"simulated-rich-{idempotency_key}",
+            },
+        )
     if connector_key == "manual_export":
         return ConnectorResult(
             status="manual_required",
@@ -383,4 +712,104 @@ def simulate_connector_publish(
             "platform_key": platform_key,
             "connector_key": connector_key,
         },
+    )
+
+
+async def publish_connector(
+    *,
+    publication_id: str,
+    destination_id: str,
+    platform_key: str,
+    connector_key: str,
+    text: str,
+    configuration: dict[str, Any],
+    idempotency_key: str,
+    media_items: list[dict[str, Any]] | None = None,
+) -> ConnectorResult:
+    if connector_key != TELEGRAM_CONNECTOR_KEY or _telegram_delivery_mode(configuration) != "live":
+        return simulate_connector_publish(
+            publication_id=publication_id,
+            destination_id=destination_id,
+            platform_key=platform_key,
+            connector_key=connector_key,
+            text=text,
+            configuration=configuration,
+            idempotency_key=idempotency_key,
+            media_items=media_items,
+        )
+
+    validate_destination_configuration(connector_key, configuration, can_activate_live=True)
+    payload_mode = _telegram_payload_mode(configuration)
+    if payload_mode != "rich_message":
+        raise ConnectorValidationError(
+            "telegram_live_fallback_not_enabled",
+            "Telegram live fallback delivery is disabled until explicit live evidence is approved.",
+        )
+    payload = build_telegram_rich_message_payload(
+        publication_id=publication_id,
+        destination_id=destination_id,
+        text=text,
+        configuration=configuration,
+        idempotency_key=idempotency_key,
+        media_items=media_items,
+    )
+    token = str(configuration.get("bot_token") or "").strip()
+    endpoint = f"https://api.telegram.org/bot{token}/sendRichMessage"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(endpoint, json=payload["request"])
+    except httpx.HTTPError as exc:
+        return ConnectorResult(
+            status="failed_retryable",
+            external_id=None,
+            response_payload={
+                "provider": "telegram",
+                "delivery_mode": "live",
+                "payload": payload,
+                "transport_error": type(exc).__name__,
+            },
+            retryable=True,
+            error_code="telegram_transport_error",
+            error_message="Telegram Bot API request failed before a response was received.",
+        )
+
+    try:
+        body = response.json()
+    except ValueError:
+        body = {"raw": response.text[:2048]}
+    ok = bool(isinstance(body, dict) and body.get("ok") is True)
+    if ok:
+        result = body.get("result") if isinstance(body, dict) else {}
+        message_id = str(result.get("message_id") if isinstance(result, dict) else response.status_code)
+        return ConnectorResult(
+            status="published",
+            external_id=f"telegram:rich:{_target_chat(configuration)}:{message_id}",
+            response_payload={
+                "provider": "telegram",
+                "delivery_mode": "live",
+                "payload": payload,
+                "telegram_result": result,
+                "status_code": response.status_code,
+            },
+        )
+    retry_after = None
+    if isinstance(body, dict):
+        parameters = body.get("parameters")
+        if isinstance(parameters, dict):
+            retry_after = parameters.get("retry_after")
+    retryable = response.status_code == 429 or response.status_code >= 500
+    return ConnectorResult(
+        status="failed_retryable" if retryable else "failed_permanent",
+        external_id=None,
+        response_payload={
+            "provider": "telegram",
+            "delivery_mode": "live",
+            "payload": payload,
+            "status_code": response.status_code,
+            "telegram_error": body,
+            "retry_after_seconds": retry_after,
+        },
+        retryable=retryable,
+        error_code="telegram_retryable_error" if retryable else "telegram_rejected",
+        error_message="Telegram Bot API rejected the Rich Message publication.",
     )

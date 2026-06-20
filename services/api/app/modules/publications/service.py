@@ -12,6 +12,7 @@ from app.db.base import (
     ContentMedia,
     ContentRevision,
     ExternalPost,
+    MediaAsset,
     OutboxEvent,
     Platform,
     PlatformCapability,
@@ -28,8 +29,8 @@ from app.modules.publications.connectors import (
     adapt_text_for_platform,
     all_capabilities,
     capability_for,
+    publish_connector,
     redacted_destination_configuration,
-    simulate_connector_publish,
     validate_destination_configuration,
     validate_variant,
 )
@@ -89,11 +90,15 @@ async def ensure_publication_catalog(session: AsyncSession) -> None:
                 key=capability.platform_key,
                 name=capability.name,
                 status="active",
-                native_enabled=False,
+                native_enabled=capability.automated_delivery,
                 created_at=utc_now(),
                 updated_at=utc_now(),
             )
             session.add(platform)
+        else:
+            platform.name = capability.name
+            platform.native_enabled = capability.automated_delivery
+            platform.updated_at = utc_now()
         existing = await session.scalar(
             select(PlatformCapability).where(
                 PlatformCapability.platform_key == capability.platform_key,
@@ -143,6 +148,42 @@ async def media_count_for_content(session: AsyncSession, content_id: UUID) -> in
         select(func.count(ContentMedia.id)).where(ContentMedia.content_item_id == content_id)
     )
     return int(count or 0)
+
+
+async def ordered_media_for_content(session: AsyncSession, content_id: UUID) -> list[dict[str, Any]]:
+    rows = (
+        await session.execute(
+            select(ContentMedia, MediaAsset)
+            .join(MediaAsset, MediaAsset.id == ContentMedia.media_asset_id)
+            .where(
+                ContentMedia.content_item_id == content_id,
+                MediaAsset.deleted_at.is_(None),
+            )
+            .order_by(ContentMedia.sort_order.asc())
+        )
+    ).all()
+    media_items: list[dict[str, Any]] = []
+    for row, media in rows:
+        public_url = None
+        metadata = media.codec_metadata if isinstance(media.codec_metadata, dict) else {}
+        if isinstance(metadata, dict):
+            public_url = metadata.get("public_url")
+        media_items.append(
+            {
+                "content_media_id": str(row.id),
+                "media_id": str(media.id),
+                "storage_key": media.storage_key,
+                "bucket": media.bucket,
+                "kind": media.kind,
+                "mime_type": media.mime_type,
+                "size_bytes": media.size_bytes,
+                "sort_order": row.sort_order,
+                "role": row.role,
+                "caption": row.caption,
+                "public_url": public_url,
+            }
+        )
+    return media_items
 
 
 async def next_variant_revision_number(
@@ -634,6 +675,7 @@ async def process_publication_outbox(
         await session.flush()
         return publication
     configuration = destination.configuration_json if isinstance(destination.configuration_json, dict) else {}
+    media_items = await ordered_media_for_content(session, publication.content_item_id)
     request_payload = {
         "publication_id": str(publication.id),
         "variant_id": str(variant.id),
@@ -641,6 +683,7 @@ async def process_publication_outbox(
         "platform_key": variant.platform_key,
         "connector_key": destination.connector_key,
         "text": variant.text,
+        "media_items": media_items,
         "configuration": redacted_destination_configuration(configuration),
     }
     attempt = PublicationAttempt(
@@ -660,7 +703,7 @@ async def process_publication_outbox(
     publication.status = "publishing"
     publication.updated_at = now
     await session.flush()
-    result = simulate_connector_publish(
+    result = await publish_connector(
         publication_id=str(publication.id),
         destination_id=str(destination.id),
         platform_key=variant.platform_key,
@@ -668,6 +711,7 @@ async def process_publication_outbox(
         text=variant.text,
         configuration=configuration,
         idempotency_key=publication.idempotency_key or str(publication.id),
+        media_items=media_items,
     )
     completed_at = utc_now()
     attempt.status = result.status

@@ -6,7 +6,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 
 1. Provide a Telegram bot token and test channel where the bot is an administrator with post, edit, and delete rights.
 2. Approve a live Telegram Rich Message test using `fixtures/telegram-donika.json` and confirm which clients must be evidenced: Android, iOS, Desktop, Web.
-3. Verify Telegram `sendRichMessage` edit/delete behavior for the chosen rich layout and record returned external IDs.
+3. Verify Telegram `sendRichMessage` edit/delete behavior for the chosen rich layout and record returned external IDs; Phase 07 has contract coverage only, live evidence is still pending.
 4. Provide MAX bot credentials and a safe test channel/chat.
 5. Approve a MAX live upload/readiness test for ten mixed media items and record observed attachment behavior separately from documented policy.
 6. Confirm MAX edit/delete semantics for channel messages and whether webhook `secret` is mandatory for production.
@@ -45,7 +45,6 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 13. Confirm whether raw voice notes, uploaded photos/videos, transcription text, and corrected fact blocks use one retention period or separate retention periods.
 14. Confirm recommended AI retention defaults from ADR 0012 or replace them before production cleanup jobs are implemented.
 15. Confirm the working UI brand label: keep visible "Медиа-хаб" for now or switch to configurable "Temichev PostHub" / "PostHub".
-16. Confirm whether UI Phase 01 should be completed before Product Phase 07 Telegram, or whether Telegram may start after UI Phase 00 with the current technical UI.
-17. Approve or reject adding UI Phase 01 frontend dependencies: React Hook Form, Zod, TanStack Query, dnd-kit, Playwright, and optional component-showcase tooling.
-18. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
-19. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.
+16. Approve or reject adding UI Phase 01 frontend dependencies: React Hook Form, Zod, TanStack Query, dnd-kit, Playwright, and optional component-showcase tooling.
+17. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
+18. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.
