@@ -47,8 +47,11 @@ Implemented first slice:
 - `apps/web/src/services/openapi-types.ts`
 - `apps/web/src/services/dashboard.ts`
 - `apps/web/src/services/publications.ts`
+- `apps/web/src/services/projects.ts`
 - `/app` dashboard
 - `/app/publications`
+- `/app/projects`
+- `/app/projects/[projectId]/rubrics`
 
 ## Fixture Sources
 

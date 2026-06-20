@@ -36,6 +36,28 @@ export interface ProjectListResponse {
   projects: ProjectOut[];
 }
 
+export interface RubricOut {
+  active_version_id: string;
+  active_version_number: number;
+  ai_mode: string;
+  description: string | null;
+  editorial_max_chars: number | null;
+  editorial_min_chars: number | null;
+  generated_fields: string[];
+  id: string;
+  input_schema_id: string;
+  name: string;
+  project_id: string;
+  slug: string;
+  sort_order: number;
+  status: string;
+  workspace_id: string;
+}
+
+export interface RubricListResponse {
+  rubrics: RubricOut[];
+}
+
 export interface ContentItemOut {
   created_at: string;
   id: string;

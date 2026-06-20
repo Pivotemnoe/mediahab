@@ -39,7 +39,6 @@ import {
   previewBlocks,
   repeatableGroups,
   rubricFields,
-  rubricList,
   styleRules,
 } from "@/features/rubric-builder/rubric-builder-fixtures";
 import {
@@ -48,6 +47,10 @@ import {
   projectWizardSteps,
   rubricSuggestions,
 } from "@/features/project-wizard/project-wizard-fixtures";
+import {
+  type ProjectIndexViewModel,
+  type RubricBuilderViewModel,
+} from "@/services/projects";
 
 const projectSteps = [
   "Идентичность",
@@ -64,7 +67,7 @@ const projectEntryPoints: Array<[string, string, LucideIcon]> = [
   ["Импорт пакета", "Проверить JSON проекта и рубрик перед активацией.", FileJson],
 ];
 
-export function ProjectIndexShell() {
+export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewModel }) {
   return (
     <div className="grid gap-4">
       <BuilderHeader title="Проекты" />
@@ -80,13 +83,43 @@ export function ProjectIndexShell() {
               настроек. Пресеты импортируются как данные, без ветвлений в коде.
             </p>
           </div>
-          <Button asChild>
-            <Link href="/app/projects/new">
-              <FolderPlus size={16} />
-              Новый проект
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
+            <Button asChild>
+              <Link href="/app/projects/new">
+                <FolderPlus size={16} />
+                Новый проект
+              </Link>
+            </Button>
+          </div>
         </div>
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+        <Card className="grid gap-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <FolderPlus size={18} className="text-primary" />
+            Текущие проекты
+          </div>
+          {viewModel.projects.map((project) => (
+            <div className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[1fr_auto_auto]" key={project.href}>
+              <div>
+                <div className="text-sm font-semibold text-foreground">{project.name}</div>
+                <div className="mt-1 text-xs leading-5 text-muted">{project.description}</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge tone={project.status === "активен" ? "success" : "warning"}>{project.status}</Badge>
+                <Badge>{project.rubrics}</Badge>
+                <Badge>{project.version}</Badge>
+              </div>
+              <Button asChild size="sm" variant="secondary">
+                <Link href={project.href}>Открыть</Link>
+              </Button>
+            </div>
+          ))}
+        </Card>
         <div className="grid gap-4 lg:grid-cols-3">
           {projectEntryPoints.map(([title, text, Icon]) => (
             <Card className="grid gap-3" key={title}>
@@ -348,14 +381,23 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
   );
 }
 
-export function RubricBuilderShell({ projectId }: { projectId: string }) {
+export function RubricBuilderShell({
+  projectId,
+  viewModel,
+}: {
+  projectId: string;
+  viewModel: RubricBuilderViewModel;
+}) {
   return (
     <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Конструктор рубрик" />
       <section className="grid min-w-0 gap-5">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 max-w-full">
-            <Badge>Проект {projectId}</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge>Проект {viewModel.projectLabel || projectId}</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+            </div>
             <h1 className="mt-3 break-words text-2xl font-semibold text-foreground sm:text-3xl">
               Рубрики, поля и версии формы
             </h1>
@@ -376,6 +418,12 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
           </div>
         </div>
 
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
         <div className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
           <div className="grid min-w-0 content-start gap-4">
             <Card className="grid gap-3">
@@ -383,7 +431,7 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
                 <ListChecks size={18} className="text-primary" />
                 Рубрики проекта
               </div>
-              {rubricList.map(([name, status, count, version]) => (
+              {viewModel.rubrics.map(({ count, name, status, version }) => (
                 <button
                   className="grid gap-1 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
                   key={name}
@@ -395,9 +443,9 @@ export function RubricBuilderShell({ projectId }: { projectId: string }) {
                     </span>
                     <Badge
                       className="shrink-0"
-                      tone={status === "draft" ? "warning" : "success"}
+                      tone={status === "черновик" ? "warning" : "success"}
                     >
-                      {status === "draft" ? "черновик" : "активна"}
+                      {status}
                     </Badge>
                   </span>
                   <span className="text-xs text-muted">
