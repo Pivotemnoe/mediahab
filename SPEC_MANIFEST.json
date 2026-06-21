@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T14:58:12.069082+00:00",
+  "generated_at": "2026-06-21T15:03:53.747791+00:00",
   "canonical_language": "en",
-  "file_count": 418,
+  "file_count": 421,
   "files": [
     {
       "path": ".dockerignore",
@@ -342,8 +342,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 22703,
-      "sha256": "17ce950f75c54fccf7e9f0ae654d0296a0274cbab49c25784529d978525a06eb"
+      "size_bytes": 21841,
+      "sha256": "3fb0be2302607d2ec72f1a96a9d10b5021fb527caa6e0ca7142664d507a9566e"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -357,8 +357,8 @@
     },
     {
       "path": "apps/web/src/components/pwa/offline-status.tsx",
-      "size_bytes": 2077,
-      "sha256": "f60d397721d86970d768505eb964a3c7a852f83fbade996c41fde6551affa091"
+      "size_bytes": 1973,
+      "sha256": "b7913b0d12252aa5c416dfc918a497295a6041c9c151ba11eb43864bb4eb4658"
     },
     {
       "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
@@ -484,6 +484,11 @@
       "path": "apps/web/src/services/guided-queue-contract.ts",
       "size_bytes": 2445,
       "sha256": "f39cf82a8b4d1e292acc86dae5c53cee4ab5f0047a593bacad735398db4f309c"
+    },
+    {
+      "path": "apps/web/src/services/guided-queue-store.ts",
+      "size_bytes": 2349,
+      "sha256": "9c15863d56e777324cbd29df26bad0831edc197d2df3acc1b7e85eec029a08f3"
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
@@ -1329,6 +1334,16 @@
       "path": "docs/exec-plans/UI_PHASE_10U_REPORT_RU.md",
       "size_bytes": 3521,
       "sha256": "86b3b74e94d53861e2b0c31279f5112a9772b3b8a96634f790d0663cbc6f9fea"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10V_GUIDED_QUEUE_STORE_BOUNDARY.md",
+      "size_bytes": 4177,
+      "sha256": "e0e4fa0d42f1e321a5ffeae7d56bd4716b0955965c14ef2db7a44479fd0a9d7d"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10V_REPORT_RU.md",
+      "size_bytes": 3684,
+      "sha256": "748fffeab2627b4ce274b9df81a828ac723c31aacd19fcbcd07819c4de62827a"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",

@@ -16,12 +16,13 @@ import {
 import {
   createGuidedQueueJob,
   guidedFieldQueueKey,
-  guidedFormQueueEvent,
-  hasGuidedQueueValues,
-  parseGuidedQueueJob,
-  serializeGuidedQueueJob,
   type GuidedQueueJob,
 } from "@/services/guided-queue-contract";
+import {
+  clearGuidedQueueJob,
+  readGuidedQueueJob,
+  writeGuidedQueueJob,
+} from "@/services/guided-queue-store";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
@@ -109,37 +110,6 @@ function writeDraft(storageKey: string, values: Record<string, string>) {
 function clearDraft(storageKey: string) {
   try {
     window.localStorage.removeItem(storageKey);
-  } catch {
-    // Ignore storage cleanup failures.
-  }
-}
-
-function readQueueJob(storageKey: string): GuidedQueueJob | null {
-  try {
-    return parseGuidedQueueJob(window.localStorage.getItem(storageKey));
-  } catch {
-    return null;
-  }
-}
-
-function writeQueueJob(storageKey: string, job: GuidedQueueJob) {
-  try {
-    if (!hasGuidedQueueValues(job.values)) {
-      window.localStorage.removeItem(storageKey);
-      window.dispatchEvent(new Event(guidedFormQueueEvent));
-      return;
-    }
-    window.localStorage.setItem(storageKey, serializeGuidedQueueJob(job));
-    window.dispatchEvent(new Event(guidedFormQueueEvent));
-  } catch {
-    // Browser storage can be unavailable or full. The visible action state remains authoritative.
-  }
-}
-
-function clearQueueJob(storageKey: string) {
-  try {
-    window.localStorage.removeItem(storageKey);
-    window.dispatchEvent(new Event(guidedFormQueueEvent));
   } catch {
     // Ignore storage cleanup failures.
   }
@@ -275,7 +245,7 @@ function useGuidedQueue(params: {
       setQueueStatus("unavailable");
       return;
     }
-    const storedJob = readQueueJob(params.storageKey);
+    const storedJob = readGuidedQueueJob(params.storageKey);
     setQueueJob(storedJob);
     setQueueStatus(storedJob ? "queued" : "empty");
   }, [params.enabled, params.storageKey]);
@@ -289,7 +259,7 @@ function useGuidedQueue(params: {
       return;
     }
     if (params.state.tone === "success") {
-      clearQueueJob(params.storageKey);
+      clearGuidedQueueJob(params.storageKey);
       setQueueJob(null);
       setQueueStatus("synced");
       return;
@@ -310,7 +280,7 @@ function useGuidedQueue(params: {
         requestId: params.state.requestId,
         values: formDraftValues(params.formRef.current),
       });
-      writeQueueJob(params.storageKey, job);
+      writeGuidedQueueJob(params.storageKey, job);
       setQueueJob(job);
       setQueueStatus(job.recoveryAction === "refresh" ? "blocked" : "queued");
       return;
@@ -321,7 +291,7 @@ function useGuidedQueue(params: {
   }, [params.enabled, params.formRef, params.isPending, params.state, params.storageKey, queueJob]);
 
   function clearQueue() {
-    clearQueueJob(params.storageKey);
+    clearGuidedQueueJob(params.storageKey);
     setQueueJob(null);
     setQueueStatus("empty");
   }

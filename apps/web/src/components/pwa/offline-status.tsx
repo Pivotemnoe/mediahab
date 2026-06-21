@@ -5,16 +5,8 @@ import { useEffect, useState } from "react";
 
 import {
   guidedFormQueueEvent,
-  isGuidedFormQueueKey,
 } from "@/services/guided-queue-contract";
-
-function guidedQueueCount(): number {
-  try {
-    return Object.keys(window.localStorage).filter(isGuidedFormQueueKey).length;
-  } catch {
-    return 0;
-  }
-}
+import { countGuidedQueueEntries } from "@/services/guided-queue-store";
 
 export function OfflineStatus() {
   const [online, setOnline] = useState(true);
@@ -23,7 +15,7 @@ export function OfflineStatus() {
   useEffect(() => {
     const update = () => {
       setOnline(navigator.onLine);
-      setQueueCount(guidedQueueCount());
+      setQueueCount(countGuidedQueueEntries());
     };
     update();
     window.addEventListener("online", update);
