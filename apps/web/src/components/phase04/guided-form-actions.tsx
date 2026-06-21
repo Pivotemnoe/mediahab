@@ -60,6 +60,23 @@ function formDraftValues(form: HTMLFormElement): Record<string, string> {
   return values;
 }
 
+function formFieldTypes(form: HTMLFormElement): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const element of Array.from(form.elements)) {
+    if (!(element instanceof HTMLInputElement) || element.type !== "hidden") {
+      continue;
+    }
+    if (element.name === "fieldType") {
+      values.value = element.value;
+      continue;
+    }
+    if (element.name.startsWith("fieldType:")) {
+      values[`field:${element.name.slice("fieldType:".length)}`] = element.value;
+    }
+  }
+  return values;
+}
+
 function restoreFormDraft(form: HTMLFormElement, values: Record<string, string>) {
   for (const element of Array.from(form.elements)) {
     if (!isDraftControl(element) || values[element.name] === undefined) {
@@ -276,6 +293,7 @@ function useGuidedQueue(params: {
       }
       const job = createGuidedQueueJob({
         code: params.state.code,
+        fieldTypes: formFieldTypes(params.formRef.current),
         recoveryAction: params.state.recoveryAction,
         requestId: params.state.requestId,
         values: formDraftValues(params.formRef.current),

@@ -5,6 +5,7 @@ export const guidedFormQueueEvent = "tmh-guided-form-queue-change";
 
 export interface GuidedQueueJob {
   code: string | null;
+  fieldTypes: Record<string, string>;
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt: string;
@@ -29,6 +30,7 @@ export function hasGuidedQueueValues(values: Record<string, string>): boolean {
 
 export function createGuidedQueueJob(params: {
   code: string | null;
+  fieldTypes?: Record<string, string>;
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt?: string;
@@ -36,10 +38,11 @@ export function createGuidedQueueJob(params: {
 }): GuidedQueueJob {
   return {
     code: params.code,
+    fieldTypes: sanitizeStringRecord(params.fieldTypes),
     recoveryAction: params.recoveryAction,
     requestId: params.requestId,
     savedAt: params.savedAt ?? new Date().toISOString(),
-    values: params.values,
+    values: sanitizeStringRecord(params.values),
   };
 }
 
@@ -55,12 +58,11 @@ export function parseGuidedQueueJob(raw: string | null): GuidedQueueJob | null {
 
     return {
       code: typeof parsed.code === "string" ? parsed.code : null,
+      fieldTypes: sanitizeStringRecord(parsed.fieldTypes),
       recoveryAction: isGuidedRecoveryAction(parsed.recoveryAction) ? parsed.recoveryAction : "none",
       requestId: typeof parsed.requestId === "string" ? parsed.requestId : null,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
-      values: Object.fromEntries(
-        Object.entries(parsed.values).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
-      ),
+      values: sanitizeStringRecord(parsed.values),
     };
   } catch {
     return null;
@@ -73,4 +75,13 @@ export function serializeGuidedQueueJob(job: GuidedQueueJob): string {
 
 function isGuidedRecoveryAction(value: unknown): value is GuidedRecoveryAction {
   return value === "none" || value === "refresh" || value === "retry";
+}
+
+function sanitizeStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  );
 }
