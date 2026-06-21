@@ -1,15 +1,16 @@
 # Specification package validation report
 
 **Status:** PASS
-**Validated:** 2026-06-21T15:15:16.478781+00:00
+**Validated:** 2026-06-21T15:21:17.315754+00:00
 
-Checks passed: 68
+Checks passed: 69
 Errors: 0
 
 ## Key checks
 
 - PASS — `SPEC_MANIFEST.json`: JSON parse
 - PASS — `apps/web/package.json`: JSON parse
+- PASS — `apps/web/public/sw-capabilities.json`: JSON parse
 - PASS — `apps/web/src/generated-api/openapi.json`: JSON parse
 - PASS — `apps/web/tsconfig.json`: JSON parse
 - PASS — `design/ui-reference/reference_manifest.json`: JSON parse

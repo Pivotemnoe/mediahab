@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "serviceWorker": {
+    "script": "/sw.js",
+    "cacheName": "media-hub-shell-v1",
+    "strategy": "shell-get-cache",
+    "shellUrls": ["/app", "/manifest.webmanifest"]
+  },
+  "capabilities": {
+    "backgroundSync": false,
+    "mutationReplay": false,
+    "offlineNavigationFallback": true
+  },
+  "replayPolicy": {
+    "guidedFormQueue": "manual_retry_required",
+    "reason": "http_only_cookie_csrf_required"
+  }
+}

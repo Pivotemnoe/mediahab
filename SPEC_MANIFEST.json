@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:15:16.478781+00:00",
+  "generated_at": "2026-06-21T15:21:17.315754+00:00",
   "canonical_language": "en",
-  "file_count": 427,
+  "file_count": 431,
   "files": [
     {
       "path": ".dockerignore",
@@ -69,6 +69,11 @@
       "path": "apps/web/public/manifest.webmanifest",
       "size_bytes": 198,
       "sha256": "06a2131a62aeb8aad1032c1b92be3a7517f4e6c6c88666c9f74e448d5a6c0bec"
+    },
+    {
+      "path": "apps/web/public/sw-capabilities.json",
+      "size_bytes": 435,
+      "sha256": "3b723a30c1d1c723b15273de631bbc3897759e2e6e2864f30b13a0ba9496f5a0"
     },
     {
       "path": "apps/web/public/sw.js",
@@ -362,8 +367,8 @@
     },
     {
       "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
-      "size_bytes": 808,
-      "sha256": "c6a854e738dc1750797f751f5a762cb339cb195938bfe94b7bd6d82742206d19"
+      "size_bytes": 2022,
+      "sha256": "c6048d85507e84d58b760c1f192971d71f61a128c8561d6d4007baf4d538ed5e"
     },
     {
       "path": "apps/web/src/components/states/screen-state.tsx",
@@ -1371,6 +1376,16 @@
       "sha256": "35e8570041ad951cbce2c57641a3bd1608f97fa6364fb7949d09ca5c767915fd"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10Y_REPORT_RU.md",
+      "size_bytes": 3663,
+      "sha256": "6ba80c80095ecde888c30de24e26b76880ba441472eb46d7b6f229d7def8417d"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10Y_SERVICE_WORKER_CAPABILITIES.md",
+      "size_bytes": 4076,
+      "sha256": "4fab1c5dfe6da1c274635473b7bc8c59d838626b86ffa55e268cce5d47755f53"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -2109,6 +2124,11 @@
       "path": "tools/check_guided_queue_replay.mjs",
       "size_bytes": 3481,
       "sha256": "54270a33506dbd9bf155228c357abc58754bd17708deb0bff345ab68dd6360d8"
+    },
+    {
+      "path": "tools/check_sw_capabilities.mjs",
+      "size_bytes": 1768,
+      "sha256": "efd1e6c2e1df7425da9e52fdb41c6c34871ffff67e8c561fd01f335211f575c0"
     },
     {
       "path": "tools/e2e_smoke.py",
