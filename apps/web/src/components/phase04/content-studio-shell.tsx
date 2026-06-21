@@ -60,6 +60,165 @@ function StudioHeader({ title, label = "Этап 04" }: { title: string; label?:
   );
 }
 
+function GuidedFieldControl({
+  field,
+}: {
+  field: ContentStudioViewModel["guidedForm"]["fields"][number];
+}) {
+  const placeholder = field.required ? "Нужно заполнить перед сборкой" : "Можно заполнить позже";
+
+  if (field.inputKind === "textarea") {
+    return (
+      <textarea
+        className="min-h-28 resize-y rounded-md border border-border bg-background px-3 py-2 text-sm leading-6 outline-none"
+        defaultValue={field.value}
+        placeholder={placeholder}
+        readOnly
+      />
+    );
+  }
+
+  if (field.inputKind === "media") {
+    return (
+      <div className="flex min-w-0 items-center gap-2 rounded-md border border-dashed border-border bg-surface-muted p-3 text-sm text-muted">
+        <ImagePlus className="shrink-0 text-primary" size={16} />
+        <span className="min-w-0 break-words">
+          {field.value || "Медиа выбираются и сортируются в библиотеке справа."}
+        </span>
+      </div>
+    );
+  }
+
+  if (field.inputKind === "checkbox") {
+    return (
+      <label className="flex items-center gap-2 rounded-md border border-border bg-background p-3 text-sm text-muted">
+        <input checked={field.value === "true"} disabled readOnly type="checkbox" />
+        <span>{field.value || placeholder}</span>
+      </label>
+    );
+  }
+
+  if (field.inputKind === "select") {
+    return (
+      <select
+        className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none"
+        disabled
+        value={field.value}
+      >
+        <option>{field.value || placeholder}</option>
+      </select>
+    );
+  }
+
+  if (field.inputKind === "readonly" || field.inputKind === "custom") {
+    return null;
+  }
+
+  return (
+    <input
+      className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
+      defaultValue={field.value}
+      placeholder={placeholder}
+      readOnly
+      type={field.inputKind === "number" ? "text" : "text"}
+    />
+  );
+}
+
+function GuidedFieldCard({
+  field,
+}: {
+  field: ContentStudioViewModel["guidedForm"]["fields"][number];
+}) {
+  return (
+    <div className="grid gap-3 rounded-md border border-border bg-background p-3">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="break-words text-sm font-medium text-foreground">{field.label}</div>
+            {field.required ? <Badge tone="warning">обязательно</Badge> : <Badge>опционально</Badge>}
+            {field.locked ? <Badge tone="success">fact-lock</Badge> : null}
+          </div>
+          <div className="mt-1 text-xs leading-5 text-muted">
+            {field.typeLabel} · источник: {field.source}
+          </div>
+        </div>
+        <Badge className="shrink-0" tone={field.statusTone}>{field.status}</Badge>
+      </div>
+      <p className="text-xs leading-5 text-muted">{field.helper}</p>
+
+      {field.fields.length ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {field.fields.map((child) => (
+            <GuidedFieldCard field={child} key={child.key} />
+          ))}
+        </div>
+      ) : null}
+
+      {field.groupItems.length ? (
+        <div className="grid gap-3">
+          {field.groupItems.map((item) => (
+            <div className="grid gap-3 rounded-md border border-border bg-surface-muted p-3" key={item.label}>
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <div className="text-sm font-medium text-foreground">{item.label}</div>
+                <GripVertical className="text-muted" size={16} />
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {item.fields.map((child) => (
+                  <GuidedFieldCard field={child} key={child.key} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {!field.fields.length && !field.groupItems.length ? <GuidedFieldControl field={field} /> : null}
+    </div>
+  );
+}
+
+function GuidedFormPanel({
+  viewModel,
+}: {
+  viewModel: ContentStudioViewModel["guidedForm"];
+}) {
+  return (
+    <Card className="grid gap-4">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <ListChecks size={18} className="text-primary" />
+            {viewModel.title}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted">{viewModel.description}</p>
+        </div>
+        <Badge tone="info">{viewModel.limits}</Badge>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {viewModel.generatedFields.map((field) => (
+          <Badge key={field} tone="neutral">ИИ позже: {field}</Badge>
+        ))}
+      </div>
+      <div className="grid gap-3">
+        {viewModel.fields.map((field) => (
+          <GuidedFieldCard field={field} key={field.key} />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled type="button" variant="secondary">
+          <Save size={16} />
+          Автосохранение подключается позже
+        </Button>
+        <Button disabled type="button">
+          <LockKeyhole size={16} />
+          Зафиксировать выбранные факты
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewModel }) {
   return (
     <div className="grid gap-4">
@@ -453,6 +612,8 @@ export function ContentStudioShell({
           </div>
 
           <div className="grid min-w-0 content-start gap-4">
+            <GuidedFormPanel viewModel={viewModel.guidedForm} />
+
             <Card className="grid gap-4">
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">

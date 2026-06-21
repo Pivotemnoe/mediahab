@@ -116,6 +116,40 @@ export interface ContentListResponse {
   content_items: ContentItemOut[];
 }
 
+export interface GuidedFormUiField {
+  description?: string | null;
+  fact_locked?: boolean;
+  fields?: GuidedFormUiField[];
+  key: string;
+  label: string;
+  max_items?: number | null;
+  min_items?: number | null;
+  repeatable?: boolean;
+  required?: boolean;
+  source?: string;
+  type: string;
+  ui?: JsonObject;
+  validation?: JsonObject;
+  [key: string]: unknown;
+}
+
+export interface GuidedFormResponse {
+  content_id: string;
+  editorial_limits: {
+    max_chars?: number | null;
+    min_chars?: number | null;
+    [key: string]: unknown;
+  };
+  generated_fields: string[];
+  json_schema: JsonObject;
+  rubric_version_id: string;
+  ui_schema: {
+    fields?: GuidedFormUiField[];
+    order?: string[];
+    [key: string]: unknown;
+  };
+}
+
 export interface ExampleOut {
   character_count: number;
   created_at: string;

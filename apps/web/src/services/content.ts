@@ -22,6 +22,8 @@ import {
   type BlocksResponse,
   type ContentItemOut,
   type ContentListResponse,
+  type GuidedFormResponse,
+  type GuidedFormUiField,
   type MeResponse,
   type PlatformVariantOut,
   type PlatformVariantsResponse,
@@ -61,6 +63,13 @@ export interface ContentStudioViewModel {
     source: string;
     status: string;
   }>;
+  guidedForm: {
+    description: string;
+    fields: GuidedFormFieldViewModel[];
+    generatedFields: string[];
+    limits: string;
+    title: string;
+  };
   inputBlocks: Array<{
     helper: string;
     name: string;
@@ -102,6 +111,28 @@ export interface ContentStudioViewModel {
     status: string;
     text: string;
   };
+}
+
+export interface GuidedFormFieldViewModel {
+  fields: GuidedFormFieldViewModel[];
+  groupItems: Array<{
+    fields: GuidedFormFieldViewModel[];
+    label: string;
+  }>;
+  helper: string;
+  inputKind: "checkbox" | "custom" | "input" | "media" | "number" | "readonly" | "select" | "textarea";
+  key: string;
+  label: string;
+  locked: boolean;
+  maxItems?: number | null;
+  minItems?: number | null;
+  required: boolean;
+  source: string;
+  status: string;
+  statusTone: "info" | "neutral" | "success" | "warning" | "danger";
+  type: string;
+  typeLabel: string;
+  value: string;
 }
 
 export interface NewContentViewModel {
@@ -162,6 +193,146 @@ const fixtureItems = [
     version: "v7",
   },
 ] as const;
+
+type GuidedBlockSource = Pick<
+  BlockOut,
+  "field_key" | "group_index" | "group_key" | "is_locked" | "source_type" | "transcript_text" | "value_json"
+>;
+
+const fixtureGuidedFields: GuidedFormUiField[] = [
+  {
+    fields: [
+      { fact_locked: true, key: "venue_name", label: "Заведение", required: true, type: "short_text" },
+      { fact_locked: true, key: "address", label: "Адрес", required: true, type: "address" },
+      { fact_locked: true, key: "total_check", label: "Общий чек", required: false, type: "money" },
+    ],
+    key: "basic_info",
+    label: "Заведение, адрес и чек",
+    required: true,
+    type: "object",
+  },
+  {
+    description: "Посадка, музыка, ожидание, работа официантов и общее ощущение от места.",
+    fact_locked: true,
+    key: "atmosphere",
+    label: "Атмосфера, сервис и обстановка",
+    required: true,
+    type: "voice_or_long_text",
+  },
+  {
+    fields: [
+      { fact_locked: true, key: "name", label: "Название", required: true, type: "short_text" },
+      { fact_locked: true, key: "price", label: "Цена", required: false, type: "money" },
+      {
+        fact_locked: true,
+        key: "observations",
+        label: "Описание и впечатления",
+        required: true,
+        type: "voice_or_long_text",
+      },
+    ],
+    key: "dishes",
+    label: "Блюда, напитки и десерты",
+    min_items: 1,
+    repeatable: true,
+    required: true,
+    type: "repeatable_group",
+  },
+  {
+    description: "Рекомендация, кому идти, главный вывод и честная оговорка.",
+    fact_locked: true,
+    key: "conclusion",
+    label: "Итоговое впечатление",
+    required: true,
+    type: "voice_or_long_text",
+  },
+  {
+    key: "media",
+    label: "Фото и видео",
+    repeatable: true,
+    required: false,
+    type: "media_picker",
+  },
+];
+
+const fixtureGuidedBlocks: GuidedBlockSource[] = [
+  {
+    field_key: "venue_name",
+    group_index: null,
+    group_key: null,
+    is_locked: true,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "ПуриПури",
+  },
+  {
+    field_key: "address",
+    group_index: null,
+    group_key: null,
+    is_locked: true,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "Армавир, ул. Кирова, 27",
+  },
+  {
+    field_key: "total_check",
+    group_index: null,
+    group_key: null,
+    is_locked: true,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "590 ₽ за сет, отдельные позиции в основном обзоре",
+  },
+  {
+    field_key: "atmosphere",
+    group_index: null,
+    group_key: null,
+    is_locked: false,
+    source_type: "transcription",
+    transcript_text:
+      "Внутри красиво, удобно, можно сесть в зале, у детской или во дворике. Сервис старается, но организации не хватает.",
+    value_json: {
+      text: "Внутри красиво, удобно, можно сесть в зале, у детской или во дворике. Сервис старается, но организации не хватает.",
+    },
+  },
+  {
+    field_key: "name",
+    group_index: 0,
+    group_key: "dishes",
+    is_locked: true,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "Хачапури на мангале",
+  },
+  {
+    field_key: "price",
+    group_index: 0,
+    group_key: "dishes",
+    is_locked: true,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "в составе сета 590 ₽",
+  },
+  {
+    field_key: "observations",
+    group_index: 0,
+    group_key: "dishes",
+    is_locked: true,
+    source_type: "voice",
+    transcript_text: null,
+    value_json:
+      "Хорошая корочка, полностью расплавленный сулугуни, температура удачная. Эту позицию можно брать ещё раз.",
+  },
+  {
+    field_key: "conclusion",
+    group_index: null,
+    group_key: null,
+    is_locked: false,
+    source_type: "user_text",
+    transcript_text: null,
+    value_json: "",
+  },
+];
 
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
@@ -243,10 +414,222 @@ function sourceLabel(sourceType: string): string {
     import: "импорт",
     system: "система",
     transcription: "расшифровка",
+    user_input: "ручной ввод",
     user_text: "текст",
     voice: "голос",
   };
   return labels[sourceType] ?? sourceType;
+}
+
+function fieldTypeLabel(fieldType: string): string {
+  const labels: Record<string, string> = {
+    address: "адрес",
+    boolean: "да/нет",
+    custom_block: "кастомный блок",
+    date_time: "дата и время",
+    long_text: "длинный текст",
+    media_picker: "медиа",
+    money: "деньги",
+    multi_select: "мультивыбор",
+    number: "число",
+    object: "группа полей",
+    rating: "оценка",
+    repeatable_group: "повторяемый блок",
+    select: "выбор",
+    short_text: "короткий текст",
+    voice: "голос",
+    voice_or_long_text: "голос или текст",
+  };
+  return labels[fieldType] ?? fieldType.replace(/_/g, " ");
+}
+
+function inputKind(fieldType: string): GuidedFormFieldViewModel["inputKind"] {
+  if (fieldType === "voice" || fieldType === "voice_or_long_text" || fieldType === "long_text") {
+    return "textarea";
+  }
+  if (fieldType === "number" || fieldType === "money" || fieldType === "rating") {
+    return "number";
+  }
+  if (fieldType === "boolean") {
+    return "checkbox";
+  }
+  if (fieldType === "select" || fieldType === "multi_select") {
+    return "select";
+  }
+  if (fieldType === "media_picker") {
+    return "media";
+  }
+  if (fieldType === "object" || fieldType === "repeatable_group") {
+    return "readonly";
+  }
+  if (fieldType === "custom_block") {
+    return "custom";
+  }
+  return "input";
+}
+
+function generatedFieldLabel(fieldKey: string): string {
+  const labels: Record<string, string> = {
+    cta: "CTA",
+    hook: "Хук",
+    master_text: "Мастер-текст",
+    platform_variants: "Варианты площадок",
+    ranking_summary: "Сводка рейтинга",
+    ratings: "Оценки",
+    transitions: "Переходы",
+  };
+  return labels[fieldKey] ?? fieldLabel(fieldKey);
+}
+
+function editorialLimitsLabel(limits: GuidedFormResponse["editorial_limits"]): string {
+  const min = limits.min_chars;
+  const max = limits.max_chars;
+  if (typeof min === "number" && typeof max === "number") {
+    return `${new Intl.NumberFormat("ru-RU").format(min)}-${new Intl.NumberFormat("ru-RU").format(max)} знаков`;
+  }
+  if (typeof max === "number") {
+    return `до ${new Intl.NumberFormat("ru-RU").format(max)} знаков`;
+  }
+  if (typeof min === "number") {
+    return `от ${new Intl.NumberFormat("ru-RU").format(min)} знаков`;
+  }
+  return "лимит не задан";
+}
+
+function blockForField(
+  blocks: GuidedBlockSource[],
+  fieldKey: string,
+  groupKey: string | null,
+  groupIndex: number | null,
+): GuidedBlockSource | undefined {
+  return blocks.find(
+    (block) =>
+      block.field_key === fieldKey &&
+      (block.group_key ?? null) === groupKey &&
+      (block.group_index ?? null) === groupIndex,
+  );
+}
+
+function blockDisplayValue(block: GuidedBlockSource | undefined): string {
+  if (!block) {
+    return "";
+  }
+  return block.transcript_text || valueText(block.value_json);
+}
+
+function groupIndexes(blocks: GuidedBlockSource[], groupKey: string, minItems: number | null | undefined): number[] {
+  const indexes = Array.from(
+    new Set(
+      blocks
+        .filter((block) => block.group_key === groupKey && block.group_index !== null)
+        .map((block) => block.group_index as number),
+    ),
+  ).sort((left, right) => left - right);
+
+  if (indexes.length) {
+    return indexes;
+  }
+  return minItems && minItems > 0 ? [0] : [];
+}
+
+function guidedFieldStatus(
+  field: GuidedFormUiField,
+  block: GuidedBlockSource | undefined,
+  value: string,
+  groupItemsCount: number,
+): Pick<GuidedFormFieldViewModel, "status" | "statusTone"> {
+  if (field.type === "repeatable_group") {
+    if (groupItemsCount > 0) {
+      return { status: `${groupItemsCount} позиция`, statusTone: "info" };
+    }
+    return field.required ? { status: "нужна позиция", statusTone: "warning" } : { status: "опционально", statusTone: "neutral" };
+  }
+  if (field.type === "object") {
+    return { status: "секция", statusTone: "info" };
+  }
+  if (block?.is_locked) {
+    return { status: "зафиксировано", statusTone: "success" };
+  }
+  if (value.trim()) {
+    return { status: "черновик", statusTone: "info" };
+  }
+  if (field.required) {
+    return { status: "требуется", statusTone: "warning" };
+  }
+  return { status: "опционально", statusTone: "neutral" };
+}
+
+function guidedFieldView(
+  field: GuidedFormUiField,
+  blocks: GuidedBlockSource[],
+  context: { groupIndex: number | null; groupKey: string | null } = { groupIndex: null, groupKey: null },
+): GuidedFormFieldViewModel {
+  const nestedFields = field.fields ?? [];
+  const fieldGroupIndexes =
+    field.type === "repeatable_group" ? groupIndexes(blocks, field.key, field.min_items) : [];
+  const block = field.type === "repeatable_group" || field.type === "object"
+    ? undefined
+    : blockForField(blocks, field.key, context.groupKey, context.groupIndex);
+  const value = blockDisplayValue(block);
+  const groupItems = field.type === "repeatable_group"
+    ? fieldGroupIndexes.map((groupIndex) => ({
+        fields: nestedFields.map((child) =>
+          guidedFieldView(child, blocks, {
+            groupIndex,
+            groupKey: field.key,
+          }),
+        ),
+        label: `${field.label} ${groupIndex + 1}`,
+      }))
+    : [];
+  const status = guidedFieldStatus(field, block, value, groupItems.length);
+
+  return {
+    fields: field.type === "object"
+      ? nestedFields.map((child) => guidedFieldView(child, blocks))
+      : [],
+    groupItems,
+    helper: field.description ?? (field.required ? "Обязательное фактическое поле." : "Можно заполнить позже."),
+    inputKind: inputKind(field.type),
+    key: context.groupKey ? `${context.groupKey}.${context.groupIndex ?? 0}.${field.key}` : field.key,
+    label: field.label,
+    locked: Boolean(block?.is_locked || field.fact_locked),
+    maxItems: field.max_items,
+    minItems: field.min_items,
+    required: Boolean(field.required),
+    source: sourceLabel(block?.source_type ?? String(field.source ?? "user_input")),
+    type: field.type,
+    typeLabel: fieldTypeLabel(field.type),
+    value,
+    ...status,
+  };
+}
+
+function guidedFormView(
+  params: {
+    blocks: GuidedBlockSource[];
+    editorialLimits: GuidedFormResponse["editorial_limits"];
+    fields: GuidedFormUiField[];
+    generatedFields: string[];
+  },
+): ContentStudioViewModel["guidedForm"] {
+  return {
+    description:
+      "Поля построены из активной версии рубрики. В этом slice отображение уже schema-driven, сохранение подключается отдельной mutation-фазой.",
+    fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
+    generatedFields: params.generatedFields.map(generatedFieldLabel),
+    limits: editorialLimitsLabel(params.editorialLimits),
+    title: "Фактическая форма рубрики",
+  };
+}
+
+function fixtureGuidedForm(): ContentStudioViewModel["guidedForm"] {
+  return guidedFormView({
+    blocks: fixtureGuidedBlocks,
+    editorialLimits: { max_chars: 4100, min_chars: 3500 },
+    fields: fixtureGuidedFields,
+    generatedFields: ["hook", "transitions", "ratings", "cta", "master_text", "platform_variants"],
+  });
 }
 
 function blockStatus(block: BlockOut): string {
@@ -320,6 +703,7 @@ function fixtureContentStudio(contentId: string): ContentStudioViewModel {
       { label: "Готовность", tone: "warning", value: "нужна проверка MAX" },
     ],
     factLocks: factLocks.map(([fact, status, source]) => ({ fact, source, status })),
+    guidedForm: fixtureGuidedForm(),
     inputBlocks: inputBlocks.map(([name, status, helper, source]) => ({
       helper,
       name,
@@ -428,8 +812,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
   }
 
   const project = await firstWorkspaceProject();
-  const [rubricNames, blocksResponse, variantsResponse] = await Promise.all([
+  const [rubricNames, guidedFormResponse, blocksResponse, variantsResponse] = await Promise.all([
     rubricNameMap(item.project_id),
+    safeApiGet<GuidedFormResponse>(`/api/v1/content-items/${contentId}/guided-form`),
     safeApiGet<BlocksResponse>(`/api/v1/content-items/${contentId}/blocks`),
     safeApiGet<PlatformVariantsResponse>(`/api/v1/content-items/${contentId}/variants`),
   ]);
@@ -450,6 +835,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     return count + (Array.isArray(warnings) ? warnings.length : 0);
   }, 0);
   const notices = [
+    guidedFormResponse ? null : "Форма рубрики из API недоступна.",
     blocksResponse ? null : "Блоки материала из API недоступны.",
     variantsResponse ? null : "Платформенные превью из API недоступны.",
     "История версий пока fallback: backend не даёт list endpoint для content revisions.",
@@ -475,6 +861,14 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           status: "locked",
         }))
       : fallback.factLocks,
+    guidedForm: guidedFormResponse
+      ? guidedFormView({
+          blocks,
+          editorialLimits: guidedFormResponse.editorial_limits,
+          fields: guidedFormResponse.ui_schema.fields ?? [],
+          generatedFields: guidedFormResponse.generated_fields,
+        })
+      : fallback.guidedForm,
     inputBlocks: blocks.length
       ? blocks.map((block) => ({
           helper: truncateText(valueText(block.value_json) || "Значение пока не заполнено.", 120),
@@ -502,6 +896,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     summary: {
       ...fallback.summary,
       autosave: formatUpdatedAt(item.updated_at),
+      range: guidedFormResponse
+        ? editorialLimitsLabel(guidedFormResponse.editorial_limits)
+        : fallback.summary.range,
       project: project?.id === item.project_id ? project.name : "Проект",
       revision: `v${item.version}`,
       rubric: rubricNames.get(item.rubric_id) ?? "Рубрика",
