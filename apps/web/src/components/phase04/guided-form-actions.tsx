@@ -16,8 +16,10 @@ import {
 import {
   createGuidedQueueJob,
   guidedFieldQueueKey,
+  guidedRepeatableGroupQueueKey,
   type GuidedQueueFieldMetadata,
   type GuidedQueueIntent,
+  type GuidedQueueMetadata,
   type GuidedQueueValues,
   type GuidedQueueJob,
 } from "@/services/guided-queue-contract";
@@ -100,6 +102,23 @@ function formQueueMetadata(form: HTMLFormElement): GuidedQueueFieldMetadata | nu
     intent: guidedSubmitIntent(form.dataset.guidedSubmitIntent),
     itemVersion: formNumberValue(form, "itemVersion"),
     kind: "field",
+    sourceType: formTextValue(form, "sourceType") ?? "user_text",
+  };
+}
+
+function repeatableGroupQueueMetadata(form: HTMLFormElement): GuidedQueueMetadata | null {
+  const contentId = formTextValue(form, "contentId");
+  const groupKey = formTextValue(form, "groupKey");
+  if (!contentId || !groupKey) {
+    return null;
+  }
+
+  return {
+    contentId,
+    groupKey,
+    intent: guidedSubmitIntent(form.dataset.guidedSubmitIntent),
+    itemVersion: formNumberValue(form, "itemVersion"),
+    kind: "repeatable_group",
     sourceType: formTextValue(form, "sourceType") ?? "user_text",
   };
 }
@@ -339,6 +358,7 @@ function useGuidedQueue(params: {
   enabled: boolean;
   formRef: RefObject<HTMLFormElement | null>;
   isPending: boolean;
+  metadata: (form: HTMLFormElement) => GuidedQueueMetadata | null;
   state: GuidedActionState;
   storageKey: string;
 }) {
@@ -382,7 +402,7 @@ function useGuidedQueue(params: {
       const job = createGuidedQueueJob({
         code: params.state.code,
         fieldTypes: formFieldTypes(params.formRef.current),
-        metadata: formQueueMetadata(params.formRef.current),
+        metadata: params.metadata(params.formRef.current),
         recoveryAction: params.state.recoveryAction,
         requestId: params.state.requestId,
         values: formDraftValues(params.formRef.current),
@@ -395,7 +415,7 @@ function useGuidedQueue(params: {
     if (!params.isPending && queueJob) {
       setQueueStatus(queueJob.recoveryAction === "refresh" ? "blocked" : "queued");
     }
-  }, [params.enabled, params.formRef, params.isPending, params.state, params.storageKey, queueJob]);
+  }, [params.enabled, params.formRef, params.isPending, params.metadata, params.state, params.storageKey, queueJob]);
 
   function clearQueue() {
     clearGuidedQueueJob(params.storageKey);
@@ -650,6 +670,7 @@ export function GuidedFieldActionForm({
     enabled: canSubmit,
     formRef: draft.formRef,
     isPending,
+    metadata: formQueueMetadata,
     state,
     storageKey: guidedFieldQueueKey({
       blockId: field.blockId,
@@ -737,11 +758,33 @@ export function AddRepeatableGroupActionForm({
 }) {
   const [state, formAction, isPending] = useActionState(addRepeatableGroupAction, initialGuidedActionState);
   const disabled = !canMutate || isPending;
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const lockButtonRef = useRef<HTMLButtonElement>(null);
   const draft = useGuidedLocalDraft({
     enabled: canMutate,
     state,
     storageKey: `${draftPrefix}:repeatable:${contentId}:${field.fieldKey}`,
   });
+  const queue = useGuidedQueue({
+    enabled: canMutate,
+    formRef: draft.formRef,
+    isPending,
+    metadata: repeatableGroupQueueMetadata,
+    state,
+    storageKey: guidedRepeatableGroupQueueKey({
+      contentId,
+      groupKey: field.fieldKey,
+    }),
+  });
+
+  function retryQueuedAdd() {
+    draft.flushDraft();
+    if (queue.queueJob?.metadata?.kind === "repeatable_group" && queue.queueJob.metadata.intent === "lock") {
+      lockButtonRef.current?.click();
+      return;
+    }
+    saveButtonRef.current?.click();
+  }
 
   return (
     <form
@@ -749,7 +792,10 @@ export function AddRepeatableGroupActionForm({
       className="grid gap-3 rounded-md border border-dashed border-border p-3"
       onChange={draft.handleDraftChange}
       onInput={draft.handleDraftChange}
-      onSubmit={draft.flushDraft}
+      onSubmit={(event) => {
+        recordSubmitIntent(event);
+        draft.flushDraft();
+      }}
       ref={draft.formRef}
     >
       <input name="contentId" type="hidden" value={contentId} />
@@ -780,8 +826,35 @@ export function AddRepeatableGroupActionForm({
         ))}
       </div>
       <DraftStatusLine status={draft.draftStatus} />
+      <QueueStatusLine
+        canRetry={canMutate}
+        job={queue.queueJob}
+        onClear={queue.clearQueue}
+        onRetry={retryQueuedAdd}
+        status={queue.queueStatus}
+      />
       <ActionStatus canRetry={canMutate} state={state} />
       <div className="flex flex-wrap gap-2">
+        <button
+          aria-hidden="true"
+          className="hidden"
+          disabled={!canMutate}
+          name="intent"
+          ref={saveButtonRef}
+          tabIndex={-1}
+          type="submit"
+          value="save"
+        />
+        <button
+          aria-hidden="true"
+          className="hidden"
+          disabled={!canMutate}
+          name="intent"
+          ref={lockButtonRef}
+          tabIndex={-1}
+          type="submit"
+          value="lock"
+        />
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="save" variant="secondary">
           <Plus size={14} />
           {isPending ? "Добавляем" : "Добавить"}
