@@ -16,6 +16,7 @@ import {
 import {
   createGuidedQueueJob,
   guidedFieldQueueKey,
+  type GuidedQueueValues,
   type GuidedQueueJob,
 } from "@/services/guided-queue-contract";
 import {
@@ -28,6 +29,7 @@ type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
 type DraftStatus = "cleared" | "empty" | "restored" | "saved";
 type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "unavailable";
+type DraftValues = GuidedQueueValues;
 
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -45,14 +47,18 @@ function isDraftControl(element: Element): element is DraftControl {
   return element.name === "value" || element.name.startsWith("field:");
 }
 
-function formDraftValues(form: HTMLFormElement): Record<string, string> {
-  const values: Record<string, string> = {};
+function formDraftValues(form: HTMLFormElement): DraftValues {
+  const values: DraftValues = {};
   for (const element of Array.from(form.elements)) {
     if (!isDraftControl(element)) {
       continue;
     }
     if (element instanceof HTMLInputElement && element.type === "checkbox") {
       values[element.name] = element.checked ? element.value : "";
+      continue;
+    }
+    if (element instanceof HTMLSelectElement && element.multiple) {
+      values[element.name] = Array.from(element.selectedOptions, (option) => option.value);
       continue;
     }
     values[element.name] = element.value;
@@ -77,24 +83,32 @@ function formFieldTypes(form: HTMLFormElement): Record<string, string> {
   return values;
 }
 
-function restoreFormDraft(form: HTMLFormElement, values: Record<string, string>) {
+function restoreFormDraft(form: HTMLFormElement, values: DraftValues) {
   for (const element of Array.from(form.elements)) {
     if (!isDraftControl(element) || values[element.name] === undefined) {
       continue;
     }
+    const value = values[element.name];
     if (element instanceof HTMLInputElement && element.type === "checkbox") {
-      element.checked = values[element.name] === element.value;
+      element.checked = firstDraftValue(value) === element.value;
       continue;
     }
-    element.value = values[element.name];
+    if (element instanceof HTMLSelectElement && element.multiple) {
+      const selectedValues = new Set(Array.isArray(value) ? value : [value]);
+      for (const option of Array.from(element.options)) {
+        option.selected = selectedValues.has(option.value);
+      }
+      continue;
+    }
+    element.value = firstDraftValue(value);
   }
 }
 
-function hasDraftValues(values: Record<string, string>): boolean {
-  return Object.values(values).some((value) => value.trim().length > 0);
+function hasDraftValues(values: DraftValues): boolean {
+  return Object.values(values).some(hasDraftValue);
 }
 
-function readDraft(storageKey: string): Record<string, string> | null {
+function readDraft(storageKey: string): DraftValues | null {
   try {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) {
@@ -104,15 +118,13 @@ function readDraft(storageKey: string): Record<string, string> | null {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return null;
     }
-    return Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
-    );
+    return sanitizeDraftValues(parsed);
   } catch {
     return null;
   }
 }
 
-function writeDraft(storageKey: string, values: Record<string, string>) {
+function writeDraft(storageKey: string, values: DraftValues) {
   try {
     if (!hasDraftValues(values)) {
       window.localStorage.removeItem(storageKey);
@@ -122,6 +134,34 @@ function writeDraft(storageKey: string, values: Record<string, string>) {
   } catch {
     // Browser storage can be unavailable or full. The server action remains authoritative.
   }
+}
+
+function sanitizeDraftValues(value: unknown): DraftValues {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const values: DraftValues = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === "string") {
+      values[key] = item;
+      continue;
+    }
+    if (Array.isArray(item)) {
+      values[key] = item.filter((entry): entry is string => typeof entry === "string");
+    }
+  }
+  return values;
+}
+
+function firstDraftValue(value: DraftValues[string]): string {
+  return Array.isArray(value) ? (value[0] ?? "") : value;
+}
+
+function hasDraftValue(value: DraftValues[string]): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => item.trim().length > 0);
+  }
+  return value.trim().length > 0;
 }
 
 function clearDraft(storageKey: string) {

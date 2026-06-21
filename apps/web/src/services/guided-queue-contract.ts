@@ -3,13 +3,16 @@ import { type GuidedRecoveryAction } from "@/services/guided-action-state";
 export const guidedFormQueuePrefix = "tmh:guided-form-queue:v1";
 export const guidedFormQueueEvent = "tmh-guided-form-queue-change";
 
+export type GuidedQueueValue = string | string[];
+export type GuidedQueueValues = Record<string, GuidedQueueValue>;
+
 export interface GuidedQueueJob {
   code: string | null;
   fieldTypes: Record<string, string>;
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt: string;
-  values: Record<string, string>;
+  values: GuidedQueueValues;
 }
 
 export function isGuidedFormQueueKey(key: string): boolean {
@@ -24,8 +27,8 @@ export function guidedFieldQueueKey(params: {
   return `${guidedFormQueuePrefix}:field:${params.contentId}:${params.fieldKey}:${params.blockId ?? "new"}`;
 }
 
-export function hasGuidedQueueValues(values: Record<string, string>): boolean {
-  return Object.values(values).some((value) => value.trim().length > 0);
+export function hasGuidedQueueValues(values: GuidedQueueValues): boolean {
+  return Object.values(values).some(hasGuidedQueueValue);
 }
 
 export function createGuidedQueueJob(params: {
@@ -34,7 +37,7 @@ export function createGuidedQueueJob(params: {
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt?: string;
-  values: Record<string, string>;
+  values: GuidedQueueValues;
 }): GuidedQueueJob {
   return {
     code: params.code,
@@ -42,7 +45,7 @@ export function createGuidedQueueJob(params: {
     recoveryAction: params.recoveryAction,
     requestId: params.requestId,
     savedAt: params.savedAt ?? new Date().toISOString(),
-    values: sanitizeStringRecord(params.values),
+    values: sanitizeQueueValues(params.values),
   };
 }
 
@@ -62,7 +65,7 @@ export function parseGuidedQueueJob(raw: string | null): GuidedQueueJob | null {
       recoveryAction: isGuidedRecoveryAction(parsed.recoveryAction) ? parsed.recoveryAction : "none",
       requestId: typeof parsed.requestId === "string" ? parsed.requestId : null,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
-      values: sanitizeStringRecord(parsed.values),
+      values: sanitizeQueueValues(parsed.values),
     };
   } catch {
     return null;
@@ -84,4 +87,28 @@ function sanitizeStringRecord(value: unknown): Record<string, string> {
   return Object.fromEntries(
     Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   );
+}
+
+function sanitizeQueueValues(value: unknown): GuidedQueueValues {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const values: GuidedQueueValues = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === "string") {
+      values[key] = item;
+      continue;
+    }
+    if (Array.isArray(item)) {
+      values[key] = item.filter((entry): entry is string => typeof entry === "string");
+    }
+  }
+  return values;
+}
+
+function hasGuidedQueueValue(value: GuidedQueueValue): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => item.trim().length > 0);
+  }
+  return value.trim().length > 0;
 }

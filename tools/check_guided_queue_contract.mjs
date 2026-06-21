@@ -51,6 +51,7 @@ const job = createGuidedQueueJob({
   values: {
     "field:name": "Уха",
     "field:price": "350 RUB",
+    "field:tags": ["soup", "fish", 99, ""],
     ignored: 12,
     value: "7",
   },
@@ -68,6 +69,7 @@ assert.deepEqual(normalize(job), {
   values: {
     "field:name": "Уха",
     "field:price": "350 RUB",
+    "field:tags": ["soup", "fish", ""],
     value: "7",
   },
 });
@@ -99,6 +101,9 @@ assert.deepEqual(normalize(invalidFieldTypesJob).fieldTypes, {});
 
 assert.equal(hasGuidedQueueValues({ value: "" }), false);
 assert.equal(hasGuidedQueueValues({ value: "  " }), false);
+assert.equal(hasGuidedQueueValues({ "field:tags": [] }), false);
+assert.equal(hasGuidedQueueValues({ "field:tags": ["", "  "] }), false);
+assert.equal(hasGuidedQueueValues({ "field:tags": ["", "terrace"] }), true);
 assert.equal(hasGuidedQueueValues({ "field:price": "350 RUB" }), true);
 assert.equal(hasGuidedQueueValues({}), false);
 

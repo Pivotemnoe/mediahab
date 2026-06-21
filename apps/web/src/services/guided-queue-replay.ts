@@ -26,17 +26,27 @@ export interface GuidedQueueReplayDraft {
 export function buildGuidedQueueReplayDraft(job: GuidedQueueJob): GuidedQueueReplayDraft {
   const entries = Object.entries(job.values);
   const typedValues = Object.fromEntries(
-    entries.map(([key, value]) => [key, typedGuidedActionValue([value], job.fieldTypes[key] ?? null)]),
+    entries.map(([key, value]) => [
+      key,
+      typedGuidedActionValue(Array.isArray(value) ? value : [value], job.fieldTypes[key] ?? null),
+    ]),
   );
 
   return {
     fieldTypes: { ...job.fieldTypes },
     missingFieldTypes: entries
-      .filter(([key, value]) => value.trim().length > 0 && !job.fieldTypes[key])
+      .filter(([key, value]) => hasReplayDraftValue(value) && !job.fieldTypes[key])
       .map(([key]) => key),
     typedValues,
     valueCount: entries.length,
   };
+}
+
+function hasReplayDraftValue(value: string | string[]): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => item.trim().length > 0);
+  }
+  return value.trim().length > 0;
 }
 
 export function getGuidedQueueReplayReadiness(params: {
