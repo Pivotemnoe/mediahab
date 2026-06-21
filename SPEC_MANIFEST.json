@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:31:18.875507+00:00",
+  "generated_at": "2026-06-21T15:41:19.953455+00:00",
   "canonical_language": "en",
-  "file_count": 435,
+  "file_count": 439,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2005,
-      "sha256": "efe5ea9db08f03ada26d98b5efba096beb7e0fd4ed686e6221aca18b470af78e"
+      "size_bytes": 2048,
+      "sha256": "1e949674c8ff6a4a1c98f329e6c258cf276f1e6518b7c917db939c4c2dccbbc5"
     },
     {
       "path": "README.md",
@@ -467,8 +467,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 5406,
-      "sha256": "2d9fcd6921e25e3bf905bb79be120f9b01185bc47c621b04a82c378132ef2d46"
+      "size_bytes": 4146,
+      "sha256": "365315fa6bb0917371f02e3599ac0b9898b2b6d56c1c95ccecf5effd13f9dfbd"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -479,6 +479,11 @@
       "path": "apps/web/src/services/dashboard.ts",
       "size_bytes": 6407,
       "sha256": "e66d49d770c2db2a1a3adcf74006e8e67393096b230c2477276e8e5bc616986c"
+    },
+    {
+      "path": "apps/web/src/services/guided-action-errors.ts",
+      "size_bytes": 2180,
+      "sha256": "88ff56c414e2b801999e0348f718ea3061eba705b3ea023a2b6004050a1db8a0"
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
@@ -1154,6 +1159,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AA_TEST_GATE_INTEGRATION.md",
       "size_bytes": 2922,
       "sha256": "5cf3e58638e2c1e66a9edd831d3392b64df5f7cec4538ab3ea1ff47f11a2ed2e"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AB_GUIDED_ACTION_ERROR_MAPPING.md",
+      "size_bytes": 3746,
+      "sha256": "602e4fd5b5d060743ed63b0d113d37b4c703ec41569bfa9ac2646f60d4b857bb"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AB_REPORT_RU.md",
+      "size_bytes": 3980,
+      "sha256": "1a6856cc527dda9b5c547bcbfaba0622bc30777d33ce650fd65bb49e2246db8c"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2139,6 +2154,11 @@
       "path": "tests/test_phase00_spikes.py",
       "size_bytes": 3338,
       "sha256": "b6ca01c1d60fee10e2fad2c7fa36722e8eff8338f3cf957748977a8e9c1a2275"
+    },
+    {
+      "path": "tools/check_guided_action_errors.mjs",
+      "size_bytes": 3643,
+      "sha256": "7615f4e92b34f780a844ba90a7595992654544b16931139c9506e28aeaa126fb"
     },
     {
       "path": "tools/check_guided_queue_replay.mjs",

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { guidedActionStateFromApiError, guidedActionUnavailableState } from "@/services/guided-action-errors";
 import { type GuidedActionState } from "@/services/guided-action-state";
 import { type BlockOut, type BlocksResponse } from "@/services/openapi-types";
 import { ApiRequestError, apiRequest } from "@/services/runtime";
@@ -44,32 +45,10 @@ function successState(message: string): GuidedActionState {
 
 function actionErrorState(error: unknown): GuidedActionState {
   if (error instanceof ApiRequestError) {
-    const messages: Record<string, string> = {
-      csrf_invalid: "Сессия или CSRF-токен устарели. Обновите страницу и повторите сохранение.",
-      csrf_required: "Нет CSRF-токена для сохранения. Обновите страницу; для split-domain нужен отдельный cookie/CSRF-настрой.",
-      version_conflict: "Материал изменился в другой вкладке или сессии. Обновите страницу перед повторным сохранением.",
-    };
-    const fallback = error.status >= 500
-      ? "Backend сейчас недоступен для сохранения. Повторите позже."
-      : "Backend отклонил сохранение. Проверьте поле и повторите действие.";
-    return {
-      code: error.code,
-      message: messages[error.code] ?? fallback,
-      recoveryAction: ["csrf_invalid", "csrf_required", "version_conflict"].includes(error.code)
-        ? "refresh"
-        : "retry",
-      requestId: error.requestId,
-      tone: error.code === "version_conflict" ? "warning" : "danger",
-    };
+    return guidedActionStateFromApiError(error);
   }
 
-  return {
-    code: "api_unavailable",
-    message: "API недоступен или соединение прервано. Изменение не сохранено.",
-    recoveryAction: "retry",
-    requestId: null,
-    tone: "danger",
-  };
+  return guidedActionUnavailableState();
 }
 
 export async function saveGuidedFieldAction(
