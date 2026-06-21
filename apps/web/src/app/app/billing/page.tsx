@@ -5,55 +5,47 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UsageMeter } from "@/components/ui/usage-meter";
+import { getBillingViewModel } from "@/services/workspace-settings";
 
-const limits = [
-  ["Проекты", 1, 15, "success"],
-  ["ИИ-генерации", 62, 250, "warning"],
-  ["Расшифровка, мин", 18, 120, "neutral"],
-  ["Хранилище, ГБ", 2, 50, "neutral"],
-] as const;
+export default async function BillingPage() {
+  const viewModel = await getBillingViewModel();
 
-const plans = [
-  ["Бесплатный", "Личный тест", "1 проект, ручные публикации", "текущий"],
-  ["Старт", "Пилот", "3 проекта, базовые лимиты", "тестовая оплата"],
-  ["Pro", "Рабочий режим", "15 проектов, Instagram-флаг", "ручное включение"],
-  ["Business", "Команда", "расширенные лимиты", "по запросу"],
-] as const;
-
-const history = [
-  ["тестовый платёж", "успех в симуляции", "0 ₽", "платёж не списан"],
-  ["тестовый счёт", "счёт-заглушка создан", "0 ₽", "счёт-заглушка"],
-] as const;
-
-export default function BillingPage() {
   return (
     <div className="grid gap-5">
       <PageHeader
         actions={
-          <Button disabled variant="secondary">
-            <CreditCard size={16} />
-            Реальная оплата выключена
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
+            <Button disabled variant="secondary">
+              <CreditCard size={16} />
+              Реальная оплата выключена
+            </Button>
+          </div>
         }
         description="Тарифы, лимиты, заглушка оплаты и заглушка счетов без настоящего списания денег."
         eyebrow="Этап UI 09"
         title="Тариф и оплата"
       />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <Card className="grid gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <Badge tone="success">Активен</Badge>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">Бесплатный</h2>
+              <Badge tone="success">{viewModel.currentPlan.status}</Badge>
+              <h2 className="mt-3 text-xl font-semibold text-foreground">{viewModel.currentPlan.name}</h2>
               <p className="mt-1 text-sm leading-6 text-muted">
-                Текущий тариф используется для серверной проверки лимитов. Коммерческие цены не зашиты в код.
+                {viewModel.currentPlan.description}
               </p>
             </div>
             <BadgeDollarSign size={22} className="text-primary" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {limits.map(([label, value, max, tone]) => (
+            {viewModel.limits.map(({ label, max, tone, value }) => (
               <UsageMeter key={label} label={label} max={max} tone={tone} value={value} />
             ))}
           </div>
@@ -73,7 +65,7 @@ export default function BillingPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-4">
-        {plans.map(([name, subtitle, description, status]) => (
+        {viewModel.plans.map(({ description, name, status, subtitle }) => (
           <Card className="grid gap-3" key={name}>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-foreground">{name}</h2>
@@ -94,7 +86,7 @@ export default function BillingPage() {
           <FileText size={20} className="text-primary" />
         </div>
         <div className="grid gap-2">
-          {history.map(([id, status, amount, note]) => (
+          {viewModel.history.map(({ amount, id, note, status }) => (
             <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[1fr_180px_120px_160px]" key={id}>
               <div className="min-w-0 text-sm font-medium text-foreground">{id}</div>
               <Badge tone="info" className="w-fit">

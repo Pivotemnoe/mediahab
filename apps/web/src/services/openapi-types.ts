@@ -17,6 +17,46 @@ export interface MeResponse {
   workspaces: MeWorkspaceOut[];
 }
 
+export interface SessionOut {
+  current: boolean;
+  expires_at: string;
+  id: string;
+  last_seen_at: string;
+  revoked_at: string | null;
+  user_agent: string | null;
+}
+
+export interface SessionsResponse {
+  sessions: SessionOut[];
+}
+
+export interface WorkspaceOut {
+  default_locale: string;
+  id: string;
+  name: string;
+  role: string;
+  slug: string;
+  status: string;
+  timezone: string;
+}
+
+export interface WorkspaceListResponse {
+  workspaces: WorkspaceOut[];
+}
+
+export interface MemberOut {
+  accepted: boolean;
+  display_name: string;
+  email: string;
+  publication_permission: string;
+  role: string;
+  user_id: string;
+}
+
+export interface MembersResponse {
+  members: MemberOut[];
+}
+
 export interface ProjectOut {
   active_version_id: string;
   active_version_number: number;
@@ -101,6 +141,43 @@ export interface SubscriptionResponse {
   provider_key: string;
   status: string;
   workspace_id: string;
+}
+
+export interface PriceOut {
+  amount_minor: number;
+  currency: string;
+  interval: string;
+  provider_price_id: string | null;
+}
+
+export interface PlanOut {
+  description: string;
+  entitlements: JsonObject;
+  id: string;
+  is_active: boolean;
+  key: string;
+  name: string;
+  prices: PriceOut[];
+}
+
+export interface PlansResponse {
+  plans: PlanOut[];
+}
+
+export interface PaymentOut {
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  id: string;
+  payment_captured: boolean;
+  provider_key: string;
+  provider_payment_id: string | null;
+  status: string;
+  workspace_id: string;
+}
+
+export interface PaymentsResponse {
+  payments: PaymentOut[];
 }
 
 export interface DestinationOut {

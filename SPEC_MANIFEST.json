@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T03:51:16.893629+00:00",
+  "generated_at": "2026-06-21T04:16:55.720674+00:00",
   "canonical_language": "en",
-  "file_count": 379,
+  "file_count": 382,
   "files": [
     {
       "path": ".dockerignore",
@@ -77,8 +77,8 @@
     },
     {
       "path": "apps/web/src/app/app/account/page.tsx",
-      "size_bytes": 3058,
-      "sha256": "3dd06a91c42bbf370bacd18450fd65d09260f1133d499d09c736ae4dc22f0fe5"
+      "size_bytes": 3431,
+      "sha256": "37602de6fc91a94c6c0089403cf883de60914bb840929a288eb44b5ef8fe3900"
     },
     {
       "path": "apps/web/src/app/app/ai/page.tsx",
@@ -87,8 +87,8 @@
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
-      "size_bytes": 5450,
-      "sha256": "e8d7ecfcc933da67d5dfa3176593d51a2b2c5dd6090046ea8d2b8884842dd60d"
+      "size_bytes": 4866,
+      "sha256": "317ff01e84a21b859cc8700b2588614584179b861fbe44b4db6879bb6f70706b"
     },
     {
       "path": "apps/web/src/app/app/calendar/page.tsx",
@@ -127,8 +127,8 @@
     },
     {
       "path": "apps/web/src/app/app/integrations/page.tsx",
-      "size_bytes": 3804,
-      "sha256": "9f2567d33026e37bc18cf676269bd575576b6bef3adbe8bfac2d5e9050090fb0"
+      "size_bytes": 4129,
+      "sha256": "b9b804aec845375d52860b94d45c6c947b21a165293959631883407fba2a02f8"
     },
     {
       "path": "apps/web/src/app/app/layout.tsx",
@@ -212,8 +212,8 @@
     },
     {
       "path": "apps/web/src/app/app/workspace/page.tsx",
-      "size_bytes": 3097,
-      "sha256": "f3058b97d87a36181f3332ec52a59f1e545e4b21da08403f55ad49423d3407ba"
+      "size_bytes": 3190,
+      "sha256": "ff53394a2039805433f3efaefc1581414982762d1290694e25e059e6b9a4fdab"
     },
     {
       "path": "apps/web/src/app/contacts/page.tsx",
@@ -462,8 +462,8 @@
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
-      "size_bytes": 3704,
-      "sha256": "028e6db58dce6e9e614bd41c9f223e200c7e2beb2fbb4079fa843a1d65d5e3a8"
+      "size_bytes": 5068,
+      "sha256": "ca5eddd8a839b39fb5dfbfca29a4b7a5cb0789ae0f2a5b2f18e0bf72b6b98516"
     },
     {
       "path": "apps/web/src/services/projects.ts",
@@ -479,6 +479,11 @@
       "path": "apps/web/src/services/runtime.ts",
       "size_bytes": 1589,
       "sha256": "65987abc21414f4cacdfee2cd9138bb3a8412a063fbb2a7075ace60f682fec92"
+    },
+    {
+      "path": "apps/web/src/services/workspace-settings.ts",
+      "size_bytes": 15744,
+      "sha256": "f32af4035d570b597ba57ce390d787b11de34519acc40eff96c4487b51d810b9"
     },
     {
       "path": "apps/web/tailwind.config.ts",
@@ -1136,6 +1141,16 @@
       "sha256": "f6305e5336d5b6aea0e6c56d2c99fc53ddf8b990e3521a7ce3d7fa896fa9ccec"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10F_REPORT_RU.md",
+      "size_bytes": 3836,
+      "sha256": "576f362d3e8846a93a9e78f360960f4a6a589f52fb5598b8c7d4b66392ef200e"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10F_WORKSPACE_SERVICE_BOUNDARY.md",
+      "size_bytes": 3548,
+      "sha256": "5517e56efad3aaf5dbf51a5c5fc0a8bb2b681e00a19da0b6353492f94d9f0c5e"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1157,8 +1172,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 5437,
-      "sha256": "6df8ce76e275de0d80825518fdb2aedd4eae6faaf30009f0345d5bafd894a750"
+      "size_bytes": 5599,
+      "sha256": "848d315f135b5d92a9f16514420619599e58e54ade65203373c6d4a63adeb126"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",

@@ -4,22 +4,32 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { accountSettings, sessionRows } from "@/features/account-workspace/account-workspace-fixtures";
+import { getAccountViewModel } from "@/services/workspace-settings";
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  const viewModel = await getAccountViewModel();
+
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
         actions={
-          <Button type="button" variant="secondary">
-            <LogOut size={16} />
-            Выйти со всех устройств
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
+            <Button type="button" variant="secondary">
+              <LogOut size={16} />
+              Выйти со всех устройств
+            </Button>
+          </div>
         }
         description="Профиль, подтверждение почты, безопасность и управление активными сессиями."
         eyebrow="Этап UI 09"
         title="Аккаунт"
       />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <Card className="grid gap-3">
@@ -28,7 +38,7 @@ export default function AccountPage() {
             Настройки профиля
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {accountSettings.map(([label, value, status]) => (
+            {viewModel.settings.map(({ label, status, value }) => (
               <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
                 <div className="text-xs text-muted">{label}</div>
                 <div className="mt-1 break-words font-medium text-foreground">{value}</div>
@@ -55,7 +65,7 @@ export default function AccountPage() {
 
       <Card className="grid gap-3">
         <div className="text-sm font-semibold text-foreground">Активные сессии</div>
-        {sessionRows.map(([device, client, seen, state]) => (
+        {viewModel.sessions.map(({ client, device, seen, state }) => (
           <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[160px_1fr_140px_auto]" key={device}>
             <div className="font-medium text-foreground">{device}</div>
             <div className="text-sm text-muted">{client}</div>

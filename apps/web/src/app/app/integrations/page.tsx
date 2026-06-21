@@ -4,18 +4,26 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { connectorCards } from "@/features/publication-ops/publication-ops-fixtures";
+import { getIntegrationsViewModel } from "@/services/workspace-settings";
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  const viewModel = await getIntegrationsViewModel();
+
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
+        actions={<Badge>{viewModel.modeLabel}</Badge>}
         description="Площадки, права, возможности и безопасный боевой режим без вывода секретов в клиентский интерфейс."
         eyebrow="Этап UI 07"
         title="Интеграции"
       />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {connectorCards.map((connector) => (
+        {viewModel.connectors.map((connector) => (
           <Card className="grid content-start gap-4" key={connector.name}>
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
