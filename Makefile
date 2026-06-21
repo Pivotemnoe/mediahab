@@ -7,7 +7,7 @@ PHASE00_PYTHONPATH ?= /private/tmp/phase00-python-deps
 COMPOSE ?= docker compose
 MIGRATE_DATABASE_URL ?= postgresql+asyncpg://media_hub:media_hub@localhost:55434/media_hub
 
-.PHONY: deps dev down lint typecheck test test-e2e migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
+.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
 
 deps: node_modules/.pnpm $(VENV)/.deps-installed
 
@@ -40,6 +40,10 @@ test: deps
 
 test-e2e: deps
 	$(PY) tools/e2e_smoke.py
+
+test-ui-hardening: deps
+	node tools/check_sw_capabilities.mjs
+	node tools/check_guided_queue_replay.mjs
 
 migrate: deps
 	cd services/api && DATABASE_URL="$(MIGRATE_DATABASE_URL)" ../../$(PY) -m alembic -c alembic.ini upgrade head

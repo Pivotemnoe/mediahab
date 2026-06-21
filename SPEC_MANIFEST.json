@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:21:17.315754+00:00",
+  "generated_at": "2026-06-21T15:26:29.733874+00:00",
   "canonical_language": "en",
-  "file_count": 431,
+  "file_count": 433,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 1864,
-      "sha256": "6ebb207e3decdf78096110d477c9472bac9aeb83505dbcb4fa8f2e31d4827623"
+      "size_bytes": 1987,
+      "sha256": "a1165ad18f62e68498ea770b5bbce8ea969e9aecfcd7a565d4dbf4cbbc5ed651"
     },
     {
       "path": "README.md",
@@ -1384,6 +1384,16 @@
       "path": "docs/exec-plans/UI_PHASE_10Y_SERVICE_WORKER_CAPABILITIES.md",
       "size_bytes": 4076,
       "sha256": "4fab1c5dfe6da1c274635473b7bc8c59d838626b86ffa55e268cce5d47755f53"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10Z_REPORT_RU.md",
+      "size_bytes": 2990,
+      "sha256": "9effbd43e6f372b94ae7a18eabf6cee1731527b0ffa01a8278294380bd5ccb27"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10Z_UI_HARDENING_CHECK_TARGET.md",
+      "size_bytes": 2806,
+      "sha256": "77668054f97958ab1515fbfbcd98e96d987458a879d904ddc0fedfff9729ae40"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
