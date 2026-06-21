@@ -22,7 +22,8 @@ type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "una
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const draftPrefix = "tmh:guided-form-draft:v1";
-const queuePrefix = "tmh:guided-form-queue:v1";
+export const guidedFormQueuePrefix = "tmh:guided-form-queue:v1";
+export const guidedFormQueueEvent = "tmh-guided-form-queue-change";
 const autosaveDelayMs = 1200;
 
 interface QueueJob {
@@ -142,9 +143,11 @@ function writeQueueJob(storageKey: string, job: QueueJob) {
   try {
     if (!hasDraftValues(job.values)) {
       window.localStorage.removeItem(storageKey);
+      window.dispatchEvent(new Event(guidedFormQueueEvent));
       return;
     }
     window.localStorage.setItem(storageKey, JSON.stringify(job));
+    window.dispatchEvent(new Event(guidedFormQueueEvent));
   } catch {
     // Browser storage can be unavailable or full. The visible action state remains authoritative.
   }
@@ -153,6 +156,7 @@ function writeQueueJob(storageKey: string, job: QueueJob) {
 function clearQueueJob(storageKey: string) {
   try {
     window.localStorage.removeItem(storageKey);
+    window.dispatchEvent(new Event(guidedFormQueueEvent));
   } catch {
     // Ignore storage cleanup failures.
   }
@@ -560,7 +564,7 @@ export function GuidedFieldActionForm({
     formRef: draft.formRef,
     isPending,
     state,
-    storageKey: `${queuePrefix}:field:${contentId}:${field.fieldKey}:${field.blockId ?? "new"}`,
+    storageKey: `${guidedFormQueuePrefix}:field:${contentId}:${field.fieldKey}:${field.blockId ?? "new"}`,
   });
 
   function retryQueuedSave() {
