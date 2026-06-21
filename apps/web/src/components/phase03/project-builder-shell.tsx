@@ -34,33 +34,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  fieldPalette,
-  platformStrategies,
-  previewBlocks,
-  repeatableGroups,
-  rubricFields,
-  styleRules,
-} from "@/features/rubric-builder/rubric-builder-fixtures";
-import {
-  exampleImports,
-  platformOptions,
-  projectWizardSteps,
-  rubricSuggestions,
-} from "@/features/project-wizard/project-wizard-fixtures";
-import {
+  type NewProjectViewModel,
+  type ProjectBuilderViewModel,
+  type ProjectDetailViewModel,
   type ProjectIndexViewModel,
-  type RubricDetailViewModel,
+  type ProjectSettingsViewModel,
   type RubricBuilderViewModel,
+  type RubricDetailViewModel,
 } from "@/services/projects";
-
-const projectSteps = [
-  "Идентичность",
-  "Аудитория",
-  "Голос",
-  "Площадки",
-  "Примеры",
-  "Рубрики",
-];
 
 const projectEntryPoints: Array<[string, string, LucideIcon]> = [
   ["С нуля", "Создать переиспользуемый проект без данных пресета.", FolderPlus],
@@ -137,7 +118,7 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
   );
 }
 
-export function NewProjectShell() {
+export function NewProjectShell({ viewModel }: { viewModel: NewProjectViewModel }) {
   return (
     <div className="grid gap-5">
       <BuilderHeader title="Новый проект" />
@@ -158,10 +139,15 @@ export function NewProjectShell() {
         eyebrow="Этап UI 03"
         title="Мастер проекта"
       />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[300px_1fr_340px]">
         <Card className="grid content-start gap-2">
-          {projectWizardSteps.map(([step, text, status], index) => (
+          {viewModel.wizardSteps.map(({ status, step, text }, index) => (
             <div
               className="grid grid-cols-[24px_1fr] gap-3 rounded-md border border-border p-3"
               key={step}
@@ -181,15 +167,10 @@ export function NewProjectShell() {
           <Card className="grid gap-4">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ClipboardCheck size={18} className="text-primary" />
-              Основа проекта
+              Основа проекта · {viewModel.modeLabel}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              {[
-                ["Название проекта", "Что поесть? Армавир"],
-                ["URL-slug", "chto-poest-armavir"],
-                ["Тематика", "Еда, обзоры, кафе и доставка"],
-                ["Основной язык", "Русский"],
-              ].map(([label, placeholder]) => (
+              {viewModel.fields.map(({ label, placeholder }) => (
                 <label className="grid gap-1.5 text-sm" key={label}>
                   <span className="font-medium text-foreground">{label}</span>
                   <input
@@ -203,7 +184,7 @@ export function NewProjectShell() {
               <span className="font-medium text-foreground">Аудитория и тон</span>
               <textarea
                 className="min-h-28 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
-                placeholder="Локальная аудитория Армавира, живой разговорный тон, честные оценки без рекламной подачи."
+                placeholder={viewModel.audiencePlaceholder}
               />
             </label>
           </Card>
@@ -214,7 +195,7 @@ export function NewProjectShell() {
               Площадки
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              {platformOptions.map(([name, note, enabled]) => (
+              {viewModel.platformOptions.map(({ enabled, name, note }) => (
                 <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={name}>
                   <span className="flex items-center justify-between gap-3">
                     <span className="font-medium text-foreground">{name}</span>
@@ -235,7 +216,7 @@ export function NewProjectShell() {
               Загрузите тексты, фото или голосовые заметки. В этапе UI 03 это демо-блок; API-импорт подключается позже.
             </div>
             <div className="flex flex-wrap gap-2">
-              {exampleImports.map((item) => (
+              {viewModel.exampleImports.map((item) => (
                 <Badge key={item} tone="info">
                   {item}
                 </Badge>
@@ -250,7 +231,7 @@ export function NewProjectShell() {
               <Sparkles size={18} className="text-primary" />
               ИИ-предложения рубрик
             </div>
-            {rubricSuggestions.map(([name, text, mode]) => (
+            {viewModel.rubricSuggestions.map(({ mode, name, text }) => (
               <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
                 <div>
                   <div className="text-sm font-medium text-foreground">{name}</div>
@@ -295,16 +276,25 @@ export function NewProjectShell() {
   );
 }
 
-export function ProjectDetailShell({ projectId }: { projectId: string }) {
+export function ProjectDetailShell({
+  projectId,
+  viewModel,
+}: {
+  projectId: string;
+  viewModel: ProjectDetailViewModel;
+}) {
   return (
     <div className="grid gap-4">
       <BuilderHeader title="Проект" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge>ID проекта</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge>Проект</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+            </div>
             <h1 className="mt-3 break-all text-3xl font-semibold text-ink">
-              {projectId}
+              {viewModel.projectLabel || projectId}
             </h1>
             <p className="mt-2 text-sm text-muted">
               Стабильная идентичность с активной версией настроек.
@@ -337,12 +327,17 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
             </Button>
           </div>
         </div>
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-3">
-          {["Версии", "Рубрики", "Импорт пресета"].map((title) => (
+          {viewModel.summaryCards.map(({ note, title }) => (
             <Card key={title}>
               <div className="text-sm font-semibold">{title}</div>
               <div className="mt-2 text-sm leading-6 text-muted">
-                Управляется через API этапа 03 и неизменяемые записи версий.
+                {note}
               </div>
             </Card>
           ))}
@@ -352,13 +347,19 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
   );
 }
 
-export function ProjectBuilderShell({ projectId }: { projectId: string }) {
+export function ProjectBuilderShell({
+  projectId,
+  viewModel,
+}: {
+  projectId: string;
+  viewModel: ProjectBuilderViewModel;
+}) {
   return (
     <div className="grid gap-4">
       <BuilderHeader title="Конструктор проекта" />
       <section className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <Card className="grid content-start gap-2">
-          {projectSteps.map((step) => (
+          {viewModel.steps.map((step) => (
             <button
               className="h-10 rounded-md px-3 text-left text-sm text-muted hover:bg-surface hover:text-ink"
               key={step}
@@ -368,16 +369,24 @@ export function ProjectBuilderShell({ projectId }: { projectId: string }) {
           ))}
         </Card>
         <Card className="grid gap-4">
-          <Badge>Версионируемые настройки</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge>Версионируемые настройки</Badge>
+            <Badge>{viewModel.modeLabel}</Badge>
+          </div>
           <h1 className="text-2xl font-semibold text-ink">
-            Конструктор проекта {projectId}
+            Конструктор проекта {viewModel.projectLabel || projectId}
           </h1>
+          {viewModel.notice ? (
+            <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
+              {viewModel.notice}
+            </div>
+          ) : null}
           <div className="grid gap-3 md:grid-cols-2">
-            {["Название", "Описание", "ИИ-режим", "Политика знаков"].map((label) => (
+            {viewModel.settingCards.map(({ label, text }) => (
               <div className="rounded-md border border-line p-3" key={label}>
                 <div className="text-sm font-medium">{label}</div>
                 <div className="mt-1 text-sm text-muted">
-                  Сохранённые изменения создают новую версию проекта.
+                  {text}
                 </div>
               </div>
             ))}
@@ -473,7 +482,7 @@ export function RubricBuilderShell({
                 <Braces size={18} className="text-primary" />
                 Палитра полей
               </div>
-              {fieldPalette.map(([title, text]) => (
+              {viewModel.fieldPalette.map(({ text, title }) => (
                 <button
                   className="grid gap-1 rounded-md border border-border px-3 py-2 text-left text-sm transition hover:bg-surface-muted"
                   key={title}
@@ -506,7 +515,7 @@ export function RubricBuilderShell({
               </div>
 
               <div className="grid gap-3">
-                {rubricFields.map((field, index) => (
+                {viewModel.rubricFields.map((field, index) => (
                   <div
                     className="grid gap-3 rounded-md border border-border p-3"
                     key={field.key}
@@ -548,7 +557,7 @@ export function RubricBuilderShell({
                 Повторяемые группы
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {repeatableGroups.map(([name, min, max, fields]) => (
+                {viewModel.repeatableGroups.map(({ fields, max, min, name }) => (
                   <div className="rounded-md border border-border p-3" key={name}>
                     <div className="break-words text-sm font-medium text-foreground">{name}</div>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -596,7 +605,7 @@ export function RubricBuilderShell({
                 <SlidersHorizontal size={18} className="text-primary" />
                 Площадки и лимиты
               </div>
-              {platformStrategies.map(([platform, mode, note]) => (
+              {viewModel.platformStrategies.map(({ mode, note, platform }) => (
                 <div className="rounded-md border border-border p-3" key={platform}>
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="break-words text-sm font-medium text-foreground">{platform}</div>
@@ -612,7 +621,7 @@ export function RubricBuilderShell({
                 <ShieldCheck size={18} className="text-primary" />
                 Правила стиля
               </div>
-              {styleRules.map((rule) => (
+              {viewModel.styleRules.map((rule) => (
                 <div className="flex min-w-0 gap-2 text-sm leading-6 text-muted" key={rule}>
                   <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
                   <span>{rule}</span>
@@ -625,7 +634,7 @@ export function RubricBuilderShell({
                 <Eye size={18} className="text-primary" />
                 Предпросмотр мобильной формы
               </div>
-              {previewBlocks.map(([index, name, note]) => (
+              {viewModel.previewBlocks.map(({ index, name, note }) => (
                 <div
                   className="grid grid-cols-[28px_1fr] gap-2 rounded-md border border-border p-2"
                   key={index}
@@ -731,7 +740,7 @@ export function NewRubricShell({
                 Стартовый набор полей
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {fieldPalette.map(([title, text]) => (
+                {viewModel.fieldPalette.map(({ text, title }) => (
                   <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={title}>
                     <span className="flex items-center justify-between gap-3">
                       <span className="font-medium text-foreground">{title}</span>
@@ -749,7 +758,7 @@ export function NewRubricShell({
                 Повторяемые блоки
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {repeatableGroups.map(([name, min, max, fields]) => (
+                {viewModel.repeatableGroups.map(({ fields, max, min, name }) => (
                   <div className="rounded-md border border-border p-3" key={name}>
                     <div className="text-sm font-medium text-foreground">{name}</div>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -788,7 +797,7 @@ export function NewRubricShell({
                 <SlidersHorizontal size={18} className="text-primary" />
                 Площадки
               </div>
-              {platformStrategies.map(([platform, mode, note]) => (
+              {viewModel.platformStrategies.map(({ mode, note, platform }) => (
                 <div className="rounded-md border border-border p-3" key={platform}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-medium text-foreground">{platform}</div>
@@ -902,7 +911,7 @@ export function RubricDetailShell({
                 <Blocks size={18} className="text-primary" />
                 Полотно формы
               </div>
-              {rubricFields.map((field, index) => (
+              {viewModel.rubricFields.map((field, index) => (
                 <div className="grid gap-3 rounded-md border border-border p-3" key={field.key}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 gap-3">
@@ -934,7 +943,7 @@ export function RubricDetailShell({
                 <Eye size={18} className="text-primary" />
                 Предпросмотр формы
               </div>
-              {previewBlocks.map(([index, name, note]) => (
+              {viewModel.previewBlocks.map(({ index, name, note }) => (
                 <div className="grid grid-cols-[28px_1fr] gap-2 rounded-md border border-border p-2" key={index}>
                   <span className="grid size-7 place-items-center rounded bg-surface-muted text-xs font-medium text-muted">
                     {index}
@@ -974,7 +983,7 @@ export function RubricDetailShell({
                 <ShieldCheck size={18} className="text-primary" />
                 Правила стиля
               </div>
-              {styleRules.map((rule) => (
+              {viewModel.styleRules.map((rule) => (
                 <div className="flex gap-2 text-sm leading-6 text-muted" key={rule}>
                   <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
                   <span>{rule}</span>
@@ -988,14 +997,23 @@ export function RubricDetailShell({
   );
 }
 
-export function ProjectSettingsShell({ projectId }: { projectId: string }) {
+export function ProjectSettingsShell({
+  projectId,
+  viewModel,
+}: {
+  projectId: string;
+  viewModel: ProjectSettingsViewModel;
+}) {
   return (
     <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Настройки проекта" />
       <section className="grid gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Badge>Проект {projectId}</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge>Проект {viewModel.projectLabel || projectId}</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+            </div>
             <h1 className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">
               Идентичность, доступы и версии
             </h1>
@@ -1017,21 +1035,21 @@ export function ProjectSettingsShell({ projectId }: { projectId: string }) {
             </Button>
           </div>
         </div>
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="grid gap-4">
             <Card className="grid gap-4">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <ClipboardCheck size={18} className="text-primary" />
-                Профиль проекта
+              Профиль проекта
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  ["Название", "Что поесть? Армавир"],
-                  ["Slug", "chto-poest-armavir"],
-                  ["Язык", "ru"],
-                  ["Тематика", "Локальные обзоры еды"],
-                ].map(([label, value]) => (
+                {viewModel.profileFields.map(({ label, value }) => (
                   <label className="grid gap-1.5 text-sm" key={label}>
                     <span className="font-medium text-foreground">{label}</span>
                     <input
@@ -1046,10 +1064,10 @@ export function ProjectSettingsShell({ projectId }: { projectId: string }) {
             <Card className="grid gap-4">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <RadioTower size={18} className="text-primary" />
-                Площадки проекта
+              Площадки проекта
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                {platformOptions.map(([name, note, enabled]) => (
+                {viewModel.platformOptions.map(({ enabled, name, note }) => (
                   <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={name}>
                     <span className="flex items-center justify-between gap-3">
                       <span className="font-medium text-foreground">{name}</span>
@@ -1064,13 +1082,9 @@ export function ProjectSettingsShell({ projectId }: { projectId: string }) {
             <Card className="grid gap-4">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Users size={18} className="text-primary" />
-                Роли и публикация
+              Роли и публикация
               </div>
-              {[
-                ["Владелец", "может управлять биллингом, проектом и публикациями"],
-                ["Администратор", "может управлять проектом и публикациями"],
-                ["Редактор", "готовит материалы, но публикует только при выданном content.publish"],
-              ].map(([role, note]) => (
+              {viewModel.roleNotes.map(({ note, role }) => (
                 <div className="rounded-md border border-border p-3 text-sm" key={role}>
                   <div className="font-medium text-foreground">{role}</div>
                   <div className="mt-1 text-muted">{note}</div>
@@ -1083,9 +1097,9 @@ export function ProjectSettingsShell({ projectId }: { projectId: string }) {
             <Card className="grid gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <ShieldCheck size={18} className="text-primary" />
-                Версионность
+              Версионность
               </div>
-              {["Текущая версия: v9", "Изменение настроек создаёт v10", "Исторические материалы остаются на старых версиях"].map((item) => (
+              {viewModel.versionNotes.map((item) => (
                 <div className="flex gap-2 text-sm leading-6 text-muted" key={item}>
                   <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
                   <span>{item}</span>

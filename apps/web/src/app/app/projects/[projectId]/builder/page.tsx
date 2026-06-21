@@ -1,4 +1,5 @@
 import { ProjectBuilderShell } from "@/components/phase03/project-builder-shell";
+import { getProjectBuilderViewModel } from "@/services/projects";
 
 export default async function ProjectBuilderPage({
   params,
@@ -6,5 +7,6 @@ export default async function ProjectBuilderPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  return <ProjectBuilderShell projectId={projectId} />;
+  const viewModel = await getProjectBuilderViewModel(projectId);
+  return <ProjectBuilderShell projectId={projectId} viewModel={viewModel} />;
 }

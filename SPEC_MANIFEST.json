@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T05:30:19.163504+00:00",
+  "generated_at": "2026-06-21T05:42:24.732663+00:00",
   "canonical_language": "en",
-  "file_count": 390,
+  "file_count": 392,
   "files": [
     {
       "path": ".dockerignore",
@@ -152,8 +152,8 @@
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
-      "size_bytes": 292,
-      "sha256": "afe940d88ac97b6275d5c89782b1d423a801493015252605b7dc4f37740ff0b6"
+      "size_bytes": 445,
+      "sha256": "6474f18d0318c036b5376872db38842b75fa7f2d125a7e39636b69ac970610f4"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/examples/page.tsx",
@@ -162,8 +162,8 @@
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/page.tsx",
-      "size_bytes": 283,
-      "sha256": "9c5ed825ac76a174dd3b46390e6abd67fc877345408c238e3dc32ba2aa8a0acb"
+      "size_bytes": 434,
+      "sha256": "fe5300805b33944425d5d887d0f5f83d623c0324ca4f983281eeea0c5cab5487"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/rubrics/[rubricId]/page.tsx",
@@ -182,13 +182,13 @@
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/settings/page.tsx",
-      "size_bytes": 296,
-      "sha256": "a0433942879126f5837dcdf629287702c90a456d3e30abbe18d25ad169cfedbe"
+      "size_bytes": 451,
+      "sha256": "8097a00cffb429c96fa45f0d207b54a27ac11b6bc17cfa95d7151b5a6ef349cd"
     },
     {
       "path": "apps/web/src/app/app/projects/new/page.tsx",
-      "size_bytes": 154,
-      "sha256": "8ab6d8c686b83aabfc157dffb235491f0b9b0e3cbdabd62e1267381950111213"
+      "size_bytes": 296,
+      "sha256": "c36bf8104dcace615862c58cb6d483751db95113a19917311225e27e8d6ea38e"
     },
     {
       "path": "apps/web/src/app/app/projects/page.tsx",
@@ -332,8 +332,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 50597,
-      "sha256": "c99a1e7f377be79f1c0c58f8764bdc5eedb24fd707d4ec516db4e18cb3cb0bd0"
+      "size_bytes": 50481,
+      "sha256": "287dd6ed341fe2e0da3c3698fd65ed0484d0014a5a2c125186d0b1a516453985"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
@@ -477,8 +477,8 @@
     },
     {
       "path": "apps/web/src/services/projects.ts",
-      "size_bytes": 6743,
-      "sha256": "cbbd4e66921e0c5a5a34a46030bd8116297a28da724c8f99860187e54a572ab2"
+      "size_bytes": 18155,
+      "sha256": "422847b1c22f372e37c2be884d201d9c81cf2ecc9dc8d38feb7a2767302d251f"
     },
     {
       "path": "apps/web/src/services/publications.ts",
@@ -1191,6 +1191,16 @@
       "sha256": "bf152633162a30c7853a50c9d8821437a3268b854985121dac4987c9b6eab4c0"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10J_PROJECT_BUILDER_SERVICE_BOUNDARY.md",
+      "size_bytes": 3619,
+      "sha256": "3a6e5fc1d5718813167d3e28b4bcb5b0a5b09b87e89a8f572af09cc4fb9f6eb5"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10J_REPORT_RU.md",
+      "size_bytes": 4054,
+      "sha256": "b26afc55f88924c51a0788e31f31934a85de26370c7ac8c933ededa0bfad57eb"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1212,8 +1222,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 5934,
-      "sha256": "9f9323dfa7459bf65aae39729fa02b71544cf2d3b6b99637288b34436682df40"
+      "size_bytes": 6197,
+      "sha256": "7128648c00bc267aa230a8887a7f5c3921c9f9b8e7774cd54ad874a0f3d9901b"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",
