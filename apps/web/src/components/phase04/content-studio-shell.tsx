@@ -36,6 +36,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
+  addRepeatableGroupAction,
+  saveGuidedFieldAction,
+} from "@/services/content-actions";
+import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
   type NewContentViewModel,
@@ -61,8 +65,10 @@ function StudioHeader({ title, label = "Этап 04" }: { title: string; label?:
 }
 
 function GuidedFieldControl({
+  canMutate,
   field,
 }: {
+  canMutate: boolean;
   field: ContentStudioViewModel["guidedForm"]["fields"][number];
 }) {
   const placeholder = field.required ? "Нужно заполнить перед сборкой" : "Можно заполнить позже";
@@ -72,8 +78,9 @@ function GuidedFieldControl({
       <textarea
         className="min-h-28 resize-y rounded-md border border-border bg-background px-3 py-2 text-sm leading-6 outline-none"
         defaultValue={field.value}
+        name="value"
         placeholder={placeholder}
-        readOnly
+        readOnly={!canMutate}
       />
     );
   }
@@ -92,7 +99,7 @@ function GuidedFieldControl({
   if (field.inputKind === "checkbox") {
     return (
       <label className="flex items-center gap-2 rounded-md border border-border bg-background p-3 text-sm text-muted">
-        <input checked={field.value === "true"} disabled readOnly type="checkbox" />
+        <input defaultChecked={field.value === "true"} disabled={!canMutate} name="value" type="checkbox" value="true" />
         <span>{field.value || placeholder}</span>
       </label>
     );
@@ -102,8 +109,9 @@ function GuidedFieldControl({
     return (
       <select
         className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none"
-        disabled
-        value={field.value}
+        defaultValue={field.value}
+        disabled={!canMutate}
+        name="value"
       >
         <option>{field.value || placeholder}</option>
       </select>
@@ -118,18 +126,32 @@ function GuidedFieldControl({
     <input
       className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
       defaultValue={field.value}
+      name="value"
       placeholder={placeholder}
-      readOnly
+      readOnly={!canMutate}
       type={field.inputKind === "number" ? "text" : "text"}
     />
   );
 }
 
 function GuidedFieldCard({
+  mutation,
   field,
 }: {
+  mutation: {
+    canMutate: boolean;
+    contentId: string;
+    itemVersion: number | null;
+  };
   field: ContentStudioViewModel["guidedForm"]["fields"][number];
 }) {
+  const canSubmit =
+    mutation.canMutate &&
+    !field.locked &&
+    field.inputKind !== "custom" &&
+    field.inputKind !== "media" &&
+    field.inputKind !== "readonly";
+
   return (
     <div className="grid gap-3 rounded-md border border-border bg-background p-3">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
@@ -137,7 +159,8 @@ function GuidedFieldCard({
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <div className="break-words text-sm font-medium text-foreground">{field.label}</div>
             {field.required ? <Badge tone="warning">обязательно</Badge> : <Badge>опционально</Badge>}
-            {field.locked ? <Badge tone="success">fact-lock</Badge> : null}
+            {field.lockPolicy ? <Badge tone="info">fact-lock</Badge> : null}
+            {field.locked ? <Badge tone="success">зафиксировано</Badge> : null}
           </div>
           <div className="mt-1 text-xs leading-5 text-muted">
             {field.typeLabel} · источник: {field.source}
@@ -150,7 +173,7 @@ function GuidedFieldCard({
       {field.fields.length ? (
         <div className="grid gap-3 md:grid-cols-2">
           {field.fields.map((child) => (
-            <GuidedFieldCard field={child} key={child.key} />
+            <GuidedFieldCard field={child} key={child.key} mutation={mutation} />
           ))}
         </div>
       ) : null}
@@ -165,7 +188,7 @@ function GuidedFieldCard({
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {item.fields.map((child) => (
-                  <GuidedFieldCard field={child} key={child.key} />
+                  <GuidedFieldCard field={child} key={child.key} mutation={mutation} />
                 ))}
               </div>
             </div>
@@ -173,16 +196,83 @@ function GuidedFieldCard({
         </div>
       ) : null}
 
-      {!field.fields.length && !field.groupItems.length ? <GuidedFieldControl field={field} /> : null}
+      {!field.fields.length && !field.groupItems.length ? (
+        <form action={saveGuidedFieldAction} className="grid gap-3">
+          <input name="contentId" type="hidden" value={mutation.contentId} />
+          <input name="fieldKey" type="hidden" value={field.fieldKey} />
+          <input name="sourceType" type="hidden" value="user_text" />
+          {field.blockId ? <input name="blockId" type="hidden" value={field.blockId} /> : null}
+          {mutation.itemVersion !== null ? (
+            <input name="itemVersion" type="hidden" value={mutation.itemVersion} />
+          ) : null}
+          <GuidedFieldControl canMutate={canSubmit} field={field} />
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={!canSubmit} name="intent" size="sm" type="submit" value="save" variant="secondary">
+              <Save size={14} />
+              Сохранить
+            </Button>
+            <Button disabled={!canSubmit} name="intent" size="sm" type="submit" value="lock">
+              <LockKeyhole size={14} />
+              Сохранить и зафиксировать
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      {field.newItemFields.length ? (
+        <form action={addRepeatableGroupAction} className="grid gap-3 rounded-md border border-dashed border-border p-3">
+          <input name="contentId" type="hidden" value={mutation.contentId} />
+          <input name="groupKey" type="hidden" value={field.fieldKey} />
+          <input name="sourceType" type="hidden" value="user_text" />
+          {mutation.itemVersion !== null ? (
+            <input name="itemVersion" type="hidden" value={mutation.itemVersion} />
+          ) : null}
+          <div className="text-sm font-medium text-foreground">Добавить позицию</div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {field.newItemFields.map((item) => (
+              <label className="grid gap-1.5 text-sm" key={item.key}>
+                <span className="font-medium text-foreground">
+                  {item.label}
+                  {item.required ? <span className="text-warning"> *</span> : null}
+                </span>
+                <input
+                  className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
+                  disabled={!mutation.canMutate}
+                  name={`field:${item.key}`}
+                  placeholder={item.typeLabel}
+                />
+              </label>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={!mutation.canMutate} name="intent" size="sm" type="submit" value="save" variant="secondary">
+              <Plus size={14} />
+              Добавить
+            </Button>
+            <Button disabled={!mutation.canMutate} name="intent" size="sm" type="submit" value="lock">
+              <LockKeyhole size={14} />
+              Добавить и зафиксировать
+            </Button>
+          </div>
+        </form>
+      ) : null}
     </div>
   );
 }
 
 function GuidedFormPanel({
+  contentId,
   viewModel,
 }: {
+  contentId: string;
   viewModel: ContentStudioViewModel["guidedForm"];
 }) {
+  const mutation = {
+    canMutate: viewModel.canMutate,
+    contentId,
+    itemVersion: viewModel.itemVersion,
+  };
+
   return (
     <Card className="grid gap-4">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
@@ -202,18 +292,14 @@ function GuidedFormPanel({
       </div>
       <div className="grid gap-3">
         {viewModel.fields.map((field) => (
-          <GuidedFieldCard field={field} key={field.key} />
+          <GuidedFieldCard field={field} key={field.key} mutation={mutation} />
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button disabled type="button" variant="secondary">
-          <Save size={16} />
-          Автосохранение подключается позже
-        </Button>
-        <Button disabled type="button">
-          <LockKeyhole size={16} />
-          Зафиксировать выбранные факты
-        </Button>
+        <Badge tone={viewModel.canMutate ? "success" : "neutral"}>
+          {viewModel.canMutate ? "API-сохранение включено" : "Сохранение доступно в API-режиме"}
+        </Badge>
+        <Badge>Версия: {viewModel.itemVersion ?? "fixture"}</Badge>
       </div>
     </Card>
   );
@@ -612,7 +698,7 @@ export function ContentStudioShell({
           </div>
 
           <div className="grid min-w-0 content-start gap-4">
-            <GuidedFormPanel viewModel={viewModel.guidedForm} />
+            <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
 
             <Card className="grid gap-4">
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">

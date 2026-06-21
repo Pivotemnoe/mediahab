@@ -15,13 +15,13 @@ Add the first schema-driven guided form renderer to Content Studio, using the ru
 
 - `ContentStudioShell` renders a useful technical studio, but the central factual input UI is still a static master-draft area plus input-block cards.
 - Backend already has `GET /api/v1/content-items/{content_id}/guided-form`, returning `json_schema`, `ui_schema`, `generated_fields`, and `editorial_limits`.
-- `apps/web/src/generated-api/openapi.json` does not currently list the content-item guided-form endpoint, even though the backend route exists.
+- The generated OpenAPI artifacts contain the content-item guided-form endpoint; UI Phase 10m uses that as the contract evidence for mutation follow-up work.
 - Existing API mode already reads content item, blocks, and platform variants.
 
 ## Assumptions And Open Questions
 
 - For fixture mode, use a view-model representation of the `Обзор недели` preset input flow because fixture data is allowed behind a service boundary.
-- For API mode, call `/api/v1/content-items/{content_id}/guided-form` with a locally typed DTO until OpenAPI is regenerated.
+- For API mode, call `/api/v1/content-items/{content_id}/guided-form` through the service boundary and keep local frontend DTOs synchronized with generated OpenAPI.
 - The renderer is read/write posture only in this slice: field controls can display values, but persistence remains a later mutation slice.
 - Repeatable groups should display existing block groups when API blocks exist and show one fixture item in fixture mode.
 
@@ -72,7 +72,7 @@ Fixture mode remains the default for build and visual smoke. API mode requires a
 
 ## Risks And Recovery
 
-- The frontend uses a local DTO for `guided-form` until OpenAPI is refreshed; keep this documented and remove the local gap once generated types catch up.
+- The frontend keeps lightweight DTOs in `apps/web/src/services/openapi-types.ts`; keep them synchronized with generated OpenAPI until a generated TypeScript client is introduced.
 - This is a display/posture renderer, not a complete JSON Schema forms engine. Advanced conditional visibility and validation UI should follow after mutation wiring.
 
 ## Status

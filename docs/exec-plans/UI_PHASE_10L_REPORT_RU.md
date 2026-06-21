@@ -12,7 +12,7 @@
 
 ## Противоречия и открытые вопросы
 
-1. Backend route `/api/v1/content-items/{content_id}/guided-form` существует в коде, но текущий generated OpenAPI JSON его не содержит. Нужно обновить OpenAPI generation отдельным backend/API slice.
+1. Backend route `/api/v1/content-items/{content_id}/guided-form` существует и текущие generated OpenAPI JSON уже содержат этот path. Локальные DTO в `openapi-types.ts` нужно держать синхронно до появления полноценного generated TS-клиента.
 2. Renderer пока не является полноценным JSON Schema forms engine: conditional visibility, advanced validation UI и autosave conflict handling остаются следующими задачами.
 3. Repeatable group mutation (`POST /content-items/{content_id}/repeatable-groups/{group_key}`) пока не подключена к UI.
 
@@ -41,5 +41,5 @@
 
 ## Решения, требующие подтверждения
 
-1. Следующий slice: подключать autosave/block mutations для guided form или сначала обновлять OpenAPI generation под `/guided-form`.
+1. Следующий slice: расширять autosave/block mutations для guided form или сначала делать явный conflict UI для `409 version_conflict`.
 2. Нужен ли полноценный JSON Schema forms engine в MVP, или достаточно постепенно расширять текущий renderer под используемые типы полей.

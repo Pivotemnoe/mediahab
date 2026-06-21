@@ -64,9 +64,11 @@ export interface ContentStudioViewModel {
     status: string;
   }>;
   guidedForm: {
+    canMutate: boolean;
     description: string;
     fields: GuidedFormFieldViewModel[];
     generatedFields: string[];
+    itemVersion: number | null;
     limits: string;
     title: string;
   };
@@ -114,6 +116,8 @@ export interface ContentStudioViewModel {
 }
 
 export interface GuidedFormFieldViewModel {
+  blockId: string | null;
+  fieldKey: string;
   fields: GuidedFormFieldViewModel[];
   groupItems: Array<{
     fields: GuidedFormFieldViewModel[];
@@ -124,8 +128,15 @@ export interface GuidedFormFieldViewModel {
   key: string;
   label: string;
   locked: boolean;
+  lockPolicy: boolean;
   maxItems?: number | null;
   minItems?: number | null;
+  newItemFields: Array<{
+    key: string;
+    label: string;
+    required: boolean;
+    typeLabel: string;
+  }>;
   required: boolean;
   source: string;
   status: string;
@@ -196,7 +207,7 @@ const fixtureItems = [
 
 type GuidedBlockSource = Pick<
   BlockOut,
-  "field_key" | "group_index" | "group_key" | "is_locked" | "source_type" | "transcript_text" | "value_json"
+  "field_key" | "group_index" | "group_key" | "id" | "is_locked" | "source_type" | "transcript_text" | "value_json"
 >;
 
 const fixtureGuidedFields: GuidedFormUiField[] = [
@@ -257,6 +268,7 @@ const fixtureGuidedFields: GuidedFormUiField[] = [
 
 const fixtureGuidedBlocks: GuidedBlockSource[] = [
   {
+    id: "fixture-venue",
     field_key: "venue_name",
     group_index: null,
     group_key: null,
@@ -266,6 +278,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     value_json: "ПуриПури",
   },
   {
+    id: "fixture-address",
     field_key: "address",
     group_index: null,
     group_key: null,
@@ -275,6 +288,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     value_json: "Армавир, ул. Кирова, 27",
   },
   {
+    id: "fixture-total-check",
     field_key: "total_check",
     group_index: null,
     group_key: null,
@@ -284,6 +298,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     value_json: "590 ₽ за сет, отдельные позиции в основном обзоре",
   },
   {
+    id: "fixture-atmosphere",
     field_key: "atmosphere",
     group_index: null,
     group_key: null,
@@ -296,6 +311,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     },
   },
   {
+    id: "fixture-dish-name",
     field_key: "name",
     group_index: 0,
     group_key: "dishes",
@@ -305,6 +321,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     value_json: "Хачапури на мангале",
   },
   {
+    id: "fixture-dish-price",
     field_key: "price",
     group_index: 0,
     group_key: "dishes",
@@ -314,6 +331,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
     value_json: "в составе сета 590 ₽",
   },
   {
+    id: "fixture-dish-observations",
     field_key: "observations",
     group_index: 0,
     group_key: "dishes",
@@ -324,6 +342,7 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
       "Хорошая корочка, полностью расплавленный сулугуни, температура удачная. Эту позицию можно брать ещё раз.",
   },
   {
+    id: "fixture-conclusion",
     field_key: "conclusion",
     group_index: null,
     group_key: null,
@@ -585,6 +604,8 @@ function guidedFieldView(
   const status = guidedFieldStatus(field, block, value, groupItems.length);
 
   return {
+    blockId: block?.id ?? null,
+    fieldKey: field.key,
     fields: field.type === "object"
       ? nestedFields.map((child) => guidedFieldView(child, blocks))
       : [],
@@ -593,9 +614,18 @@ function guidedFieldView(
     inputKind: inputKind(field.type),
     key: context.groupKey ? `${context.groupKey}.${context.groupIndex ?? 0}.${field.key}` : field.key,
     label: field.label,
-    locked: Boolean(block?.is_locked || field.fact_locked),
+    locked: Boolean(block?.is_locked),
+    lockPolicy: Boolean(field.fact_locked),
     maxItems: field.max_items,
     minItems: field.min_items,
+    newItemFields: field.type === "repeatable_group"
+      ? nestedFields.map((child) => ({
+          key: child.key,
+          label: child.label,
+          required: Boolean(child.required),
+          typeLabel: fieldTypeLabel(child.type),
+        }))
+      : [],
     required: Boolean(field.required),
     source: sourceLabel(block?.source_type ?? String(field.source ?? "user_input")),
     type: field.type,
@@ -608,16 +638,22 @@ function guidedFieldView(
 function guidedFormView(
   params: {
     blocks: GuidedBlockSource[];
+    canMutate: boolean;
     editorialLimits: GuidedFormResponse["editorial_limits"];
     fields: GuidedFormUiField[];
     generatedFields: string[];
+    itemVersion: number | null;
   },
 ): ContentStudioViewModel["guidedForm"] {
   return {
+    canMutate: params.canMutate,
     description:
-      "Поля построены из активной версии рубрики. В этом slice отображение уже schema-driven, сохранение подключается отдельной mutation-фазой.",
+      params.canMutate
+        ? "Поля построены из активной версии рубрики. Сохранение идёт через backend с CSRF и проверкой версии материала."
+        : "Поля построены из активной версии рубрики. В fixture mode сохранение отключено.",
     fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
     generatedFields: params.generatedFields.map(generatedFieldLabel),
+    itemVersion: params.itemVersion,
     limits: editorialLimitsLabel(params.editorialLimits),
     title: "Фактическая форма рубрики",
   };
@@ -626,9 +662,11 @@ function guidedFormView(
 function fixtureGuidedForm(): ContentStudioViewModel["guidedForm"] {
   return guidedFormView({
     blocks: fixtureGuidedBlocks,
+    canMutate: false,
     editorialLimits: { max_chars: 4100, min_chars: 3500 },
     fields: fixtureGuidedFields,
     generatedFields: ["hook", "transitions", "ratings", "cta", "master_text", "platform_variants"],
+    itemVersion: null,
   });
 }
 
@@ -864,9 +902,11 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     guidedForm: guidedFormResponse
       ? guidedFormView({
           blocks,
+          canMutate: true,
           editorialLimits: guidedFormResponse.editorial_limits,
           fields: guidedFormResponse.ui_schema.fields ?? [],
           generatedFields: guidedFormResponse.generated_fields,
+          itemVersion: item.version,
         })
       : fallback.guidedForm,
     inputBlocks: blocks.length

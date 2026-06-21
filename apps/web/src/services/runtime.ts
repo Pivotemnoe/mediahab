@@ -23,21 +23,26 @@ export function getApiBaseUrl(): string {
   ).replace(/\/$/, "");
 }
 
-async function getServerCookieHeader(): Promise<string | undefined> {
+async function getServerCookies(): Promise<{
+  cookieHeader?: string;
+  csrfToken?: string;
+}> {
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    const value = cookieStore.toString();
-    return value || undefined;
+    const cookieHeader = cookieStore.toString() || undefined;
+    const csrfCookieName = process.env.CSRF_COOKIE_NAME ?? "tmh_csrf";
+    const csrfToken = cookieStore.get(csrfCookieName)?.value;
+    return { cookieHeader, csrfToken };
   } catch {
-    return undefined;
+    return {};
   }
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
   const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
   const headers = new Headers({ Accept: "application/json" });
-  const cookieHeader = await getServerCookieHeader();
+  const { cookieHeader } = await getServerCookies();
 
   if (cookieHeader) {
     headers.set("Cookie", cookieHeader);
@@ -47,6 +52,46 @@ export async function apiGet<T>(path: string): Promise<T> {
     cache: "no-store",
     credentials: "include",
     headers,
+  });
+
+  if (!response.ok) {
+    throw new ApiRequestError(`API request failed with ${response.status}`, response.status, path);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: {
+    body?: unknown;
+    method: "DELETE" | "PATCH" | "POST" | "PUT";
+    requireCsrf?: boolean;
+  },
+): Promise<T> {
+  const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
+  const headers = new Headers({ Accept: "application/json" });
+  const { cookieHeader, csrfToken } = await getServerCookies();
+
+  if (cookieHeader) {
+    headers.set("Cookie", cookieHeader);
+  }
+  if (options.body !== undefined) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (options.requireCsrf ?? true) {
+    if (!csrfToken) {
+      throw new ApiRequestError("CSRF token is missing", 403, path);
+    }
+    headers.set(process.env.CSRF_HEADER_NAME ?? "X-CSRF-Token", csrfToken);
+  }
+
+  const response = await fetch(url, {
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    cache: "no-store",
+    credentials: "include",
+    headers,
+    method: options.method,
   });
 
   if (!response.ok) {
