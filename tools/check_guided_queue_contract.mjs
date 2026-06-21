@@ -27,12 +27,14 @@ new Script(transpiled.outputText, { filename: "guided-queue-contract.cjs" }).run
 
 const {
   createGuidedQueueJob,
+  guidedRepeatableGroupQueueKey,
   hasGuidedQueueValues,
   parseGuidedQueueJob,
   serializeGuidedQueueJob,
 } = moduleScope.module.exports;
 
 assert.equal(typeof createGuidedQueueJob, "function");
+assert.equal(typeof guidedRepeatableGroupQueueKey, "function");
 assert.equal(typeof parseGuidedQueueJob, "function");
 assert.equal(typeof serializeGuidedQueueJob, "function");
 assert.equal(typeof hasGuidedQueueValues, "function");
@@ -132,6 +134,48 @@ assert.deepEqual(normalize(partialMetadataJob.metadata), {
   kind: "field",
   sourceType: "user_text",
 });
+
+const repeatableJob = createGuidedQueueJob({
+  code: "api_unavailable",
+  fieldTypes: {
+    "field:name": "short_text",
+    "field:price": "money",
+  },
+  metadata: {
+    contentId: "content-4",
+    groupKey: "dishes",
+    intent: "save",
+    itemVersion: 12,
+    kind: "repeatable_group",
+    sourceType: "user_text",
+  },
+  recoveryAction: "retry",
+  requestId: "request-4",
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: {
+    "field:name": "Уха",
+    "field:price": "350 RUB",
+  },
+});
+assert.deepEqual(normalize(parseGuidedQueueJob(serializeGuidedQueueJob(repeatableJob))), normalize(repeatableJob));
+assert.equal(
+  guidedRepeatableGroupQueueKey({ contentId: "content-4", groupKey: "dishes" }),
+  "tmh:guided-form-queue:v1:repeatable:content-4:dishes:new",
+);
+
+const invalidRepeatableJob = createGuidedQueueJob({
+  code: null,
+  metadata: {
+    contentId: "content-5",
+    groupKey: "",
+    intent: "lock",
+    kind: "repeatable_group",
+  },
+  recoveryAction: "retry",
+  requestId: null,
+  values: { "field:name": "Суп" },
+});
+assert.equal(invalidRepeatableJob.metadata, null);
 
 const legacyJob = parseGuidedQueueJob(JSON.stringify({
   code: "version_conflict",

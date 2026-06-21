@@ -222,6 +222,64 @@ assert.deepEqual(normalize(newBlockRequestDraft), {
   },
 });
 
+const repeatableRequestDraft = buildGuidedQueueReplayRequestDraft({
+  code: "api_unavailable",
+  fieldTypes: {
+    "field:name": "short_text",
+    "field:price": "money",
+    "field:rating": "rating",
+  },
+  metadata: {
+    contentId: "content-3",
+    groupKey: "dishes",
+    intent: "lock",
+    itemVersion: 14,
+    kind: "repeatable_group",
+    sourceType: "user_text",
+  },
+  recoveryAction: "retry",
+  requestId: "req-4",
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: {
+    "field:name": "Уха",
+    "field:price": "590 ₽",
+    "field:rating": "8",
+  },
+});
+assert.deepEqual(normalize(repeatableRequestDraft), {
+  contentId: "content-3",
+  request: {
+    body: {
+      lock: true,
+      source_type: "user_text",
+      values: {
+        name: { text: "Уха" },
+        price: { amount: 590, currency: "RUB" },
+        rating: 8,
+      },
+      version: 14,
+    },
+    method: "POST",
+    path: "/api/v1/content-items/content-3/repeatable-groups/dishes",
+  },
+  status: "ready",
+  successMessage: "Позиция добавлена и зафиксирована.",
+  typedDraft: {
+    fieldTypes: {
+      "field:name": "short_text",
+      "field:price": "money",
+      "field:rating": "rating",
+    },
+    missingFieldTypes: [],
+    typedValues: {
+      "field:name": { text: "Уха" },
+      "field:price": { amount: 590, currency: "RUB" },
+      "field:rating": 8,
+    },
+    valueCount: 3,
+  },
+});
+
 const incompleteRequestDraft = buildGuidedQueueReplayRequestDraft({
   code: null,
   fieldTypes: {},
@@ -238,6 +296,33 @@ assert.deepEqual(normalize(incompleteRequestDraft), {
     fieldTypes: {},
     missingFieldTypes: ["value"],
     typedValues: { value: { text: "legacy draft" } },
+    valueCount: 1,
+  },
+});
+
+const incompleteRepeatableRequestDraft = buildGuidedQueueReplayRequestDraft({
+  code: null,
+  fieldTypes: {},
+  metadata: {
+    contentId: "content-4",
+    groupKey: "dishes",
+    intent: null,
+    itemVersion: null,
+    kind: "repeatable_group",
+    sourceType: "user_text",
+  },
+  recoveryAction: "retry",
+  requestId: null,
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: { value: "legacy field draft" },
+});
+assert.deepEqual(normalize(incompleteRepeatableRequestDraft), {
+  missing: ["metadata.intent", "values.fields"],
+  status: "incomplete",
+  typedDraft: {
+    fieldTypes: {},
+    missingFieldTypes: ["value"],
+    typedValues: { value: { text: "legacy field draft" } },
     valueCount: 1,
   },
 });

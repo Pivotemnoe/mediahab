@@ -17,7 +17,16 @@ export interface GuidedQueueFieldMetadata {
   sourceType: string;
 }
 
-export type GuidedQueueMetadata = GuidedQueueFieldMetadata;
+export interface GuidedQueueRepeatableGroupMetadata {
+  contentId: string;
+  groupKey: string;
+  intent: GuidedQueueIntent | null;
+  itemVersion: number | null;
+  kind: "repeatable_group";
+  sourceType: string;
+}
+
+export type GuidedQueueMetadata = GuidedQueueFieldMetadata | GuidedQueueRepeatableGroupMetadata;
 
 export interface GuidedQueueJob {
   code: string | null;
@@ -39,6 +48,13 @@ export function guidedFieldQueueKey(params: {
   fieldKey: string;
 }): string {
   return `${guidedFormQueuePrefix}:field:${params.contentId}:${params.fieldKey}:${params.blockId ?? "new"}`;
+}
+
+export function guidedRepeatableGroupQueueKey(params: {
+  contentId: string;
+  groupKey: string;
+}): string {
+  return `${guidedFormQueuePrefix}:repeatable:${params.contentId}:${params.groupKey}:new`;
 }
 
 export function hasGuidedQueueValues(values: GuidedQueueValues): boolean {
@@ -134,9 +150,9 @@ function sanitizeQueueMetadata(value: unknown): GuidedQueueMetadata | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
-  const metadata = value as Partial<GuidedQueueFieldMetadata>;
+  const metadata = value as Partial<GuidedQueueFieldMetadata | GuidedQueueRepeatableGroupMetadata>;
   if (metadata.kind !== "field") {
-    return null;
+    return sanitizeRepeatableGroupMetadata(metadata);
   }
   if (typeof metadata.contentId !== "string" || !metadata.contentId.trim()) {
     return null;
@@ -154,6 +170,33 @@ function sanitizeQueueMetadata(value: unknown): GuidedQueueMetadata | null {
       ? metadata.itemVersion
       : null,
     kind: "field",
+    sourceType: typeof metadata.sourceType === "string" && metadata.sourceType.trim()
+      ? metadata.sourceType
+      : "user_text",
+  };
+}
+
+function sanitizeRepeatableGroupMetadata(
+  metadata: Partial<GuidedQueueFieldMetadata | GuidedQueueRepeatableGroupMetadata>,
+): GuidedQueueRepeatableGroupMetadata | null {
+  if (metadata.kind !== "repeatable_group") {
+    return null;
+  }
+  if (typeof metadata.contentId !== "string" || !metadata.contentId.trim()) {
+    return null;
+  }
+  if (typeof metadata.groupKey !== "string" || !metadata.groupKey.trim()) {
+    return null;
+  }
+
+  return {
+    contentId: metadata.contentId,
+    groupKey: metadata.groupKey,
+    intent: isGuidedQueueIntent(metadata.intent) ? metadata.intent : null,
+    itemVersion: typeof metadata.itemVersion === "number" && Number.isFinite(metadata.itemVersion)
+      ? metadata.itemVersion
+      : null,
+    kind: "repeatable_group",
     sourceType: typeof metadata.sourceType === "string" && metadata.sourceType.trim()
       ? metadata.sourceType
       : "user_text",

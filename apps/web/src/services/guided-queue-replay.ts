@@ -23,7 +23,7 @@ export interface GuidedQueueReplayDraft {
   valueCount: number;
 }
 
-type GuidedQueueReplayRequestMethod = "PATCH" | "PUT";
+type GuidedQueueReplayRequestMethod = "PATCH" | "POST" | "PUT";
 
 export interface GuidedQueueReplayRequest {
   body: unknown;
@@ -79,6 +79,38 @@ export function buildGuidedQueueReplayRequestDraft(job: GuidedQueueJob): GuidedQ
   if (!metadata?.intent) {
     missing.push("metadata.intent");
   }
+  if (metadata?.kind === "repeatable_group") {
+    const repeatableValues = repeatableGroupTypedValues(typedDraft.typedValues);
+    if (Object.keys(repeatableValues).length === 0) {
+      missing.push("values.fields");
+    }
+    if (!metadata.intent || Object.keys(repeatableValues).length === 0) {
+      return {
+        missing,
+        status: "incomplete",
+        typedDraft,
+      };
+    }
+
+    const lock = metadata.intent === "lock";
+    return {
+      contentId: metadata.contentId,
+      request: {
+        body: {
+          lock,
+          source_type: metadata.sourceType,
+          values: repeatableValues,
+          version: metadata.itemVersion,
+        },
+        method: "POST",
+        path: `/api/v1/content-items/${metadata.contentId}/repeatable-groups/${metadata.groupKey}`,
+      },
+      status: "ready",
+      successMessage: lock ? "Позиция добавлена и зафиксирована." : "Позиция добавлена.",
+      typedDraft,
+    };
+  }
+
   if (!Object.prototype.hasOwnProperty.call(typedDraft.typedValues, "value")) {
     missing.push("values.value");
   }
@@ -129,6 +161,16 @@ export function buildGuidedQueueReplayRequestDraft(job: GuidedQueueJob): GuidedQ
     successMessage,
     typedDraft,
   };
+}
+
+function repeatableGroupTypedValues(
+  typedValues: Record<string, GuidedActionValue>,
+): Record<string, GuidedActionValue> {
+  return Object.fromEntries(
+    Object.entries(typedValues)
+      .filter(([key]) => key.startsWith("field:"))
+      .map(([key, value]) => [key.slice("field:".length), value]),
+  );
 }
 
 function hasReplayDraftValue(value: string | string[]): boolean {

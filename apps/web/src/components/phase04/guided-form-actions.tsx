@@ -559,6 +559,7 @@ function manualReplayMissingLabel(key: string): string {
   const labels: Record<string, string> = {
     metadata: "данных формы",
     "metadata.intent": "действия сохранения",
+    "values.fields": "полей позиции",
     "values.value": "значения поля",
   };
   return labels[key] ?? key;
