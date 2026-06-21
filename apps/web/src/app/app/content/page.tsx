@@ -1,5 +1,8 @@
 import { ContentIndexShell } from "@/components/phase04/content-studio-shell";
+import { getContentIndexViewModel } from "@/services/content";
 
-export default function ContentPage() {
-  return <ContentIndexShell />;
+export default async function ContentPage() {
+  const viewModel = await getContentIndexViewModel();
+
+  return <ContentIndexShell viewModel={viewModel} />;
 }

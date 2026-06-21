@@ -42,7 +42,6 @@ import {
   masterDraftParagraphs,
   platformPreviews,
   revisionEvents,
-  studioSummary,
   transcriptReview,
 } from "@/features/content-studio/content-studio-fixtures";
 import {
@@ -59,23 +58,10 @@ import {
   mediaLibrary,
   mediaWarnings,
 } from "@/features/library-planning/library-planning-fixtures";
-
-const contentItems = [
-  {
-    title: "Старый город, бизнес-ланч",
-    project: "Что поесть? Армавир",
-    rubric: "Поесть до 500 рублей",
-    status: "сбор фактов",
-    version: "v4",
-  },
-  {
-    title: "ПуриПури, сет за 590 ₽",
-    project: "Что поесть? Армавир",
-    rubric: "Обзор недели",
-    status: "готово к сборке",
-    version: "v7",
-  },
-];
+import {
+  type ContentIndexViewModel,
+  type ContentStudioViewModel,
+} from "@/services/content";
 
 const mediaItems = [
   ["01", "Фото фасада", "готово", "обложка"],
@@ -101,7 +87,7 @@ function StudioHeader({ title, label = "Этап 04" }: { title: string; label?:
   );
 }
 
-export function ContentIndexShell() {
+export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewModel }) {
   return (
     <div className="grid gap-4">
       <StudioHeader title="Контент" />
@@ -114,17 +100,26 @@ export function ContentIndexShell() {
               Факты собираются отдельно от будущей сборки ИИ.
             </p>
           </div>
-          <Button asChild>
-            <Link href="/app/content/new">
-              <Plus size={16} />
-              Создать материал
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
+            <Button asChild>
+              <Link href="/app/content/new">
+                <Plus size={16} />
+                Создать материал
+              </Link>
+            </Button>
+          </div>
         </div>
 
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
         <div className="grid gap-4 md:grid-cols-2">
-          {contentItems.map((item) => (
-            <Card className="grid gap-4" key={item.title}>
+          {viewModel.items.map((item) => (
+            <Card className="grid gap-4" key={item.href}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Badge>{item.status}</Badge>
@@ -146,7 +141,7 @@ export function ContentIndexShell() {
                 </div>
               </div>
               <Button asChild variant="secondary">
-                <Link href="/app/content/demo-review">Открыть студию</Link>
+                <Link href={item.href}>Открыть студию</Link>
               </Button>
             </Card>
           ))}
@@ -340,7 +335,15 @@ export function NewContentShell() {
   );
 }
 
-export function ContentStudioShell({ contentId }: { contentId: string }) {
+export function ContentStudioShell({
+  contentId,
+  viewModel,
+}: {
+  contentId: string;
+  viewModel: ContentStudioViewModel;
+}) {
+  const { summary } = viewModel;
+
   return (
     <div className="grid min-w-0 gap-5">
       <StudioHeader label="Этап UI 05" title="Контент-студия" />
@@ -348,22 +351,25 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
         <Card className="grid gap-4">
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <Badge>Материал {contentId}</Badge>
+              <div className="flex flex-wrap gap-2">
+                <Badge>Материал {viewModel.materialLabel || contentId}</Badge>
+                <Badge>{viewModel.modeLabel}</Badge>
+              </div>
               <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
-                {studioSummary.title}
+                {summary.title}
               </h1>
               <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
-                <span>{studioSummary.project}</span>
+                <span>{summary.project}</span>
                 <span>·</span>
-                <span>{studioSummary.rubric}</span>
+                <span>{summary.rubric}</span>
                 <span>·</span>
-                <span>{studioSummary.range}</span>
+                <span>{summary.range}</span>
               </div>
             </div>
             <div className="flex max-w-full flex-wrap gap-2">
               <Button type="button" variant="secondary">
                 <Save size={16} />
-                {studioSummary.autosave}
+                {summary.autosave}
               </Button>
               <Button type="button">
                 <WandSparkles size={16} />
@@ -373,9 +379,9 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
           </div>
           <div className="grid gap-3 text-sm md:grid-cols-4">
             {[
-              ["Статус", studioSummary.status],
-              ["Версия", studioSummary.revision],
-              ["Факт-локи", studioSummary.lockedFacts],
+              ["Статус", summary.status],
+              ["Версия", summary.revision],
+              ["Факт-локи", summary.lockedFacts],
               ["Публикация", "только после проверки"],
             ].map(([label, value]) => (
               <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
@@ -385,6 +391,12 @@ export function ContentStudioShell({ contentId }: { contentId: string }) {
             ))}
           </div>
         </Card>
+
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
 
         <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
           <div className="grid min-w-0 content-start gap-4">
