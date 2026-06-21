@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { AlertTriangle, CheckCircle2, LockKeyhole, Plus, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle2, LockKeyhole, Plus, RotateCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,19 +29,39 @@ function statusClassName(tone: GuidedActionState["tone"]): string {
   return "border-border bg-surface-muted text-muted";
 }
 
-function ActionStatus({ state }: { state: GuidedActionState }) {
+function refreshPage() {
+  window.location.reload();
+}
+
+function ActionStatus({ canRetry, state }: { canRetry: boolean; state: GuidedActionState }) {
   const Icon = state.tone === "success" ? CheckCircle2 : AlertTriangle;
+  const showRefresh = state.recoveryAction === "refresh";
+  const showRetry = state.recoveryAction === "retry" && canRetry;
 
   return (
-    <div
-      aria-live="polite"
-      className={`flex min-w-0 items-start gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(state.tone)}`}
-    >
-      <Icon className="mt-0.5 shrink-0" size={14} />
-      <span className="min-w-0 break-words">
-        {state.message}
-        {state.requestId ? <span className="block">ID запроса: {state.requestId}</span> : null}
-      </span>
+    <div className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(state.tone)}`}>
+      <div aria-live="polite" className="flex min-w-0 items-start gap-2">
+        <Icon className="mt-0.5 shrink-0" size={14} />
+        <span className="min-w-0 break-words">
+          {state.message}
+          {state.requestId ? <span className="block">ID запроса: {state.requestId}</span> : null}
+        </span>
+      </div>
+      {showRefresh ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={refreshPage} size="sm" type="button" variant="secondary">
+            <RotateCcw size={14} />
+            Обновить страницу
+          </Button>
+          <span className="text-muted">После обновления форма получит актуальную версию материала.</span>
+        </div>
+      ) : null}
+      {showRetry ? (
+        <div className="flex min-w-0 items-center gap-2 text-muted">
+          <RotateCcw className="shrink-0" size={14} />
+          <span className="min-w-0 break-words">Исправьте поле при необходимости и нажмите кнопку сохранения ещё раз.</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -123,7 +143,7 @@ export function GuidedFieldActionForm({
       {field.blockId ? <input name="blockId" type="hidden" value={field.blockId} /> : null}
       {itemVersion !== null ? <input name="itemVersion" type="hidden" value={itemVersion} /> : null}
       <GuidedFieldControl canMutate={canSubmit} field={field} />
-      <ActionStatus state={state} />
+      <ActionStatus canRetry={canSubmit} state={state} />
       <div className="flex flex-wrap gap-2">
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="save" variant="secondary">
           <Save size={14} />
@@ -175,7 +195,7 @@ export function AddRepeatableGroupActionForm({
           </label>
         ))}
       </div>
-      <ActionStatus state={state} />
+      <ActionStatus canRetry={canMutate} state={state} />
       <div className="flex flex-wrap gap-2">
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="save" variant="secondary">
           <Plus size={14} />

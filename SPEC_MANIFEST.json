@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T11:42:37.994590+00:00",
+  "generated_at": "2026-06-21T11:56:40.196522+00:00",
   "canonical_language": "en",
-  "file_count": 403,
+  "file_count": 405,
   "files": [
     {
       "path": ".dockerignore",
@@ -342,8 +342,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 6650,
-      "sha256": "76901cbbbcc9a163666ad2e2528a71047f09d8af900287b15c316e22f6887c06"
+      "size_bytes": 7772,
+      "sha256": "f6e819d68755dd27f945737aac6be1071342d79ee03f4cd6d9ce40958e0a4fb4"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -462,8 +462,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 5213,
-      "sha256": "5943996ba6d0533e83e6b8355c81412b8a274e2332d248342b0076a514779458"
+      "size_bytes": 5406,
+      "sha256": "2d9fcd6921e25e3bf905bb79be120f9b01185bc47c621b04a82c378132ef2d46"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -477,8 +477,8 @@
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
-      "size_bytes": 397,
-      "sha256": "11019f24b46b73e83a04005e691ddec63b4ead923d71754852570685d27601b4"
+      "size_bytes": 528,
+      "sha256": "1c5b6f70204f24142dbaa556f634517019a07a652ea476d84232701300937953"
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
@@ -1254,6 +1254,16 @@
       "path": "docs/exec-plans/UI_PHASE_10N_REPORT_RU.md",
       "size_bytes": 3810,
       "sha256": "10034f75cdc0aa07a3cc6376718870d4b342bd1142a2ddef9831891faa70b6c3"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10O_GUIDED_FORM_RECOVERY_UI.md",
+      "size_bytes": 4121,
+      "sha256": "a4d3879c3ddb3124d4fc2a0877439522efdc9409e2cd23382b61806673774b37"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10O_REPORT_RU.md",
+      "size_bytes": 3393,
+      "sha256": "edfaf4dbd003bd51dcfa822045a91c802f1d62bf9d4954d4aa28301fefa003ba"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",

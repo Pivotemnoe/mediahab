@@ -36,6 +36,7 @@ function successState(message: string): GuidedActionState {
   return {
     code: "ok",
     message,
+    recoveryAction: "none",
     requestId: null,
     tone: "success",
   };
@@ -54,6 +55,9 @@ function actionErrorState(error: unknown): GuidedActionState {
     return {
       code: error.code,
       message: messages[error.code] ?? fallback,
+      recoveryAction: ["csrf_invalid", "csrf_required", "version_conflict"].includes(error.code)
+        ? "refresh"
+        : "retry",
       requestId: error.requestId,
       tone: error.code === "version_conflict" ? "warning" : "danger",
     };
@@ -62,6 +66,7 @@ function actionErrorState(error: unknown): GuidedActionState {
   return {
     code: "api_unavailable",
     message: "API недоступен или соединение прервано. Изменение не сохранено.",
+    recoveryAction: "retry",
     requestId: null,
     tone: "danger",
   };
