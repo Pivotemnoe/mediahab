@@ -5,10 +5,40 @@ export class ApiRequestError extends Error {
     message: string,
     readonly status: number,
     readonly path: string,
+    readonly code: string = "api_error",
+    readonly details: Record<string, unknown> = {},
+    readonly requestId: string | null = null,
   ) {
     super(message);
     this.name = "ApiRequestError";
   }
+}
+
+async function errorFromResponse(response: Response, path: string): Promise<ApiRequestError> {
+  try {
+    const payload = await response.json() as {
+      error?: {
+        code?: unknown;
+        details?: unknown;
+        message?: unknown;
+        request_id?: unknown;
+      };
+    };
+    const error = payload.error;
+    if (error && typeof error === "object") {
+      const code = typeof error.code === "string" ? error.code : "api_error";
+      const message = typeof error.message === "string" ? error.message : `API request failed with ${response.status}`;
+      const details = error.details && typeof error.details === "object" && !Array.isArray(error.details)
+        ? error.details as Record<string, unknown>
+        : {};
+      const requestId = typeof error.request_id === "string" ? error.request_id : null;
+      return new ApiRequestError(message, response.status, path, code, details, requestId);
+    }
+  } catch {
+    // Non-JSON errors are normalized below.
+  }
+
+  return new ApiRequestError(`API request failed with ${response.status}`, response.status, path);
 }
 
 export function getDataMode(): DataMode {
@@ -55,7 +85,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new ApiRequestError(`API request failed with ${response.status}`, response.status, path);
+    throw await errorFromResponse(response, path);
   }
 
   return response.json() as Promise<T>;
@@ -81,7 +111,7 @@ export async function apiRequest<T>(
   }
   if (options.requireCsrf ?? true) {
     if (!csrfToken) {
-      throw new ApiRequestError("CSRF token is missing", 403, path);
+      throw new ApiRequestError("CSRF token is missing", 403, path, "csrf_required");
     }
     headers.set(process.env.CSRF_HEADER_NAME ?? "X-CSRF-Token", csrfToken);
   }
@@ -95,7 +125,7 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    throw new ApiRequestError(`API request failed with ${response.status}`, response.status, path);
+    throw await errorFromResponse(response, path);
   }
 
   return response.json() as Promise<T>;

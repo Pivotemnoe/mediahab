@@ -36,9 +36,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  addRepeatableGroupAction,
-  saveGuidedFieldAction,
-} from "@/services/content-actions";
+  AddRepeatableGroupActionForm,
+  GuidedFieldActionForm,
+} from "@/components/phase04/guided-form-actions";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
@@ -196,65 +196,30 @@ function GuidedFieldCard({
         </div>
       ) : null}
 
-      {!field.fields.length && !field.groupItems.length ? (
-        <form action={saveGuidedFieldAction} className="grid gap-3">
-          <input name="contentId" type="hidden" value={mutation.contentId} />
-          <input name="fieldKey" type="hidden" value={field.fieldKey} />
-          <input name="sourceType" type="hidden" value="user_text" />
-          {field.blockId ? <input name="blockId" type="hidden" value={field.blockId} /> : null}
-          {mutation.itemVersion !== null ? (
-            <input name="itemVersion" type="hidden" value={mutation.itemVersion} />
-          ) : null}
-          <GuidedFieldControl canMutate={canSubmit} field={field} />
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={!canSubmit} name="intent" size="sm" type="submit" value="save" variant="secondary">
-              <Save size={14} />
-              Сохранить
-            </Button>
-            <Button disabled={!canSubmit} name="intent" size="sm" type="submit" value="lock">
-              <LockKeyhole size={14} />
-              Сохранить и зафиксировать
-            </Button>
-          </div>
-        </form>
+      {!field.fields.length && !field.groupItems.length && field.inputKind === "media" ? (
+        <GuidedFieldControl canMutate={canSubmit} field={field} />
+      ) : null}
+
+      {!field.fields.length &&
+      !field.groupItems.length &&
+      field.inputKind !== "custom" &&
+      field.inputKind !== "media" &&
+      field.inputKind !== "readonly" ? (
+        <GuidedFieldActionForm
+          canSubmit={canSubmit}
+          contentId={mutation.contentId}
+          field={field}
+          itemVersion={mutation.itemVersion}
+        />
       ) : null}
 
       {field.newItemFields.length ? (
-        <form action={addRepeatableGroupAction} className="grid gap-3 rounded-md border border-dashed border-border p-3">
-          <input name="contentId" type="hidden" value={mutation.contentId} />
-          <input name="groupKey" type="hidden" value={field.fieldKey} />
-          <input name="sourceType" type="hidden" value="user_text" />
-          {mutation.itemVersion !== null ? (
-            <input name="itemVersion" type="hidden" value={mutation.itemVersion} />
-          ) : null}
-          <div className="text-sm font-medium text-foreground">Добавить позицию</div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {field.newItemFields.map((item) => (
-              <label className="grid gap-1.5 text-sm" key={item.key}>
-                <span className="font-medium text-foreground">
-                  {item.label}
-                  {item.required ? <span className="text-warning"> *</span> : null}
-                </span>
-                <input
-                  className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
-                  disabled={!mutation.canMutate}
-                  name={`field:${item.key}`}
-                  placeholder={item.typeLabel}
-                />
-              </label>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={!mutation.canMutate} name="intent" size="sm" type="submit" value="save" variant="secondary">
-              <Plus size={14} />
-              Добавить
-            </Button>
-            <Button disabled={!mutation.canMutate} name="intent" size="sm" type="submit" value="lock">
-              <LockKeyhole size={14} />
-              Добавить и зафиксировать
-            </Button>
-          </div>
-        </form>
+        <AddRepeatableGroupActionForm
+          canMutate={mutation.canMutate}
+          contentId={mutation.contentId}
+          field={field}
+          itemVersion={mutation.itemVersion}
+        />
       ) : null}
     </div>
   );

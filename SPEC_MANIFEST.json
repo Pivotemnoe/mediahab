@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T06:14:12.399701+00:00",
+  "generated_at": "2026-06-21T11:42:37.994590+00:00",
   "canonical_language": "en",
-  "file_count": 399,
+  "file_count": 403,
   "files": [
     {
       "path": ".dockerignore",
@@ -337,8 +337,13 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 39991,
-      "sha256": "561eb382d42b0810870ede7dbf4ab1b3279311d7da0e6453ebbe58e5c8936ab9"
+      "size_bytes": 37751,
+      "sha256": "be510debfc0bc35251a85b59e7339444d183ac417d3be0e72b04459d64a07986"
+    },
+    {
+      "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
+      "size_bytes": 6650,
+      "sha256": "76901cbbbcc9a163666ad2e2528a71047f09d8af900287b15c316e22f6887c06"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -457,8 +462,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 2948,
-      "sha256": "12641e32eb94a611959fddf6cf9af1c7e69bccc4a5058097636def00f2c85228"
+      "size_bytes": 5213,
+      "sha256": "5943996ba6d0533e83e6b8355c81412b8a274e2332d248342b0076a514779458"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -469,6 +474,11 @@
       "path": "apps/web/src/services/dashboard.ts",
       "size_bytes": 6407,
       "sha256": "e66d49d770c2db2a1a3adcf74006e8e67393096b230c2477276e8e5bc616986c"
+    },
+    {
+      "path": "apps/web/src/services/guided-action-state.ts",
+      "size_bytes": 397,
+      "sha256": "11019f24b46b73e83a04005e691ddec63b4ead923d71754852570685d27601b4"
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
@@ -492,8 +502,8 @@
     },
     {
       "path": "apps/web/src/services/runtime.ts",
-      "size_bytes": 2920,
-      "sha256": "bb8bdd8bd8d7b7dd5a59a698095ddf70c04b9086f84bf08b221c87ea669281c1"
+      "size_bytes": 4066,
+      "sha256": "d11206ebdaf712597f0bf1ca00df8370b74665776bd671f17897fefa2b05a5e7"
     },
     {
       "path": "apps/web/src/services/workspace-settings.ts",
@@ -1234,6 +1244,16 @@
       "path": "docs/exec-plans/UI_PHASE_10M_REPORT_RU.md",
       "size_bytes": 3956,
       "sha256": "40edd043d22f9e71b3083d18fce257dbfca2426f792db328958996e396b7fd82"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10N_GUIDED_FORM_ERROR_UI.md",
+      "size_bytes": 4371,
+      "sha256": "abda112eac2ac6ddf04ee32a87122899918ba0569f7a3fe0e0ac70b6dfaf8293"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10N_REPORT_RU.md",
+      "size_bytes": 3810,
+      "sha256": "10034f75cdc0aa07a3cc6376718870d4b342bd1142a2ddef9831891faa70b6c3"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
