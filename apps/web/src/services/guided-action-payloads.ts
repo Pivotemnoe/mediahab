@@ -16,7 +16,9 @@ type GuidedActionValue =
   | { amount: number; currency: string }
   | { text: string }
   | boolean
-  | number;
+  | number
+  | string
+  | string[];
 
 function requiredText(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -29,6 +31,14 @@ function requiredText(formData: FormData, key: string): string {
 function optionalText(formData: FormData, key: string): string | null {
   const value = formData.get(key);
   return typeof value === "string" && value.trim() ? value : null;
+}
+
+function textValues(formData: FormData, key: string): string[] {
+  return formData.getAll(key).filter((value): value is string => typeof value === "string");
+}
+
+function firstText(values: string[]): string {
+  return values[0] ?? "";
 }
 
 function optionalNumber(formData: FormData, key: string): number | null {
@@ -83,7 +93,12 @@ function numberValue(value: string): GuidedActionValue {
   return Number.isFinite(number) ? number : textValue(value);
 }
 
-function typedValue(value: string, fieldType: string | null): GuidedActionValue {
+function multiSelectValue(values: string[]): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function typedValue(values: string[], fieldType: string | null): GuidedActionValue {
+  const value = firstText(values);
   if (fieldType === "boolean") {
     return booleanValue(value);
   }
@@ -92,6 +107,12 @@ function typedValue(value: string, fieldType: string | null): GuidedActionValue 
   }
   if (fieldType === "number" || fieldType === "rating") {
     return numberValue(value);
+  }
+  if (fieldType === "select") {
+    return value;
+  }
+  if (fieldType === "multi_select") {
+    return multiSelectValue(values);
   }
   return textValue(value);
 }
@@ -102,7 +123,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
   const fieldType = optionalText(formData, "fieldType");
   const blockId = optionalText(formData, "blockId");
   const itemVersion = optionalNumber(formData, "itemVersion");
-  const value = optionalText(formData, "value") ?? "";
+  const values = textValues(formData, "value");
   const intent = optionalText(formData, "intent");
   const sourceType = optionalText(formData, "sourceType") ?? "user_text";
   const lock = intent === "lock";
@@ -114,7 +135,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
         body: {
           lock,
           source_type: sourceType,
-          value: typedValue(value, fieldType),
+          value: typedValue(values, fieldType),
         },
         method: "PATCH",
         path: `/api/v1/content-blocks/${blockId}`,
@@ -129,7 +150,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
       body: {
         lock,
         source_type: sourceType,
-        value: typedValue(value, fieldType),
+        value: typedValue(values, fieldType),
         version: itemVersion,
       },
       method: "PUT",
@@ -145,15 +166,21 @@ export function buildAddRepeatableGroupPayload(formData: FormData): GuidedAction
   const itemVersion = optionalNumber(formData, "itemVersion");
   const sourceType = optionalText(formData, "sourceType") ?? "user_text";
   const lock = optionalText(formData, "intent") === "lock";
-  const values: Record<string, GuidedActionValue> = {};
+  const valuesByField = new Map<string, string[]>();
 
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("field:") || typeof value !== "string") {
       continue;
     }
     const fieldKey = key.slice("field:".length);
-    values[fieldKey] = typedValue(value, optionalText(formData, `fieldType:${fieldKey}`));
+    valuesByField.set(fieldKey, [...(valuesByField.get(fieldKey) ?? []), value]);
   }
+  const values = Object.fromEntries(
+    Array.from(valuesByField.entries()).map(([fieldKey, fieldValues]) => [
+      fieldKey,
+      typedValue(fieldValues, optionalText(formData, `fieldType:${fieldKey}`)),
+    ]),
+  );
 
   return {
     contentId,

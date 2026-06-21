@@ -468,14 +468,20 @@ function GuidedFieldControl({
   }
 
   if (field.inputKind === "select") {
+    const isMultiSelect = field.type === "multi_select";
+    const defaultValue = isMultiSelect
+      ? field.value.split(";").map((value) => value.trim()).filter(Boolean)
+      : field.value;
+
     return (
       <select
-        className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none"
-        defaultValue={field.value}
+        className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+        defaultValue={defaultValue}
         disabled={!canMutate}
+        multiple={isMultiSelect}
         name="value"
       >
-        <option>{field.value || placeholder}</option>
+        <option value={field.value}>{field.value || placeholder}</option>
       </select>
     );
   }

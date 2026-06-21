@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T16:12:10.772659+00:00",
+  "generated_at": "2026-06-21T16:18:35.106065+00:00",
   "canonical_language": "en",
-  "file_count": 453,
+  "file_count": 455,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 22255,
-      "sha256": "ad1a7f1d30d51572effaf8a9b2c4dd6f47f28ad09f71c3054c3ddb571bb2d6a5"
+      "size_bytes": 22512,
+      "sha256": "80526010fcd97219b5fac304ab4a8a179b05704d40a9929b74b2da329a2ba3d5"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -487,8 +487,8 @@
     },
     {
       "path": "apps/web/src/services/guided-action-payloads.ts",
-      "size_bytes": 5129,
-      "sha256": "553ab6c1d916d38f737f47cb8e73bc4145b702094eabd19bc7ef447ecd771823"
+      "size_bytes": 5886,
+      "sha256": "0f7c339bf0e9e1522eb96147216ce3e06735cbeede6861a122fafc59da772c48"
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
@@ -1222,8 +1222,18 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10AG_REPORT_RU.md",
-      "size_bytes": 2903,
-      "sha256": "c0c2f2e9cf1ce04e4e47d0428587aec711aa8ea3e9b61ac5181f1739b42c3fd6"
+      "size_bytes": 3858,
+      "sha256": "602d3df17c15b1c8ea2b132b270050cbd2a98a23a82b55fdba8667bfff6a6d4c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AH_GUIDED_ACTION_SELECT_VALUES.md",
+      "size_bytes": 4321,
+      "sha256": "f910ce7c521c9b4fc6c8cdd54a3bdccc1d2530661fb24ded2ca349e44aba7759"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AH_REPORT_RU.md",
+      "size_bytes": 2830,
+      "sha256": "5cf620ca4203c8ae0539e094811f5c3b50199aec0f03bd9342cc4a2d6305b28e"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2222,8 +2232,8 @@
     },
     {
       "path": "tools/check_guided_action_payloads.mjs",
-      "size_bytes": 6519,
-      "sha256": "02a6668c168ef5bfe64da1a784c361be1f45b138348af475d6d9f393e69909a9"
+      "size_bytes": 7706,
+      "sha256": "303e2f30e68007be46f7d0b0f8c698c4fc9030751a90b78512af230370f47096"
     },
     {
       "path": "tools/check_guided_form_api_mode.py",

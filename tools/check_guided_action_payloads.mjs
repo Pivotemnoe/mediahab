@@ -169,6 +169,44 @@ assert.deepEqual(normalize(ambiguousRatingSave.request.body), {
   version: null,
 });
 
+const selectFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "visit_type",
+  fieldType: "select",
+  value: "family_dinner",
+}));
+assert.deepEqual(normalize(selectFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: "family_dinner",
+  version: null,
+});
+
+const multiSelectFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "features",
+  fieldType: "multi_select",
+  value: ["terrace", "kids_room", ""],
+}));
+assert.deepEqual(normalize(multiSelectFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: ["terrace", "kids_room"],
+  version: null,
+});
+
+const emptyMultiSelectFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "features",
+  fieldType: "multi_select",
+}));
+assert.deepEqual(normalize(emptyMultiSelectFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: [],
+  version: null,
+});
+
 const emptyOptionalSave = buildSaveGuidedFieldPayload(formData({
   contentId: "content-3",
   fieldKey: "conclusion",
@@ -187,10 +225,12 @@ const repeatableAdd = buildAddRepeatableGroupPayload(formData({
   "field:observations": "Рыбный вкус нормальный.",
   "field:price": "350 RUB",
   "field:rating": "4,5",
+  "field:tags": ["soup", "fish", ""],
   "fieldType:name": "short_text",
   "fieldType:observations": "voice_or_long_text",
   "fieldType:price": "money",
   "fieldType:rating": "rating",
+  "fieldType:tags": "multi_select",
   groupKey: "dishes",
   intent: "lock",
   itemVersion: "8",
@@ -206,6 +246,7 @@ assert.deepEqual(normalize(repeatableAdd), {
         observations: { text: "Рыбный вкус нормальный." },
         price: { amount: 350, currency: "RUB" },
         rating: 4.5,
+        tags: ["soup", "fish"],
       },
       version: 8,
     },
@@ -229,7 +270,10 @@ console.log("guided action payload contract checks passed");
 function formData(values) {
   const data = new FormData();
   for (const [key, value] of Object.entries(values)) {
-    data.set(key, value);
+    const items = Array.isArray(value) ? value : [value];
+    for (const item of items) {
+      data.append(key, item);
+    }
   }
   return data;
 }
