@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { type RefObject, useActionState, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, LockKeyhole, Plus, RotateCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,21 @@ import {
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
 type DraftStatus = "cleared" | "empty" | "restored" | "saved";
+type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "unavailable";
 
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const draftPrefix = "tmh:guided-form-draft:v1";
+const queuePrefix = "tmh:guided-form-queue:v1";
 const autosaveDelayMs = 1200;
+
+interface QueueJob {
+  code: string | null;
+  recoveryAction: GuidedActionState["recoveryAction"];
+  requestId: string | null;
+  savedAt: string;
+  values: Record<string, string>;
+}
 
 function isDraftControl(element: Element): element is DraftControl {
   if (
@@ -97,6 +107,50 @@ function writeDraft(storageKey: string, values: Record<string, string>) {
 }
 
 function clearDraft(storageKey: string) {
+  try {
+    window.localStorage.removeItem(storageKey);
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+
+function readQueueJob(storageKey: string): QueueJob | null {
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Partial<QueueJob>;
+    if (!parsed || typeof parsed !== "object" || !parsed.values || typeof parsed.values !== "object") {
+      return null;
+    }
+    return {
+      code: typeof parsed.code === "string" ? parsed.code : null,
+      recoveryAction: parsed.recoveryAction === "refresh" || parsed.recoveryAction === "retry" ? parsed.recoveryAction : "none",
+      requestId: typeof parsed.requestId === "string" ? parsed.requestId : null,
+      savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
+      values: Object.fromEntries(
+        Object.entries(parsed.values).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+      ),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeQueueJob(storageKey: string, job: QueueJob) {
+  try {
+    if (!hasDraftValues(job.values)) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+    window.localStorage.setItem(storageKey, JSON.stringify(job));
+  } catch {
+    // Browser storage can be unavailable or full. The visible action state remains authoritative.
+  }
+}
+
+function clearQueueJob(storageKey: string) {
   try {
     window.localStorage.removeItem(storageKey);
   } catch {
@@ -219,6 +273,76 @@ function useGuidedAutosave(params: {
   return { autosaveButtonRef, autosaveStatus, flushAutosaveTimer, scheduleAutosave };
 }
 
+function useGuidedQueue(params: {
+  enabled: boolean;
+  formRef: RefObject<HTMLFormElement | null>;
+  isPending: boolean;
+  state: GuidedActionState;
+  storageKey: string;
+}) {
+  const [queueJob, setQueueJob] = useState<QueueJob | null>(null);
+  const [queueStatus, setQueueStatus] = useState<QueueStatus>(params.enabled ? "empty" : "unavailable");
+
+  useEffect(() => {
+    if (!params.enabled) {
+      setQueueStatus("unavailable");
+      return;
+    }
+    const storedJob = readQueueJob(params.storageKey);
+    setQueueJob(storedJob);
+    setQueueStatus(storedJob ? "queued" : "empty");
+  }, [params.enabled, params.storageKey]);
+
+  useEffect(() => {
+    if (!params.enabled) {
+      return;
+    }
+    if (params.isPending && queueJob) {
+      setQueueStatus("retrying");
+      return;
+    }
+    if (params.state.tone === "success") {
+      clearQueueJob(params.storageKey);
+      setQueueJob(null);
+      setQueueStatus("synced");
+      return;
+    }
+    if ((params.state.tone === "warning" || params.state.tone === "danger") && params.formRef.current) {
+      if (
+        queueJob &&
+        queueJob.code === params.state.code &&
+        queueJob.requestId === params.state.requestId &&
+        queueJob.recoveryAction === params.state.recoveryAction
+      ) {
+        setQueueStatus(queueJob.recoveryAction === "refresh" ? "blocked" : "queued");
+        return;
+      }
+      const job: QueueJob = {
+        code: params.state.code,
+        recoveryAction: params.state.recoveryAction,
+        requestId: params.state.requestId,
+        savedAt: new Date().toISOString(),
+        values: formDraftValues(params.formRef.current),
+      };
+      writeQueueJob(params.storageKey, job);
+      setQueueJob(job);
+      setQueueStatus(job.recoveryAction === "refresh" ? "blocked" : "queued");
+      return;
+    }
+    if (!params.isPending && queueJob) {
+      setQueueStatus(queueJob.recoveryAction === "refresh" ? "blocked" : "queued");
+    }
+  }, [params.enabled, params.formRef, params.isPending, params.state, params.storageKey, queueJob]);
+
+  function clearQueue() {
+    clearQueueJob(params.storageKey);
+    setQueueJob(null);
+    setQueueStatus("empty");
+  }
+
+  return { clearQueue, queueJob, queueStatus };
+}
+
 function statusClassName(tone: GuidedActionState["tone"]): string {
   if (tone === "success") {
     return "border-success bg-[color-mix(in_srgb,var(--success),transparent_92%)] text-success";
@@ -304,6 +428,59 @@ function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
   );
 }
 
+function QueueStatusLine({
+  canRetry,
+  job,
+  onClear,
+  onRetry,
+  status,
+}: {
+  canRetry: boolean;
+  job: QueueJob | null;
+  onClear: () => void;
+  onRetry: () => void;
+  status: QueueStatus;
+}) {
+  const labels: Record<QueueStatus, string> = {
+    blocked: "В очереди есть несинхронизированное поле. Сначала обновите страницу, затем повторите сохранение.",
+    empty: "Очередь автосохранения пуста.",
+    queued: "Есть несинхронизированное автосохранение в этом браузере.",
+    retrying: "Повторяем сохранение из локальной очереди...",
+    synced: "Локальная очередь синхронизирована.",
+    unavailable: "Очередь автосохранения включится в API-режиме.",
+  };
+  const tone: GuidedActionState["tone"] =
+    status === "blocked" || status === "queued" || status === "retrying"
+      ? "warning"
+      : status === "synced"
+        ? "success"
+        : "idle";
+  const canRetryJob = canRetry && job?.recoveryAction !== "refresh" && (status === "queued" || status === "blocked");
+
+  return (
+    <div className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}>
+      <div>
+        {labels[status]}
+        {job?.code ? <span className="block">Код: {job.code}</span> : null}
+        {job?.requestId ? <span className="block">ID запроса: {job.requestId}</span> : null}
+      </div>
+      {job ? (
+        <div className="flex flex-wrap gap-2">
+          {canRetryJob ? (
+            <Button onClick={onRetry} size="sm" type="button" variant="secondary">
+              <RotateCcw size={14} />
+              Повторить из очереди
+            </Button>
+          ) : null}
+          <Button onClick={onClear} size="sm" type="button" variant="ghost">
+            Очистить локальную очередь
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function GuidedFieldControl({
   canMutate,
   field,
@@ -378,6 +555,19 @@ export function GuidedFieldActionForm({
     state,
     storageKey: `${draftPrefix}:field:${contentId}:${field.fieldKey}:${field.blockId ?? "new"}`,
   });
+  const queue = useGuidedQueue({
+    enabled: canSubmit,
+    formRef: draft.formRef,
+    isPending,
+    state,
+    storageKey: `${queuePrefix}:field:${contentId}:${field.fieldKey}:${field.blockId ?? "new"}`,
+  });
+
+  function retryQueuedSave() {
+    autosave.flushAutosaveTimer();
+    draft.flushDraft();
+    autosave.autosaveButtonRef.current?.click();
+  }
 
   return (
     <form
@@ -405,6 +595,13 @@ export function GuidedFieldActionForm({
       <GuidedFieldControl canMutate={canSubmit} field={field} />
       <AutosaveStatusLine status={autosave.autosaveStatus} />
       <DraftStatusLine status={draft.draftStatus} />
+      <QueueStatusLine
+        canRetry={canSubmit}
+        job={queue.queueJob}
+        onClear={queue.clearQueue}
+        onRetry={retryQueuedSave}
+        status={queue.queueStatus}
+      />
       <ActionStatus canRetry={canSubmit} state={state} />
       <div className="flex flex-wrap gap-2">
         <button
