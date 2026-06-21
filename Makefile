@@ -46,6 +46,7 @@ test-ui-hardening: deps
 	node tools/check_guided_queue_replay.mjs
 	node tools/check_guided_action_errors.mjs
 	node tools/check_api_request_headers.mjs
+	$(PY) tools/check_guided_form_api_mode.py
 
 migrate: deps
 	cd services/api && DATABASE_URL="$(MIGRATE_DATABASE_URL)" ../../$(PY) -m alembic -c alembic.ini upgrade head
