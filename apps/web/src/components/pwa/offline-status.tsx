@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 
 import {
   guidedFormQueueEvent,
-  guidedFormQueuePrefix,
-} from "@/components/phase04/guided-form-actions";
+  isGuidedFormQueueKey,
+} from "@/services/guided-queue-contract";
 
 function guidedQueueCount(): number {
   try {
-    return Object.keys(window.localStorage).filter((key) => key.startsWith(guidedFormQueuePrefix)).length;
+    return Object.keys(window.localStorage).filter(isGuidedFormQueueKey).length;
   } catch {
     return 0;
   }

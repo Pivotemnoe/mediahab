@@ -13,6 +13,10 @@ import {
   initialGuidedActionState,
   type GuidedActionState,
 } from "@/services/guided-action-state";
+import {
+  guidedFieldQueueKey,
+  guidedFormQueueEvent,
+} from "@/services/guided-queue-contract";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
@@ -22,8 +26,6 @@ type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "una
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const draftPrefix = "tmh:guided-form-draft:v1";
-export const guidedFormQueuePrefix = "tmh:guided-form-queue:v1";
-export const guidedFormQueueEvent = "tmh-guided-form-queue-change";
 const autosaveDelayMs = 1200;
 
 interface QueueJob {
@@ -564,7 +566,11 @@ export function GuidedFieldActionForm({
     formRef: draft.formRef,
     isPending,
     state,
-    storageKey: `${guidedFormQueuePrefix}:field:${contentId}:${field.fieldKey}:${field.blockId ?? "new"}`,
+    storageKey: guidedFieldQueueKey({
+      blockId: field.blockId,
+      contentId,
+      fieldKey: field.fieldKey,
+    }),
   });
 
   function retryQueuedSave() {
