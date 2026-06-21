@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T17:00:01.146342+00:00",
+  "generated_at": "2026-06-21T17:18:00.495469+00:00",
   "canonical_language": "en",
-  "file_count": 463,
+  "file_count": 465,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 24279,
-      "sha256": "d2d222f5cdcb6ee599c2e6272bb3800add46270f78f4be9470628dd58369d9fe"
+      "size_bytes": 25941,
+      "sha256": "c53f665673bb6a7549489253e567d06c0b0e32cca9c0d773de5e03a25e70505f"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -502,13 +502,13 @@
     },
     {
       "path": "apps/web/src/services/guided-queue-contract.ts",
-      "size_bytes": 3611,
-      "sha256": "02ab8d99735a8ed5079f676c96b387ea891d878323860fd5c46a0cbff0b7f473"
+      "size_bytes": 5301,
+      "sha256": "c7b5f7fbe81a5b0ba6490f50f9991441ba2543d02de074afc0e053890a5a1523"
     },
     {
       "path": "apps/web/src/services/guided-queue-replay.ts",
-      "size_bytes": 3151,
-      "sha256": "4f2c8abf88558b7db0e4e6f329e3cdd264b5b6a7ff6767acb906ca168d51b93f"
+      "size_bytes": 5423,
+      "sha256": "c88de13105cab3b0be6643ca6f9a4a82f5bf5fc6dd75617b950f1e3517ea7e95"
     },
     {
       "path": "apps/web/src/services/guided-queue-store.ts",
@@ -1269,6 +1269,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AK_REPORT_RU.md",
       "size_bytes": 4441,
       "sha256": "152d91e52ab5179d2218a39a46f19b7a2860a1d28f19cbd3f817267067e3a890"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AL_GUIDED_QUEUE_REQUEST_ENVELOPE.md",
+      "size_bytes": 4586,
+      "sha256": "4a360416b23e3b9f4111acc220f20dc896904eb8ac2760e621e05b8368c0cc2b"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AL_REPORT_RU.md",
+      "size_bytes": 4344,
+      "sha256": "67729a2b2f97078ba306045d6bfb1b00f11906aa8b09f96ad6c706353d29819b"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2277,13 +2287,13 @@
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",
-      "size_bytes": 3600,
-      "sha256": "b145878facc87f11887bdc56726180c70e15fe1a0654778df9d6fd9351908293"
+      "size_bytes": 4956,
+      "sha256": "2bad3827b7945ee1f975a52e43d301cbe0b422afa5e31887bfa65b4c373785e3"
     },
     {
       "path": "tools/check_guided_queue_replay.mjs",
-      "size_bytes": 5757,
-      "sha256": "fcd5af22e1399c48fc296ffd5af03d045ff996b2fe774c75ea7aa44636646a29"
+      "size_bytes": 8393,
+      "sha256": "436d51347e1723d10b9a299fa6bf35d30777a9948e486ce648f098689c647939"
     },
     {
       "path": "tools/check_sw_capabilities.mjs",

@@ -5,10 +5,24 @@ export const guidedFormQueueEvent = "tmh-guided-form-queue-change";
 
 export type GuidedQueueValue = string | string[];
 export type GuidedQueueValues = Record<string, GuidedQueueValue>;
+export type GuidedQueueIntent = "lock" | "save";
+
+export interface GuidedQueueFieldMetadata {
+  blockId: string | null;
+  contentId: string;
+  fieldKey: string;
+  intent: GuidedQueueIntent | null;
+  itemVersion: number | null;
+  kind: "field";
+  sourceType: string;
+}
+
+export type GuidedQueueMetadata = GuidedQueueFieldMetadata;
 
 export interface GuidedQueueJob {
   code: string | null;
   fieldTypes: Record<string, string>;
+  metadata: GuidedQueueMetadata | null;
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt: string;
@@ -34,6 +48,7 @@ export function hasGuidedQueueValues(values: GuidedQueueValues): boolean {
 export function createGuidedQueueJob(params: {
   code: string | null;
   fieldTypes?: Record<string, string>;
+  metadata?: GuidedQueueMetadata | null;
   recoveryAction: GuidedRecoveryAction;
   requestId: string | null;
   savedAt?: string;
@@ -42,6 +57,7 @@ export function createGuidedQueueJob(params: {
   return {
     code: params.code,
     fieldTypes: sanitizeStringRecord(params.fieldTypes),
+    metadata: sanitizeQueueMetadata(params.metadata),
     recoveryAction: params.recoveryAction,
     requestId: params.requestId,
     savedAt: params.savedAt ?? new Date().toISOString(),
@@ -62,6 +78,7 @@ export function parseGuidedQueueJob(raw: string | null): GuidedQueueJob | null {
     return {
       code: typeof parsed.code === "string" ? parsed.code : null,
       fieldTypes: sanitizeStringRecord(parsed.fieldTypes),
+      metadata: sanitizeQueueMetadata(parsed.metadata),
       recoveryAction: isGuidedRecoveryAction(parsed.recoveryAction) ? parsed.recoveryAction : "none",
       requestId: typeof parsed.requestId === "string" ? parsed.requestId : null,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
@@ -111,4 +128,38 @@ function hasGuidedQueueValue(value: GuidedQueueValue): boolean {
     return value.some((item) => item.trim().length > 0);
   }
   return value.trim().length > 0;
+}
+
+function sanitizeQueueMetadata(value: unknown): GuidedQueueMetadata | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const metadata = value as Partial<GuidedQueueFieldMetadata>;
+  if (metadata.kind !== "field") {
+    return null;
+  }
+  if (typeof metadata.contentId !== "string" || !metadata.contentId.trim()) {
+    return null;
+  }
+  if (typeof metadata.fieldKey !== "string" || !metadata.fieldKey.trim()) {
+    return null;
+  }
+
+  return {
+    blockId: typeof metadata.blockId === "string" && metadata.blockId.trim() ? metadata.blockId : null,
+    contentId: metadata.contentId,
+    fieldKey: metadata.fieldKey,
+    intent: isGuidedQueueIntent(metadata.intent) ? metadata.intent : null,
+    itemVersion: typeof metadata.itemVersion === "number" && Number.isFinite(metadata.itemVersion)
+      ? metadata.itemVersion
+      : null,
+    kind: "field",
+    sourceType: typeof metadata.sourceType === "string" && metadata.sourceType.trim()
+      ? metadata.sourceType
+      : "user_text",
+  };
+}
+
+function isGuidedQueueIntent(value: unknown): value is GuidedQueueIntent {
+  return value === "lock" || value === "save";
 }

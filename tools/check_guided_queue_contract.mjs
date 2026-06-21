@@ -45,6 +45,15 @@ const job = createGuidedQueueJob({
     ignored: 42,
     value: "rating",
   },
+  metadata: {
+    blockId: "block-1",
+    contentId: "content-1",
+    fieldKey: "rating",
+    intent: "lock",
+    itemVersion: 7,
+    kind: "field",
+    sourceType: "user_text",
+  },
   recoveryAction: "retry",
   requestId: "request-1",
   savedAt: "2026-06-21T00:00:00.000Z",
@@ -63,6 +72,15 @@ assert.deepEqual(normalize(job), {
     "field:price": "money",
     value: "rating",
   },
+  metadata: {
+    blockId: "block-1",
+    contentId: "content-1",
+    fieldKey: "rating",
+    intent: "lock",
+    itemVersion: 7,
+    kind: "field",
+    sourceType: "user_text",
+  },
   recoveryAction: "retry",
   requestId: "request-1",
   savedAt: "2026-06-21T00:00:00.000Z",
@@ -76,6 +94,45 @@ assert.deepEqual(normalize(job), {
 
 assert.deepEqual(normalize(parseGuidedQueueJob(serializeGuidedQueueJob(job))), normalize(job));
 
+const invalidMetadataJob = createGuidedQueueJob({
+  code: null,
+  metadata: {
+    contentId: "",
+    fieldKey: "venue",
+    intent: "delete",
+    kind: "field",
+  },
+  recoveryAction: "retry",
+  requestId: null,
+  values: { value: "draft" },
+});
+assert.equal(invalidMetadataJob.metadata, null);
+
+const partialMetadataJob = createGuidedQueueJob({
+  code: null,
+  metadata: {
+    blockId: "",
+    contentId: "content-2",
+    fieldKey: "venue",
+    intent: "publish",
+    itemVersion: Number.NaN,
+    kind: "field",
+    sourceType: "",
+  },
+  recoveryAction: "retry",
+  requestId: null,
+  values: { value: "draft" },
+});
+assert.deepEqual(normalize(partialMetadataJob.metadata), {
+  blockId: null,
+  contentId: "content-2",
+  fieldKey: "venue",
+  intent: null,
+  itemVersion: null,
+  kind: "field",
+  sourceType: "user_text",
+});
+
 const legacyJob = parseGuidedQueueJob(JSON.stringify({
   code: "version_conflict",
   recoveryAction: "refresh",
@@ -86,6 +143,7 @@ const legacyJob = parseGuidedQueueJob(JSON.stringify({
 assert.deepEqual(normalize(legacyJob), {
   code: "version_conflict",
   fieldTypes: {},
+  metadata: null,
   recoveryAction: "refresh",
   requestId: "request-2",
   savedAt: "2026-06-21T00:00:00.000Z",
@@ -94,10 +152,16 @@ assert.deepEqual(normalize(legacyJob), {
 
 const invalidFieldTypesJob = parseGuidedQueueJob(JSON.stringify({
   fieldTypes: ["money"],
+  metadata: {
+    contentId: "content-3",
+    fieldKey: "price",
+    kind: "repeatable",
+  },
   recoveryAction: "retry",
   values: { value: "590" },
 }));
 assert.deepEqual(normalize(invalidFieldTypesJob).fieldTypes, {});
+assert.equal(invalidFieldTypesJob.metadata, null);
 
 assert.equal(hasGuidedQueueValues({ value: "" }), false);
 assert.equal(hasGuidedQueueValues({ value: "  " }), false);

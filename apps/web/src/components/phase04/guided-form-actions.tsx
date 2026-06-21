@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useActionState, useEffect, useRef, useState } from "react";
+import { type FormEvent, type RefObject, useActionState, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, LockKeyhole, Plus, RotateCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import {
 import {
   createGuidedQueueJob,
   guidedFieldQueueKey,
+  type GuidedQueueFieldMetadata,
+  type GuidedQueueIntent,
   type GuidedQueueValues,
   type GuidedQueueJob,
 } from "@/services/guided-queue-contract";
@@ -83,6 +85,24 @@ function formFieldTypes(form: HTMLFormElement): Record<string, string> {
   return values;
 }
 
+function formQueueMetadata(form: HTMLFormElement): GuidedQueueFieldMetadata | null {
+  const contentId = formTextValue(form, "contentId");
+  const fieldKey = formTextValue(form, "fieldKey");
+  if (!contentId || !fieldKey) {
+    return null;
+  }
+
+  return {
+    blockId: formTextValue(form, "blockId"),
+    contentId,
+    fieldKey,
+    intent: guidedSubmitIntent(form.dataset.guidedSubmitIntent),
+    itemVersion: formNumberValue(form, "itemVersion"),
+    kind: "field",
+    sourceType: formTextValue(form, "sourceType") ?? "user_text",
+  };
+}
+
 function restoreFormDraft(form: HTMLFormElement, values: DraftValues) {
   for (const element of Array.from(form.elements)) {
     if (!isDraftControl(element) || values[element.name] === undefined) {
@@ -134,6 +154,33 @@ function writeDraft(storageKey: string, values: DraftValues) {
   } catch {
     // Browser storage can be unavailable or full. The server action remains authoritative.
   }
+}
+
+function formTextValue(form: HTMLFormElement, name: string): string | null {
+  const value = new FormData(form).get(name);
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function formNumberValue(form: HTMLFormElement, name: string): number | null {
+  const value = formTextValue(form, name);
+  if (!value) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function guidedSubmitIntent(value: string | undefined): GuidedQueueIntent | null {
+  return value === "lock" || value === "save" ? value : null;
+}
+
+function recordSubmitIntent(event: FormEvent<HTMLFormElement>) {
+  const submitter = (event.nativeEvent as SubmitEvent).submitter;
+  if (!(submitter instanceof HTMLButtonElement) || submitter.name !== "intent") {
+    event.currentTarget.dataset.guidedSubmitIntent = "";
+    return;
+  }
+  event.currentTarget.dataset.guidedSubmitIntent = submitter.value;
 }
 
 function sanitizeDraftValues(value: unknown): DraftValues {
@@ -334,6 +381,7 @@ function useGuidedQueue(params: {
       const job = createGuidedQueueJob({
         code: params.state.code,
         fieldTypes: formFieldTypes(params.formRef.current),
+        metadata: formQueueMetadata(params.formRef.current),
         recoveryAction: params.state.recoveryAction,
         requestId: params.state.requestId,
         values: formDraftValues(params.formRef.current),
@@ -606,7 +654,8 @@ export function GuidedFieldActionForm({
         draft.handleDraftChange();
         autosave.scheduleAutosave();
       }}
-      onSubmit={() => {
+      onSubmit={(event) => {
+        recordSubmitIntent(event);
         autosave.flushAutosaveTimer();
         draft.flushDraft();
       }}

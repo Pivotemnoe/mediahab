@@ -16,7 +16,11 @@ const moduleScope = await loadServiceModule("guided-queue-replay.ts", {
   },
 });
 
-const { buildGuidedQueueReplayDraft, getGuidedQueueReplayReadiness } = moduleScope;
+const {
+  buildGuidedQueueReplayDraft,
+  buildGuidedQueueReplayRequestDraft,
+  getGuidedQueueReplayReadiness,
+} = moduleScope;
 
 function queueEntries(count) {
   return Array.from({ length: count }, (_, index) => ({
@@ -34,6 +38,7 @@ function queueEntries(count) {
 
 assert.equal(typeof getGuidedQueueReplayReadiness, "function");
 assert.equal(typeof buildGuidedQueueReplayDraft, "function");
+assert.equal(typeof buildGuidedQueueReplayRequestDraft, "function");
 
 assert.deepEqual(normalize(getGuidedQueueReplayReadiness({ entries: [], online: true })), {
   canAutoReplay: false,
@@ -138,6 +143,103 @@ assert.deepEqual(normalize(legacyDraft), {
     value: { text: "Старый локальный черновик" },
   },
   valueCount: 2,
+});
+
+const existingBlockRequestDraft = buildGuidedQueueReplayRequestDraft({
+  code: "api_unavailable",
+  fieldTypes: { value: "money" },
+  metadata: {
+    blockId: "block-1",
+    contentId: "content-1",
+    fieldKey: "total_check",
+    intent: "lock",
+    itemVersion: 7,
+    kind: "field",
+    sourceType: "user_text",
+  },
+  recoveryAction: "retry",
+  requestId: "req-2",
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: { value: "590 ₽" },
+});
+assert.deepEqual(normalize(existingBlockRequestDraft), {
+  contentId: "content-1",
+  request: {
+    body: {
+      lock: true,
+      source_type: "user_text",
+      value: { amount: 590, currency: "RUB" },
+    },
+    method: "PATCH",
+    path: "/api/v1/content-blocks/block-1",
+  },
+  status: "ready",
+  successMessage: "Поле сохранено и зафиксировано.",
+  typedDraft: {
+    fieldTypes: { value: "money" },
+    missingFieldTypes: [],
+    typedValues: { value: { amount: 590, currency: "RUB" } },
+    valueCount: 1,
+  },
+});
+
+const newBlockRequestDraft = buildGuidedQueueReplayRequestDraft({
+  code: "api_unavailable",
+  fieldTypes: { value: "multi_select" },
+  metadata: {
+    blockId: null,
+    contentId: "content-2",
+    fieldKey: "features",
+    intent: "save",
+    itemVersion: 11,
+    kind: "field",
+    sourceType: "voice_transcript",
+  },
+  recoveryAction: "retry",
+  requestId: "req-3",
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: { value: ["terrace", "kids_room"] },
+});
+assert.deepEqual(normalize(newBlockRequestDraft), {
+  contentId: "content-2",
+  request: {
+    body: {
+      lock: false,
+      source_type: "voice_transcript",
+      value: ["terrace", "kids_room"],
+      version: 11,
+    },
+    method: "PUT",
+    path: "/api/v1/content-items/content-2/blocks/features",
+  },
+  status: "ready",
+  successMessage: "Поле сохранено.",
+  typedDraft: {
+    fieldTypes: { value: "multi_select" },
+    missingFieldTypes: [],
+    typedValues: { value: ["terrace", "kids_room"] },
+    valueCount: 1,
+  },
+});
+
+const incompleteRequestDraft = buildGuidedQueueReplayRequestDraft({
+  code: null,
+  fieldTypes: {},
+  metadata: null,
+  recoveryAction: "retry",
+  requestId: null,
+  savedAt: "2026-06-21T00:00:00.000Z",
+  values: { value: "legacy draft" },
+});
+assert.deepEqual(normalize(incompleteRequestDraft), {
+  missing: ["metadata", "metadata.intent"],
+  status: "incomplete",
+  typedDraft: {
+    fieldTypes: {},
+    missingFieldTypes: ["value"],
+    typedValues: { value: { text: "legacy draft" } },
+    valueCount: 1,
+  },
 });
 
 console.log("guided queue replay readiness checks passed");
