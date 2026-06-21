@@ -6,16 +6,23 @@ import { useEffect, useState } from "react";
 import {
   guidedFormQueueEvent,
 } from "@/services/guided-queue-contract";
-import { countGuidedQueueEntries } from "@/services/guided-queue-store";
+import {
+  getGuidedQueueReplayReadiness,
+  type GuidedQueueReplayReadiness,
+} from "@/services/guided-queue-replay";
+import { listGuidedQueueEntries } from "@/services/guided-queue-store";
 
 export function OfflineStatus() {
-  const [online, setOnline] = useState(true);
-  const [queueCount, setQueueCount] = useState(0);
+  const [readiness, setReadiness] = useState<GuidedQueueReplayReadiness>(() =>
+    getGuidedQueueReplayReadiness({ entries: [], online: true }),
+  );
 
   useEffect(() => {
     const update = () => {
-      setOnline(navigator.onLine);
-      setQueueCount(countGuidedQueueEntries());
+      setReadiness(getGuidedQueueReplayReadiness({
+        entries: listGuidedQueueEntries(),
+        online: navigator.onLine,
+      }));
     };
     update();
     window.addEventListener("online", update);
@@ -30,16 +37,11 @@ export function OfflineStatus() {
     };
   }, []);
 
-  if (online && queueCount === 0) {
+  if (!readiness.shellMessage) {
     return null;
   }
 
-  const text = online
-    ? `Есть несинхронизированные поля: ${queueCount}. Откройте материал и повторите сохранение.`
-    : queueCount > 0
-      ? `Нет сети: ${queueCount} поле в локальной очереди, ИИ и публикации недоступны.`
-      : "Нет сети: черновики сохраняются локально, ИИ и публикации недоступны.";
-  const Icon = online ? CloudOff : WifiOff;
+  const Icon = readiness.status === "manual_retry_required" ? CloudOff : WifiOff;
 
   return (
     <div
@@ -48,7 +50,7 @@ export function OfflineStatus() {
       role="status"
     >
       <Icon size={16} className="text-warning" />
-      {text}
+      {readiness.shellMessage}
     </div>
   );
 }
