@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:41:19.953455+00:00",
+  "generated_at": "2026-06-21T15:46:47.580838+00:00",
   "canonical_language": "en",
-  "file_count": 439,
+  "file_count": 442,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2048,
-      "sha256": "1e949674c8ff6a4a1c98f329e6c258cf276f1e6518b7c917db939c4c2dccbbc5"
+      "size_bytes": 2090,
+      "sha256": "5fc1c97a2d0b4ff411b057378d1513c2dcf02d5e79d4b2c1436e70f43a47c7b7"
     },
     {
       "path": "README.md",
@@ -527,8 +527,8 @@
     },
     {
       "path": "apps/web/src/services/runtime.ts",
-      "size_bytes": 4066,
-      "sha256": "d11206ebdaf712597f0bf1ca00df8370b74665776bd671f17897fefa2b05a5e7"
+      "size_bytes": 4525,
+      "sha256": "b5f63faafc9d5ecd19d8faff3d47931fa818e14163f1b0b375553f2fc2b98c24"
     },
     {
       "path": "apps/web/src/services/workspace-settings.ts",
@@ -1169,6 +1169,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AB_REPORT_RU.md",
       "size_bytes": 3980,
       "sha256": "1a6856cc527dda9b5c547bcbfaba0622bc30777d33ce650fd65bb49e2246db8c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AC_API_REQUEST_CSRF_CONTRACT.md",
+      "size_bytes": 3972,
+      "sha256": "c681ba52c2f17262fae14c03a86f5b5ad40885b78767a5bb9f7df35481fe481c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AC_REPORT_RU.md",
+      "size_bytes": 2414,
+      "sha256": "d9a102be5ce0480efca23399e16bf6470f387c62514bac21b90988fd46781624"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2154,6 +2164,11 @@
       "path": "tests/test_phase00_spikes.py",
       "size_bytes": 3338,
       "sha256": "b6ca01c1d60fee10e2fad2c7fa36722e8eff8338f3cf957748977a8e9c1a2275"
+    },
+    {
+      "path": "tools/check_api_request_headers.mjs",
+      "size_bytes": 3169,
+      "sha256": "d601b251c5ddd5a3a68d1df3c8cebef9bf2e93f60c81f46f7f8c64325cb89717"
     },
     {
       "path": "tools/check_guided_action_errors.mjs",

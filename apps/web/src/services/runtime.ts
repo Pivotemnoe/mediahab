@@ -69,6 +69,32 @@ async function getServerCookies(): Promise<{
   }
 }
 
+export function createApiRequestHeaders(options: {
+  body?: unknown;
+  cookieHeader?: string;
+  csrfHeaderName?: string;
+  csrfToken?: string;
+  path: string;
+  requireCsrf?: boolean;
+}): Headers {
+  const headers = new Headers({ Accept: "application/json" });
+
+  if (options.cookieHeader) {
+    headers.set("Cookie", options.cookieHeader);
+  }
+  if (options.body !== undefined) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (options.requireCsrf ?? true) {
+    if (!options.csrfToken) {
+      throw new ApiRequestError("CSRF token is missing", 403, options.path, "csrf_required");
+    }
+    headers.set(options.csrfHeaderName ?? "X-CSRF-Token", options.csrfToken);
+  }
+
+  return headers;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
   const headers = new Headers({ Accept: "application/json" });
@@ -100,21 +126,15 @@ export async function apiRequest<T>(
   },
 ): Promise<T> {
   const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
-  const headers = new Headers({ Accept: "application/json" });
   const { cookieHeader, csrfToken } = await getServerCookies();
-
-  if (cookieHeader) {
-    headers.set("Cookie", cookieHeader);
-  }
-  if (options.body !== undefined) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (options.requireCsrf ?? true) {
-    if (!csrfToken) {
-      throw new ApiRequestError("CSRF token is missing", 403, path, "csrf_required");
-    }
-    headers.set(process.env.CSRF_HEADER_NAME ?? "X-CSRF-Token", csrfToken);
-  }
+  const headers = createApiRequestHeaders({
+    body: options.body,
+    cookieHeader,
+    csrfHeaderName: process.env.CSRF_HEADER_NAME,
+    csrfToken,
+    path,
+    requireCsrf: options.requireCsrf,
+  });
 
   const response = await fetch(url, {
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
