@@ -105,6 +105,70 @@ assert.deepEqual(normalize(unparseableMoneyFieldSave.request.body), {
   version: null,
 });
 
+const checkedBooleanSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "has_parking",
+  fieldType: "boolean",
+  value: "true",
+}));
+assert.deepEqual(normalize(checkedBooleanSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: true,
+  version: null,
+});
+
+const uncheckedBooleanSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "has_parking",
+  fieldType: "boolean",
+}));
+assert.deepEqual(normalize(uncheckedBooleanSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: false,
+  version: null,
+});
+
+const numberFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "wait_minutes",
+  fieldType: "number",
+  value: "12,5",
+}));
+assert.deepEqual(normalize(numberFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: 12.5,
+  version: null,
+});
+
+const ratingFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "taste",
+  fieldType: "rating",
+  value: "7",
+}));
+assert.deepEqual(normalize(ratingFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: 7,
+  version: null,
+});
+
+const ambiguousRatingSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "taste",
+  fieldType: "rating",
+  value: "7 из 9",
+}));
+assert.deepEqual(normalize(ambiguousRatingSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: { text: "7 из 9" },
+  version: null,
+});
+
 const emptyOptionalSave = buildSaveGuidedFieldPayload(formData({
   contentId: "content-3",
   fieldKey: "conclusion",
@@ -122,9 +186,11 @@ const repeatableAdd = buildAddRepeatableGroupPayload(formData({
   "field:name": "Уха",
   "field:observations": "Рыбный вкус нормальный.",
   "field:price": "350 RUB",
+  "field:rating": "4,5",
   "fieldType:name": "short_text",
   "fieldType:observations": "voice_or_long_text",
   "fieldType:price": "money",
+  "fieldType:rating": "rating",
   groupKey: "dishes",
   intent: "lock",
   itemVersion: "8",
@@ -139,6 +205,7 @@ assert.deepEqual(normalize(repeatableAdd), {
         name: { text: "Уха" },
         observations: { text: "Рыбный вкус нормальный." },
         price: { amount: 350, currency: "RUB" },
+        rating: 4.5,
       },
       version: 8,
     },

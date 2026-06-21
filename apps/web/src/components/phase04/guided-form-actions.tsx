@@ -484,6 +484,7 @@ function GuidedFieldControl({
     <input
       className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
       defaultValue={field.value}
+      inputMode={field.inputKind === "number" ? "decimal" : undefined}
       name="value"
       placeholder={placeholder}
       readOnly={!canMutate}
@@ -632,6 +633,11 @@ export function AddRepeatableGroupActionForm({
             <input
               className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
               disabled={!canMutate}
+              inputMode={
+                item.type === "money" || item.type === "number" || item.type === "rating"
+                  ? "decimal"
+                  : undefined
+              }
               name={`field:${item.key}`}
               placeholder={item.typeLabel}
             />

@@ -14,7 +14,9 @@ export interface GuidedActionPayload {
 
 type GuidedActionValue =
   | { amount: number; currency: string }
-  | { text: string };
+  | { text: string }
+  | boolean
+  | number;
 
 function requiredText(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -62,9 +64,34 @@ function moneyValue(value: string): GuidedActionValue {
   return { amount, currency: "RUB" };
 }
 
+function booleanValue(value: string): boolean {
+  const normalizedValue = value.trim().toLowerCase();
+  return normalizedValue === "1" || normalizedValue === "true" || normalizedValue === "yes" || normalizedValue === "on";
+}
+
+function numberValue(value: string): GuidedActionValue {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return textValue("");
+  }
+
+  if (!/^[-+]?\d+(?:[,.]\d+)?$/.test(trimmedValue)) {
+    return textValue(value);
+  }
+
+  const number = Number(trimmedValue.replace(",", "."));
+  return Number.isFinite(number) ? number : textValue(value);
+}
+
 function typedValue(value: string, fieldType: string | null): GuidedActionValue {
+  if (fieldType === "boolean") {
+    return booleanValue(value);
+  }
   if (fieldType === "money") {
     return moneyValue(value);
+  }
+  if (fieldType === "number" || fieldType === "rating") {
+    return numberValue(value);
   }
   return textValue(value);
 }
