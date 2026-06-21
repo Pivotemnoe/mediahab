@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:52:12.903857+00:00",
+  "generated_at": "2026-06-21T15:59:46.997914+00:00",
   "canonical_language": "en",
-  "file_count": 445,
+  "file_count": 449,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2133,
-      "sha256": "46479c7ec483ba5ca9a6c1994b083eac686b27642db18225953322e8ecd689d9"
+      "size_bytes": 2178,
+      "sha256": "4d3a8f310bddd519543e85ce5d0e4242b9438e202e6c3c61541bc2aa0c138c16"
     },
     {
       "path": "README.md",
@@ -467,8 +467,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 4146,
-      "sha256": "365315fa6bb0917371f02e3599ac0b9898b2b6d56c1c95ccecf5effd13f9dfbd"
+      "size_bytes": 1914,
+      "sha256": "0c7de1994fa1413c6798b666ff2470601bb549ebf51e60564d6c9f6f5cc6db79"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -484,6 +484,11 @@
       "path": "apps/web/src/services/guided-action-errors.ts",
       "size_bytes": 2180,
       "sha256": "88ff56c414e2b801999e0348f718ea3061eba705b3ea023a2b6004050a1db8a0"
+    },
+    {
+      "path": "apps/web/src/services/guided-action-payloads.ts",
+      "size_bytes": 3424,
+      "sha256": "eeec66eab96ca5fc673f21297917d17ab49cf42b8a4dc3f6783117d628a246e4"
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
@@ -1187,8 +1192,18 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10AD_REPORT_RU.md",
-      "size_bytes": 2433,
-      "sha256": "fc208739ff18ac02c47331464cbcc5989ec585f52398ce9ba0762e1bd7c998dc"
+      "size_bytes": 3882,
+      "sha256": "8eed7d746036f8bbae5bfe38d142cfcff496488f02cbb182ede9d8d718441acf"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AE_GUIDED_ACTION_PAYLOAD_CONTRACT.md",
+      "size_bytes": 4008,
+      "sha256": "3592d17444f3d386e244a0f274213b9f8aec171dc0a20b23b08cbe208e7d82ae"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AE_REPORT_RU.md",
+      "size_bytes": 4253,
+      "sha256": "921fdfd5112d577a926e03d6eac6546c563f434f5d3aee64f1e9efc95e585204"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2184,6 +2199,11 @@
       "path": "tools/check_guided_action_errors.mjs",
       "size_bytes": 3643,
       "sha256": "7615f4e92b34f780a844ba90a7595992654544b16931139c9506e28aeaa126fb"
+    },
+    {
+      "path": "tools/check_guided_action_payloads.mjs",
+      "size_bytes": 4082,
+      "sha256": "d89c0a1a7e2965d46d721b7a47b5ecdb4163edeb337ff6267a1eadbda21b0445"
     },
     {
       "path": "tools/check_guided_form_api_mode.py",
