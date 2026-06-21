@@ -22,6 +22,11 @@ import {
 import { getDataMode, safeApiGet } from "@/services/runtime";
 
 export interface ProjectIndexViewModel {
+  entryPoints: Array<{
+    icon: "package" | "preset" | "scratch";
+    text: string;
+    title: string;
+  }>;
   modeLabel: string;
   notice?: string;
   projects: Array<{
@@ -219,6 +224,23 @@ function fixtureRubricAssets(): RubricAssetsViewModel {
 
 function fixtureProjectIndex(): ProjectIndexViewModel {
   return {
+    entryPoints: [
+      {
+        icon: "scratch",
+        text: "Создать переиспользуемый проект без данных пресета.",
+        title: "С нуля",
+      },
+      {
+        icon: "preset",
+        text: "Идемпотентно импортировать поддерживаемый пресет.",
+        title: "Из пресета",
+      },
+      {
+        icon: "package",
+        text: "Проверить JSON проекта и рубрик перед активацией.",
+        title: "Импорт пакета",
+      },
+    ],
     modeLabel: "fixtures",
     projects: [
       {

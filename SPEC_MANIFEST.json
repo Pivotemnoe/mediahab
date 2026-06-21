@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T05:42:24.732663+00:00",
+  "generated_at": "2026-06-21T05:50:26.816058+00:00",
   "canonical_language": "en",
-  "file_count": 392,
+  "file_count": 394,
   "files": [
     {
       "path": ".dockerignore",
@@ -332,8 +332,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 50481,
-      "sha256": "287dd6ed341fe2e0da3c3698fd65ed0484d0014a5a2c125186d0b1a516453985"
+      "size_bytes": 50203,
+      "sha256": "7755af6a7288c840df8ea27f5f976e4c3628346c4b46ef6f39d754a6797fb85c"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
@@ -477,8 +477,8 @@
     },
     {
       "path": "apps/web/src/services/projects.ts",
-      "size_bytes": 18155,
-      "sha256": "422847b1c22f372e37c2be884d201d9c81cf2ecc9dc8d38feb7a2767302d251f"
+      "size_bytes": 18859,
+      "sha256": "e4801790eff58fe08b47d35e501dd0eda5625b9823b7e6663cceba060660f2ed"
     },
     {
       "path": "apps/web/src/services/publications.ts",
@@ -1201,6 +1201,16 @@
       "sha256": "b26afc55f88924c51a0788e31f31934a85de26370c7ac8c933ededa0bfad57eb"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10K_PROJECT_INDEX_CLEANUP.md",
+      "size_bytes": 1557,
+      "sha256": "b10f555313f3f1ea36c0715b8ea664a916d834231261f8b6fa6cedb02e772fb6"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10K_REPORT_RU.md",
+      "size_bytes": 3206,
+      "sha256": "d1f4e8e3c297582a1abd6dd61828f87ba5073dca108818d2b0fe5e1c62ed8df7"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1222,8 +1232,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 6197,
-      "sha256": "7128648c00bc267aa230a8887a7f5c3921c9f9b8e7774cd54ad874a0f3d9901b"
+      "size_bytes": 6225,
+      "sha256": "278093d1e038f49d12d054523c7b032b2a97268542c718ef6b6c7a12a52494d7"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",

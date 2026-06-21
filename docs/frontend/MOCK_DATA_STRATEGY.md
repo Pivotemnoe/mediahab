@@ -1,6 +1,6 @@
 # Mock Data And Service Strategy
 
-Status: UI Phase 10j partial implementation. Dashboard, publication operations, project/rubric screens, Project Builder/Wizard/Settings internals, content index/detail/new screens, Content Studio internals, mobile capture, integrations, billing, workspace, account, examples, media, calendar, AI pipeline, and project examples now use a service boundary with `NEXT_PUBLIC_DATA_MODE=api | fixtures`; the remaining feature internals still need the same migration.
+Status: UI Phase 10k partial implementation. Dashboard, publication operations, project/rubric screens, Project Index entry points, Project Builder/Wizard/Settings internals, content index/detail/new screens, Content Studio internals, mobile capture, integrations, billing, workspace, account, examples, media, calendar, AI pipeline, and project examples now use a service boundary with `NEXT_PUBLIC_DATA_MODE=api | fixtures`; the remaining feature internals still need the same migration.
 
 ## Goal
 

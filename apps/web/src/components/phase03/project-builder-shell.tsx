@@ -25,7 +25,6 @@ import {
   Trash2,
   Upload,
   Users,
-  type LucideIcon,
   WandSparkles,
 } from "lucide-react";
 
@@ -43,11 +42,11 @@ import {
   type RubricDetailViewModel,
 } from "@/services/projects";
 
-const projectEntryPoints: Array<[string, string, LucideIcon]> = [
-  ["С нуля", "Создать переиспользуемый проект без данных пресета.", FolderPlus],
-  ["Из пресета", "Идемпотентно импортировать поддерживаемый пресет.", CopyPlus],
-  ["Импорт пакета", "Проверить JSON проекта и рубрик перед активацией.", FileJson],
-];
+const projectEntryPointIcons = {
+  package: FileJson,
+  preset: CopyPlus,
+  scratch: FolderPlus,
+};
 
 export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewModel }) {
   return (
@@ -103,15 +102,18 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
           ))}
         </Card>
         <div className="grid gap-4 lg:grid-cols-3">
-          {projectEntryPoints.map(([title, text, Icon]) => (
-            <Card className="grid gap-3" key={title}>
-              <Icon className="text-accent" size={20} />
-              <div>
-                <div className="text-sm font-semibold">{title}</div>
-                <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
-              </div>
-            </Card>
-          ))}
+          {viewModel.entryPoints.map(({ icon, text, title }) => {
+            const Icon = projectEntryPointIcons[icon];
+            return (
+              <Card className="grid gap-3" key={title}>
+                <Icon className="text-accent" size={20} />
+                <div>
+                  <div className="text-sm font-semibold">{title}</div>
+                  <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </section>
     </div>
