@@ -49,6 +49,7 @@ import {
 } from "@/features/project-wizard/project-wizard-fixtures";
 import {
   type ProjectIndexViewModel,
+  type RubricDetailViewModel,
   type RubricBuilderViewModel,
 } from "@/services/projects";
 
@@ -309,11 +310,17 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
               Стабильная идентичность с активной версией настроек.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button asChild variant="secondary">
               <Link href={`/app/projects/${projectId}/examples`}>
                 <BookOpenCheck size={16} />
                 Примеры
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}/settings`}>
+                <SlidersHorizontal size={16} />
+                Настройки
               </Link>
             </Button>
             <Button asChild variant="secondary">
@@ -431,11 +438,11 @@ export function RubricBuilderShell({
                 <ListChecks size={18} className="text-primary" />
                 Рубрики проекта
               </div>
-              {viewModel.rubrics.map(({ count, name, status, version }) => (
-                <button
+              {viewModel.rubrics.map(({ count, href, name, status, version }) => (
+                <Link
                   className="grid gap-1 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
                   key={name}
-                  type="button"
+                  href={href}
                 >
                   <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <span className="min-w-0 break-words font-medium text-foreground">
@@ -451,11 +458,13 @@ export function RubricBuilderShell({
                   <span className="text-xs text-muted">
                     {count} · {version}
                   </span>
-                </button>
+                </Link>
               ))}
-              <Button type="button" variant="secondary">
-                <Plus size={16} />
-                Добавить рубрику
+              <Button asChild variant="secondary">
+                <Link href={`/app/projects/${projectId}/rubrics/new`}>
+                  <Plus size={16} />
+                  Добавить рубрику
+                </Link>
               </Button>
             </Card>
 
@@ -630,6 +639,473 @@ export function RubricBuilderShell({
                   </span>
                 </div>
               ))}
+            </Card>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function NewRubricShell({
+  projectId,
+  viewModel,
+}: {
+  projectId: string;
+  viewModel: RubricBuilderViewModel;
+}) {
+  return (
+    <div className="grid min-w-0 gap-5">
+      <BuilderHeader title="Новая рубрика" />
+      <section className="grid min-w-0 gap-5">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              <Badge>Проект {viewModel.projectLabel || projectId}</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+            </div>
+            <h1 className="mt-3 break-words text-2xl font-semibold text-foreground sm:text-3xl">
+              Черновик рубрики
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              Страница готовит структуру будущей рубрики: название, slug, лимиты,
+              поля, повторяемые группы и платформенные правила. Реальное
+              сохранение подключается через API-мутацию отдельным срезом.
+            </p>
+          </div>
+          <div className="flex max-w-full flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}/rubrics`}>
+                <ArrowLeft size={16} />
+                К списку
+              </Link>
+            </Button>
+            <Button disabled type="button">
+              <Save size={16} />
+              Создать после API
+            </Button>
+          </div>
+        </div>
+
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid min-w-0 gap-4">
+            <Card className="grid gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ClipboardCheck size={18} className="text-primary" />
+                Основные параметры
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  ["Название", "Например: Завтраки до 500 рублей"],
+                  ["Slug", "breakfast-under-500"],
+                  ["Минимум знаков", "1500"],
+                  ["Максимум знаков", "4096"],
+                ].map(([label, placeholder]) => (
+                  <label className="grid gap-1.5 text-sm" key={label}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <input
+                      className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
+                      placeholder={placeholder}
+                    />
+                  </label>
+                ))}
+              </div>
+              <label className="grid gap-1.5 text-sm">
+                <span className="font-medium text-foreground">Описание сценария</span>
+                <textarea
+                  className="min-h-28 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
+                  placeholder="Кому нужна рубрика, какие факты собираем, какие границы вкуса и цены важны."
+                />
+              </label>
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Braces size={18} className="text-primary" />
+                Стартовый набор полей
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {fieldPalette.map(([title, text]) => (
+                  <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={title}>
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-medium text-foreground">{title}</span>
+                      <input defaultChecked={title !== "ИИ-поле"} type="checkbox" />
+                    </span>
+                    <span className="text-xs leading-5 text-muted">{text}</span>
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Repeat2 size={18} className="text-primary" />
+                Повторяемые блоки
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {repeatableGroups.map(([name, min, max, fields]) => (
+                  <div className="rounded-md border border-border p-3" key={name}>
+                    <div className="text-sm font-medium text-foreground">{name}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge>{min}</Badge>
+                      <Badge>{max}</Badge>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted">{fields}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ListChecks size={18} className="text-primary" />
+                Уже есть в проекте
+              </div>
+              {viewModel.rubrics.map((rubric) => (
+                <Link
+                  className="rounded-md border border-border p-3 text-sm transition hover:bg-surface-muted"
+                  href={rubric.href}
+                  key={rubric.id}
+                >
+                  <span className="block font-medium text-foreground">{rubric.name}</span>
+                  <span className="mt-1 block text-xs text-muted">
+                    {rubric.status} · {rubric.count} · {rubric.version}
+                  </span>
+                </Link>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <SlidersHorizontal size={18} className="text-primary" />
+                Площадки
+              </div>
+              {platformStrategies.map(([platform, mode, note]) => (
+                <div className="rounded-md border border-border p-3" key={platform}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm font-medium text-foreground">{platform}</div>
+                    <Badge tone="info">{mode}</Badge>
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-muted">{note}</div>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function RubricDetailShell({
+  projectId,
+  rubricId,
+  viewModel,
+}: {
+  projectId: string;
+  rubricId: string;
+  viewModel: RubricDetailViewModel;
+}) {
+  const rubric = viewModel.selectedRubric;
+
+  return (
+    <div className="grid min-w-0 gap-5">
+      <BuilderHeader title="Редактор рубрики" />
+      <section className="grid min-w-0 gap-5">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              <Badge>Проект {viewModel.projectLabel || projectId}</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+              <Badge>{rubric.status}</Badge>
+            </div>
+            <h1 className="mt-3 break-words text-2xl font-semibold text-foreground sm:text-3xl">
+              {rubric.name}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              Route-level редактор для конкретной рубрики. Изменения должны
+              создавать новую immutable-версию; текущий экран показывает
+              целевую структуру до подключения сохранения.
+            </p>
+          </div>
+          <div className="flex max-w-full flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}/rubrics`}>
+                <ListChecks size={16} />
+                Все рубрики
+              </Link>
+            </Button>
+            <Button disabled type="button">
+              <Save size={16} />
+              Сохранить после API
+            </Button>
+          </div>
+        </div>
+
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
+        <div className="grid gap-3 text-sm md:grid-cols-4">
+          {[
+            ["Route id", rubricId],
+            ["Версия", rubric.version],
+            ["Поля", rubric.count],
+            ["Сохранение", "новая версия"],
+          ].map(([label, value]) => (
+            <Card className="bg-surface-muted" key={label}>
+              <div className="text-xs text-muted">{label}</div>
+              <div className="mt-1 break-words font-medium text-foreground">{value}</div>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
+          <Card className="grid content-start gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ListChecks size={18} className="text-primary" />
+              Рубрики проекта
+            </div>
+            {viewModel.rubrics.map((item) => (
+              <Link
+                className="grid gap-1 rounded-md border border-border p-3 text-sm transition hover:bg-surface-muted"
+                href={item.href}
+                key={item.id}
+              >
+                <span className="font-medium text-foreground">{item.name}</span>
+                <span className="text-xs text-muted">
+                  {item.status} · {item.version}
+                </span>
+              </Link>
+            ))}
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}/rubrics/new`}>
+                <Plus size={16} />
+                Новая рубрика
+              </Link>
+            </Button>
+          </Card>
+
+          <div className="grid min-w-0 gap-4">
+            <Card className="grid gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Blocks size={18} className="text-primary" />
+                Полотно формы
+              </div>
+              {rubricFields.map((field, index) => (
+                <div className="grid gap-3 rounded-md border border-border p-3" key={field.key}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 gap-3">
+                      <GripVertical className="mt-0.5 shrink-0 text-muted" size={18} />
+                      <div className="min-w-0">
+                        <div className="break-words text-sm font-medium text-foreground">
+                          {index + 1}. {field.label}
+                        </div>
+                        <p className="mt-1 break-words text-xs leading-5 text-muted">
+                          {field.helper}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge tone={field.required ? "success" : "neutral"}>
+                      {field.required ? "обязательное" : "опционально"}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-2 text-xs text-muted sm:grid-cols-3">
+                    <span>ключ: {field.key}</span>
+                    <span>источник: {field.source}</span>
+                    <span>лимит: {field.limit}</span>
+                  </div>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Eye size={18} className="text-primary" />
+                Предпросмотр формы
+              </div>
+              {previewBlocks.map(([index, name, note]) => (
+                <div className="grid grid-cols-[28px_1fr] gap-2 rounded-md border border-border p-2" key={index}>
+                  <span className="grid size-7 place-items-center rounded bg-surface-muted text-xs font-medium text-muted">
+                    {index}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{name}</span>
+                    <span className="block text-xs text-muted">{note}</span>
+                  </span>
+                </div>
+              ))}
+            </Card>
+          </div>
+
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <PanelRight size={18} className="text-primary" />
+                Инспектор версии
+              </div>
+              {[
+                ["Название", rubric.name],
+                ["Статус", rubric.status],
+                ["Лимит", rubric.count],
+              ].map(([label, value]) => (
+                <label className="grid gap-1.5 text-sm" key={label}>
+                  <span className="font-medium text-foreground">{label}</span>
+                  <input
+                    className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+                    defaultValue={value}
+                  />
+                </label>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ShieldCheck size={18} className="text-primary" />
+                Правила стиля
+              </div>
+              {styleRules.map((rule) => (
+                <div className="flex gap-2 text-sm leading-6 text-muted" key={rule}>
+                  <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
+                  <span>{rule}</span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function ProjectSettingsShell({ projectId }: { projectId: string }) {
+  return (
+    <div className="grid min-w-0 gap-5">
+      <BuilderHeader title="Настройки проекта" />
+      <section className="grid gap-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <Badge>Проект {projectId}</Badge>
+            <h1 className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">
+              Идентичность, доступы и версии
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              Настройки проекта должны сохраняться версионируемо: изменение
+              голоса, площадок или лимитов не меняет исторические материалы.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${projectId}`}>
+                <ArrowLeft size={16} />
+                В проект
+              </Link>
+            </Button>
+            <Button disabled type="button">
+              <Save size={16} />
+              Сохранить после API
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid gap-4">
+            <Card className="grid gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ClipboardCheck size={18} className="text-primary" />
+                Профиль проекта
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  ["Название", "Что поесть? Армавир"],
+                  ["Slug", "chto-poest-armavir"],
+                  ["Язык", "ru"],
+                  ["Тематика", "Локальные обзоры еды"],
+                ].map(([label, value]) => (
+                  <label className="grid gap-1.5 text-sm" key={label}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <input
+                      className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+                      defaultValue={value}
+                    />
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="grid gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <RadioTower size={18} className="text-primary" />
+                Площадки проекта
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                {platformOptions.map(([name, note, enabled]) => (
+                  <label className="grid gap-2 rounded-md border border-border p-3 text-sm" key={name}>
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-medium text-foreground">{name}</span>
+                      <input defaultChecked={enabled} type="checkbox" />
+                    </span>
+                    <span className="text-xs leading-5 text-muted">{note}</span>
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="grid gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Users size={18} className="text-primary" />
+                Роли и публикация
+              </div>
+              {[
+                ["Владелец", "может управлять биллингом, проектом и публикациями"],
+                ["Администратор", "может управлять проектом и публикациями"],
+                ["Редактор", "готовит материалы, но публикует только при выданном content.publish"],
+              ].map(([role, note]) => (
+                <div className="rounded-md border border-border p-3 text-sm" key={role}>
+                  <div className="font-medium text-foreground">{role}</div>
+                  <div className="mt-1 text-muted">{note}</div>
+                </div>
+              ))}
+            </Card>
+          </div>
+
+          <div className="grid content-start gap-4">
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ShieldCheck size={18} className="text-primary" />
+                Версионность
+              </div>
+              {["Текущая версия: v9", "Изменение настроек создаёт v10", "Исторические материалы остаются на старых версиях"].map((item) => (
+                <div className="flex gap-2 text-sm leading-6 text-muted" key={item}>
+                  <CheckCircle2 className="mt-1 shrink-0 text-success" size={15} />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <FileJson size={18} className="text-primary" />
+                Импорт и экспорт
+              </div>
+              <p className="text-sm leading-6 text-muted">
+                JSON-пакеты остаются форматом переноса пресетов и резервного
+                экспорта. Приложение не должно хранить секреты в пакетах.
+              </p>
+              <Button type="button" variant="secondary">
+                <FileJson size={16} />
+                Экспортировать пакет
+              </Button>
             </Card>
           </div>
         </div>

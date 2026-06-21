@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T03:21:10.016012+00:00",
+  "generated_at": "2026-06-21T03:51:16.893629+00:00",
   "canonical_language": "en",
-  "file_count": 374,
+  "file_count": 379,
   "files": [
     {
       "path": ".dockerignore",
@@ -166,9 +166,24 @@
       "sha256": "9c5ed825ac76a174dd3b46390e6abd67fc877345408c238e3dc32ba2aa8a0acb"
     },
     {
+      "path": "apps/web/src/app/app/projects/[projectId]/rubrics/[rubricId]/page.tsx",
+      "size_bytes": 526,
+      "sha256": "f7b917edbc5879a03026f82164ad7ff49e64198428ee0341ec3525dc168b21f6"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/[projectId]/rubrics/new/page.tsx",
+      "size_bytes": 429,
+      "sha256": "17f5267461a7aef281e2bb6897bf1c599e070a32f12d9aa587ad58936fb3b6de"
+    },
+    {
       "path": "apps/web/src/app/app/projects/[projectId]/rubrics/page.tsx",
       "size_bytes": 442,
       "sha256": "df8b5f5eddf6462421098e5625c030893aa69ae13abb6e2fc0cbd80dfb2511b1"
+    },
+    {
+      "path": "apps/web/src/app/app/projects/[projectId]/settings/page.tsx",
+      "size_bytes": 296,
+      "sha256": "a0433942879126f5837dcdf629287702c90a456d3e30abbe18d25ad169cfedbe"
     },
     {
       "path": "apps/web/src/app/app/projects/new/page.tsx",
@@ -317,8 +332,8 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 28419,
-      "sha256": "87edce9e98c1582a803609d51ba402e1bfe6496d21da2fb19aa7c7686c8f2372"
+      "size_bytes": 50597,
+      "sha256": "c99a1e7f377be79f1c0c58f8764bdc5eedb24fd707d4ec516db4e18cb3cb0bd0"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
@@ -452,8 +467,8 @@
     },
     {
       "path": "apps/web/src/services/projects.ts",
-      "size_bytes": 5329,
-      "sha256": "81e7435f0179d8d4e912e463cc3085bca9b56f11774e131067a55e956d246473"
+      "size_bytes": 6743,
+      "sha256": "cbbd4e66921e0c5a5a34a46030bd8116297a28da724c8f99860187e54a572ab2"
     },
     {
       "path": "apps/web/src/services/publications.ts",
@@ -1111,6 +1126,16 @@
       "sha256": "a563faf50b6c09b85b9b42f48d7837930bcd1c3fb2c066f480818492c3aa4c50"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10E_PROJECT_ROUTE_COMPLETION.md",
+      "size_bytes": 3368,
+      "sha256": "f1f44ca416c29194c037b2c93b625c3fe5be736c23de08cc2ebb4551a04f46fb"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10E_REPORT_RU.md",
+      "size_bytes": 3818,
+      "sha256": "f6305e5336d5b6aea0e6c56d2c99fc53ddf8b990e3521a7ce3d7fa896fa9ccec"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1137,8 +1162,8 @@
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",
-      "size_bytes": 5864,
-      "sha256": "2cedffe3dfe9df48b82a8b190fd0a630b8d072866489abfa120ad36f74c94172"
+      "size_bytes": 6043,
+      "sha256": "b908081be3109ff221f629fcb40caee33d6bb2d99657c6c138e7557c5aace7d3"
     },
     {
       "path": "docs/frontend/UI_ARCHITECTURE.md",

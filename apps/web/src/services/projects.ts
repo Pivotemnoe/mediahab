@@ -26,10 +26,16 @@ export interface RubricBuilderViewModel {
   projectLabel: string;
   rubrics: Array<{
     count: string;
+    href: string;
+    id: string;
     name: string;
     status: string;
     version: string;
   }>;
+}
+
+export interface RubricDetailViewModel extends RubricBuilderViewModel {
+  selectedRubric: RubricBuilderViewModel["rubrics"][number];
 }
 
 function projectStatusLabel(status: string): string {
@@ -48,6 +54,15 @@ function rubricStatusLabel(status: string): string {
     draft: "черновик",
   };
   return labels[status] ?? status;
+}
+
+function fixtureRubricId(name: string): string {
+  const ids: Record<string, string> = {
+    "Обзор недели": "obzor-nedeli",
+    "Поесть до 500 рублей": "poest-do-500",
+    "Фаст-обзор": "fast-obzor",
+  };
+  return ids[name] ?? encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-"));
 }
 
 function fixtureProjectIndex(): ProjectIndexViewModel {
@@ -70,12 +85,17 @@ function fixtureRubricBuilder(projectId: string): RubricBuilderViewModel {
   return {
     modeLabel: "fixtures",
     projectLabel: projectId,
-    rubrics: rubricList.map(([name, status, count, version]) => ({
-      count,
-      name,
-      status: rubricStatusLabel(status),
-      version,
-    })),
+    rubrics: rubricList.map(([name, status, count, version]) => {
+      const id = fixtureRubricId(name);
+      return {
+        count,
+        href: `/app/projects/${projectId}/rubrics/${id}`,
+        id,
+        name,
+        status: rubricStatusLabel(status),
+        version,
+      };
+    }),
   };
 }
 
@@ -135,6 +155,8 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
             count: rubric.editorial_max_chars
               ? `до ${rubric.editorial_max_chars} знаков`
               : "лимит не задан",
+            href: `/app/projects/${projectId}/rubrics/${rubric.id}`,
+            id: rubric.id,
             name: rubric.name,
             status: rubricStatusLabel(rubric.status),
             version: `v${rubric.active_version_number}`,
@@ -173,4 +195,27 @@ export async function getRubricBuilderViewModel(projectId: string): Promise<Rubr
       notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
     };
   }
+}
+
+export async function getRubricDetailViewModel(
+  projectId: string,
+  rubricId: string,
+): Promise<RubricDetailViewModel> {
+  const viewModel = await getRubricBuilderViewModel(projectId);
+  const selectedRubric =
+    viewModel.rubrics.find((rubric) => rubric.id === rubricId) ??
+    viewModel.rubrics.find((rubric) => rubric.href.endsWith(`/${rubricId}`)) ??
+    viewModel.rubrics[0] ?? {
+      count: "поля не настроены",
+      href: `/app/projects/${projectId}/rubrics/${rubricId}`,
+      id: rubricId,
+      name: "Новая рубрика",
+      status: "черновик",
+      version: "v1",
+    };
+
+  return {
+    ...viewModel,
+    selectedRubric,
+  };
 }

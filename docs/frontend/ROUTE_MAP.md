@@ -1,6 +1,6 @@
 # Frontend Route Map
 
-Status: UI Phase 00 planning baseline.
+Status: UI Phase 10e route inventory.
 
 ## Principles
 
@@ -41,19 +41,19 @@ Status: UI Phase 00 planning baseline.
 | `/app/projects` | Project list | exists | Project cards and create/import actions |
 | `/app/projects/new` | Project wizard | exists | Visual Builder wizard |
 | `/app/projects/[projectId]` | Project overview | exists | Project home with rubrics, examples, health |
-| `/app/projects/[projectId]/settings` | Project settings | missing | Add in UI/API phase when settings UI is ready |
+| `/app/projects/[projectId]/settings` | Project settings | exists | Project identity, platforms, roles, version posture |
 | `/app/projects/[projectId]/builder` | Project builder | exists | Keep as builder hub or redirect to settings/rubrics |
 | `/app/projects/[projectId]/rubrics` | Rubric list | exists | Visual Builder rubric list |
-| `/app/projects/[projectId]/rubrics/new` | New rubric | missing | Add in UI Phase 04 |
-| `/app/projects/[projectId]/rubrics/[rubricId]` | Rubric editor | missing | Add in UI Phase 04 |
+| `/app/projects/[projectId]/rubrics/new` | New rubric | exists | Route shell; live save mutation deferred |
+| `/app/projects/[projectId]/rubrics/[rubricId]` | Rubric editor | exists | Route shell; immutable-version save deferred |
 | `/app/projects/[projectId]/examples` | Project examples | exists | Keep as project-scoped examples |
-| `/app/examples` | Cross-project examples | missing | Add in UI Phase 08 |
+| `/app/examples` | Cross-project examples | exists | Cross-project examples and import posture |
 | `/app/content` | Content list | exists | Drafts, filters, status, create action |
 | `/app/content/new` | Start content | exists | Project/rubric selection and mobile-first entry |
 | `/app/content/[contentId]` | Content Studio | exists | Editorial Studio desktop and Mobile Capture responsive mode |
-| `/app/calendar` | Schedule/calendar | missing | Add with Product Phase 10/UI Phase 08 |
+| `/app/calendar` | Schedule/calendar | exists | Planning calendar and scheduled publication posture |
 | `/app/media` | Media library | exists | Media grid, upload status, filters |
-| `/app/integrations` | Connector accounts | missing | Add with Product Phases 07-09/UI Phase 07 |
+| `/app/integrations` | Connector accounts | exists | Connector states, credential posture, manual/export modes |
 | `/app/publications` | Publication queue/history | exists | Publication cards, partial success, attempts, retry, cancel |
 | `/app/billing` | Billing/usage | exists | Current plan, usage, pricing, coming-soon payment |
 | `/app/workspace` | Workspace settings/members | exists | Workspace and roles |
@@ -148,5 +148,5 @@ This can be introduced gradually. A route group migration must preserve visible 
 
 - `/app` and `/app/dashboard` should become the same dashboard experience.
 - `/app/settings` is not in the canonical route list; keep as a temporary hub or redirect.
-- `/app/integrations`, `/app/calendar`, `/app/examples`, project settings, and rubric detail routes are missing.
+- Route inventory is now broadly complete for the cabinet map. Remaining gaps are behavioral: live mutations, project-wide content filtering, route-group cleanup, and richer API-backed state.
 - The current route files directly render phase shell components. UI Phase 01 should wrap them in a durable CabinetShell first, then later replace them feature by feature.
