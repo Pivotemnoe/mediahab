@@ -4,26 +4,36 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { calendarDays, calendarQueue } from "@/features/library-planning/library-planning-fixtures";
+import { getCalendarViewModel } from "@/services/library-planning";
 
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  const viewModel = await getCalendarViewModel();
+
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
         actions={
-          <Button type="button">
-            <CalendarClock size={16} />
-            Запланировать
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{viewModel.modeLabel}</Badge>
+            <Button type="button">
+              <CalendarClock size={16} />
+              Запланировать
+            </Button>
+          </div>
         }
         description="Календарь публикаций: часовой пояс workspace, хранение в UTC, перенос, отмена и надёжная исходящая очередь."
         eyebrow="Этап UI 08"
         title="Календарь"
       />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
       <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="grid gap-3">
           <div className="grid gap-3 md:grid-cols-4">
-            {calendarDays.map(([day, status, note]) => (
+            {viewModel.days.map(({ day, note, status }) => (
               <div className="rounded-md border border-border bg-surface-muted p-3" key={day}>
                 <div className="text-sm font-medium text-foreground">{day}</div>
                 <Badge className="mt-2" tone={status === "пусто" ? "neutral" : status === "внимание" ? "warning" : "success"}>
@@ -33,7 +43,7 @@ export default function CalendarPage() {
               </div>
             ))}
           </div>
-          {calendarQueue.map(([date, title, status, note]) => (
+          {viewModel.queue.map(({ date, note, status, title }) => (
             <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[140px_1fr_auto]" key={title}>
               <div className="flex items-center gap-2 text-sm text-muted">
                 <CalendarClock size={16} />

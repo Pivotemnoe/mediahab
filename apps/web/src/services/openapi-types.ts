@@ -116,6 +116,39 @@ export interface ContentListResponse {
   content_items: ContentItemOut[];
 }
 
+export interface ExampleOut {
+  character_count: number;
+  created_at: string;
+  id: string;
+  labels: string[];
+  manual_quality_score: number | null;
+  project_id: string;
+  rubric_id: string | null;
+  source_external_id: string | null;
+  source_type: string;
+  status: string;
+  text: string;
+  title: string | null;
+  workspace_id: string;
+}
+
+export interface ExampleListResponse {
+  examples: ExampleOut[];
+}
+
+export interface ContentMediaOut {
+  caption: string | null;
+  content_item_id: string;
+  id: string;
+  media_asset_id: string;
+  role: string;
+  sort_order: number;
+}
+
+export interface ContentMediaResponse {
+  media: ContentMediaOut[];
+}
+
 export interface UsageLimitOut {
   key?: string;
   label?: string;

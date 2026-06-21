@@ -4,9 +4,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { exampleFilters, exampleLibrary } from "@/features/library-planning/library-planning-fixtures";
+import { getExamplesLibraryViewModel } from "@/services/library-planning";
 
-export default function ExamplesPage() {
+export default async function ExamplesPage() {
+  const viewModel = await getExamplesLibraryViewModel();
+
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
@@ -26,10 +28,18 @@ export default function ExamplesPage() {
         eyebrow="Этап UI 08"
         title="Примеры"
       />
+      <div className="flex flex-wrap gap-2">
+        <Badge>{viewModel.modeLabel}</Badge>
+      </div>
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
       <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="grid gap-3">
           <div className="flex flex-wrap gap-2">
-            {exampleFilters.map((filter) => (
+            {viewModel.filters.map((filter) => (
               <Button key={filter} size="sm" type="button" variant={filter === "Все" ? "primary" : "secondary"}>
                 <Filter size={14} />
                 {filter}
@@ -43,7 +53,7 @@ export default function ExamplesPage() {
               placeholder="Поиск по рубрике, стилю или статусу"
             />
           </label>
-          {exampleLibrary.map(([rubric, title, status, score, fragments]) => (
+          {viewModel.examples.map(({ fragments, rubric, score, status, title }) => (
             <div className="rounded-md border border-border p-3" key={title}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>

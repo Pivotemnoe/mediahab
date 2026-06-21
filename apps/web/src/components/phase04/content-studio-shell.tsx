@@ -54,10 +54,8 @@ import {
   reviewBlocks,
 } from "@/features/mobile-capture/mobile-capture-fixtures";
 import {
-  mediaFilters,
-  mediaLibrary,
-  mediaWarnings,
-} from "@/features/library-planning/library-planning-fixtures";
+  type MediaLibraryViewModel,
+} from "@/services/library-planning";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
@@ -625,14 +623,22 @@ export function ContentStudioShell({
   );
 }
 
-export function MediaLibraryShell() {
+export function MediaLibraryShell({ viewModel }: { viewModel: MediaLibraryViewModel }) {
   return (
     <div className="grid min-w-0 gap-5">
       <StudioHeader label="Этап UI 08" title="Медиа" />
+      {viewModel.notice ? (
+        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+          {viewModel.notice}
+        </Card>
+      ) : null}
       <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
         <Card className="grid content-start gap-4">
           <div>
-            <Badge>Библиотека</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge>Библиотека</Badge>
+              <Badge>{viewModel.modeLabel}</Badge>
+            </div>
             <h1 className="mt-3 text-2xl font-semibold text-foreground">
               Медиа материала
             </h1>
@@ -645,7 +651,7 @@ export function MediaLibraryShell() {
             Выбрать файлы
           </Button>
           <div className="grid gap-2">
-            {mediaFilters.map((filter) => (
+            {viewModel.filters.map((filter) => (
               <Button key={filter} size="sm" type="button" variant={filter === "Все" ? "primary" : "secondary"}>
                 <Filter size={14} />
                 {filter}
@@ -663,14 +669,14 @@ export function MediaLibraryShell() {
             <h2 className="mt-3 text-lg font-semibold text-foreground">Файлы материала</h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            {mediaWarnings.map(([platform, warning]) => (
+            {viewModel.warnings.map(({ platform, warning }) => (
               <div className="flex gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs text-muted" key={platform}>
                 <AlertTriangle className="shrink-0 text-warning" size={14} />
                 <span>{platform}: {warning}</span>
               </div>
             ))}
           </div>
-          {mediaLibrary.map(([index, title, type, status, role, compatibility]) => (
+          {viewModel.items.map(({ compatibility, index, role, status, title, type }) => (
             <div className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[40px_1fr_120px_140px]" key={index}>
               <GripVertical size={18} className="text-muted" />
               <div>
