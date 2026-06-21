@@ -15,11 +15,13 @@ import {
 } from "@/services/guided-action-state";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
+type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
 type DraftStatus = "cleared" | "empty" | "restored" | "saved";
 
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const draftPrefix = "tmh:guided-form-draft:v1";
+const autosaveDelayMs = 1200;
 
 function isDraftControl(element: Element): element is DraftControl {
   if (
@@ -149,6 +151,74 @@ function useGuidedLocalDraft(params: {
   return { draftStatus, flushDraft, formRef, handleDraftChange };
 }
 
+function useGuidedAutosave(params: {
+  enabled: boolean;
+  isPending: boolean;
+  state: GuidedActionState;
+}) {
+  const autosaveButtonRef = useRef<HTMLButtonElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>(params.enabled ? "idle" : "disabled");
+
+  useEffect(() => {
+    if (!params.enabled) {
+      setAutosaveStatus("disabled");
+      return;
+    }
+    setAutosaveStatus((current) => (current === "disabled" ? "idle" : current));
+  }, [params.enabled]);
+
+  useEffect(() => {
+    if (!params.enabled) {
+      return;
+    }
+    if (params.isPending) {
+      setAutosaveStatus("pending");
+      return;
+    }
+    if (params.state.tone === "success") {
+      setAutosaveStatus("synced");
+      return;
+    }
+    if (params.state.tone === "warning" || params.state.tone === "danger") {
+      setAutosaveStatus("failed");
+    }
+  }, [params.enabled, params.isPending, params.state.tone]);
+
+  useEffect(() => () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+  }, []);
+
+  function scheduleAutosave() {
+    if (!params.enabled || !autosaveButtonRef.current) {
+      return;
+    }
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setAutosaveStatus("queued");
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      if (!params.enabled || !autosaveButtonRef.current) {
+        return;
+      }
+      autosaveButtonRef.current.click();
+    }, autosaveDelayMs);
+  }
+
+  function flushAutosaveTimer() {
+    if (!timerRef.current) {
+      return;
+    }
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }
+
+  return { autosaveButtonRef, autosaveStatus, flushAutosaveTimer, scheduleAutosave };
+}
+
 function statusClassName(tone: GuidedActionState["tone"]): string {
   if (tone === "success") {
     return "border-success bg-[color-mix(in_srgb,var(--success),transparent_92%)] text-success";
@@ -209,6 +279,26 @@ function DraftStatusLine({ status }: { status: DraftStatus }) {
 
   return (
     <div className="rounded-md border border-border bg-surface-muted px-3 py-2 text-xs leading-5 text-muted">
+      {labels[status]}
+    </div>
+  );
+}
+
+function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
+  const labels: Record<AutosaveStatus, string> = {
+    disabled: "Автосохранение включится в API-режиме для изменяемых полей.",
+    failed: "Автосохранение не прошло. Локальный черновик сохранён в браузере.",
+    idle: "Автосохранение ждёт ввода.",
+    pending: "Автосохраняем через backend...",
+    queued: "Автосохранение запланировано.",
+    synced: "Автосохранено через backend.",
+  };
+
+  const tone: GuidedActionState["tone"] =
+    status === "failed" ? "danger" : status === "pending" || status === "queued" ? "warning" : status === "synced" ? "success" : "idle";
+
+  return (
+    <div className={`rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}>
       {labels[status]}
     </div>
   );
@@ -282,6 +372,7 @@ export function GuidedFieldActionForm({
 }) {
   const [state, formAction, isPending] = useActionState(saveGuidedFieldAction, initialGuidedActionState);
   const disabled = !canSubmit || isPending;
+  const autosave = useGuidedAutosave({ enabled: canSubmit, isPending, state });
   const draft = useGuidedLocalDraft({
     enabled: canSubmit,
     state,
@@ -292,9 +383,18 @@ export function GuidedFieldActionForm({
     <form
       action={formAction}
       className="grid gap-3"
-      onChange={draft.handleDraftChange}
-      onInput={draft.handleDraftChange}
-      onSubmit={draft.flushDraft}
+      onChange={() => {
+        draft.handleDraftChange();
+        autosave.scheduleAutosave();
+      }}
+      onInput={() => {
+        draft.handleDraftChange();
+        autosave.scheduleAutosave();
+      }}
+      onSubmit={() => {
+        autosave.flushAutosaveTimer();
+        draft.flushDraft();
+      }}
       ref={draft.formRef}
     >
       <input name="contentId" type="hidden" value={contentId} />
@@ -303,9 +403,20 @@ export function GuidedFieldActionForm({
       {field.blockId ? <input name="blockId" type="hidden" value={field.blockId} /> : null}
       {itemVersion !== null ? <input name="itemVersion" type="hidden" value={itemVersion} /> : null}
       <GuidedFieldControl canMutate={canSubmit} field={field} />
+      <AutosaveStatusLine status={autosave.autosaveStatus} />
       <DraftStatusLine status={draft.draftStatus} />
       <ActionStatus canRetry={canSubmit} state={state} />
       <div className="flex flex-wrap gap-2">
+        <button
+          aria-hidden="true"
+          className="hidden"
+          disabled={!canSubmit}
+          name="intent"
+          ref={autosave.autosaveButtonRef}
+          tabIndex={-1}
+          type="submit"
+          value="save"
+        />
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="save" variant="secondary">
           <Save size={14} />
           {isPending ? "Сохраняем" : "Сохранить"}
