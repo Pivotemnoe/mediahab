@@ -34,7 +34,7 @@ typecheck: deps
 	$(PNPM) --filter @temichev/web typecheck
 	$(PY) -m compileall -q tools tests services packages connectors
 
-test: deps
+test: deps test-ui-hardening
 	$(PY) -m unittest discover -s tests
 	$(PY) -m unittest discover -s services/api/tests
 
