@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:09:43.380510+00:00",
+  "generated_at": "2026-06-21T15:15:16.478781+00:00",
   "canonical_language": "en",
-  "file_count": 424,
+  "file_count": 427,
   "files": [
     {
       "path": ".dockerignore",
@@ -1361,6 +1361,16 @@
       "sha256": "5a4f443eab45b1ebaf39ee5be7f9771470333f75c7430bd8aaa2bea7b649b0f0"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10X_GUIDED_QUEUE_READINESS_HARNESS.md",
+      "size_bytes": 3756,
+      "sha256": "0a62684bc030d74f80a63685070107d25d6219ba99dab64304e48126081cdc5b"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10X_REPORT_RU.md",
+      "size_bytes": 3373,
+      "sha256": "35e8570041ad951cbce2c57641a3bd1608f97fa6364fb7949d09ca5c767915fd"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -2094,6 +2104,11 @@
       "path": "tests/test_phase00_spikes.py",
       "size_bytes": 3338,
       "sha256": "b6ca01c1d60fee10e2fad2c7fa36722e8eff8338f3cf957748977a8e9c1a2275"
+    },
+    {
+      "path": "tools/check_guided_queue_replay.mjs",
+      "size_bytes": 3481,
+      "sha256": "54270a33506dbd9bf155228c357abc58754bd17708deb0bff345ab68dd6360d8"
     },
     {
       "path": "tools/e2e_smoke.py",
