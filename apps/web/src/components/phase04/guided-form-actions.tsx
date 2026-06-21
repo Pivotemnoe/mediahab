@@ -26,6 +26,7 @@ import {
   readGuidedQueueJob,
   writeGuidedQueueJob,
 } from "@/services/guided-queue-store";
+import { buildGuidedQueueReplayRequestDraft } from "@/services/guided-queue-replay";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
@@ -518,6 +519,7 @@ function QueueStatusLine({
         ? "success"
         : "idle";
   const canRetryJob = canRetry && job?.recoveryAction !== "refresh" && (status === "queued" || status === "blocked");
+  const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
 
   return (
     <div className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}>
@@ -525,6 +527,7 @@ function QueueStatusLine({
         {labels[status]}
         {job?.code ? <span className="block">Код: {job.code}</span> : null}
         {job?.requestId ? <span className="block">ID запроса: {job.requestId}</span> : null}
+        {replayReadiness ? <span className="block">{replayReadiness}</span> : null}
       </div>
       {job ? (
         <div className="flex flex-wrap gap-2">
@@ -541,6 +544,24 @@ function QueueStatusLine({
       ) : null}
     </div>
   );
+}
+
+function manualReplayReadinessLabel(job: GuidedQueueJob): string {
+  const draft = buildGuidedQueueReplayRequestDraft(job);
+  if (draft.status === "ready") {
+    return "Ручной повтор подготовлен: запрос собран локально, автоматическая отправка выключена.";
+  }
+
+  return `Ручной повтор не готов: не хватает ${draft.missing.map(manualReplayMissingLabel).join(", ")}.`;
+}
+
+function manualReplayMissingLabel(key: string): string {
+  const labels: Record<string, string> = {
+    metadata: "данных формы",
+    "metadata.intent": "действия сохранения",
+    "values.value": "значения поля",
+  };
+  return labels[key] ?? key;
 }
 
 function GuidedFieldControl({
