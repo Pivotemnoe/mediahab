@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T04:40:33.039281+00:00",
+  "generated_at": "2026-06-21T05:30:19.163504+00:00",
   "canonical_language": "en",
-  "file_count": 388,
+  "file_count": 390,
   "files": [
     {
       "path": ".dockerignore",
@@ -102,8 +102,8 @@
     },
     {
       "path": "apps/web/src/app/app/content/new/page.tsx",
-      "size_bytes": 153,
-      "sha256": "d195ce290b7abc56f2953af3c5526a8e7ff5d6f8240c65bb1a5712d6ea0a2707"
+      "size_bytes": 294,
+      "sha256": "809bc03d8a8834a5945aa2233f384e08ef10cd32003b674767a85dce386426d8"
     },
     {
       "path": "apps/web/src/app/app/content/page.tsx",
@@ -337,8 +337,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 30676,
-      "sha256": "4cdd976b824d0e431d4d5287657c4a7f5742617d52a52d62bdd79661e0e5560d"
+      "size_bytes": 30506,
+      "sha256": "e66f44dedc9f3bd0a63aedd313e6015334797116c1e30508804151f72deaa448"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -457,8 +457,8 @@
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 6357,
-      "sha256": "076820eece358bd89163a15369b98a7a2b2a0e8eeaed64bcc8c510e9d565551d"
+      "size_bytes": 19060,
+      "sha256": "b082d55bc7874fdef644eee3baeeaf568f4b4c6dd0093018f5fbf9a550f01e8e"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -472,8 +472,8 @@
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
-      "size_bytes": 6324,
-      "sha256": "2dd3ac7ad7198bc794fc6f25eed530dcf6b138ccaf60f5034eb4ce1ae0694b5c"
+      "size_bytes": 7275,
+      "sha256": "8858a7af453d50154d12fae7c0dae4bbf1e7ff07d97ec991209a6931e03b4821"
     },
     {
       "path": "apps/web/src/services/projects.ts",
@@ -1181,6 +1181,16 @@
       "sha256": "3c5912c87802ccbad23c179fc23b48662dcfacb1c09ca3f6639742605b4f7e51"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10I_CONTENT_STUDIO_INTERNAL_SERVICES.md",
+      "size_bytes": 3697,
+      "sha256": "06ab2426416c09b47f7ee842d763265d268877d772accad48acaa621212576c1"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10I_REPORT_RU.md",
+      "size_bytes": 3727,
+      "sha256": "bf152633162a30c7853a50c9d8821437a3268b854985121dac4987c9b6eab4c0"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1202,8 +1212,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 5837,
-      "sha256": "2632a63d3416a6f7a9c56e0471788d2f37af30c258d9654a0bc8a0c5b8976b20"
+      "size_bytes": 5934,
+      "sha256": "9f9323dfa7459bf65aae39729fa02b71544cf2d3b6b99637288b34436682df40"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",

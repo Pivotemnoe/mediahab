@@ -149,6 +149,25 @@ export interface ContentMediaResponse {
   media: ContentMediaOut[];
 }
 
+export interface BlockOut {
+  content_item_id: string;
+  field_key: string;
+  group_index: number | null;
+  group_key: string | null;
+  id: string;
+  is_locked: boolean;
+  revision_number: number;
+  source_media_id: string | null;
+  source_type: string;
+  transcript_text: string | null;
+  updated_at: string;
+  value_json: unknown;
+}
+
+export interface BlocksResponse {
+  blocks: BlockOut[];
+}
+
 export interface GenerationRunOut {
   completed_at: string | null;
   content_item_id: string;
@@ -171,6 +190,30 @@ export interface GenerationRunOut {
   status: string;
   task_type: string;
   workspace_id: string;
+}
+
+export interface PlatformVariantOut {
+  approved_at: string | null;
+  character_count: number;
+  content_item_id: string;
+  created_at: string;
+  id: string;
+  master_revision_id: string;
+  parent_variant_id: string | null;
+  payload: JsonObject;
+  platform_key: string;
+  rendered_text: string;
+  revision_number: number;
+  status: string;
+  superseded_by_variant_id: string | null;
+  text: string;
+  updated_at: string;
+  validation: JsonObject;
+  workspace_id: string;
+}
+
+export interface PlatformVariantsResponse {
+  variants: PlatformVariantOut[];
 }
 
 export interface UsageLimitOut {

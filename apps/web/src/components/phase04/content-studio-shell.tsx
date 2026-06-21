@@ -36,36 +36,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  aiSuggestions,
-  factLocks,
-  inputBlocks,
-  masterDraftParagraphs,
-  platformPreviews,
-  revisionEvents,
-  transcriptReview,
-} from "@/features/content-studio/content-studio-fixtures";
-import {
-  activeCaptureBlock,
-  captureSteps,
-  compactPreviews,
-  offlineDraft,
-  recordingStates,
-  resumeItems,
-  reviewBlocks,
-} from "@/features/mobile-capture/mobile-capture-fixtures";
-import {
-  type MediaLibraryViewModel,
-} from "@/services/library-planning";
-import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
+  type NewContentViewModel,
 } from "@/services/content";
-
-const mediaItems = [
-  ["01", "Фото фасада", "готово", "обложка"],
-  ["02", "Блюдо крупным планом", "готово", "карусель"],
-  ["03", "Видео подачи", "проверка", "карусель"],
-];
+import { type MediaLibraryViewModel } from "@/services/library-planning";
 
 function StudioHeader({ title, label = "Этап 04" }: { title: string; label?: string }) {
   return (
@@ -149,7 +124,7 @@ export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewMo
   );
 }
 
-export function NewContentShell() {
+export function NewContentShell({ viewModel }: { viewModel: NewContentViewModel }) {
   return (
     <div className="grid min-w-0 gap-5">
       <StudioHeader label="Этап UI 06" title="Мобильная диктовка" />
@@ -158,18 +133,26 @@ export function NewContentShell() {
           <Card className="grid gap-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
-                <Badge tone="info">PWA-запись</Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone="info">PWA-запись</Badge>
+                  <Badge>Данные: {viewModel.modeLabel}</Badge>
+                </div>
                 <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
                   Новый материал голосом
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Что поесть? Армавир · Обзор недели
+                  {viewModel.contextLabel}
                 </p>
               </div>
               <Smartphone className="shrink-0 text-primary" size={24} />
             </div>
+            {viewModel.notice ? (
+              <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
+                {viewModel.notice}
+              </div>
+            ) : null}
             <div className="grid gap-2 text-sm">
-              {resumeItems.map(([label, value]) => (
+              {viewModel.resumeItems.map(({ label, value }) => (
                 <div
                   className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border bg-surface-muted p-3"
                   key={label}
@@ -193,7 +176,7 @@ export function NewContentShell() {
               Шаги записи
             </div>
             <div className="grid gap-2">
-              {captureSteps.map(([step, status], index) => (
+              {viewModel.captureSteps.map(({ status, step }, index) => (
                 <div
                   className="grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-md border border-border p-2 text-sm"
                   key={step}
@@ -212,18 +195,18 @@ export function NewContentShell() {
 
           <Card className="grid gap-4">
             <div>
-              <Badge tone="info">{activeCaptureBlock.progress}</Badge>
+              <Badge tone="info">{viewModel.activeCaptureBlock.progress}</Badge>
               <h2 className="mt-3 text-xl font-semibold text-foreground">
-                {activeCaptureBlock.title}
+                {viewModel.activeCaptureBlock.title}
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted">
-                {activeCaptureBlock.prompt}
+                {viewModel.activeCaptureBlock.prompt}
               </p>
             </div>
             <div className="rounded-lg border border-border bg-surface-muted p-4 text-center">
               <Mic className="mx-auto text-primary" size={32} />
               <div className="mt-3 text-2xl font-semibold text-foreground">
-                {activeCaptureBlock.duration}
+                {viewModel.activeCaptureBlock.duration}
               </div>
               <div className="mt-1 text-sm text-muted">идёт запись</div>
             </div>
@@ -242,7 +225,7 @@ export function NewContentShell() {
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {recordingStates.map(([state, label]) => (
+              {viewModel.recordingStates.map(({ label, state }) => (
                 <Badge key={state} tone={state === "recording" ? "success" : state === "error" ? "danger" : "neutral"}>
                   {label}
                 </Badge>
@@ -250,7 +233,7 @@ export function NewContentShell() {
             </div>
             <textarea
               className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-              defaultValue={activeCaptureBlock.transcript}
+              defaultValue={viewModel.activeCaptureBlock.transcript}
             />
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="secondary">
@@ -271,9 +254,9 @@ export function NewContentShell() {
               Локальный черновик
             </div>
             <div className="rounded-md border border-border bg-surface-muted p-3 text-sm">
-              <div className="font-medium text-foreground">{offlineDraft.status}</div>
-              <div className="mt-1 text-muted">{offlineDraft.saved}</div>
-              <div className="mt-1 text-muted">{offlineDraft.queue}</div>
+              <div className="font-medium text-foreground">{viewModel.offlineDraft.status}</div>
+              <div className="mt-1 text-muted">{viewModel.offlineDraft.saved}</div>
+              <div className="mt-1 text-muted">{viewModel.offlineDraft.queue}</div>
             </div>
             <Button disabled type="button">
               <WandSparkles size={16} />
@@ -289,7 +272,7 @@ export function NewContentShell() {
               <FileText size={18} className="text-primary" />
               Проверка перед сборкой
             </div>
-            {reviewBlocks.map(([name, status, text]) => (
+            {viewModel.reviewBlocks.map(({ name, status, text }) => (
               <div className="rounded-md border border-border p-3" key={name}>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-foreground">{name}</div>
@@ -311,7 +294,7 @@ export function NewContentShell() {
               <PanelRight size={18} className="text-primary" />
               Краткие превью
             </div>
-            {compactPreviews.map(([platform, status, note]) => (
+            {viewModel.compactPreviews.map(({ note, platform, status }) => (
               <div className="rounded-md border border-border p-3 text-sm" key={platform}>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-foreground">{platform}</div>
@@ -403,7 +386,7 @@ export function ContentStudioShell({
                 <ListChecks size={18} className="text-primary" />
                 Входные блоки
               </div>
-              {inputBlocks.map(([name, status, helper, source]) => (
+              {viewModel.inputBlocks.map(({ helper, name, source, status }) => (
                 <button
                   className="grid gap-2 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
                   key={name}
@@ -450,17 +433,17 @@ export function ContentStudioShell({
               <div className="rounded-md border border-border p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2 font-medium text-foreground">
                   <AudioLines size={16} className="text-primary" />
-                  {transcriptReview.provider}
-                  <Badge tone="warning">{transcriptReview.status}</Badge>
+                  {viewModel.transcriptReview.provider}
+                  <Badge tone="warning">{viewModel.transcriptReview.status}</Badge>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-                  <span>{transcriptReview.duration}</span>
-                  <span>уверенность {transcriptReview.confidence}</span>
+                  <span>{viewModel.transcriptReview.duration}</span>
+                  <span>уверенность {viewModel.transcriptReview.confidence}</span>
                 </div>
               </div>
               <textarea
                 className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-                defaultValue={transcriptReview.text}
+                defaultValue={viewModel.transcriptReview.text}
               />
               <Button type="button">
                 <LockKeyhole size={16} />
@@ -481,10 +464,10 @@ export function ContentStudioShell({
                     Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
                   </p>
                 </div>
-                <Badge tone="info">3 860 / 4 096</Badge>
+                <Badge tone="info">{viewModel.masterBudget}</Badge>
               </div>
               <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
-                {masterDraftParagraphs.map((paragraph) => (
+                {viewModel.masterDraftParagraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
               </article>
@@ -505,7 +488,7 @@ export function ContentStudioShell({
                 <Bot size={18} className="text-primary" />
                 ИИ-предложения
               </div>
-              {aiSuggestions.map(([name, text, action]) => (
+              {viewModel.aiSuggestions.map(({ action, name, text }) => (
                 <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
                   <div>
                     <div className="text-sm font-medium text-foreground">{name}</div>
@@ -530,7 +513,7 @@ export function ContentStudioShell({
                 <History size={18} className="text-primary" />
                 История версий
               </div>
-              {revisionEvents.map(([version, event, time]) => (
+              {viewModel.revisionEvents.map(({ event, time, version }) => (
                 <div
                   className="grid grid-cols-[48px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
                   key={version}
@@ -551,7 +534,7 @@ export function ContentStudioShell({
                 <PanelRight size={18} className="text-primary" />
                 Превью площадок
               </div>
-              {platformPreviews.map((preview) => (
+              {viewModel.platformPreviews.map((preview) => (
                 <div className="grid gap-3 rounded-md border border-border p-3" key={preview.platform}>
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="font-medium text-foreground">{preview.platform}</div>
@@ -587,7 +570,7 @@ export function ContentStudioShell({
                 <LockKeyhole size={18} className="text-primary" />
                 Факт-локи
               </div>
-              {factLocks.map(([fact, status, source]) => (
+              {viewModel.factLocks.map(({ fact, source, status }) => (
                 <div className="rounded-md border border-border p-3 text-sm" key={fact}>
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0 break-words font-medium text-foreground">{fact}</div>
@@ -605,14 +588,10 @@ export function ContentStudioShell({
                 <Clock3 size={18} className="text-primary" />
                 Проверки
               </div>
-              {[
-                ["Ошибки", "0", "success"],
-                ["Предупреждения", "2", "warning"],
-                ["Готовность", "нужна проверка MAX", "warning"],
-              ].map(([label, value, tone]) => (
+              {viewModel.checks.map(({ label, tone, value }) => (
                 <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm" key={label}>
                   <span className="text-muted">{label}</span>
-                  <Badge tone={tone === "success" ? "success" : "warning"}>{value}</Badge>
+                  <Badge tone={tone}>{value}</Badge>
                 </div>
               ))}
             </Card>
