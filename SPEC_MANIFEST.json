@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T04:26:53.820712+00:00",
+  "generated_at": "2026-06-21T04:40:33.039281+00:00",
   "canonical_language": "en",
-  "file_count": 385,
+  "file_count": 388,
   "files": [
     {
       "path": ".dockerignore",
@@ -82,8 +82,8 @@
     },
     {
       "path": "apps/web/src/app/app/ai/page.tsx",
-      "size_bytes": 142,
-      "sha256": "1257743ba05255f6d4f11c99db7f016d45808e66fa32839ba8a5052ebcd4ed83"
+      "size_bytes": 278,
+      "sha256": "f00ff6da56fe2d0a8f5a0c7e37057d8d1827301d8980fae245bf4e9b33c8540d"
     },
     {
       "path": "apps/web/src/app/app/billing/page.tsx",
@@ -157,8 +157,8 @@
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/examples/page.tsx",
-      "size_bytes": 326,
-      "sha256": "a1d6249e138552eea4b4bd5649ff67b46823b99ba2ca3ca12b3092b27f836bc5"
+      "size_bytes": 453,
+      "sha256": "3d1318d8609baa4853c1ad2b8421692ab37a226a9c0d139b437ed2c951b25abc"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/page.tsx",
@@ -342,8 +342,8 @@
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
-      "size_bytes": 10306,
-      "sha256": "cbda5f41b0e5340f8766d98a017634b06bd51120c1ee42a107e3fe8a06c512a6"
+      "size_bytes": 10480,
+      "sha256": "8a1abc6a8f2e847eff90339333974ff046e6e3c4cb869d4b132650d2bab64b07"
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
@@ -451,6 +451,11 @@
       "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
     },
     {
+      "path": "apps/web/src/services/ai.ts",
+      "size_bytes": 11861,
+      "sha256": "ada4bbaa2f8644aa06388f43434aff97c5cd35046cf77c89bbd94c34bcb43646"
+    },
+    {
       "path": "apps/web/src/services/content.ts",
       "size_bytes": 6357,
       "sha256": "076820eece358bd89163a15369b98a7a2b2a0e8eeaed64bcc8c510e9d565551d"
@@ -467,8 +472,8 @@
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
-      "size_bytes": 5723,
-      "sha256": "9ef6950c07668ff3735ce076f9aa6a384ec930ef18b1b6fb49cf5d1f3e1af782"
+      "size_bytes": 6324,
+      "sha256": "2dd3ac7ad7198bc794fc6f25eed530dcf6b138ccaf60f5034eb4ce1ae0694b5c"
     },
     {
       "path": "apps/web/src/services/projects.ts",
@@ -1166,6 +1171,16 @@
       "sha256": "dd7129e811814f837e9f129d6a74890950ba4bd4141d0fb6cc8b8137acd5e396"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10H_AI_EXAMPLES_SERVICE_BOUNDARY.md",
+      "size_bytes": 3405,
+      "sha256": "71540221614ec9857fb62ccf6d44bc3a0d022c2d80f19ba4c39d7cb84f8cf687"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10H_REPORT_RU.md",
+      "size_bytes": 4233,
+      "sha256": "3c5912c87802ccbad23c179fc23b48662dcfacb1c09ca3f6639742605b4f7e51"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
       "size_bytes": 2907,
       "sha256": "3cd254c2c2e02c3214342a0b30889f629a064a8e5bfa880e146288e53545d10c"
@@ -1187,8 +1202,8 @@
     },
     {
       "path": "docs/frontend/MOCK_DATA_STRATEGY.md",
-      "size_bytes": 5723,
-      "sha256": "d2f0ef7fc46a60e5d2ff404854bdff4ae8a5ebaa13f3baa85fdd1725d7daf990"
+      "size_bytes": 5837,
+      "sha256": "2632a63d3416a6f7a9c56e0471788d2f37af30c258d9654a0bc8a0c5b8976b20"
     },
     {
       "path": "docs/frontend/ROUTE_MAP.md",

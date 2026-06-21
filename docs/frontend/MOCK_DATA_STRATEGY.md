@@ -1,6 +1,6 @@
 # Mock Data And Service Strategy
 
-Status: UI Phase 10g partial implementation. Dashboard, publication operations, project/rubric screens, top-level content screens, integrations, billing, workspace, account, examples, media, and calendar now use a service boundary with `NEXT_PUBLIC_DATA_MODE=api | fixtures`; the remaining feature internals still need the same migration.
+Status: UI Phase 10h partial implementation. Dashboard, publication operations, project/rubric screens, top-level content screens, integrations, billing, workspace, account, examples, media, calendar, AI pipeline, and project examples now use a service boundary with `NEXT_PUBLIC_DATA_MODE=api | fixtures`; the remaining feature internals still need the same migration.
 
 ## Goal
 
@@ -51,6 +51,7 @@ Implemented first slice:
 - `apps/web/src/services/content.ts`
 - `apps/web/src/services/workspace-settings.ts`
 - `apps/web/src/services/library-planning.ts`
+- `apps/web/src/services/ai.ts`
 - `/app` dashboard
 - `/app/publications`
 - `/app/projects`
@@ -64,6 +65,8 @@ Implemented first slice:
 - `/app/examples`
 - `/app/media`
 - `/app/calendar`
+- `/app/ai`
+- `/app/projects/[projectId]/examples`
 
 ## Fixture Sources
 

@@ -1,4 +1,5 @@
 import { ExamplesLibraryShell } from "@/components/phase05/ai-pipeline-shell";
+import { getProjectExamplesViewModel } from "@/services/ai";
 
 type ExamplesPageProps = {
   params: Promise<{ projectId: string }>;
@@ -6,5 +7,6 @@ type ExamplesPageProps = {
 
 export default async function ExamplesPage({ params }: ExamplesPageProps) {
   const { projectId } = await params;
-  return <ExamplesLibraryShell projectId={projectId} />;
+  const viewModel = await getProjectExamplesViewModel(projectId);
+  return <ExamplesLibraryShell viewModel={viewModel} />;
 }

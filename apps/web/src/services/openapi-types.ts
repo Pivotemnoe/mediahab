@@ -149,6 +149,30 @@ export interface ContentMediaResponse {
   media: ContentMediaOut[];
 }
 
+export interface GenerationRunOut {
+  completed_at: string | null;
+  content_item_id: string;
+  created_at: string;
+  error_code: string | null;
+  error_message: string | null;
+  id: string;
+  input_characters: number | null;
+  input_tokens: number | null;
+  latency_ms: number | null;
+  model_id: string;
+  output_characters: number | null;
+  output_tokens: number | null;
+  project_id: string;
+  provider_key: string;
+  response_json: JsonObject | null;
+  retrieved_example_ids: string[];
+  retry_count: number;
+  rubric_id: string;
+  status: string;
+  task_type: string;
+  workspace_id: string;
+}
+
 export interface UsageLimitOut {
   key?: string;
   label?: string;
