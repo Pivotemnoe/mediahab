@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T15:59:46.997914+00:00",
+  "generated_at": "2026-06-21T16:05:16.432817+00:00",
   "canonical_language": "en",
-  "file_count": 449,
+  "file_count": 451,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 21841,
-      "sha256": "3fb0be2302607d2ec72f1a96a9d10b5021fb527caa6e0ca7142664d507a9566e"
+      "size_bytes": 21992,
+      "sha256": "75b15af19a843519e9f0464abd931bd037896726954afe77ac99e33accffda11"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -472,8 +472,8 @@
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 33523,
-      "sha256": "bb3c62cc323a23c5341dc4650cb58bd2ddb3f4758ff3204906a36bc58f9cb27d"
+      "size_bytes": 33569,
+      "sha256": "43de150ec026f9bc4274095991f824089f5f8b43c204f86a327167cf7099d950"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -487,8 +487,8 @@
     },
     {
       "path": "apps/web/src/services/guided-action-payloads.ts",
-      "size_bytes": 3424,
-      "sha256": "eeec66eab96ca5fc673f21297917d17ab49cf42b8a4dc3f6783117d628a246e4"
+      "size_bytes": 4360,
+      "sha256": "daaa6056332deac895f438a4f4e367bec2302098eeb4000c5963a67e6c3d8d31"
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
@@ -1204,6 +1204,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AE_REPORT_RU.md",
       "size_bytes": 4253,
       "sha256": "921fdfd5112d577a926e03d6eac6546c563f434f5d3aee64f1e9efc95e585204"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AF_GUIDED_ACTION_VALUE_MAPPING.md",
+      "size_bytes": 4490,
+      "sha256": "76cf796d9ea1cb02f6f281a309752c282a7a8bd2dc85e77c8af6eba5d498d54c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AF_REPORT_RU.md",
+      "size_bytes": 3058,
+      "sha256": "cf316fb9139d1ca8f6abe084c7b8a0f05a72c73e67e0b37fd8c337a77331086c"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2202,8 +2212,8 @@
     },
     {
       "path": "tools/check_guided_action_payloads.mjs",
-      "size_bytes": 4082,
-      "sha256": "d89c0a1a7e2965d46d721b7a47b5ecdb4163edeb337ff6267a1eadbda21b0445"
+      "size_bytes": 4923,
+      "sha256": "a846307062bff5ddc835b6bc6c2357b1654146491123e30f7ecb3553def53091"
     },
     {
       "path": "tools/check_guided_form_api_mode.py",

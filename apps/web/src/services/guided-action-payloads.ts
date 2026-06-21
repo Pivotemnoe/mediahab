@@ -12,6 +12,10 @@ export interface GuidedActionPayload {
   successMessage: string;
 }
 
+type GuidedActionValue =
+  | { amount: number; currency: string }
+  | { text: string };
+
 function requiredText(formData: FormData, key: string): string {
   const value = formData.get(key);
   if (typeof value !== "string" || !value.trim()) {
@@ -38,9 +42,37 @@ function textValue(value: string): { text: string } {
   return { text: value };
 }
 
+function moneyValue(value: string): GuidedActionValue {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return textValue("");
+  }
+
+  const amountMatch = trimmedValue.match(/[-+]?\d+(?:[\s.,]\d{3})*(?:[,.]\d+)?|[-+]?\d+(?:[,.]\d+)?/);
+  if (!amountMatch) {
+    return textValue(value);
+  }
+
+  const normalizedAmount = amountMatch[0].replace(/\s/g, "").replace(",", ".");
+  const amount = Number(normalizedAmount);
+  if (!Number.isFinite(amount)) {
+    return textValue(value);
+  }
+
+  return { amount, currency: "RUB" };
+}
+
+function typedValue(value: string, fieldType: string | null): GuidedActionValue {
+  if (fieldType === "money") {
+    return moneyValue(value);
+  }
+  return textValue(value);
+}
+
 export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPayload {
   const contentId = requiredText(formData, "contentId");
   const fieldKey = requiredText(formData, "fieldKey");
+  const fieldType = optionalText(formData, "fieldType");
   const blockId = optionalText(formData, "blockId");
   const itemVersion = optionalNumber(formData, "itemVersion");
   const value = optionalText(formData, "value") ?? "";
@@ -55,7 +87,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
         body: {
           lock,
           source_type: sourceType,
-          value: textValue(value),
+          value: typedValue(value, fieldType),
         },
         method: "PATCH",
         path: `/api/v1/content-blocks/${blockId}`,
@@ -70,7 +102,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
       body: {
         lock,
         source_type: sourceType,
-        value: textValue(value),
+        value: typedValue(value, fieldType),
         version: itemVersion,
       },
       method: "PUT",
@@ -86,14 +118,14 @@ export function buildAddRepeatableGroupPayload(formData: FormData): GuidedAction
   const itemVersion = optionalNumber(formData, "itemVersion");
   const sourceType = optionalText(formData, "sourceType") ?? "user_text";
   const lock = optionalText(formData, "intent") === "lock";
-  const values: Record<string, { text: string }> = {};
+  const values: Record<string, GuidedActionValue> = {};
 
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("field:") || typeof value !== "string") {
       continue;
     }
     const fieldKey = key.slice("field:".length);
-    values[fieldKey] = textValue(value);
+    values[fieldKey] = typedValue(value, optionalText(formData, `fieldType:${fieldKey}`));
   }
 
   return {

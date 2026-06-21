@@ -135,6 +135,7 @@ export interface GuidedFormFieldViewModel {
     key: string;
     label: string;
     required: boolean;
+    type: string;
     typeLabel: string;
   }>;
   required: boolean;
@@ -623,6 +624,7 @@ function guidedFieldView(
           key: child.key,
           label: child.label,
           required: Boolean(child.required),
+          type: child.type,
           typeLabel: fieldTypeLabel(child.type),
         }))
       : [],

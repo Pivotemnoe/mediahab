@@ -549,6 +549,7 @@ export function GuidedFieldActionForm({
     >
       <input name="contentId" type="hidden" value={contentId} />
       <input name="fieldKey" type="hidden" value={field.fieldKey} />
+      <input name="fieldType" type="hidden" value={field.type} />
       <input name="sourceType" type="hidden" value="user_text" />
       {field.blockId ? <input name="blockId" type="hidden" value={field.blockId} /> : null}
       {itemVersion !== null ? <input name="itemVersion" type="hidden" value={itemVersion} /> : null}
@@ -627,6 +628,7 @@ export function AddRepeatableGroupActionForm({
               {item.label}
               {item.required ? <span className="text-warning"> *</span> : null}
             </span>
+            <input name={`fieldType:${item.key}`} type="hidden" value={item.type} />
             <input
               className="h-10 rounded-md border border-border bg-background px-3 text-sm outline-none"
               disabled={!canMutate}

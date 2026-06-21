@@ -77,6 +77,34 @@ assert.deepEqual(normalize(newFieldSave), {
   successMessage: "Поле сохранено.",
 });
 
+const moneyFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "total_check",
+  fieldType: "money",
+  intent: "save",
+  itemVersion: "4",
+  value: "590 ₽",
+}));
+assert.deepEqual(normalize(moneyFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: { amount: 590, currency: "RUB" },
+  version: 4,
+});
+
+const unparseableMoneyFieldSave = buildSaveGuidedFieldPayload(formData({
+  contentId: "content-2",
+  fieldKey: "total_check",
+  fieldType: "money",
+  value: "по меню",
+}));
+assert.deepEqual(normalize(unparseableMoneyFieldSave.request.body), {
+  lock: false,
+  source_type: "user_text",
+  value: { text: "по меню" },
+  version: null,
+});
+
 const emptyOptionalSave = buildSaveGuidedFieldPayload(formData({
   contentId: "content-3",
   fieldKey: "conclusion",
@@ -94,6 +122,9 @@ const repeatableAdd = buildAddRepeatableGroupPayload(formData({
   "field:name": "Уха",
   "field:observations": "Рыбный вкус нормальный.",
   "field:price": "350 RUB",
+  "fieldType:name": "short_text",
+  "fieldType:observations": "voice_or_long_text",
+  "fieldType:price": "money",
   groupKey: "dishes",
   intent: "lock",
   itemVersion: "8",
@@ -107,7 +138,7 @@ assert.deepEqual(normalize(repeatableAdd), {
       values: {
         name: { text: "Уха" },
         observations: { text: "Рыбный вкус нормальный." },
-        price: { text: "350 RUB" },
+        price: { amount: 350, currency: "RUB" },
       },
       version: 8,
     },
