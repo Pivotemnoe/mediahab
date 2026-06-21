@@ -14,8 +14,13 @@ import {
   type GuidedActionState,
 } from "@/services/guided-action-state";
 import {
+  createGuidedQueueJob,
   guidedFieldQueueKey,
   guidedFormQueueEvent,
+  hasGuidedQueueValues,
+  parseGuidedQueueJob,
+  serializeGuidedQueueJob,
+  type GuidedQueueJob,
 } from "@/services/guided-queue-contract";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
@@ -27,14 +32,6 @@ type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const draftPrefix = "tmh:guided-form-draft:v1";
 const autosaveDelayMs = 1200;
-
-interface QueueJob {
-  code: string | null;
-  recoveryAction: GuidedActionState["recoveryAction"];
-  requestId: string | null;
-  savedAt: string;
-  values: Record<string, string>;
-}
 
 function isDraftControl(element: Element): element is DraftControl {
   if (
@@ -117,38 +114,22 @@ function clearDraft(storageKey: string) {
   }
 }
 
-function readQueueJob(storageKey: string): QueueJob | null {
+function readQueueJob(storageKey: string): GuidedQueueJob | null {
   try {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as Partial<QueueJob>;
-    if (!parsed || typeof parsed !== "object" || !parsed.values || typeof parsed.values !== "object") {
-      return null;
-    }
-    return {
-      code: typeof parsed.code === "string" ? parsed.code : null,
-      recoveryAction: parsed.recoveryAction === "refresh" || parsed.recoveryAction === "retry" ? parsed.recoveryAction : "none",
-      requestId: typeof parsed.requestId === "string" ? parsed.requestId : null,
-      savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
-      values: Object.fromEntries(
-        Object.entries(parsed.values).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
-      ),
-    };
+    return parseGuidedQueueJob(window.localStorage.getItem(storageKey));
   } catch {
     return null;
   }
 }
 
-function writeQueueJob(storageKey: string, job: QueueJob) {
+function writeQueueJob(storageKey: string, job: GuidedQueueJob) {
   try {
-    if (!hasDraftValues(job.values)) {
+    if (!hasGuidedQueueValues(job.values)) {
       window.localStorage.removeItem(storageKey);
       window.dispatchEvent(new Event(guidedFormQueueEvent));
       return;
     }
-    window.localStorage.setItem(storageKey, JSON.stringify(job));
+    window.localStorage.setItem(storageKey, serializeGuidedQueueJob(job));
     window.dispatchEvent(new Event(guidedFormQueueEvent));
   } catch {
     // Browser storage can be unavailable or full. The visible action state remains authoritative.
@@ -286,7 +267,7 @@ function useGuidedQueue(params: {
   state: GuidedActionState;
   storageKey: string;
 }) {
-  const [queueJob, setQueueJob] = useState<QueueJob | null>(null);
+  const [queueJob, setQueueJob] = useState<GuidedQueueJob | null>(null);
   const [queueStatus, setQueueStatus] = useState<QueueStatus>(params.enabled ? "empty" : "unavailable");
 
   useEffect(() => {
@@ -323,13 +304,12 @@ function useGuidedQueue(params: {
         setQueueStatus(queueJob.recoveryAction === "refresh" ? "blocked" : "queued");
         return;
       }
-      const job: QueueJob = {
+      const job = createGuidedQueueJob({
         code: params.state.code,
         recoveryAction: params.state.recoveryAction,
         requestId: params.state.requestId,
-        savedAt: new Date().toISOString(),
         values: formDraftValues(params.formRef.current),
-      };
+      });
       writeQueueJob(params.storageKey, job);
       setQueueJob(job);
       setQueueStatus(job.recoveryAction === "refresh" ? "blocked" : "queued");
@@ -442,7 +422,7 @@ function QueueStatusLine({
   status,
 }: {
   canRetry: boolean;
-  job: QueueJob | null;
+  job: GuidedQueueJob | null;
   onClear: () => void;
   onRetry: () => void;
   status: QueueStatus;

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T14:47:42.671629+00:00",
+  "generated_at": "2026-06-21T14:58:12.069082+00:00",
   "canonical_language": "en",
-  "file_count": 416,
+  "file_count": 418,
   "files": [
     {
       "path": ".dockerignore",
@@ -342,8 +342,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 23516,
-      "sha256": "bc6b8f3d376c6f0157b2ae3ecce54510754b633657ce1a4e48400e808d7fd550"
+      "size_bytes": 22703,
+      "sha256": "17ce950f75c54fccf7e9f0ae654d0296a0274cbab49c25784529d978525a06eb"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -482,8 +482,8 @@
     },
     {
       "path": "apps/web/src/services/guided-queue-contract.ts",
-      "size_bytes": 483,
-      "sha256": "74437db87d7c1d804f00b5fb808b72db0ae4a940c3db1a1ef2356597ffd76608"
+      "size_bytes": 2445,
+      "sha256": "f39cf82a8b4d1e292acc86dae5c53cee4ab5f0047a593bacad735398db4f309c"
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
@@ -1319,6 +1319,16 @@
       "path": "docs/exec-plans/UI_PHASE_10T_REPORT_RU.md",
       "size_bytes": 3202,
       "sha256": "a0220a1fb9ed9b3319cf93254f52bc1706ff83ec80b175054387e508b8849b98"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10U_GUIDED_QUEUE_PAYLOAD_DTO.md",
+      "size_bytes": 3976,
+      "sha256": "8e1f3bd1728d3a998c81eb4a43675e31a974eaa6e3ce74d339d121515ae07b5c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10U_REPORT_RU.md",
+      "size_bytes": 3521,
+      "sha256": "86b3b74e94d53861e2b0c31279f5112a9772b3b8a96634f790d0663cbc6f9fea"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10_HARDENING.md",
