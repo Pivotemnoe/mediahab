@@ -1,3 +1,5 @@
+import { typedGuidedActionValue } from "@/services/guided-action-values";
+
 type GuidedActionMethod = "PATCH" | "POST" | "PUT";
 
 interface GuidedActionRequest {
@@ -11,14 +13,6 @@ export interface GuidedActionPayload {
   request: GuidedActionRequest;
   successMessage: string;
 }
-
-type GuidedActionValue =
-  | { amount: number; currency: string }
-  | { text: string }
-  | boolean
-  | number
-  | string
-  | string[];
 
 function requiredText(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -37,10 +31,6 @@ function textValues(formData: FormData, key: string): string[] {
   return formData.getAll(key).filter((value): value is string => typeof value === "string");
 }
 
-function firstText(values: string[]): string {
-  return values[0] ?? "";
-}
-
 function optionalNumber(formData: FormData, key: string): number | null {
   const value = optionalText(formData, key);
   if (!value) {
@@ -48,73 +38,6 @@ function optionalNumber(formData: FormData, key: string): number | null {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function textValue(value: string): { text: string } {
-  return { text: value };
-}
-
-function moneyValue(value: string): GuidedActionValue {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return textValue("");
-  }
-
-  const amountMatch = trimmedValue.match(/[-+]?\d+(?:[\s.,]\d{3})*(?:[,.]\d+)?|[-+]?\d+(?:[,.]\d+)?/);
-  if (!amountMatch) {
-    return textValue(value);
-  }
-
-  const normalizedAmount = amountMatch[0].replace(/\s/g, "").replace(",", ".");
-  const amount = Number(normalizedAmount);
-  if (!Number.isFinite(amount)) {
-    return textValue(value);
-  }
-
-  return { amount, currency: "RUB" };
-}
-
-function booleanValue(value: string): boolean {
-  const normalizedValue = value.trim().toLowerCase();
-  return normalizedValue === "1" || normalizedValue === "true" || normalizedValue === "yes" || normalizedValue === "on";
-}
-
-function numberValue(value: string): GuidedActionValue {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return textValue("");
-  }
-
-  if (!/^[-+]?\d+(?:[,.]\d+)?$/.test(trimmedValue)) {
-    return textValue(value);
-  }
-
-  const number = Number(trimmedValue.replace(",", "."));
-  return Number.isFinite(number) ? number : textValue(value);
-}
-
-function multiSelectValue(values: string[]): string[] {
-  return values.map((value) => value.trim()).filter(Boolean);
-}
-
-function typedValue(values: string[], fieldType: string | null): GuidedActionValue {
-  const value = firstText(values);
-  if (fieldType === "boolean") {
-    return booleanValue(value);
-  }
-  if (fieldType === "money") {
-    return moneyValue(value);
-  }
-  if (fieldType === "number" || fieldType === "rating") {
-    return numberValue(value);
-  }
-  if (fieldType === "select") {
-    return value;
-  }
-  if (fieldType === "multi_select") {
-    return multiSelectValue(values);
-  }
-  return textValue(value);
 }
 
 export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPayload {
@@ -135,7 +58,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
         body: {
           lock,
           source_type: sourceType,
-          value: typedValue(values, fieldType),
+          value: typedGuidedActionValue(values, fieldType),
         },
         method: "PATCH",
         path: `/api/v1/content-blocks/${blockId}`,
@@ -150,7 +73,7 @@ export function buildSaveGuidedFieldPayload(formData: FormData): GuidedActionPay
       body: {
         lock,
         source_type: sourceType,
-        value: typedValue(values, fieldType),
+        value: typedGuidedActionValue(values, fieldType),
         version: itemVersion,
       },
       method: "PUT",
@@ -178,7 +101,7 @@ export function buildAddRepeatableGroupPayload(formData: FormData): GuidedAction
   const values = Object.fromEntries(
     Array.from(valuesByField.entries()).map(([fieldKey, fieldValues]) => [
       fieldKey,
-      typedValue(fieldValues, optionalText(formData, `fieldType:${fieldKey}`)),
+      typedGuidedActionValue(fieldValues, optionalText(formData, `fieldType:${fieldKey}`)),
     ]),
   );
 

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-21T16:24:31.289355+00:00",
+  "generated_at": "2026-06-21T16:37:36.632543+00:00",
   "canonical_language": "en",
-  "file_count": 458,
+  "file_count": 461,
   "files": [
     {
       "path": ".dockerignore",
@@ -42,8 +42,8 @@
     },
     {
       "path": "apps/web/next-env.d.ts",
-      "size_bytes": 228,
-      "sha256": "46f003f604b6bc947aed764a36ee0637bf2c058620edc905923a6d0d7b26db0e"
+      "size_bytes": 262,
+      "sha256": "85ae5aee75f011967cf2d25cbc342f62d69314e9d925f7f4aa3456fc2cffcca6"
     },
     {
       "path": "apps/web/next.config.ts",
@@ -487,13 +487,18 @@
     },
     {
       "path": "apps/web/src/services/guided-action-payloads.ts",
-      "size_bytes": 5886,
-      "sha256": "0f7c339bf0e9e1522eb96147216ce3e06735cbeede6861a122fafc59da772c48"
+      "size_bytes": 3949,
+      "sha256": "bcd3757d01867c5e6e24236fea12d17d495e8e9b17a7a4a5ef4a63980a4db7e6"
     },
     {
       "path": "apps/web/src/services/guided-action-state.ts",
       "size_bytes": 528,
       "sha256": "1c5b6f70204f24142dbaa556f634517019a07a652ea476d84232701300937953"
+    },
+    {
+      "path": "apps/web/src/services/guided-action-values.ts",
+      "size_bytes": 2073,
+      "sha256": "a3b441b052991c5a16805a0491f9061a287c7177cf7afbd0de8ca8300fb338ed"
     },
     {
       "path": "apps/web/src/services/guided-queue-contract.ts",
@@ -502,8 +507,8 @@
     },
     {
       "path": "apps/web/src/services/guided-queue-replay.ts",
-      "size_bytes": 2012,
-      "sha256": "5513142322cc805e6a70915a03a17afb26aa065a7f7632b0eaf7aea6aee41d19"
+      "size_bytes": 2904,
+      "sha256": "6a148cb011c82ca2d17854653c5060a48457bc31ef4078c76d5475ffe04c96ce"
     },
     {
       "path": "apps/web/src/services/guided-queue-store.ts",
@@ -1242,8 +1247,18 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10AI_REPORT_RU.md",
-      "size_bytes": 2643,
-      "sha256": "0e76f3e6fd6a284c95fb2edc0a19b22d52f94f95f8d50a827083609ba402cf29"
+      "size_bytes": 3611,
+      "sha256": "bccab3ed9f33ff3f8a556d97f6cd0e88865288bee615a4228fabf53b4131d377"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AJ_GUIDED_QUEUE_REPLAY_DRAFT.md",
+      "size_bytes": 4564,
+      "sha256": "2fa095a71d8f661491ffbd8e97e6a88a40e5f2025fafe8abd94244a103e2c013"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AJ_REPORT_RU.md",
+      "size_bytes": 3010,
+      "sha256": "86f6eb96c92fe31cdcd52d40463cc0ef48ca3bc6121bdce1e02330d1492f7e34"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2242,8 +2257,8 @@
     },
     {
       "path": "tools/check_guided_action_payloads.mjs",
-      "size_bytes": 7706,
-      "sha256": "303e2f30e68007be46f7d0b0f8c698c4fc9030751a90b78512af230370f47096"
+      "size_bytes": 8145,
+      "sha256": "291fcd7f8e7297ea3bfe6d66c095f3db42066b6a61fbd5f7f5cc218316b123f8"
     },
     {
       "path": "tools/check_guided_form_api_mode.py",
@@ -2257,8 +2272,8 @@
     },
     {
       "path": "tools/check_guided_queue_replay.mjs",
-      "size_bytes": 3481,
-      "sha256": "54270a33506dbd9bf155228c357abc58754bd17708deb0bff345ab68dd6360d8"
+      "size_bytes": 5725,
+      "sha256": "91a0d70c09f24954a635e33c4c7024048e2a9963fef88f405a7c732570cd9913"
     },
     {
       "path": "tools/check_sw_capabilities.mjs",

@@ -1,3 +1,5 @@
+import { typedGuidedActionValue, type GuidedActionValue } from "@/services/guided-action-values";
+import { type GuidedQueueJob } from "@/services/guided-queue-contract";
 import { type GuidedQueueEntry } from "@/services/guided-queue-store";
 
 export type GuidedQueueReplayStatus = "empty" | "manual_retry_required" | "offline";
@@ -12,6 +14,29 @@ export interface GuidedQueueReplayReadiness {
   reason: GuidedQueueReplayReason;
   status: GuidedQueueReplayStatus;
   shellMessage: string | null;
+}
+
+export interface GuidedQueueReplayDraft {
+  fieldTypes: Record<string, string>;
+  missingFieldTypes: string[];
+  typedValues: Record<string, GuidedActionValue>;
+  valueCount: number;
+}
+
+export function buildGuidedQueueReplayDraft(job: GuidedQueueJob): GuidedQueueReplayDraft {
+  const entries = Object.entries(job.values);
+  const typedValues = Object.fromEntries(
+    entries.map(([key, value]) => [key, typedGuidedActionValue([value], job.fieldTypes[key] ?? null)]),
+  );
+
+  return {
+    fieldTypes: { ...job.fieldTypes },
+    missingFieldTypes: entries
+      .filter(([key, value]) => value.trim().length > 0 && !job.fieldTypes[key])
+      .map(([key]) => key),
+    typedValues,
+    valueCount: entries.length,
+  };
 }
 
 export function getGuidedQueueReplayReadiness(params: {

@@ -6,27 +6,18 @@ import { Script } from "node:vm";
 const require = createRequire(import.meta.url);
 const typescript = require("../apps/web/node_modules/typescript");
 
-const sourcePath = new URL("../apps/web/src/services/guided-action-payloads.ts", import.meta.url);
-const source = await readFile(sourcePath, "utf8");
-const transpiled = typescript.transpileModule(source, {
-  compilerOptions: {
-    esModuleInterop: true,
-    module: typescript.ModuleKind.CommonJS,
-    target: typescript.ScriptTarget.ES2022,
+const actionValuesModule = await loadServiceModule("guided-action-values.ts");
+const moduleScope = await loadServiceModule("guided-action-payloads.ts", {
+  FormData,
+  require(specifier) {
+    if (specifier === "@/services/guided-action-values") {
+      return actionValuesModule;
+    }
+    throw new Error(`Unexpected require: ${specifier}`);
   },
-  fileName: "guided-action-payloads.ts",
 });
 
-const moduleScope = {
-  exports: {},
-  FormData,
-  module: { exports: {} },
-};
-moduleScope.exports = moduleScope.module.exports;
-
-new Script(transpiled.outputText, { filename: "guided-action-payloads.cjs" }).runInNewContext(moduleScope);
-
-const { buildAddRepeatableGroupPayload, buildSaveGuidedFieldPayload } = moduleScope.module.exports;
+const { buildAddRepeatableGroupPayload, buildSaveGuidedFieldPayload } = moduleScope;
 
 assert.equal(typeof buildSaveGuidedFieldPayload, "function");
 assert.equal(typeof buildAddRepeatableGroupPayload, "function");
@@ -280,4 +271,27 @@ function formData(values) {
 
 function normalize(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+async function loadServiceModule(fileName, overrides = {}) {
+  const sourcePath = new URL(`../apps/web/src/services/${fileName}`, import.meta.url);
+  const source = await readFile(sourcePath, "utf8");
+  const transpiled = typescript.transpileModule(source, {
+    compilerOptions: {
+      esModuleInterop: true,
+      module: typescript.ModuleKind.CommonJS,
+      target: typescript.ScriptTarget.ES2022,
+    },
+    fileName,
+  });
+
+  const moduleScope = {
+    exports: {},
+    module: { exports: {} },
+    ...overrides,
+  };
+  moduleScope.exports = moduleScope.module.exports;
+
+  new Script(transpiled.outputText, { filename: fileName.replace(/\.ts$/, ".cjs") }).runInNewContext(moduleScope);
+  return moduleScope.module.exports;
 }
