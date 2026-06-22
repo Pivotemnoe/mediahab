@@ -36,6 +36,21 @@ assert.match(formSource, /onClear=\{queue\.clearQueue\}/);
 assert.match(formSource, /onRetry=\{retryQueuedAdd\}/);
 assert.match(formSource, /status=\{queue\.queueStatus\}/);
 
+const queueStatusLabelSource = functionBody(source, "queueStatusLabel");
+assert.match(queueStatusLabelSource, /status === "blocked"/);
+assert.match(queueStatusLabelSource, /job\?\.metadata\?\.kind === "repeatable_group"/);
+assert.match(queueStatusLabelSource, /несинхронизированное добавление позиции/);
+assert.match(queueStatusLabelSource, /status === "queued"/);
+assert.match(queueStatusLabelSource, /Есть несинхронизированное добавление позиции в этом браузере/);
+assert.match(queueStatusLabelSource, /несинхронизированное поле/);
+for (const privateValue of ["Черновик", "secret", "legacy", "unclassified"]) {
+  assert.equal(
+    queueStatusLabelSource.includes(privateValue),
+    false,
+    `queue status copy must not expose queued value: ${privateValue}`,
+  );
+}
+
 const retrySource = functionBody(formSource, "retryQueuedAdd");
 assert.match(retrySource, /draft\.flushDraft\(\)/);
 assert.match(retrySource, /queue\.queueJob\?\.metadata\?\.kind === "repeatable_group"/);

@@ -524,14 +524,6 @@ function QueueStatusLine({
   onRetry: () => void;
   status: QueueStatus;
 }) {
-  const labels: Record<QueueStatus, string> = {
-    blocked: "В очереди есть несинхронизированное поле. Сначала обновите страницу, затем повторите сохранение.",
-    empty: "Очередь автосохранения пуста.",
-    queued: "Есть несинхронизированное автосохранение в этом браузере.",
-    retrying: "Повторяем сохранение из локальной очереди...",
-    synced: "Локальная очередь синхронизирована.",
-    unavailable: "Очередь автосохранения включится в API-режиме.",
-  };
   const tone: GuidedActionState["tone"] =
     status === "blocked" || status === "queued" || status === "retrying"
       ? "warning"
@@ -544,7 +536,7 @@ function QueueStatusLine({
   return (
     <div className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}>
       <div>
-        {labels[status]}
+        {queueStatusLabel(status, job)}
         {job?.code ? <span className="block">Код: {job.code}</span> : null}
         {job?.requestId ? <span className="block">ID запроса: {job.requestId}</span> : null}
         {replayReadiness ? <span className="block">{replayReadiness}</span> : null}
@@ -564,6 +556,35 @@ function QueueStatusLine({
       ) : null}
     </div>
   );
+}
+
+function queueStatusLabel(status: QueueStatus, job: GuidedQueueJob | null): string {
+  if (status === "blocked") {
+    if (job?.metadata?.kind === "repeatable_group") {
+      return "В очереди есть несинхронизированное добавление позиции. Сначала обновите страницу, затем повторите действие.";
+    }
+    if (job?.metadata?.kind === "field") {
+      return "В очереди есть несинхронизированное поле. Сначала обновите страницу, затем повторите сохранение.";
+    }
+    return "В очереди есть несинхронизированное изменение. Сначала обновите страницу, затем повторите действие.";
+  }
+  if (status === "queued") {
+    if (job?.metadata?.kind === "repeatable_group") {
+      return "Есть несинхронизированное добавление позиции в этом браузере.";
+    }
+    if (job?.metadata?.kind === "field") {
+      return "Есть несинхронизированное поле в этом браузере.";
+    }
+    return "Есть несинхронизированное автосохранение в этом браузере.";
+  }
+
+  const labels: Record<Exclude<QueueStatus, "blocked" | "queued">, string> = {
+    empty: "Очередь автосохранения пуста.",
+    retrying: "Повторяем сохранение из локальной очереди...",
+    synced: "Локальная очередь синхронизирована.",
+    unavailable: "Очередь автосохранения включится в API-режиме.",
+  };
+  return labels[status];
 }
 
 function manualReplayReadinessLabel(job: GuidedQueueJob): string {
