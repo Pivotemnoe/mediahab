@@ -3,6 +3,7 @@ import { AuthPage } from "@/components/phase02/auth-page";
 export default function RegisterPage() {
   return (
     <AuthPage
+      action="register"
       eyebrow="Новый кабинет"
       title="Создать рабочее пространство"
       description="Заведите аккаунт владельца и первый проект для контента, диктовки и публикаций."

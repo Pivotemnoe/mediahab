@@ -3,6 +3,7 @@ import { AuthPage } from "@/components/phase02/auth-page";
 export default function LoginPage() {
   return (
     <AuthPage
+      action="login"
       title="Вход в MediaHub"
       description="Откройте рабочее пространство, черновики, публикации и настройки проекта."
       fields={[
