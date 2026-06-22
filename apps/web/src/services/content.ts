@@ -85,6 +85,7 @@ export interface ContentStudioViewModel {
   notice?: string;
   platformPreviews: Array<{
     budget: string;
+    id: string;
     media: string;
     mode: string;
     platform: string;
@@ -723,6 +724,17 @@ function validationMessages(variant: PlatformVariantOut): string[] {
   ];
 }
 
+function latestVariantsByPlatform(variants: PlatformVariantOut[]): PlatformVariantOut[] {
+  const latest = new Map<string, PlatformVariantOut>();
+  for (const variant of variants) {
+    const current = latest.get(variant.platform_key);
+    if (!current || variant.revision_number > current.revision_number) {
+      latest.set(variant.platform_key, variant);
+    }
+  }
+  return Array.from(latest.values()).sort((left, right) => left.platform_key.localeCompare(right.platform_key));
+}
+
 function stringFromJson(object: Record<string, unknown>, key: string): string | null {
   const value = object[key];
   return typeof value === "string" ? value : null;
@@ -927,8 +939,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     modeLabel: "api",
     notice: notices.length ? `${notices.join(" ")} Панели без read endpoint показаны fallback-данными.` : undefined,
     platformPreviews: variants.length
-      ? variants.map((variant) => ({
+      ? latestVariantsByPlatform(variants).map((variant) => ({
           budget: `${variant.character_count} знаков`,
+          id: variant.id,
           media: stringFromJson(variant.payload, "media") ?? "медиа по правилам площадки",
           mode: stringFromJson(variant.payload, "mode") ?? "вариант публикации",
           platform: platformLabel(variant.platform_key),

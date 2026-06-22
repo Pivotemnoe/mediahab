@@ -727,7 +727,7 @@ export function ContentStudioShell({
                 Превью площадок
               </div>
               {viewModel.platformPreviews.map((preview) => (
-                <div className="grid gap-3 rounded-md border border-border p-3" key={preview.platform}>
+                <div className="grid gap-3 rounded-md border border-border p-3" key={preview.id}>
                   <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="font-medium text-foreground">{preview.platform}</div>
                     <Badge tone={preview.status === "готово к проверке" ? "success" : "warning"}>

@@ -45,6 +45,7 @@ export const factLocks = [
 
 export const platformPreviews = [
   {
+    id: "fixture-telegram",
     platform: "Telegram",
     mode: "расширенное сообщение + коллаж",
     status: "готово к проверке",
@@ -53,6 +54,7 @@ export const platformPreviews = [
     warning: "Проверить порядок фото перед одобрением.",
   },
   {
+    id: "fixture-max",
     platform: "MAX",
     mode: "адаптированный текст",
     status: "нужна правка",
@@ -61,6 +63,7 @@ export const platformPreviews = [
     warning: "Текст нужно сократить перед экспортом.",
   },
   {
+    id: "fixture-instagram",
     platform: "Instagram",
     mode: "подпись + ручной экспорт",
     status: "нужен ручной экспорт",

@@ -62,3 +62,12 @@ Expose the already verified backend pilot path in the Russian user UI:
   run carries `ai_fact_conflict_fallback` in quality warnings.
 - Test update: `test_locked_fact_conflict_uses_source_fallback_master_revision` verifies that a conflict no
   longer creates a dead-end and that the fallback preserves the locked `venue_name` fact.
+
+## 2026-06-22 Follow-up: double publish UI hardening
+
+- Observed in production pilot: two quick Telegram publication clicks created two successful publications.
+  The dev overlay also showed a React duplicate-key warning because several Telegram variants were rendered
+  with the same `platform` key.
+- UI fix: platform previews now render one latest variant per platform and use the variant id as React key.
+  The pilot publish and master buttons also use the `useActionState` pending flag together with transition
+  pending state, so repeated clicks are blocked while the server action is in flight.

@@ -1,7 +1,7 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T14:22:35.398969+00:00",
+  "generated_at": "2026-06-22T15:22:33.095633+00:00",
   "canonical_language": "en",
   "file_count": 514,
   "files": [
@@ -42,8 +42,8 @@
     },
     {
       "path": "apps/web/next-env.d.ts",
-      "size_bytes": 228,
-      "sha256": "46f003f604b6bc947aed764a36ee0637bf2c058620edc905923a6d0d7b26db0e"
+      "size_bytes": 262,
+      "sha256": "85ae5aee75f011967cf2d25cbc342f62d69314e9d925f7f4aa3456fc2cffcca6"
     },
     {
       "path": "apps/web/next.config.ts",
@@ -342,8 +342,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 36645,
-      "sha256": "106a76333d49fbb9a7d644f7cd5bd3efc5a0d1fa1a8bbdd9f1bd34234d91676f"
+      "size_bytes": 36639,
+      "sha256": "0dfe75b2cdab3f6135fa7afbb91716f6000b1c877a8aa769f7f64c6c86316281"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -352,8 +352,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 14727,
-      "sha256": "ee81c55290952d8079dae4f02292552d8f31de34818e6d1362e49e8ee41f91b3"
+      "size_bytes": 14899,
+      "sha256": "2862a75ef26965503b5a4f06a7b381852abda24d11004610d1e120dd140bab72"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -422,8 +422,8 @@
     },
     {
       "path": "apps/web/src/features/content-studio/content-studio-fixtures.ts",
-      "size_bytes": 4180,
-      "sha256": "1739687ecc8cf5b96e91e04d17319aa4a35681f24831608d0a8403d8b93d81e5"
+      "size_bytes": 4260,
+      "sha256": "a15c0517ca4cb15b439d4fa8266244b7cf0f5c8d9afd488a71a9a39fea7868fd"
     },
     {
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
@@ -477,8 +477,8 @@
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 33658,
-      "sha256": "9ea016d020a63966b73cf661e7479b64067f020ce57449cd25bd53e65e08bab7"
+      "size_bytes": 34210,
+      "sha256": "cc4a02c0f8303f2f8e75847231a89b4667fa90f972629f84acdf88cea99c1e78"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -1737,8 +1737,8 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_11A_VOICE_TO_TELEGRAM_PILOT.md",
-      "size_bytes": 2892,
-      "sha256": "6f1f6042fea5e609b5c4c22c33a0e9f6e331912fe0927557054614cb26e6a0e1"
+      "size_bytes": 3495,
+      "sha256": "7970b91fa5d8e78374fb90057b0cbbabd20952656758a2cbc365b3b6376d672a"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

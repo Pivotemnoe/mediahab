@@ -129,10 +129,12 @@ export function PilotVoiceTelegramPanel({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const [masterState, masterAction] = useActionState(assemblePilotMasterAction, initialGuidedActionState);
-  const [publishState, publishAction] = useActionState(publishPilotTelegramAction, initialGuidedActionState);
-  const [isMasterPending, startMasterTransition] = useTransition();
-  const [isPublishPending, startPublishTransition] = useTransition();
+  const [masterState, masterAction, isMasterPending] = useActionState(assemblePilotMasterAction, initialGuidedActionState);
+  const [publishState, publishAction, isPublishPending] = useActionState(publishPilotTelegramAction, initialGuidedActionState);
+  const [isMasterTransitionPending, startMasterTransition] = useTransition();
+  const [isPublishTransitionPending, startPublishTransition] = useTransition();
+  const masterBusy = isMasterPending || isMasterTransitionPending;
+  const publishBusy = isPublishPending || isPublishTransitionPending;
   const disabled = !canMutate || !workspaceId || itemVersion === null;
 
   async function startRecording() {
@@ -358,23 +360,23 @@ export function PilotVoiceTelegramPanel({
           {masterState.message}
         </div>
         <Button
-          disabled={disabled || isMasterPending}
+          disabled={disabled || masterBusy}
           type="button"
           variant="secondary"
           onClick={() => startMasterTransition(() => submitAction(masterAction))}
         >
-          {isMasterPending ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+          {masterBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
           Собрать мастер-текст
         </Button>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
           {publishState.message}
         </div>
         <Button
-          disabled={disabled || isPublishPending}
+          disabled={disabled || publishBusy}
           type="button"
           onClick={() => startPublishTransition(() => submitAction(publishAction))}
         >
-          {isPublishPending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+          {publishBusy ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
           Опубликовать в тестовый Telegram
         </Button>
         <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
