@@ -59,9 +59,23 @@ assert.notEqual(queueStatusSource.length, 0, "QueueStatusLine source must be ext
 assert.match(queueStatusSource, /const canRetryJob = canRetry && job\?\.recoveryAction !== "refresh"/);
 assert.match(queueStatusSource, /const canRefreshJob = status === "blocked" && job\?\.recoveryAction === "refresh"/);
 assert.match(queueStatusSource, /canRefreshJob \? \(/);
+assert.match(queueStatusSource, /data-guided-queue-kind=\{job\?\.metadata\?\.kind \?\? "none"\}/);
+assert.match(queueStatusSource, /data-guided-queue-recovery=\{job\?\.recoveryAction \?\? "none"\}/);
+assert.match(queueStatusSource, /data-guided-queue-status=\{status\}/);
+assert.match(queueStatusSource, /data-testid="guided-queue-status"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-refresh"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-clear"/);
 assert.match(queueStatusSource, /onClick=\{refreshPage\}/);
 assert.match(queueStatusSource, /Обновить страницу/);
 assert.match(queueStatusSource, /Повторить из очереди/);
+for (const privateValue of ["Черновик", "secret", "legacy", "unclassified"]) {
+  assert.equal(
+    queueStatusSource.includes(privateValue),
+    false,
+    `queue status DOM hooks must not expose queued value: ${privateValue}`,
+  );
+}
 
 const retrySource = functionBody(formSource, "retryQueuedAdd");
 assert.match(retrySource, /draft\.flushDraft\(\)/);

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T04:44:03.450514+00:00",
+  "generated_at": "2026-06-22T04:50:54.712563+00:00",
   "canonical_language": "en",
-  "file_count": 489,
+  "file_count": 491,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 30503,
-      "sha256": "c504447f03c571357340e45f8777a2e72cad2b43916934f52520ebda55a28009"
+      "size_bytes": 30821,
+      "sha256": "7923148b824eeb21bf92de9686244086aacc61d16d7b9a6c51dc60ccbdd5fad9"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1386,6 +1386,16 @@
       "sha256": "4bd934af67f1b0fc7a92329bbd94653dd9049e0723662049bb87300b7d42a12c"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10AW_GUIDED_QUEUE_DOM_HOOKS.md",
+      "size_bytes": 3592,
+      "sha256": "74026315b672a8854f545970228807ad36e866afa220d4285c09bf58c250fe62"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AW_REPORT_RU.md",
+      "size_bytes": 4188,
+      "sha256": "18f9543f9cb61a67dc22bef667ce00e2dcb493f9fe371f1ea059854a0661e38f"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2412,8 +2422,8 @@
     },
     {
       "path": "tools/check_guided_repeatable_queue_ui.mjs",
-      "size_bytes": 5111,
-      "sha256": "388571d7ba38382623325e4b1859682bc0d3381a5b27c5b4c60a04003be40a18"
+      "size_bytes": 5905,
+      "sha256": "70978be47758ea5ea0126721aca95030b414dbf6c5fc5d416dcd02eedfc75952"
     },
     {
       "path": "tools/check_sw_capabilities.mjs",

@@ -535,7 +535,13 @@ function QueueStatusLine({
   const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
 
   return (
-    <div className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}>
+    <div
+      className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}
+      data-guided-queue-kind={job?.metadata?.kind ?? "none"}
+      data-guided-queue-recovery={job?.recoveryAction ?? "none"}
+      data-guided-queue-status={status}
+      data-testid="guided-queue-status"
+    >
       <div>
         {queueStatusLabel(status, job)}
         {job?.code ? <span className="block">Код: {job.code}</span> : null}
@@ -545,18 +551,18 @@ function QueueStatusLine({
       {job ? (
         <div className="flex flex-wrap gap-2">
           {canRefreshJob ? (
-            <Button onClick={refreshPage} size="sm" type="button" variant="secondary">
+            <Button data-testid="guided-queue-refresh" onClick={refreshPage} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
               Обновить страницу
             </Button>
           ) : null}
           {canRetryJob ? (
-            <Button onClick={onRetry} size="sm" type="button" variant="secondary">
+            <Button data-testid="guided-queue-retry" onClick={onRetry} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
               Повторить из очереди
             </Button>
           ) : null}
-          <Button onClick={onClear} size="sm" type="button" variant="ghost">
+          <Button data-testid="guided-queue-clear" onClick={onClear} size="sm" type="button" variant="ghost">
             Очистить локальную очередь
           </Button>
         </div>
