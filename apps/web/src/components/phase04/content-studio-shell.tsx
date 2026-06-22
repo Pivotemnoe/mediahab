@@ -39,6 +39,7 @@ import {
   AddRepeatableGroupActionForm,
   GuidedFieldActionForm,
 } from "@/components/phase04/guided-form-actions";
+import { PilotVoiceTelegramPanel } from "@/components/phase04/pilot-voice-telegram-panel";
 import { startPilotContentAction } from "@/services/content-actions";
 import {
   type ContentIndexViewModel,
@@ -630,44 +631,14 @@ export function ContentStudioShell({
               </Button>
             </Card>
 
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Mic size={18} className="text-primary" />
-                Диктовка и транскрипт
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" type="button">
-                  <Play size={14} />
-                  Запись
-                </Button>
-                <Button size="sm" type="button" variant="secondary">
-                  <Pause size={14} />
-                  Пауза
-                </Button>
-                <Button size="sm" type="button" variant="secondary">
-                  <RotateCcw size={14} />
-                  Заново
-                </Button>
-              </div>
-              <div className="rounded-md border border-border p-3 text-sm">
-                <div className="flex flex-wrap items-center gap-2 font-medium text-foreground">
-                  <AudioLines size={16} className="text-primary" />
-                  {viewModel.transcriptReview.provider}
-                  <Badge tone="warning">{viewModel.transcriptReview.status}</Badge>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-                  <span>{viewModel.transcriptReview.duration}</span>
-                  <span>уверенность {viewModel.transcriptReview.confidence}</span>
-                </div>
-              </div>
-              <textarea
-                className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-                defaultValue={viewModel.transcriptReview.text}
+            <Card>
+              <PilotVoiceTelegramPanel
+                canMutate={viewModel.guidedForm.canMutate}
+                contentId={contentId}
+                initialTranscript={viewModel.transcriptReview.text}
+                itemVersion={viewModel.guidedForm.itemVersion}
+                workspaceId={viewModel.workspaceId}
               />
-              <Button type="button">
-                <LockKeyhole size={16} />
-                Принять и зафиксировать
-              </Button>
             </Card>
           </div>
 

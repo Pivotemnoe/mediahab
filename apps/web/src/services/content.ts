@@ -113,6 +113,7 @@ export interface ContentStudioViewModel {
     status: string;
     text: string;
   };
+  workspaceId: string | null;
 }
 
 export interface GuidedFormFieldViewModel {
@@ -758,6 +759,7 @@ function fixtureContentStudio(contentId: string): ContentStudioViewModel {
     revisionEvents: revisionEvents.map(([version, event, time]) => ({ event, time, version })),
     summary: { ...studioSummary },
     transcriptReview: { ...transcriptReview },
+    workspaceId: null,
   };
 }
 
@@ -957,6 +959,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           text: transcriptBlock.transcript_text,
         }
       : fallback.transcriptReview,
+    workspaceId: item.workspace_id,
   };
 }
 

@@ -183,6 +183,30 @@ export interface ContentMediaResponse {
   media: ContentMediaOut[];
 }
 
+export interface MediaPresignResponse {
+  bucket: string;
+  expires_in_seconds: number;
+  headers: Record<string, string>;
+  media_id: string;
+  method: "PUT";
+  storage_key: string;
+  upload_url: string;
+}
+
+export interface MediaOut {
+  bucket: string;
+  checksum: string | null;
+  id: string;
+  kind: string;
+  mime_type: string;
+  processing_status: string;
+  size_bytes: number;
+  storage_key: string;
+  upload_status: string;
+  version: number;
+  workspace_id: string;
+}
+
 export interface BlockOut {
   content_item_id: string;
   field_key: string;
@@ -200,6 +224,25 @@ export interface BlockOut {
 
 export interface BlocksResponse {
   blocks: BlockOut[];
+}
+
+export interface TranscriptionJobOut {
+  completed_at: string | null;
+  confidence_json: JsonObject;
+  content_block_id: string;
+  content_item_id: string;
+  corrected_text: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  id: string;
+  media_asset_id: string;
+  provider_key: string;
+  retry_count: number;
+  started_at: string | null;
+  status: string;
+  transcript_text: string;
+  voice_asset_id: string;
+  workspace_id: string;
 }
 
 export interface GenerationRunOut {

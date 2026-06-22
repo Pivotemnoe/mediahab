@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T10:34:31.484847+00:00",
+  "generated_at": "2026-06-22T14:04:23.294753+00:00",
   "canonical_language": "en",
-  "file_count": 512,
+  "file_count": 514,
   "files": [
     {
       "path": ".dockerignore",
@@ -247,8 +247,8 @@
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
-      "size_bytes": 894,
-      "sha256": "c498b2e7f8f068671e49e6a1c9931ef55d9cc4da1eb6342077cbe4c1a65da0fa"
+      "size_bytes": 915,
+      "sha256": "ecebcf5ff1a65cf171efad4f64ef9d69a0bb8127dba1a22917efd1807effeed3"
     },
     {
       "path": "apps/web/src/app/page.tsx",
@@ -267,8 +267,8 @@
     },
     {
       "path": "apps/web/src/app/register/page.tsx",
-      "size_bytes": 1415,
-      "sha256": "41056480d05d155a3a3ddfc1a160b65726a1097333610b6fb959b5e9f2cfc7e0"
+      "size_bytes": 1439,
+      "sha256": "2f3c1c6d03c1847204cb2dbba73bf3c6a5c881cd99a4e98a766bdb0857362a84"
     },
     {
       "path": "apps/web/src/app/reset-password/page.tsx",
@@ -322,8 +322,8 @@
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
-      "size_bytes": 2320,
-      "sha256": "9deac4b91479bc5a8c0e9a6387bced9a73babdec4a814933a95ee4119c5c8d5f"
+      "size_bytes": 5246,
+      "sha256": "4c300ad4fde67255f592818d90a52e4b2db7fdc5145abef774e23850f3322a12"
     },
     {
       "path": "apps/web/src/components/phase02/cabinet-page.tsx",
@@ -342,13 +342,18 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 37751,
-      "sha256": "be510debfc0bc35251a85b59e7339444d183ac417d3be0e72b04459d64a07986"
+      "size_bytes": 36645,
+      "sha256": "106a76333d49fbb9a7d644f7cd5bd3efc5a0d1fa1a8bbdd9f1bd34234d91676f"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
       "size_bytes": 34164,
       "sha256": "1219c44693432844385154e5492b235af52777e137f835f7f1b9018fee25762f"
+    },
+    {
+      "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
+      "size_bytes": 14727,
+      "sha256": "ee81c55290952d8079dae4f02292552d8f31de34818e6d1362e49e8ee41f91b3"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -467,13 +472,13 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 1914,
-      "sha256": "0c7de1994fa1413c6798b666ff2470601bb549ebf51e60564d6c9f6f5cc6db79"
+      "size_bytes": 9324,
+      "sha256": "d803a91d7025ed79390f12a520b74926630d5a6bdd34ec10a538f6810d36dece"
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 33569,
-      "sha256": "43de150ec026f9bc4274095991f824089f5f8b43c204f86a327167cf7099d950"
+      "size_bytes": 33658,
+      "sha256": "9ea016d020a63966b73cf661e7479b64067f020ce57449cd25bd53e65e08bab7"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -527,8 +532,8 @@
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
-      "size_bytes": 8016,
-      "sha256": "0721ea7d86215a80a2eeb6a5a4ee1215d7f45c01413e9e0444acf13f36c9a308"
+      "size_bytes": 8957,
+      "sha256": "806e027493bb5d3c063d9b87662e77fd4bc9e9f4c2fec0237ce14fc836327162"
     },
     {
       "path": "apps/web/src/services/projects.ts",
@@ -1731,6 +1736,11 @@
       "sha256": "8096a9d533fc638876c215ac85ecf48c13666c7b6f73f8040554478b67d1a168"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11A_VOICE_TO_TELEGRAM_PILOT.md",
+      "size_bytes": 1970,
+      "sha256": "3e5c74af0fb80bf989402bf44e35a11793bc457d3c041b61f1c7676dd3fc6d6d"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -2247,8 +2257,8 @@
     },
     {
       "path": "services/api/app/modules/ai/service.py",
-      "size_bytes": 37918,
-      "sha256": "5dbb7f0561c0bf552ed67a6379ce621b6f93856f48c544f2178995ac4283547e"
+      "size_bytes": 39516,
+      "sha256": "e8cea823ffef80c8990337485ca704e5e99c9083185b102d4350f944d30695a6"
     },
     {
       "path": "services/api/app/modules/audit/__init__.py",
@@ -2302,8 +2312,8 @@
     },
     {
       "path": "services/api/app/modules/content/service.py",
-      "size_bytes": 15254,
-      "sha256": "36f567cefe117cb676fd8881f818cb5a135a71c9cc45c4a9c41b00768638af23"
+      "size_bytes": 15242,
+      "sha256": "0f44232e7a373caef5276a7853ce07ea329da2982929c913b3bf462a534b335b"
     },
     {
       "path": "services/api/app/modules/projects/__init__.py",
@@ -2367,8 +2377,8 @@
     },
     {
       "path": "services/api/tests/test_ai_examples_pipeline.py",
-      "size_bytes": 12861,
-      "sha256": "c78425f68a0bfa7b41184ff0d99d8143aa741b28a862d773842463e3f827765c"
+      "size_bytes": 12903,
+      "sha256": "dee3cd0495069f4e8abb6317d34e2860a059848727b787540cbd1ca6130a1554"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",
@@ -2377,8 +2387,8 @@
     },
     {
       "path": "services/api/tests/test_content_media_voice.py",
-      "size_bytes": 18832,
-      "sha256": "e2083e07cc7b916cbe77507424791be49654fd412aad90052fb89fece3bb25ae"
+      "size_bytes": 18945,
+      "sha256": "fedeb5916a7c0cc061a2181825de603759fb6b55e16b1b033a8dc347ac5d1ee5"
     },
     {
       "path": "services/api/tests/test_health.py",
