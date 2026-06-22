@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -498,6 +499,162 @@ export function NewContentShell({
   );
 }
 
+function InputBlocksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
+  return (
+    <Card className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <ListChecks size={18} className="text-primary" />
+        Входные блоки
+      </div>
+      {viewModel.inputBlocks.map(({ helper, name, source, status }) => (
+        <button
+          className="grid gap-2 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
+          key={name}
+          type="button"
+        >
+          <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <span className="font-medium text-foreground">{name}</span>
+            <Badge
+              className="shrink-0"
+              tone={status === "готово" ? "success" : status === "активно" ? "info" : "warning"}
+            >
+              {status}
+            </Badge>
+          </span>
+          <span className="text-xs leading-5 text-muted">{helper}</span>
+          <span className="text-xs text-muted">Источник: {source}</span>
+        </button>
+      ))}
+      <Button type="button" variant="secondary">
+        <Plus size={16} />
+        Добавить блюдо
+      </Button>
+    </Card>
+  );
+}
+
+function PlatformPreviewsCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
+  return (
+    <Card className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <PanelRight size={18} className="text-primary" />
+        Превью площадок
+      </div>
+      {viewModel.platformPreviews.map((preview) => (
+        <div className="grid gap-3 rounded-md border border-border p-3" key={preview.id}>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="font-medium text-foreground">{preview.platform}</div>
+            <Badge tone={preview.status === "готово к проверке" ? "success" : "warning"}>
+              {preview.status}
+            </Badge>
+          </div>
+          <div className="grid gap-1 text-xs text-muted">
+            <span>{preview.mode}</span>
+            <span>{preview.budget}</span>
+            <span>{preview.media}</span>
+          </div>
+          <div className="flex gap-2 rounded-md bg-surface-muted p-2 text-xs leading-5 text-muted">
+            <AlertTriangle className="mt-0.5 shrink-0 text-warning" size={14} />
+            <span>{preview.warning}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" type="button" variant="secondary">
+              <MessageSquareText size={14} />
+              Редактировать
+            </Button>
+            <Button size="sm" type="button">
+              <Send size={14} />
+              На проверку
+            </Button>
+          </div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function FactLocksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
+  return (
+    <Card className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <LockKeyhole size={18} className="text-primary" />
+        Факт-локи
+      </div>
+      {viewModel.factLocks.map(({ fact, source, status }) => (
+        <div className="rounded-md border border-border p-3 text-sm" key={fact}>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 break-words font-medium text-foreground">{fact}</div>
+            <Badge tone={status === "locked" ? "success" : "warning"}>
+              {status === "locked" ? "зафиксировано" : "проверка"}
+            </Badge>
+          </div>
+          <div className="mt-1 text-xs text-muted">{source}</div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function ChecksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
+  return (
+    <Card className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <Clock3 size={18} className="text-primary" />
+        Проверки
+      </div>
+      {viewModel.checks.map(({ label, tone, value }) => (
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm" key={label}>
+          <span className="text-muted">{label}</span>
+          <Badge tone={tone}>{value}</Badge>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function MobilePilotSteps() {
+  const steps = [
+    ["1", "Диктовка", "Надиктуйте или вставьте текст и примите его."],
+    ["2", "Фото", "Прикрепите фото или видео с телефона."],
+    ["3", "ИИ", "Подготовьте полный Telegram-пост."],
+    ["4", "Публикация", "Проверьте и отправьте в тестовый канал."],
+  ];
+
+  return (
+    <Card className="grid gap-3 border-primary/30 bg-[color-mix(in_srgb,var(--primary),transparent_96%)] xl:hidden">
+      <div className="text-sm font-medium text-foreground">Мобильный путь теста</div>
+      <div className="grid gap-2">
+        {steps.map(([number, title, helper]) => (
+          <div className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border bg-background p-3 text-sm" key={number}>
+            <span className="grid size-8 place-items-center rounded bg-primary text-xs font-medium text-primary-foreground">
+              {number}
+            </span>
+            <span>
+              <span className="block font-medium text-foreground">{title}</span>
+              <span className="mt-1 block leading-5 text-muted">{helper}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function MobileDetails({
+  children,
+  summary,
+}: {
+  children: ReactNode;
+  summary: string;
+}) {
+  return (
+    <details className="rounded-lg border border-border bg-surface p-4 shadow-panel">
+      <summary className="cursor-pointer text-sm font-medium text-foreground">{summary}</summary>
+      <div className="mt-4 grid gap-4">{children}</div>
+    </details>
+  );
+}
+
 export function ContentStudioShell({
   contentId,
   viewModel,
@@ -562,6 +719,7 @@ export function ContentStudioShell({
         ) : null}
 
         <LearningHints
+          className="hidden xl:grid"
           hints={[
             {
               title: "Для теста нужен левый блок «Голосовой пилот»",
@@ -579,37 +737,66 @@ export function ContentStudioShell({
           storageKey="tmh-learning-content-studio"
         />
 
-        <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
-          <div className="grid min-w-0 content-start gap-4">
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <ListChecks size={18} className="text-primary" />
-                Входные блоки
+        <div className="grid min-w-0 gap-4 xl:hidden">
+          <LearningHints
+            hints={[
+              {
+                title: "Идите сверху вниз",
+                body: "На телефоне основной путь начинается здесь: диктовка, фото, ИИ-сборка, публикация. Остальные панели раскрывайте только если нужно.",
+              },
+              {
+                title: "Кнопки с вопросом",
+                body: "Нажимайте маленький значок вопроса рядом с блоком, чтобы увидеть короткое объяснение.",
+              },
+            ]}
+            storageKey="tmh-learning-content-studio"
+            title="Обучение на телефоне"
+          />
+          <MobilePilotSteps />
+          <Card>
+            <PilotVoiceTelegramPanel
+              canMutate={viewModel.guidedForm.canMutate}
+              contentId={contentId}
+              initialTranscript={viewModel.transcriptReview.text}
+              itemVersion={viewModel.guidedForm.itemVersion}
+              workspaceId={viewModel.workspaceId}
+            />
+          </Card>
+          <MobileDetails summary="Факты и поля материала">
+            <InputBlocksCard viewModel={viewModel} />
+            <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
+          </MobileDetails>
+          <MobileDetails summary="Превью, проверки и факт-локи">
+            <PlatformPreviewsCard viewModel={viewModel} />
+            <FactLocksCard viewModel={viewModel} />
+            <ChecksCard viewModel={viewModel} />
+          </MobileDetails>
+          <MobileDetails summary="Мастер-черновик и история">
+            <Card className="grid gap-4">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <MessageSquareText size={18} className="text-primary" />
+                    Мастер-черновик
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
+                  </p>
+                </div>
+                <Badge tone="info">{viewModel.masterBudget}</Badge>
               </div>
-              {viewModel.inputBlocks.map(({ helper, name, source, status }) => (
-                <button
-                  className="grid gap-2 rounded-md border border-border p-3 text-left text-sm transition hover:bg-surface-muted"
-                  key={name}
-                  type="button"
-                >
-                  <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                    <span className="font-medium text-foreground">{name}</span>
-                    <Badge
-                      className="shrink-0"
-                      tone={status === "готово" ? "success" : status === "активно" ? "info" : "warning"}
-                    >
-                      {status}
-                    </Badge>
-                  </span>
-                  <span className="text-xs leading-5 text-muted">{helper}</span>
-                  <span className="text-xs text-muted">Источник: {source}</span>
-                </button>
-              ))}
-              <Button type="button" variant="secondary">
-                <Plus size={16} />
-                Добавить блюдо
-              </Button>
+              <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
+                {viewModel.masterDraftParagraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </article>
             </Card>
+          </MobileDetails>
+        </div>
+
+        <div className="hidden min-w-0 gap-4 xl:grid xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+          <div className="grid min-w-0 content-start gap-4">
+            <InputBlocksCard viewModel={viewModel} />
 
             <Card>
               <PilotVoiceTelegramPanel
@@ -701,72 +888,9 @@ export function ContentStudioShell({
           </div>
 
           <div className="grid min-w-0 content-start gap-4">
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <PanelRight size={18} className="text-primary" />
-                Превью площадок
-              </div>
-              {viewModel.platformPreviews.map((preview) => (
-                <div className="grid gap-3 rounded-md border border-border p-3" key={preview.id}>
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium text-foreground">{preview.platform}</div>
-                    <Badge tone={preview.status === "готово к проверке" ? "success" : "warning"}>
-                      {preview.status}
-                    </Badge>
-                  </div>
-                  <div className="grid gap-1 text-xs text-muted">
-                    <span>{preview.mode}</span>
-                    <span>{preview.budget}</span>
-                    <span>{preview.media}</span>
-                  </div>
-                  <div className="flex gap-2 rounded-md bg-surface-muted p-2 text-xs leading-5 text-muted">
-                    <AlertTriangle className="mt-0.5 shrink-0 text-warning" size={14} />
-                    <span>{preview.warning}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" type="button" variant="secondary">
-                      <MessageSquareText size={14} />
-                      Редактировать
-                    </Button>
-                    <Button size="sm" type="button">
-                      <Send size={14} />
-                      На проверку
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </Card>
-
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <LockKeyhole size={18} className="text-primary" />
-                Факт-локи
-              </div>
-              {viewModel.factLocks.map(({ fact, source, status }) => (
-                <div className="rounded-md border border-border p-3 text-sm" key={fact}>
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                    <div className="min-w-0 break-words font-medium text-foreground">{fact}</div>
-                    <Badge tone={status === "locked" ? "success" : "warning"}>
-                      {status === "locked" ? "зафиксировано" : "проверка"}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 text-xs text-muted">{source}</div>
-                </div>
-              ))}
-            </Card>
-
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Clock3 size={18} className="text-primary" />
-                Проверки
-              </div>
-              {viewModel.checks.map(({ label, tone, value }) => (
-                <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm" key={label}>
-                  <span className="text-muted">{label}</span>
-                  <Badge tone={tone}>{value}</Badge>
-                </div>
-              ))}
-            </Card>
+            <PlatformPreviewsCard viewModel={viewModel} />
+            <FactLocksCard viewModel={viewModel} />
+            <ChecksCard viewModel={viewModel} />
           </div>
         </div>
       </section>

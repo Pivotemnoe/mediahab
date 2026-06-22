@@ -12,7 +12,7 @@ export function Topbar() {
           <span className="truncate">Поиск по проектам, материалам и публикациям</span>
         </div>
         <div className="flex flex-1 items-center justify-between gap-2 md:justify-end">
-          <Button asChild size="sm" variant="secondary">
+          <Button asChild className="hidden sm:inline-flex" size="sm" variant="secondary">
             <Link href="/app/showcase">
               <HelpCircle size={16} />
               UI

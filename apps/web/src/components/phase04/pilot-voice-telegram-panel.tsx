@@ -5,6 +5,7 @@ import { CheckCircle2, FileAudio, Loader2, LockKeyhole, Mic, Pause, Play, Rotate
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { HintPopover } from "@/components/layout/learning-hints";
 import {
   analyzePilotDraftAction,
   assemblePilotMasterAction,
@@ -428,6 +429,11 @@ export function PilotVoiceTelegramPanel({
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Mic size={18} className="text-primary" />
         Голосовой пилот
+        <HintPopover
+          body="Это главный мобильный блок пилота: сюда надиктовывается текст, прикрепляются фото, затем собирается и публикуется Telegram-пост."
+          storageKey="tmh-learning-content-studio"
+          title="Голосовой пилот"
+        />
       </div>
       <div className="flex flex-wrap gap-2">
         <Badge tone={disabled ? "neutral" : "success"}>
@@ -441,7 +447,14 @@ export function PilotVoiceTelegramPanel({
         {message}
       </div>
       <label className="grid gap-2 text-sm">
-        <span className="font-medium text-foreground">Куда сохранить следующую диктовку</span>
+        <span className="flex items-center gap-2 font-medium text-foreground">
+          Куда сохранить следующую диктовку
+          <HintPopover
+            body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего поста."
+            storageKey="tmh-learning-content-studio"
+            title="Поле диктовки"
+          />
+        </span>
         <select
           className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
           disabled={disabled || targetLocked}
@@ -472,6 +485,14 @@ export function PilotVoiceTelegramPanel({
           <RotateCcw size={14} />
           Заново
         </Button>
+      </div>
+      <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
+        <HintPopover
+          body="На телефоне браузер спросит разрешение на микрофон. После диктовки нажмите «Стоп», потом «Загрузить и расшифровать»."
+          storageKey="tmh-learning-content-studio"
+          title="Как записывать"
+        />
+        <span>Сначала запись, потом расшифровка, затем проверка текста и принятие.</span>
       </div>
       <label className="grid gap-2 rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted">
         <span className="flex items-center gap-2 font-medium text-foreground">
@@ -512,7 +533,14 @@ export function PilotVoiceTelegramPanel({
         Принять текст
       </Button>
       <div className="grid gap-2 rounded-md border border-border p-3">
-        <div className="text-sm font-medium text-foreground">Фото и видео для Telegram</div>
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          Фото и видео для Telegram
+          <HintPopover
+            body="Выберите фото или видео с телефона. Файлы прикрепятся к этому материалу и попадут в Telegram-публикацию после новой подготовки поста."
+            storageKey="tmh-learning-content-studio"
+            title="Фото и видео"
+          />
+        </div>
         <label className="grid gap-2 rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted">
           <span className="flex items-center gap-2 font-medium text-foreground">
             <Upload size={16} className="text-primary" />
@@ -536,7 +564,14 @@ export function PilotVoiceTelegramPanel({
         </div>
       </div>
       <div className="grid gap-2 rounded-md border border-border p-3">
-        <div className="text-sm font-medium text-foreground">Мастер и Telegram</div>
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          Мастер и Telegram
+          <HintPopover
+            body="Здесь ИИ собирает текст из диктовки и фактов. Для текущего теста основной путь: подготовить полный Telegram-пост, проверить и опубликовать."
+            storageKey="tmh-learning-content-studio"
+            title="ИИ и публикация"
+          />
+        </div>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(analysisState.tone)}`}>
           {analysisState.message}
         </div>

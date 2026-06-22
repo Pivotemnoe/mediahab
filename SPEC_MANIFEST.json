@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T17:48:43.878482+00:00",
+  "generated_at": "2026-06-22T18:27:05.994430+00:00",
   "canonical_language": "en",
-  "file_count": 522,
+  "file_count": 524,
   "files": [
     {
       "path": ".dockerignore",
@@ -297,8 +297,8 @@
     },
     {
       "path": "apps/web/src/components/layout/learning-hints.tsx",
-      "size_bytes": 2332,
-      "sha256": "adebadb24d71336f5abacc924781e21de425e5350ab08a3fc2e1c94e62d33ddb"
+      "size_bytes": 3832,
+      "sha256": "41a6a10e9d60410c0622143d82a4156414a0118d72b5efaab8b6aa0c1936d219"
     },
     {
       "path": "apps/web/src/components/layout/mobile-nav.tsx",
@@ -322,8 +322,8 @@
     },
     {
       "path": "apps/web/src/components/layout/topbar.tsx",
-      "size_bytes": 1423,
-      "sha256": "e7459802e2e5f73ff915344b35f2e3d9498744760308f45886041559d061bae6"
+      "size_bytes": 1457,
+      "sha256": "373c1ba489147e2f7fcaed1149d178a84fcf88922f64bfd7d14f2900b1fc6a2b"
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 36864,
-      "sha256": "f6d8be5540bd2630d003b232b4a0f8de4bdc4e60f8e255df6c9916b1036927b4"
+      "size_bytes": 41531,
+      "sha256": "7258f8393cf895d0887ddeccc6df3bbc04c370f2063bf3eb408c8584837dc8e1"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -357,8 +357,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 24333,
-      "sha256": "0cfcf01b0fea2c3f8c44061bfe967715e89fdc9227436a237fcbc9bfb9df032f"
+      "size_bytes": 26704,
+      "sha256": "c34f2df49501b6fe0aa33fd775db6555ee732d6453095526059c383510724ba7"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1779,6 +1779,16 @@
       "path": "docs/exec-plans/UI_PHASE_11G_REPORT_RU.md",
       "size_bytes": 2944,
       "sha256": "35d342bb8e7928f6a88660d873207532114bb63d99e8e5f94483264f8334a25c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11H_MOBILE_PILOT_GUIDE.md",
+      "size_bytes": 1872,
+      "sha256": "c5211fdd5144bf464e2849748098c13baf6d70642200f62c18dbaa3681b7d146"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11H_REPORT_RU.md",
+      "size_bytes": 2803,
+      "sha256": "465bf3c47ddd8f45dd77fedbdefd7ecdc4e996844d3984ecb19b3a0f6642c1d0"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
