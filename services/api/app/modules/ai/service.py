@@ -101,7 +101,21 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "ratings_suggestion": {"$ref": "#/$defs/ratings"},
         "cta_candidate": {"type": "string"},
-        "fact_usage_map": {"type": "object"},
+        "fact_usage_map": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["fact_key", "generated_value", "source"],
+                "properties": {
+                    "fact_key": {"type": "string"},
+                    "generated_value": {
+                        "type": ["object", "array", "string", "number", "integer", "boolean", "null"]
+                    },
+                    "source": {"type": "string"},
+                },
+            },
+        },
         "warnings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
     },
     "$defs": {
@@ -645,10 +659,14 @@ def mock_master_payload(
         "hook_candidates": hooks,
         "ratings_suggestion": ratings,
         "cta_candidate": cta,
-        "fact_usage_map": {
-            fact.fact_key: {"generated_value": fact.value_json, "source": "locked_fact"}
+        "fact_usage_map": [
+            {
+                "fact_key": fact.fact_key,
+                "generated_value": fact.value_json,
+                "source": "locked_fact",
+            }
             for fact in locked_facts
-        },
+        ],
         "warnings": warnings,
     }
 
@@ -708,7 +726,17 @@ def deterministic_warnings(
 
 def validate_locked_facts(payload: dict[str, Any], locked_facts: list[LockedFact]) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
-    usage = payload.get("fact_usage_map") if isinstance(payload.get("fact_usage_map"), dict) else {}
+    raw_usage = payload.get("fact_usage_map")
+    if isinstance(raw_usage, dict):
+        usage = raw_usage
+    elif isinstance(raw_usage, list):
+        usage = {
+            str(item.get("fact_key")): item
+            for item in raw_usage
+            if isinstance(item, dict) and item.get("fact_key")
+        }
+    else:
+        usage = {}
     for fact in locked_facts:
         generated = usage.get(fact.fact_key)
         if generated is None:

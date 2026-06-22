@@ -235,12 +235,13 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
 
             async def generate_structured(self, request):
                 payload = dict(request.fallback_payload)
-                payload["fact_usage_map"] = {
-                    "venue_name": {
+                payload["fact_usage_map"] = [
+                    {
+                        "fact_key": "venue_name",
                         "generated_value": {"text": "Другое место"},
                         "source": "locked_fact",
                     }
-                }
+                ]
                 return StructuredGenerationResult(
                     provider_key=self.provider_key,
                     model_id=self.model_id,
