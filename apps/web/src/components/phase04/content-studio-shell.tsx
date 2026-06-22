@@ -39,6 +39,7 @@ import {
   AddRepeatableGroupActionForm,
   GuidedFieldActionForm,
 } from "@/components/phase04/guided-form-actions";
+import { startPilotContentAction } from "@/services/content-actions";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
@@ -360,6 +361,14 @@ export function NewContentShell({ viewModel }: { viewModel: NewContentViewModel 
               <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
                 {viewModel.notice}
               </div>
+            ) : null}
+            {viewModel.modeLabel === "api" ? (
+              <form action={startPilotContentAction}>
+                <Button type="submit" className="w-full">
+                  <Plus size={16} />
+                  Создать реальный черновик
+                </Button>
+              </form>
             ) : null}
             <div className="grid gap-2 text-sm">
               {viewModel.resumeItems.map(({ label, value }) => (
