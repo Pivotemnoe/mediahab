@@ -45,8 +45,20 @@ Expose the already verified backend pilot path in the Russian user UI:
 - Browser microphone permission and codec support vary. Provide file upload fallback.
 - Telegram `sendRichMessage` accepts non-empty rich HTML, so empty master text must never be publishable.
 - The current Telegram token was shared in chat and should be revoked after the pilot.
+- OpenAI can paraphrase locked transcript facts during master assembly. If that happens, the pilot must not
+  block Telegram testing: create a source-based fallback master and keep a visible quality warning.
 
 ## Rollback
 
 - Revert the UI/client component and server actions.
 - Keep backend smoke fixes in place unless a deployment regression appears.
+
+## 2026-06-22 Follow-up: locked fact fallback
+
+- Observed in production pilot: OpenAI rewrote a locked transcript about the Telegram test and the quality
+  gate returned `fact_conflict`, leaving the UI unable to proceed to publication.
+- Backend fix: when `assemble_master` detects locked fact conflicts, preserve the blocked quality errors in
+  the generation step log, then build a master from the exact source blocks and locked facts. The completed
+  run carries `ai_fact_conflict_fallback` in quality warnings.
+- Test update: `test_locked_fact_conflict_uses_source_fallback_master_revision` verifies that a conflict no
+  longer creates a dead-end and that the fallback preserves the locked `venue_name` fact.

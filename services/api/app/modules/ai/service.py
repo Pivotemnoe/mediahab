@@ -971,17 +971,40 @@ async def run_structured_task(
         validate_structured_payload(quality, QUALITY_OUTPUT_SCHEMA)
         await add_generation_step(session, run, "quality_check", output_metadata=quality)
         if quality["errors"]:
-            complete_generation_run(
+            fallback_response = mock_master_payload(item, project_version, rubric_version, blocks, locked_facts)
+            fallback_quality = quality_result(fallback_response, source_text, rubric_version, locked_facts)
+            fallback_quality["warnings"] = [
+                {
+                    "code": "ai_fact_conflict_fallback",
+                    "message": (
+                        "AI изменил зафиксированный факт, поэтому мастер собран из исходных данных "
+                        "без перефразирования."
+                    ),
+                    "field": "master_text",
+                },
+                *fallback_quality["warnings"],
+            ]
+            fallback_response["quality"] = fallback_quality
+            validate_structured_payload(fallback_quality, QUALITY_OUTPUT_SCHEMA)
+            await add_generation_step(
+                session,
                 run,
-                "failed",
-                response_payload,
-                started,
-                usage,
-                "fact_conflict",
-                "Generated master conflicts with locked facts.",
+                "fact_conflict_fallback",
+                output_metadata={"blocked_errors": quality["errors"], "fallback_quality": fallback_quality},
             )
-            await session.flush()
-            return run
+            if fallback_quality["errors"]:
+                complete_generation_run(
+                    run,
+                    "failed",
+                    response_payload,
+                    started,
+                    usage,
+                    "fact_conflict",
+                    "Generated master conflicts with locked facts.",
+                )
+                await session.flush()
+                return run
+            response_payload = fallback_response
         revision = ContentRevision(
             id=uuid4(),
             workspace_id=item.workspace_id,

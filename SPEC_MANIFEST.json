@@ -1,7 +1,7 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T14:04:23.294753+00:00",
+  "generated_at": "2026-06-22T14:22:35.398969+00:00",
   "canonical_language": "en",
   "file_count": 514,
   "files": [
@@ -1737,8 +1737,8 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_11A_VOICE_TO_TELEGRAM_PILOT.md",
-      "size_bytes": 1970,
-      "sha256": "3e5c74af0fb80bf989402bf44e35a11793bc457d3c041b61f1c7676dd3fc6d6d"
+      "size_bytes": 2892,
+      "sha256": "6f1f6042fea5e609b5c4c22c33a0e9f6e331912fe0927557054614cb26e6a0e1"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
@@ -2257,8 +2257,8 @@
     },
     {
       "path": "services/api/app/modules/ai/service.py",
-      "size_bytes": 39516,
-      "sha256": "e8cea823ffef80c8990337485ca704e5e99c9083185b102d4350f944d30695a6"
+      "size_bytes": 40793,
+      "sha256": "f20dca07d5a59ce507a16da30a860db7b9f6df4298a2356a3b9975ee30480fb1"
     },
     {
       "path": "services/api/app/modules/audit/__init__.py",
@@ -2377,8 +2377,8 @@
     },
     {
       "path": "services/api/tests/test_ai_examples_pipeline.py",
-      "size_bytes": 12903,
-      "sha256": "dee3cd0495069f4e8abb6317d34e2860a059848727b787540cbd1ca6130a1554"
+      "size_bytes": 13276,
+      "sha256": "217d1407384c4958ff0c62db2693642d7a79d648a7c2ce8f1d42b16b613fdb4a"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",

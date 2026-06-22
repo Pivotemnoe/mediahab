@@ -223,7 +223,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertIsNotNone(content_row.current_master_revision_id)
         self.assertEqual(run_row.provider_key, "mock")
 
-    def test_locked_fact_conflict_blocks_master_revision(self) -> None:
+    def test_locked_fact_conflict_uses_source_fallback_master_revision(self) -> None:
         auth = self.register(self.client, email="conflict05@example.com", workspace_name="Conflict Workspace")
         project, rubric, content = self.create_content(auth)
         self.import_examples(auth, project["id"], rubric["id"], count=3)
@@ -256,12 +256,17 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             )
         self.assertEqual(generated.status_code, 202, generated.text)
         body = generated.json()
-        self.assertEqual(body["status"], "failed")
-        self.assertEqual(body["error_code"], "fact_conflict")
-        errors = body["response_json"]["quality"]["errors"]
-        self.assertEqual(errors[0]["code"], "fact_conflict")
+        self.assertEqual(body["status"], "completed")
+        self.assertIsNone(body["error_code"])
+        response = body["response_json"]
+        self.assertEqual(response["quality"]["errors"], [])
+        warnings = response["quality"]["warnings"]
+        self.assertEqual(warnings[0]["code"], "ai_fact_conflict_fallback")
+        usage_by_key = {item["fact_key"]: item for item in response["fact_usage_map"]}
+        self.assertEqual(usage_by_key["venue_name"]["generated_value_json"], '{"text": "ПуриПури"}')
+        self.assertIn("ПуриПури", response["master_text"])
         content_row, _ = asyncio.run(self._content_and_run(content["id"], body["id"]))
-        self.assertIsNone(content_row.current_master_revision_id)
+        self.assertIsNotNone(content_row.current_master_revision_id)
 
     def test_cross_workspace_ai_run_access_returns_404(self) -> None:
         owner_a = self.register(self.client, email="owner-a05@example.com", workspace_name="A Workspace")
