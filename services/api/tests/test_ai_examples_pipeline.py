@@ -238,7 +238,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
                 payload["fact_usage_map"] = [
                     {
                         "fact_key": "venue_name",
-                        "generated_value": {"text": "Другое место"},
+                        "generated_value_json": '{"text":"Другое место"}',
                         "source": "locked_fact",
                     }
                 ]

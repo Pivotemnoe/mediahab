@@ -106,12 +106,10 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["fact_key", "generated_value", "source"],
+                "required": ["fact_key", "generated_value_json", "source"],
                 "properties": {
                     "fact_key": {"type": "string"},
-                    "generated_value": {
-                        "type": ["object", "array", "string", "number", "integer", "boolean", "null"]
-                    },
+                    "generated_value_json": {"type": "string"},
                     "source": {"type": "string"},
                 },
             },
@@ -143,7 +141,7 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
         "finding": {
             "type": "object",
             "additionalProperties": False,
-            "required": ["code", "message"],
+            "required": ["code", "message", "field"],
             "properties": {
                 "code": {"type": "string"},
                 "message": {"type": "string"},
@@ -662,7 +660,7 @@ def mock_master_payload(
         "fact_usage_map": [
             {
                 "fact_key": fact.fact_key,
-                "generated_value": fact.value_json,
+                "generated_value_json": canonical_json(fact.value_json),
                 "source": "locked_fact",
             }
             for fact in locked_facts
@@ -741,7 +739,19 @@ def validate_locked_facts(payload: dict[str, Any], locked_facts: list[LockedFact
         generated = usage.get(fact.fact_key)
         if generated is None:
             continue
-        if isinstance(generated, dict) and "generated_value" in generated:
+        if isinstance(generated, dict) and "generated_value_json" in generated:
+            generated_value = generated["generated_value_json"]
+            if isinstance(generated_value, str):
+                if generated_value != canonical_json(fact.value_json):
+                    errors.append(
+                        {
+                            "code": "fact_conflict",
+                            "field": fact.fact_key,
+                            "message": f"AI изменил зафиксированный факт: {fact.fact_key}.",
+                        }
+                    )
+                continue
+        elif isinstance(generated, dict) and "generated_value" in generated:
             generated_value = generated["generated_value"]
         else:
             generated_value = generated
