@@ -70,7 +70,7 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
         "warnings",
     ],
     "properties": {
-        "master_text": {"type": "string"},
+        "master_text": {"type": "string", "minLength": 1},
         "body_blocks": {
             "type": "array",
             "items": {
@@ -78,9 +78,9 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["section", "text", "source_keys"],
                 "properties": {
-                    "section": {"type": "string"},
-                    "text": {"type": "string"},
-                    "source_keys": {"type": "array", "items": {"type": "string"}},
+                    "section": {"type": "string", "minLength": 1},
+                    "text": {"type": "string", "minLength": 1},
+                    "source_keys": {"type": "array", "items": {"type": "string", "minLength": 1}},
                 },
             },
         },
@@ -93,14 +93,14 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["text", "rank", "source"],
                 "properties": {
-                    "text": {"type": "string"},
+                    "text": {"type": "string", "minLength": 1},
                     "rank": {"type": "integer", "minimum": 1, "maximum": 3},
-                    "source": {"type": "string"},
+                    "source": {"type": "string", "minLength": 1},
                 },
             },
         },
         "ratings_suggestion": {"$ref": "#/$defs/ratings"},
-        "cta_candidate": {"type": "string"},
+        "cta_candidate": {"type": "string", "minLength": 1},
         "fact_usage_map": {
             "type": "array",
             "items": {
@@ -108,9 +108,9 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["fact_key", "generated_value_json", "source"],
                 "properties": {
-                    "fact_key": {"type": "string"},
-                    "generated_value_json": {"type": "string"},
-                    "source": {"type": "string"},
+                    "fact_key": {"type": "string", "minLength": 1},
+                    "generated_value_json": {"type": "string", "minLength": 1},
+                    "source": {"type": "string", "minLength": 1},
                 },
             },
         },
@@ -143,8 +143,8 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
             "additionalProperties": False,
             "required": ["code", "message", "field"],
             "properties": {
-                "code": {"type": "string"},
-                "message": {"type": "string"},
+                "code": {"type": "string", "minLength": 1},
+                "message": {"type": "string", "minLength": 1},
                 "field": {"type": ["string", "null"]},
             },
         },
