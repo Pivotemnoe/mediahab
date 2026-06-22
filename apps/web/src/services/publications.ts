@@ -176,8 +176,17 @@ async function getFirstProjectDestinations() {
 
 async function apiPublications(): Promise<PublicationOpsViewModel> {
   const fallback = fixturePublications();
+  const me = await safeApiGet<MeResponse>("/api/v1/me");
+  const workspace = me?.workspaces[0];
+  if (!workspace) {
+    return {
+      ...fallback,
+      modeLabel: "api",
+      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
+    };
+  }
   const [publicationsResponse, destinationsResponse] = await Promise.all([
-    safeApiGet<PublicationsResponse>("/api/v1/publications"),
+    safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`),
     getFirstProjectDestinations(),
   ]);
   const publications = publicationsResponse?.publications ?? [];

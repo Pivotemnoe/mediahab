@@ -246,7 +246,16 @@ async function apiMedia(): Promise<MediaLibraryViewModel> {
 
 async function apiCalendar(): Promise<CalendarViewModel> {
   const fallback = fixtureCalendar();
-  const publicationsResponse = await safeApiGet<PublicationsResponse>("/api/v1/publications");
+  const me = await safeApiGet<MeResponse>("/api/v1/me");
+  const workspace = me?.workspaces[0];
+  if (!workspace) {
+    return {
+      ...fallback,
+      modeLabel: "api",
+      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
+    };
+  }
+  const publicationsResponse = await safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`);
   const publications = publicationsResponse?.publications ?? [];
   const scheduled = publications
     .filter((publication) => publication.scheduled_at || publication.status === "scheduled")

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T15:22:33.095633+00:00",
+  "generated_at": "2026-06-22T15:38:45.783237+00:00",
   "canonical_language": "en",
-  "file_count": 514,
+  "file_count": 515,
   "files": [
     {
       "path": ".dockerignore",
@@ -42,8 +42,8 @@
     },
     {
       "path": "apps/web/next-env.d.ts",
-      "size_bytes": 262,
-      "sha256": "85ae5aee75f011967cf2d25cbc342f62d69314e9d925f7f4aa3456fc2cffcca6"
+      "size_bytes": 228,
+      "sha256": "46f003f604b6bc947aed764a36ee0637bf2c058620edc905923a6d0d7b26db0e"
     },
     {
       "path": "apps/web/next.config.ts",
@@ -472,8 +472,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 9324,
-      "sha256": "d803a91d7025ed79390f12a520b74926630d5a6bdd34ec10a538f6810d36dece"
+      "size_bytes": 9966,
+      "sha256": "8893464847a066b44f6ac217c04fc784a0bd439a406b9bca280343f650faa152"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -482,8 +482,8 @@
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
-      "size_bytes": 6407,
-      "sha256": "e66d49d770c2db2a1a3adcf74006e8e67393096b230c2477276e8e5bc616986c"
+      "size_bytes": 6436,
+      "sha256": "975a55cb88716cfac28b62c746cb6991bd5241674ba9253c55c09d190c1772f9"
     },
     {
       "path": "apps/web/src/services/guided-action-errors.ts",
@@ -527,8 +527,8 @@
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
-      "size_bytes": 9645,
-      "sha256": "311fc932d44ac72beca804414b2ea78059ec0f94d52669f37498eedd8cf7dfa1"
+      "size_bytes": 10011,
+      "sha256": "49ce6d4a40348d95767dda58692f56fb9217b5c5ead991e5a903613563804040"
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
@@ -542,8 +542,8 @@
     },
     {
       "path": "apps/web/src/services/publications.ts",
-      "size_bytes": 8434,
-      "sha256": "c9f3dd4f9673cc237c4b6b41e48570aea986a97fc3a486176350df56379d870d"
+      "size_bytes": 8800,
+      "sha256": "8fd24cfcfd71d8b9a0501b3c7c9298cf6f6d4cbc57cb355db77b50c604cba4bc"
     },
     {
       "path": "apps/web/src/services/runtime.ts",
@@ -1739,6 +1739,11 @@
       "path": "docs/exec-plans/UI_PHASE_11A_VOICE_TO_TELEGRAM_PILOT.md",
       "size_bytes": 3495,
       "sha256": "7970b91fa5d8e78374fb90057b0cbbabd20952656758a2cbc365b3b6376d672a"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11B_TELEGRAM_PILOT_HARDENING.md",
+      "size_bytes": 1866,
+      "sha256": "add15024f1627693a4a013de6a6b3351c72004d4e61882bad75a2a2baf7eb2b0"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",

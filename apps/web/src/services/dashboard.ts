@@ -131,7 +131,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
       safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`),
       safeApiGet<UsageResponse>(`/api/v1/workspaces/${workspace.id}/usage`),
       safeApiGet<SubscriptionResponse>(`/api/v1/workspaces/${workspace.id}/subscription`),
-      safeApiGet<PublicationsResponse>("/api/v1/publications"),
+      safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`),
     ]);
 
   const projects = projectsResponse?.projects ?? [];

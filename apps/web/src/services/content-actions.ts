@@ -199,6 +199,14 @@ function publicationMessage(publication: PublicationOut): GuidedActionState {
   );
 }
 
+function pilotPublicationAlreadySentMessage(publication: PublicationOut): GuidedActionState {
+  const external = publication.external_posts[0];
+  const externalId = typeof external?.provider_external_id === "string"
+    ? external.provider_external_id
+    : "Telegram уже принял эту публикацию";
+  return messageState(`Эта версия уже опубликована в @temichev_posthub_test. ${externalId}`);
+}
+
 export async function publishPilotTelegramAction(
   _previousState: GuidedActionState,
   formData: FormData,
@@ -233,11 +241,16 @@ export async function publishPilotTelegramAction(
       {
         body: {
           destination_id: destination.id,
-          idempotency_key: `ui-telegram-${contentId}-${Date.now()}`,
+          idempotency_key: `ui-telegram-pilot-${contentId}-${approved.id}`,
         },
         method: "POST",
       },
     );
+    if (publication.status === "published") {
+      revalidatePath(`/app/content/${contentId}`);
+      revalidatePath("/app");
+      return pilotPublicationAlreadySentMessage(publication);
+    }
     const published = await apiRequest<PublicationOut>(`/api/v1/publications/${publication.id}/publish-now`, {
       method: "POST",
     });
