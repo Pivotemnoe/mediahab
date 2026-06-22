@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T09:38:59.841484+00:00",
+  "generated_at": "2026-06-22T10:03:08.140199+00:00",
   "canonical_language": "en",
-  "file_count": 509,
+  "file_count": 511,
   "files": [
     {
       "path": ".dockerignore",
@@ -832,8 +832,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 6573,
-      "sha256": "2509d760e90cf59765a97f08a672fd6676c4f3a05003c0e386409a4e5865ad7b"
+      "size_bytes": 9237,
+      "sha256": "da682c8415c8a1c3fafdfdbaa7d5a32a6e7021a41709605b7dade2a33b9ea4fa"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -1447,13 +1447,23 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10BC_GUIDED_QUEUE_CONFIRMATION_SHELL.md",
-      "size_bytes": 2841,
-      "sha256": "09fd6d22a4f744bdd33e5d6aec6bdfd6c9c684b6e4e3ef0d4758bd72d71efc13"
+      "size_bytes": 2989,
+      "sha256": "839816cd98108f1ef88e6b01801eeb1550ee9a8cc7c3be13a5f7c2d72baf03b0"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10BC_REPORT_RU.md",
-      "size_bytes": 604,
-      "sha256": "92a4875d91781e47283c33448af44e59552ad539be1081f2cdce8017b8086714"
+      "size_bytes": 4093,
+      "sha256": "7ac6f6cde54646acd6e56a1f817e2d8d5466d34e100ddfb5335946d2fb1f4744"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BD_PILOT_DEPLOYMENT_READINESS.md",
+      "size_bytes": 5560,
+      "sha256": "f466a709210b25cb3e3e820248e565f4c5bdca6da76a155e457893aaffb6cdfd"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BD_REPORT_RU.md",
+      "size_bytes": 5174,
+      "sha256": "71ef4726463defcaa007965ed00a3a5e1219eed82793e5778254148fe526c7fe"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -1807,8 +1817,8 @@
     },
     {
       "path": "docs/runbooks/public-domain-readiness-ru.md",
-      "size_bytes": 5698,
-      "sha256": "fc9774ddbf5028a9b4c50c407823692b0e12bfcca7a750a683b710b5733fcee4"
+      "size_bytes": 8432,
+      "sha256": "745fea32263977d9c91b89cd38f17ad58640388d9685ecb16c85e7dee0b471bc"
     },
     {
       "path": "fixtures/example-import-template.json",

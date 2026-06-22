@@ -63,3 +63,16 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 - 2026-06-22: Local HTTP check returned `308 Permanent Redirect` from Caddy to `https://temichev-posthub.ru/`.
 - 2026-06-22: Local HTTPS check currently fails with TLS internal error, so certificate/virtual-host setup still needs to be completed before public deployment.
 - 2026-06-22: Non-interactive SSH probe to `root@89.169.46.92` failed with `Permission denied (publickey,password)`. Deployment needs a working SSH key/session or owner-side server commands.
+- 2026-06-22: Owner confirmed `temichev-posthub.ru` should use the existing VPS that also hosts the "Бери сегодня" project. Caddy/Nginx, Docker, env files, and HTTPS may be configured on that server.
+- 2026-06-22: Preferred pilot topology is same-site: `https://temichev-posthub.ru` with API under `/api/v1`, host-only secure cookies, and no split-domain CSRF complexity.
+- 2026-06-22: Pilot success path is A -> B: owner opens the site, creates content, records/loads voice and media, OpenAI generates the draft, then Telegram publication is tested after a separate test bot and test channel are created.
+- 2026-06-22: Owner approved OpenAI usage for text generation, transcription, and embeddings with an approximate pilot budget of up to 10 USD / about 1000 RUB. Existing OpenAI key is available in local adjacent project env, but must only be moved into server env, never committed.
+- 2026-06-22: Timeweb S3 should be used for the pilot. Existing filled S3 env variables were found in the old "Что поесть" local `.env`; copy values only into protected server env, never into Git or chat.
+- 2026-06-22: Payment capture remains disabled for the pilot; use mock/manual billing only.
+- 2026-06-22: Instagram is not part of the first pilot and can remain `manual_required`/later setup. MAX follows after Telegram.
+- 2026-06-22: Working SSH route found for the old RU application server: local key `temichevvet_pwa_codex` -> `root@5.129.239.104` -> remote key `temichevvet_gateway_to_ru` -> `root@127.0.0.1:22065`, landing on `msk-1-vm-d817`.
+- 2026-06-22: Read-only audit of `msk-1-vm-d817` shows IPs `193.188.23.65` and `109.73.205.175`, nginx on 80/443, Docker containers for `chto-poest-armavir` and `chto-poest-armavir-v2`, and `/opt/temichevvet`.
+- 2026-06-22: Deployment decision still required: either provide working access to the DNS target `89.169.46.92`, or change DNS for `temichev-posthub.ru` to the audited RU host if that is the intended shared server.
+- 2026-06-22: Owner created a dedicated reverse tunnel for the DNS target VPS. Working route: local key `mediahub_codex_deploy_20260622` with `ProxyCommand` through `root@5.129.239.104` to `127.0.0.1:22089`, landing on `msk-1-vm-e21q`.
+- 2026-06-22: Read-only audit of `msk-1-vm-e21q` confirms IP `89.169.46.92`, Ubuntu 24.04, Caddy on 80/443, `Бери сегодня` on `/var/www/beri-segodnya` and port `3010`, and Caddyfile host blocks for `berisegodnya.ru`, `www.berisegodnya.ru`, and `http://89.169.46.92`.
+- 2026-06-22: DNS/server mismatch resolved for the pilot: `temichev-posthub.ru` should be deployed on `msk-1-vm-e21q` / `89.169.46.92` via the new reverse tunnel.
