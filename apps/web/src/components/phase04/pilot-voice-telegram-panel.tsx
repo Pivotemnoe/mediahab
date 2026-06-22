@@ -6,6 +6,7 @@ import { CheckCircle2, FileAudio, Loader2, LockKeyhole, Mic, Pause, Play, Rotate
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  analyzePilotDraftAction,
   assemblePilotMasterAction,
   publishPilotTelegramAction,
 } from "@/services/content-actions";
@@ -155,10 +156,13 @@ export function PilotVoiceTelegramPanel({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const [analysisState, analysisAction, isAnalysisPending] = useActionState(analyzePilotDraftAction, initialGuidedActionState);
   const [masterState, masterAction, isMasterPending] = useActionState(assemblePilotMasterAction, initialGuidedActionState);
   const [publishState, publishAction, isPublishPending] = useActionState(publishPilotTelegramAction, initialGuidedActionState);
+  const [isAnalysisTransitionPending, startAnalysisTransition] = useTransition();
   const [isMasterTransitionPending, startMasterTransition] = useTransition();
   const [isPublishTransitionPending, startPublishTransition] = useTransition();
+  const analysisBusy = isAnalysisPending || isAnalysisTransitionPending;
   const masterBusy = isMasterPending || isMasterTransitionPending;
   const publishBusy = isPublishPending || isPublishTransitionPending;
   const disabled = !canMutate || !workspaceId || itemVersion === null;
@@ -412,6 +416,18 @@ export function PilotVoiceTelegramPanel({
       </Button>
       <div className="grid gap-2 rounded-md border border-border p-3">
         <div className="text-sm font-medium text-foreground">Мастер и Telegram</div>
+        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(analysisState.tone)}`}>
+          {analysisState.message}
+        </div>
+        <Button
+          disabled={disabled || analysisBusy}
+          type="button"
+          variant="secondary"
+          onClick={() => startAnalysisTransition(() => submitAction(analysisAction))}
+        >
+          {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+          AI-разбор диктовки
+        </Button>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(masterState.tone)}`}>
           {masterState.message}
         </div>

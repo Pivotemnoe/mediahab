@@ -123,6 +123,76 @@ function generationMessage(run: GenerationRunOut): GuidedActionState {
   );
 }
 
+function objectSize(value: unknown): number {
+  return value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).length : 0;
+}
+
+function arraySize(value: unknown): number {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function firstHookText(value: unknown): string | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const first = value[0];
+  if (!first || typeof first !== "object" || Array.isArray(first)) {
+    return null;
+  }
+  const text = (first as Record<string, unknown>).text;
+  return typeof text === "string" && text.trim() ? text.trim() : null;
+}
+
+function aiAnalysisMessage(factsRun: GenerationRunOut, hookRun: GenerationRunOut): GuidedActionState {
+  if (factsRun.status !== "completed") {
+    return messageState(factsRun.error_message || "ИИ не смог разобрать факты из диктовки.", {
+      code: factsRun.error_code ?? "fact_extraction_failed",
+      tone: "danger",
+    });
+  }
+  if (hookRun.status !== "completed") {
+    return messageState(hookRun.error_message || "ИИ разобрал факты, но не смог предложить хук.", {
+      code: hookRun.error_code ?? "hook_suggestion_failed",
+      tone: "warning",
+    });
+  }
+
+  const factsResponse = factsRun.response_json ?? {};
+  const hookResponse = hookRun.response_json ?? {};
+  const factCount = objectSize(factsResponse.facts);
+  const uncertaintyCount = arraySize(factsResponse.uncertainties);
+  const warningCount = arraySize(factsResponse.warnings) + arraySize(hookResponse.warnings);
+  const exampleCount = new Set([...factsRun.retrieved_example_ids, ...hookRun.retrieved_example_ids]).size;
+  const hook = firstHookText(hookResponse.hook_candidates);
+
+  return messageState(
+    [
+      `AI-разбор готов: фактов понято ${factCount}, вопросов к уточнению ${uncertaintyCount}, референсов учтено ${exampleCount}.`,
+      hook ? `Первый хук: ${hook}` : "Хук не вернулся, но факты сохранены для следующей сборки.",
+      warningCount ? `Предупреждений: ${warningCount}.` : "",
+    ].filter(Boolean).join(" "),
+  );
+}
+
+export async function analyzePilotDraftAction(
+  _previousState: GuidedActionState,
+  formData: FormData,
+): Promise<GuidedActionState> {
+  const contentId = formDataString(formData, "contentId");
+  try {
+    const factsRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/extract-facts`, {
+      method: "POST",
+    });
+    const hookRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/suggest-hook`, {
+      method: "POST",
+    });
+    revalidatePath(`/app/content/${contentId}`);
+    return aiAnalysisMessage(factsRun, hookRun);
+  } catch (error) {
+    return actionErrorState(error);
+  }
+}
+
 export async function assemblePilotMasterAction(
   _previousState: GuidedActionState,
   formData: FormData,
