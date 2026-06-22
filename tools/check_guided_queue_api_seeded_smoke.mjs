@@ -202,7 +202,7 @@ async function runBrowserCheck(browserCdp, params) {
     expression: `(() => {
       const blocked = document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"]');
       const refresh = blocked?.querySelector('[data-testid="guided-queue-refresh"]');
-      const retry = blocked?.querySelector('[data-testid="guided-queue-retry"]');
+      const retry = blocked?.querySelector('[data-testid="guided-queue-retry-arm"]');
       const clear = blocked?.querySelector('[data-testid="guided-queue-clear"]');
       const bodyText = document.body.innerText || '';
       return {
@@ -216,6 +216,7 @@ async function runBrowserCheck(browserCdp, params) {
         modeTextVisible: bodyText.includes('api'),
         preflightRoute: blocked?.getAttribute('data-guided-queue-preflight-route') || '',
         preflightStatus: blocked?.getAttribute('data-guided-queue-preflight') || '',
+        retryShellStatus: blocked?.getAttribute('data-guided-queue-retry-shell') || '',
         scrollWidth: document.documentElement.scrollWidth,
       };
     })()`,
@@ -228,6 +229,7 @@ async function runBrowserCheck(browserCdp, params) {
   assert.equal(value.hasPreflight, true, `${params.check.width}px replay preflight missing`);
   assert.equal(value.preflightRoute, "repeatable_group", `${params.check.width}px replay preflight route mismatch`);
   assert.equal(value.preflightStatus, "ready", `${params.check.width}px replay preflight status mismatch`);
+  assert.equal(value.retryShellStatus, "closed", `${params.check.width}px refresh-only job must keep retry shell closed`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${params.check.width}px horizontal overflow`);
   assert.match(value.blockedText, /Обновить страницу/);
   assert.match(value.blockedText, /Очистить локальную очередь/);
@@ -284,6 +286,12 @@ async function runBrowserCheck(browserCdp, params) {
   assert.equal(clearResult.result.value.storedJob, null, `${params.check.width}px queue job must be removed from localStorage`);
   assert.equal(clearResult.result.value.hasBlockedRepeatableRefresh, false, `${params.check.width}px blocked repeatable queue must disappear after clear`);
   assert.equal(clearResult.result.value.hasEmptyRepeatableStatus, true, `${params.check.width}px empty queue status must be visible after clear`);
+  const fieldShell = await runRetryShellCheck(send, {
+    contentId: params.contentId,
+    contentUrl,
+    storageKey: `tmh:guided-form-queue:v1:field:${params.contentId}:atmosphere:new`,
+    width: params.check.width,
+  });
   await browserCdp.send("Target.closeTarget", { targetId });
   return {
     width: params.check.width,
@@ -294,9 +302,108 @@ async function runBrowserCheck(browserCdp, params) {
     scrollWidth: value.scrollWidth,
     preflightRoute: value.preflightRoute,
     preflightStatus: value.preflightStatus,
+    retryShellStatus: fieldShell.retryShellStatus,
+    retryShellClosedAfterCancel: fieldShell.closedAfterCancel,
     hasRefresh: value.hasRefresh,
     hasRetry: value.hasRetry,
   };
+}
+
+async function runRetryShellCheck(send, params) {
+  const queueJob = {
+    code: "api_unavailable",
+    fieldTypes: {
+      value: "long_text",
+    },
+    metadata: {
+      contentId: params.contentId,
+      fieldKey: "atmosphere",
+      intent: "save",
+      itemVersion: 1,
+      kind: "field",
+      sourceType: "user_text",
+    },
+    recoveryAction: "retry",
+    requestId: "ui10bc-field-retry",
+    savedAt: new Date().toISOString(),
+    values: {
+      value: "Скрытая заметка для повтора атмосферы",
+    },
+  };
+  await send("Runtime.evaluate", {
+    expression: `localStorage.setItem(${JSON.stringify(params.storageKey)}, ${JSON.stringify(JSON.stringify(queueJob))})`,
+  });
+  await send("Page.navigate", { url: params.contentUrl });
+  await waitForExpression(
+    send,
+    `Boolean(document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"]'))`,
+    30000,
+  );
+  const before = await inspectRetryShell(send);
+  assert.equal(before.hasRetryArm, true, `${params.width}px retry arm button missing`);
+  assert.equal(before.hasRefresh, false, `${params.width}px retry-safe field must not show refresh`);
+  assert.equal(before.retryShellStatus, "closed", `${params.width}px retry shell must start closed`);
+  assert.equal(before.preflightStatus, "ready", `${params.width}px field preflight status mismatch`);
+  assert.equal(before.preflightRoute, "field_item", `${params.width}px field preflight route mismatch`);
+  assert.match(before.statusText, /Повторить из очереди/);
+  assert.match(before.statusText, /Проверка повтора: PUT \/content-items\/\{id\}\/blocks\/\{key\}/);
+  assert.doesNotMatch(before.statusText, /Скрытая заметка для повтора атмосферы/);
+
+  await send("Runtime.evaluate", {
+    expression: `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"] [data-testid="guided-queue-retry-arm"]')?.click()`,
+  });
+  await waitForExpression(
+    send,
+    `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"]')?.getAttribute('data-guided-queue-retry-shell') === 'confirm'`,
+    10000,
+  );
+  const open = await inspectRetryShell(send);
+  assert.equal(open.hasRetryShell, true, `${params.width}px retry shell missing after arm`);
+  assert.equal(open.hasRetryConfirm, true, `${params.width}px retry confirm missing`);
+  assert.equal(open.hasRetryCancel, true, `${params.width}px retry cancel missing`);
+  assert.equal(open.retryShellStatus, "confirm", `${params.width}px retry shell status mismatch`);
+  assert.match(open.statusText, /Подтвердите повтор/);
+  assert.match(open.statusText, /Сохранённые значения очереди не показываются/);
+  assert.doesNotMatch(open.statusText, /Скрытая заметка для повтора атмосферы/);
+
+  await send("Runtime.evaluate", {
+    expression: `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"] [data-testid="guided-queue-retry-cancel"]')?.click()`,
+  });
+  await waitForExpression(
+    send,
+    `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"]')?.getAttribute('data-guided-queue-retry-shell') === 'closed'`,
+    10000,
+  );
+  const closed = await inspectRetryShell(send);
+  assert.equal(closed.hasRetryShell, false, `${params.width}px retry shell must close after cancel`);
+  assert.notEqual(closed.storedJob, null, `${params.width}px retry cancel must preserve queue job`);
+
+  return {
+    closedAfterCancel: !closed.hasRetryShell,
+    retryShellStatus: open.retryShellStatus,
+  };
+}
+
+async function inspectRetryShell(send) {
+  const inspected = await send("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `(() => {
+      const queued = document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="queued"][data-guided-queue-kind="field"][data-guided-queue-recovery="retry"]');
+      return {
+        hasRefresh: Boolean(queued?.querySelector('[data-testid="guided-queue-refresh"]')),
+        hasRetryArm: Boolean(queued?.querySelector('[data-testid="guided-queue-retry-arm"]')),
+        hasRetryCancel: Boolean(queued?.querySelector('[data-testid="guided-queue-retry-cancel"]')),
+        hasRetryConfirm: Boolean(queued?.querySelector('[data-testid="guided-queue-retry-confirm"]')),
+        hasRetryShell: Boolean(queued?.querySelector('[data-testid="guided-queue-retry-shell"]')),
+        preflightRoute: queued?.getAttribute('data-guided-queue-preflight-route') || '',
+        preflightStatus: queued?.getAttribute('data-guided-queue-preflight') || '',
+        retryShellStatus: queued?.getAttribute('data-guided-queue-retry-shell') || '',
+        statusText: queued?.innerText || '',
+        storedJob: localStorage.getItem(Object.keys(localStorage).find((key) => key.includes(':field:') && key.includes(':atmosphere:')) || ''),
+      };
+    })()`,
+  });
+  return inspected.result.value;
 }
 
 async function register(baseUrl) {

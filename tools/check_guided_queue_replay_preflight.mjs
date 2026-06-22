@@ -12,8 +12,15 @@ assert.notEqual(queueStatusSource.length, 0, "QueueStatusLine source must be ext
 assert.match(queueStatusSource, /const replayPreflight = job \? manualReplayPreflight\(job\) : null/);
 assert.match(queueStatusSource, /data-guided-queue-preflight=\{replayPreflight\?\.status \?\? "none"\}/);
 assert.match(queueStatusSource, /data-guided-queue-preflight-route=\{replayPreflight\?\.route \?\? "none"\}/);
+assert.match(queueStatusSource, /data-guided-queue-retry-shell=\{retryShellStatus\}/);
 assert.match(queueStatusSource, /data-testid="guided-queue-preflight"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-arm"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-shell"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-confirm"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-cancel"/);
 assert.match(queueStatusSource, /\{replayPreflight\.label\}/);
+assert.match(queueStatusSource, /Подтвердите повтор/);
+assert.match(queueStatusSource, /Сохранённые значения очереди не показываются/);
 
 const preflightSource = functionSlice(source, "manualReplayPreflight", "manualReplayRoute");
 assert.match(preflightSource, /buildGuidedQueueReplayRequestDraft\(job\)/);
@@ -39,7 +46,7 @@ assert.match(routeLabelSource, /\/content-items\/\{id\}\/blocks\/\{key\}/);
 
 for (const privateValue of ["Уха", "590", "terrace", "kids_room", "legacy draft", "Старый локальный черновик"]) {
   assert.equal(
-    preflightSource.includes(privateValue) || routeLabelSource.includes(privateValue),
+    preflightSource.includes(privateValue) || routeLabelSource.includes(privateValue) || queueStatusSource.includes(privateValue),
     false,
     `preflight source must not expose queued value: ${privateValue}`,
   );

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T09:20:00.183871+00:00",
+  "generated_at": "2026-06-22T09:38:59.841484+00:00",
   "canonical_language": "en",
-  "file_count": 506,
+  "file_count": 509,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 32658,
-      "sha256": "fcb0317c6cf0eabd3ef5f10bc6b7de8afbda90368a8194ce07aeefe048a5a830"
+      "size_bytes": 34164,
+      "sha256": "1219c44693432844385154e5492b235af52777e137f835f7f1b9018fee25762f"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1446,6 +1446,16 @@
       "sha256": "b0fe1d02971cae43eb927fc74c2a22482899ede31fde76fe3973833cb3802b82"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10BC_GUIDED_QUEUE_CONFIRMATION_SHELL.md",
+      "size_bytes": 2841,
+      "sha256": "09fd6d22a4f744bdd33e5d6aec6bdfd6c9c684b6e4e3ef0d4758bd72d71efc13"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BC_REPORT_RU.md",
+      "size_bytes": 604,
+      "sha256": "92a4875d91781e47283c33448af44e59552ad539be1081f2cdce8017b8086714"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2446,6 +2456,11 @@
       "sha256": "d601b251c5ddd5a3a68d1df3c8cebef9bf2e93f60c81f46f7f8c64325cb89717"
     },
     {
+      "path": "tools/check_content_fixture_visual_smoke.mjs",
+      "size_bytes": 7002,
+      "sha256": "a715bb17aed55dc0ed083b23f7f5461b8af37aa94917520d7482b40b6a615e93"
+    },
+    {
       "path": "tools/check_guided_action_errors.mjs",
       "size_bytes": 3643,
       "sha256": "7615f4e92b34f780a844ba90a7595992654544b16931139c9506e28aeaa126fb"
@@ -2462,8 +2477,8 @@
     },
     {
       "path": "tools/check_guided_queue_api_seeded_smoke.mjs",
-      "size_bytes": 19367,
-      "sha256": "ad21b287f01963ecfbd9893347cb5a5a0c205d06bc24ef811fbf898b3779e9bc"
+      "size_bytes": 25337,
+      "sha256": "ccec324eb56c89626cb77ca088f00fde09931830eeabddec7298e8f5fc602e89"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",
@@ -2482,8 +2497,8 @@
     },
     {
       "path": "tools/check_guided_queue_replay_preflight.mjs",
-      "size_bytes": 3853,
-      "sha256": "fe614baf0309334a2540b6f4462b2c680d866fdca87af39e3de579796ad4dcaf"
+      "size_bytes": 4478,
+      "sha256": "d0be445bd1580a88961e87e0c0623ff4a02255c448596aca348d15d522292478"
     },
     {
       "path": "tools/check_guided_queue_store.mjs",
@@ -2492,8 +2507,8 @@
     },
     {
       "path": "tools/check_guided_repeatable_queue_ui.mjs",
-      "size_bytes": 5905,
-      "sha256": "70978be47758ea5ea0126721aca95030b414dbf6c5fc5d416dcd02eedfc75952"
+      "size_bytes": 6270,
+      "sha256": "aa28d0cce050bb4e4513f083cf17aceba41f36e3d33be036d443a6d8e38cfdfe"
     },
     {
       "path": "tools/check_public_domain_readiness.mjs",

@@ -525,6 +525,7 @@ function QueueStatusLine({
   onRetry: () => void;
   status: QueueStatus;
 }) {
+  const [retryShellOpen, setRetryShellOpen] = useState(false);
   const tone: GuidedActionState["tone"] =
     status === "blocked" || status === "queued" || status === "retrying"
       ? "warning"
@@ -535,6 +536,16 @@ function QueueStatusLine({
   const canRefreshJob = status === "blocked" && job?.recoveryAction === "refresh";
   const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
   const replayPreflight = job ? manualReplayPreflight(job) : null;
+  const retryShellStatus = retryShellOpen && canRetryJob ? "confirm" : "closed";
+
+  useEffect(() => {
+    setRetryShellOpen(false);
+  }, [job?.requestId, job?.savedAt, status]);
+
+  function confirmRetry() {
+    setRetryShellOpen(false);
+    onRetry();
+  }
 
   return (
     <div
@@ -543,6 +554,7 @@ function QueueStatusLine({
       data-guided-queue-preflight-route={replayPreflight?.route ?? "none"}
       data-guided-queue-kind={job?.metadata?.kind ?? "none"}
       data-guided-queue-recovery={job?.recoveryAction ?? "none"}
+      data-guided-queue-retry-shell={retryShellStatus}
       data-guided-queue-status={status}
       data-testid="guided-queue-status"
     >
@@ -566,7 +578,7 @@ function QueueStatusLine({
             </Button>
           ) : null}
           {canRetryJob ? (
-            <Button data-testid="guided-queue-retry" onClick={onRetry} size="sm" type="button" variant="secondary">
+            <Button data-testid="guided-queue-retry-arm" onClick={() => setRetryShellOpen(true)} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
               Повторить из очереди
             </Button>
@@ -574,6 +586,23 @@ function QueueStatusLine({
           <Button data-testid="guided-queue-clear" onClick={onClear} size="sm" type="button" variant="ghost">
             Очистить локальную очередь
           </Button>
+        </div>
+      ) : null}
+      {retryShellOpen && canRetryJob ? (
+        <div className="grid gap-2 rounded-md border border-warning bg-background px-3 py-2" data-testid="guided-queue-retry-shell">
+          <div className="text-foreground">
+            Подтвердите повтор: форма отправит текущие значения через безопасное сохранение. Сохранённые значения очереди не показываются.
+          </div>
+          {replayPreflight ? <div className="text-muted">{replayPreflight.label}</div> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button data-testid="guided-queue-retry-confirm" onClick={confirmRetry} size="sm" type="button" variant="secondary">
+              <RotateCcw size={14} />
+              Подтвердить повтор
+            </Button>
+            <Button data-testid="guided-queue-retry-cancel" onClick={() => setRetryShellOpen(false)} size="sm" type="button" variant="ghost">
+              Отмена
+            </Button>
+          </div>
         </div>
       ) : null}
     </div>

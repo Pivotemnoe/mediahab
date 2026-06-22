@@ -64,11 +64,16 @@ assert.match(queueStatusSource, /data-guided-queue-recovery=\{job\?\.recoveryAct
 assert.match(queueStatusSource, /data-guided-queue-status=\{status\}/);
 assert.match(queueStatusSource, /data-testid="guided-queue-status"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-refresh"/);
-assert.match(queueStatusSource, /data-testid="guided-queue-retry"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-arm"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-shell"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-confirm"/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-cancel"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-clear"/);
 assert.match(queueStatusSource, /onClick=\{refreshPage\}/);
+assert.match(queueStatusSource, /onClick=\{confirmRetry\}/);
 assert.match(queueStatusSource, /Обновить страницу/);
 assert.match(queueStatusSource, /Повторить из очереди/);
+assert.match(queueStatusSource, /Подтвердить повтор/);
 for (const privateValue of ["Черновик", "secret", "legacy", "unclassified"]) {
   assert.equal(
     queueStatusSource.includes(privateValue),
