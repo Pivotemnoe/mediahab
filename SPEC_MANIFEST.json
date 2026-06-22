@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T03:46:52.541922+00:00",
+  "generated_at": "2026-06-22T03:54:26.776002+00:00",
   "canonical_language": "en",
-  "file_count": 474,
+  "file_count": 476,
   "files": [
     {
       "path": ".dockerignore",
@@ -507,8 +507,8 @@
     },
     {
       "path": "apps/web/src/services/guided-queue-replay.ts",
-      "size_bytes": 6740,
-      "sha256": "b4caf007e82bcaa85e8e43ab1e5452ae6ed88bc01301db7dfe1ddad38a52da9c"
+      "size_bytes": 7503,
+      "sha256": "6f8383428d0911e5e136c22a417e80a8efb57715276d9ca900a44af3ee3c8232"
     },
     {
       "path": "apps/web/src/services/guided-queue-store.ts",
@@ -1319,6 +1319,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AP_REPORT_RU.md",
       "size_bytes": 3438,
       "sha256": "b87f5ec0e95b4b68d25148e83cf1d603019b7cda679a646cfa7229a8e5acf043"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AQ_GUIDED_QUEUE_MIXED_COPY.md",
+      "size_bytes": 3076,
+      "sha256": "1a890fe02f066b24168f8cfb06b74f9737b4d2c703e3d8ac638a70b3342bec16"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AQ_REPORT_RU.md",
+      "size_bytes": 3905,
+      "sha256": "087514e3f24486c72d8bf2f34def2d248af1568a9e0288f90b93ef6712e981f0"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2332,8 +2342,8 @@
     },
     {
       "path": "tools/check_guided_queue_replay.mjs",
-      "size_bytes": 10518,
-      "sha256": "fd92d3cbf22a94afd707eef95449c97a397259d6185eaab9f48ecea5ed64a5d5"
+      "size_bytes": 12643,
+      "sha256": "5248a02ead40ef9f512940c84c9c4a651757d4b63e5d3e08e5f86915d028d1ae"
     },
     {
       "path": "tools/check_guided_repeatable_queue_ui.mjs",

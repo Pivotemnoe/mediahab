@@ -27,6 +27,15 @@ function queueEntries(count) {
     job: {
       code: null,
       fieldTypes: { value: "voice_or_long_text" },
+      metadata: {
+        blockId: null,
+        contentId: `content-${index + 1}`,
+        fieldKey: `field-${index + 1}`,
+        intent: "save",
+        itemVersion: index + 1,
+        kind: "field",
+        sourceType: "user_text",
+      },
       recoveryAction: "retry",
       requestId: null,
       savedAt: "2026-06-21T00:00:00.000Z",
@@ -36,49 +45,108 @@ function queueEntries(count) {
   }));
 }
 
+function repeatableQueueEntry(index) {
+  return {
+    job: {
+      code: null,
+      fieldTypes: { "field:name": "short_text" },
+      metadata: {
+        contentId: `content-repeatable-${index}`,
+        groupKey: "dishes",
+        intent: "save",
+        itemVersion: index,
+        kind: "repeatable_group",
+        sourceType: "user_text",
+      },
+      recoveryAction: "retry",
+      requestId: null,
+      savedAt: "2026-06-21T00:00:00.000Z",
+      values: { "field:name": `draft ${index}` },
+    },
+    storageKey: `tmh:guided-form-queue:v1:repeatable:demo:${index}:new`,
+  };
+}
+
+function legacyQueueEntry(index) {
+  return {
+    job: {
+      code: null,
+      fieldTypes: { value: "voice_or_long_text" },
+      metadata: null,
+      recoveryAction: "retry",
+      requestId: null,
+      savedAt: "2026-06-21T00:00:00.000Z",
+      values: { value: `legacy draft ${index}` },
+    },
+    storageKey: `tmh:guided-form-queue:v1:field:legacy:${index}:new`,
+  };
+}
+
 assert.equal(typeof getGuidedQueueReplayReadiness, "function");
 assert.equal(typeof buildGuidedQueueReplayDraft, "function");
 assert.equal(typeof buildGuidedQueueReplayRequestDraft, "function");
 
 assert.deepEqual(normalize(getGuidedQueueReplayReadiness({ entries: [], online: true })), {
   canAutoReplay: false,
+  fieldJobCount: 0,
   jobCount: 0,
+  repeatableGroupJobCount: 0,
   reason: "no_queue_jobs",
   shellMessage: null,
   status: "empty",
+  unknownJobCount: 0,
 });
 
 assert.deepEqual(normalize(getGuidedQueueReplayReadiness({ entries: [], online: false })), {
   canAutoReplay: false,
+  fieldJobCount: 0,
   jobCount: 0,
+  repeatableGroupJobCount: 0,
   reason: "no_queue_jobs",
   shellMessage: "Нет сети: черновики сохраняются локально, ИИ и публикации недоступны.",
   status: "offline",
+  unknownJobCount: 0,
 });
 
 const onlineQueued = getGuidedQueueReplayReadiness({ entries: queueEntries(2), online: true });
 assert.equal(onlineQueued.canAutoReplay, false);
+assert.equal(onlineQueued.fieldJobCount, 2);
 assert.equal(onlineQueued.jobCount, 2);
+assert.equal(onlineQueued.repeatableGroupJobCount, 0);
 assert.equal(onlineQueued.reason, "http_only_cookie_csrf_required");
 assert.equal(onlineQueued.status, "manual_retry_required");
 assert.match(onlineQueued.shellMessage, /Автоповтор выключен/);
-assert.match(onlineQueued.shellMessage, /Есть несинхронизированные поля: 2\./);
+assert.match(onlineQueued.shellMessage, /Есть несинхронизированные изменения: 2\./);
+assert.equal(onlineQueued.unknownJobCount, 0);
+
+const mixedQueued = getGuidedQueueReplayReadiness({
+  entries: [...queueEntries(1), repeatableQueueEntry(1), legacyQueueEntry(1)],
+  online: true,
+});
+assert.equal(mixedQueued.fieldJobCount, 1);
+assert.equal(mixedQueued.jobCount, 3);
+assert.equal(mixedQueued.repeatableGroupJobCount, 1);
+assert.equal(mixedQueued.unknownJobCount, 1);
+assert.equal(
+  mixedQueued.shellMessage,
+  "Есть несинхронизированные изменения: 3. Автоповтор выключен: откройте материал и повторите сохранение.",
+);
 
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(1), online: false }).shellMessage,
-  "Нет сети: 1 поле в локальной очереди, ИИ и публикации недоступны.",
+  "Нет сети: 1 изменение в локальной очереди, ИИ и публикации недоступны.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(2), online: false }).shellMessage,
-  "Нет сети: 2 поля в локальной очереди, ИИ и публикации недоступны.",
+  "Нет сети: 2 изменения в локальной очереди, ИИ и публикации недоступны.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(5), online: false }).shellMessage,
-  "Нет сети: 5 полей в локальной очереди, ИИ и публикации недоступны.",
+  "Нет сети: 5 изменений в локальной очереди, ИИ и публикации недоступны.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(11), online: false }).shellMessage,
-  "Нет сети: 11 полей в локальной очереди, ИИ и публикации недоступны.",
+  "Нет сети: 11 изменений в локальной очереди, ИИ и публикации недоступны.",
 );
 
 const typedDraft = buildGuidedQueueReplayDraft({

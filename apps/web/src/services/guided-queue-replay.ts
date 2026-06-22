@@ -10,10 +10,13 @@ export type GuidedQueueReplayReason =
 
 export interface GuidedQueueReplayReadiness {
   canAutoReplay: false;
+  fieldJobCount: number;
   jobCount: number;
+  repeatableGroupJobCount: number;
   reason: GuidedQueueReplayReason;
   status: GuidedQueueReplayStatus;
   shellMessage: string | null;
+  unknownJobCount: number;
 }
 
 export interface GuidedQueueReplayDraft {
@@ -185,10 +188,12 @@ export function getGuidedQueueReplayReadiness(params: {
   online: boolean;
 }): GuidedQueueReplayReadiness {
   const jobCount = params.entries.length;
+  const counts = guidedQueueJobCounts(params.entries);
 
   if (jobCount === 0) {
     return {
       canAutoReplay: false,
+      ...counts,
       jobCount,
       reason: "no_queue_jobs",
       shellMessage: params.online
@@ -201,31 +206,55 @@ export function getGuidedQueueReplayReadiness(params: {
   if (!params.online) {
     return {
       canAutoReplay: false,
+      ...counts,
       jobCount,
       reason: "network_unavailable",
-      shellMessage: `Нет сети: ${formatQueuedFields(jobCount)} в локальной очереди, ИИ и публикации недоступны.`,
+      shellMessage: `Нет сети: ${formatQueuedChanges(jobCount)} в локальной очереди, ИИ и публикации недоступны.`,
       status: "offline",
     };
   }
 
   return {
     canAutoReplay: false,
+    ...counts,
     jobCount,
     reason: "http_only_cookie_csrf_required",
-    shellMessage: `Есть несинхронизированные поля: ${jobCount}. Автоповтор выключен: откройте материал и повторите сохранение.`,
+    shellMessage: `Есть несинхронизированные изменения: ${jobCount}. Автоповтор выключен: откройте материал и повторите сохранение.`,
     status: "manual_retry_required",
   };
 }
 
-function formatQueuedFields(count: number): string {
+function guidedQueueJobCounts(entries: GuidedQueueEntry[]) {
+  return entries.reduce(
+    (counts, entry) => {
+      if (entry.job.metadata?.kind === "repeatable_group") {
+        counts.repeatableGroupJobCount += 1;
+        return counts;
+      }
+      if (entry.job.metadata?.kind === "field") {
+        counts.fieldJobCount += 1;
+        return counts;
+      }
+      counts.unknownJobCount += 1;
+      return counts;
+    },
+    {
+      fieldJobCount: 0,
+      repeatableGroupJobCount: 0,
+      unknownJobCount: 0,
+    },
+  );
+}
+
+function formatQueuedChanges(count: number): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
   if (mod10 === 1 && mod100 !== 11) {
-    return `${count} поле`;
+    return `${count} изменение`;
   }
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-    return `${count} поля`;
+    return `${count} изменения`;
   }
-  return `${count} полей`;
+  return `${count} изменений`;
 }
