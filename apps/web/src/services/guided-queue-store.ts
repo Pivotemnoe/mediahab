@@ -12,6 +12,15 @@ export interface GuidedQueueEntry {
   storageKey: string;
 }
 
+export interface GuidedQueueSummary {
+  blockedJobCount: number;
+  fieldJobCount: number;
+  jobCount: number;
+  repeatableGroupJobCount: number;
+  retryableJobCount: number;
+  unknownJobCount: number;
+}
+
 export function readGuidedQueueJob(storageKey: string): GuidedQueueJob | null {
   const storage = browserLocalStorage();
   if (!storage) {
@@ -83,6 +92,42 @@ export function listGuidedQueueEntries(): GuidedQueueEntry[] {
 
 export function countGuidedQueueEntries(): number {
   return listGuidedQueueEntries().length;
+}
+
+export function summarizeGuidedQueueEntries(entries: GuidedQueueEntry[]): GuidedQueueSummary {
+  return entries.reduce(
+    (summary, entry) => {
+      summary.jobCount += 1;
+      if (entry.job.recoveryAction === "refresh") {
+        summary.blockedJobCount += 1;
+      }
+      if (entry.job.recoveryAction === "retry") {
+        summary.retryableJobCount += 1;
+      }
+      if (entry.job.metadata?.kind === "field") {
+        summary.fieldJobCount += 1;
+        return summary;
+      }
+      if (entry.job.metadata?.kind === "repeatable_group") {
+        summary.repeatableGroupJobCount += 1;
+        return summary;
+      }
+      summary.unknownJobCount += 1;
+      return summary;
+    },
+    emptyGuidedQueueSummary(),
+  );
+}
+
+function emptyGuidedQueueSummary(): GuidedQueueSummary {
+  return {
+    blockedJobCount: 0,
+    fieldJobCount: 0,
+    jobCount: 0,
+    repeatableGroupJobCount: 0,
+    retryableJobCount: 0,
+    unknownJobCount: 0,
+  };
 }
 
 function browserLocalStorage(): Storage | null {

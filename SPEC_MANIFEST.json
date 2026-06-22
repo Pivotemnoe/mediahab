@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T03:54:26.776002+00:00",
+  "generated_at": "2026-06-22T04:04:38.135049+00:00",
   "canonical_language": "en",
-  "file_count": 476,
+  "file_count": 479,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2271,
-      "sha256": "07e3a96eb450383f275ca277a6b7f19271d3fd5b40e208e2fc68f5693cd22a4f"
+      "size_bytes": 2312,
+      "sha256": "30d6581d0e98553392586994e5108cee8c8f6c5eebedeb0cb36c07db0c970f96"
     },
     {
       "path": "README.md",
@@ -512,8 +512,8 @@
     },
     {
       "path": "apps/web/src/services/guided-queue-store.ts",
-      "size_bytes": 2349,
-      "sha256": "9c15863d56e777324cbd29df26bad0831edc197d2df3acc1b7e85eec029a08f3"
+      "size_bytes": 3506,
+      "sha256": "4ba697769c3bba9c20bd3966282c94875b828911d01d7f87cae2d0677a6c31c2"
     },
     {
       "path": "apps/web/src/services/library-planning.ts",
@@ -1329,6 +1329,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AQ_REPORT_RU.md",
       "size_bytes": 3905,
       "sha256": "087514e3f24486c72d8bf2f34def2d248af1568a9e0288f90b93ef6712e981f0"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AR_GUIDED_QUEUE_SUMMARY_HELPER.md",
+      "size_bytes": 3156,
+      "sha256": "b90ff85b404bd25503aa9767ca4f3d2dd2bb83b14a930faaadff784780facb26"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AR_REPORT_RU.md",
+      "size_bytes": 3911,
+      "sha256": "400e293a6d3c968d971b6b576bce76b1b8a42b5bfcbe2fe14b80290c37b3115a"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2344,6 +2354,11 @@
       "path": "tools/check_guided_queue_replay.mjs",
       "size_bytes": 12643,
       "sha256": "5248a02ead40ef9f512940c84c9c4a651757d4b63e5d3e08e5f86915d028d1ae"
+    },
+    {
+      "path": "tools/check_guided_queue_store.mjs",
+      "size_bytes": 4315,
+      "sha256": "258f66dac7a39d2eb158e65a0b05fb38c1c1be2e5363b1969784854f993565de"
     },
     {
       "path": "tools/check_guided_repeatable_queue_ui.mjs",
