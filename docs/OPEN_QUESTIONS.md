@@ -19,7 +19,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 
 ## Infrastructure and launch dependencies
 
-1. Production domain is confirmed as `temichev-posthub.ru`; still confirm sender email service for verification and password reset.
+1. Production/pilot domain is confirmed as `temichev-posthub.ru` and now serves the pilot runtime; still confirm sender email service for verification and password reset.
 2. Confirm initial VPS provider, Timeweb S3 region/bucket policy for production, and backup destination.
 3. Confirm whether the first deployment uses one VPS plus external object storage or a managed database/object-storage split.
 4. Confirm where encryption keys and connector secrets will be stored for personal pilot and production.
@@ -61,8 +61,8 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 
 - 2026-06-22: Owner reported the purchased domain `temichev-posthub.ru` and shared Timeweb DNS UI evidence. The screenshot shows an A record for `temichev-posthub.ru` pointing to `89.169.46.92`.
 - 2026-06-22: Local HTTP check returned `308 Permanent Redirect` from Caddy to `https://temichev-posthub.ru/`.
-- 2026-06-22: Local HTTPS check currently fails with TLS internal error, so certificate/virtual-host setup still needs to be completed before public deployment.
-- 2026-06-22: Non-interactive SSH probe to `root@89.169.46.92` failed with `Permission denied (publickey,password)`. Deployment needs a working SSH key/session or owner-side server commands.
+- 2026-06-22: HTTPS was configured for `temichev-posthub.ru`; the domain now returns the Media Hub pilot runtime with `X-Robots-Tag: noindex, nofollow`.
+- 2026-06-22: Direct non-interactive SSH probe to `root@89.169.46.92` failed with `Permission denied (publickey,password)`, but owner created a working reverse tunnel through NL for the DNS target VPS.
 - 2026-06-22: Owner confirmed `temichev-posthub.ru` should use the existing VPS that also hosts the "Бери сегодня" project. Caddy/Nginx, Docker, env files, and HTTPS may be configured on that server.
 - 2026-06-22: Preferred pilot topology is same-site: `https://temichev-posthub.ru` with API under `/api/v1`, host-only secure cookies, and no split-domain CSRF complexity.
 - 2026-06-22: Pilot success path is A -> B: owner opens the site, creates content, records/loads voice and media, OpenAI generates the draft, then Telegram publication is tested after a separate test bot and test channel are created.
@@ -72,7 +72,10 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 - 2026-06-22: Instagram is not part of the first pilot and can remain `manual_required`/later setup. MAX follows after Telegram.
 - 2026-06-22: Working SSH route found for the old RU application server: local key `temichevvet_pwa_codex` -> `root@5.129.239.104` -> remote key `temichevvet_gateway_to_ru` -> `root@127.0.0.1:22065`, landing on `msk-1-vm-d817`.
 - 2026-06-22: Read-only audit of `msk-1-vm-d817` shows IPs `193.188.23.65` and `109.73.205.175`, nginx on 80/443, Docker containers for `chto-poest-armavir` and `chto-poest-armavir-v2`, and `/opt/temichevvet`.
-- 2026-06-22: Deployment decision still required: either provide working access to the DNS target `89.169.46.92`, or change DNS for `temichev-posthub.ru` to the audited RU host if that is the intended shared server.
+- 2026-06-22: Deployment decision resolved: deploy on the DNS target `89.169.46.92` / `msk-1-vm-e21q` through the dedicated reverse tunnel.
 - 2026-06-22: Owner created a dedicated reverse tunnel for the DNS target VPS. Working route: local key `mediahub_codex_deploy_20260622` with `ProxyCommand` through `root@5.129.239.104` to `127.0.0.1:22089`, landing on `msk-1-vm-e21q`.
 - 2026-06-22: Read-only audit of `msk-1-vm-e21q` confirms IP `89.169.46.92`, Ubuntu 24.04, Caddy on 80/443, `Бери сегодня` on `/var/www/beri-segodnya` and port `3010`, and Caddyfile host blocks for `berisegodnya.ru`, `www.berisegodnya.ru`, and `http://89.169.46.92`.
 - 2026-06-22: DNS/server mismatch resolved for the pilot: `temichev-posthub.ru` should be deployed on `msk-1-vm-e21q` / `89.169.46.92` via the new reverse tunnel.
+- 2026-06-22: Pilot runtime deployed on `msk-1-vm-e21q` under `/var/www/media-hub` using server-only Docker Compose. Public web is `https://temichev-posthub.ru/`; public API is `https://temichev-posthub.ru/api/v1`; Caddy routes API to `127.0.0.1:8120` and web to `127.0.0.1:3120`.
+- 2026-06-22: Applied Alembic migrations and baseline seed on the pilot PostgreSQL. Public health checks return `ok`.
+- 2026-06-22: Current pilot web container uses `next dev`; replace with production build/start before commercial production launch.

@@ -4,15 +4,22 @@
 
 Этот runbook описывает минимальные проверки перед первой выкладкой Media Hub на публичный домен `temichev-posthub.ru`.
 
-Это не инструкция “деплоить сейчас”. Публичная выкладка допустима только после прохождения проверок ниже и явного решения по секретам, HTTPS, базе, S3, email, backup и live-интеграциям.
+Это инструкция для первого технического pilot runtime. Полноценная production-выкладка допустима только после явного решения по email, backup/restore, секретам, live-интеграциям и замены dev web runtime на production build.
 
 ## Текущий статус домена
 
 - Домен: `temichev-posthub.ru`.
 - По скриншоту Timeweb DNS: A record указывает на `89.169.46.92`.
 - HTTP отвечает от Caddy и редиректит на `https://temichev-posthub.ru/`.
-- HTTPS настроен 2026-06-22: `https://temichev-posthub.ru/` отвечает `200` с временным noindex placeholder.
-- Это ещё не deploy Media Hub приложения. Следующий шаг — отдельный runtime layout и reverse proxy на web/API.
+- HTTPS настроен 2026-06-22.
+- Pilot runtime Media Hub развернут 2026-06-22:
+  - app directory: `/var/www/media-hub`;
+  - server env: `/var/www/media-hub/.env`, права `600`;
+  - server compose: `/var/www/media-hub/docker-compose.pilot.yml`;
+  - API: `127.0.0.1:8120`;
+  - web: `127.0.0.1:3120`;
+  - public web: `https://temichev-posthub.ru/`;
+  - public API: `https://temichev-posthub.ru/api/v1`.
 - Рабочий доступ к VPS `89.169.46.92` найден через reverse tunnel:
   - local key: `~/.ssh/mediahub_codex_deploy_20260622`;
   - jump host: `root@5.129.239.104`;
@@ -20,9 +27,12 @@
   - target hostname: `msk-1-vm-e21q`.
 - На VPS уже работает `Бери сегодня`: `/var/www/beri-segodnya`, порт `3010`, Caddy host blocks `berisegodnya.ru` и `www.berisegodnya.ru`.
 - Backup Caddyfile перед добавлением домена: `/etc/caddy/Caddyfile.backup-before-mediahub-20260622-100208`.
-- Добавлены отдельные Caddy blocks:
-  - `temichev-posthub.ru` -> static placeholder `/var/www/media-hub-placeholder`;
+- Backup Caddyfile перед runtime switch: `/etc/caddy/Caddyfile.backup-before-mediahub-runtime-20260622-101606`.
+- Текущий Caddy routing:
+  - `temichev-posthub.ru /api/v1/*` -> `127.0.0.1:8120`;
+  - `temichev-posthub.ru /*` -> `127.0.0.1:3120`;
   - `www.temichev-posthub.ru` -> redirect на apex domain.
+  - `X-Robots-Tag: noindex, nofollow` сохранён для pilot.
 
 ## Быстрая диагностика
 
@@ -58,7 +68,7 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 - `http://temichev-posthub.ru` отвечает 301/302/307/308 и ведёт на HTTPS.
 - `https://temichev-posthub.ru` отвечает без TLS ошибки.
 - Сертификат доверенный для обычного браузера.
-- Caddy/Nginx проксирует web и API в согласованной same-site схеме.
+- Caddy проксирует web и API в согласованной same-site схеме.
 - Operator имеет SSH/панельный доступ к серверу, чтобы проверить Caddyfile, ACME/certificate logs и target upstreams.
 
 ## Предпочтительная первая topology
@@ -71,7 +81,10 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 - `SESSION_COOKIE_SECURE=true`.
 - `CORS_ORIGINS=https://temichev-posthub.ru`.
 - `NEXT_PUBLIC_DATA_MODE=api`.
-- `NEXT_PUBLIC_API_BASE_URL=https://temichev-posthub.ru/api/v1`.
+- `NEXT_PUBLIC_API_BASE_URL=https://temichev-posthub.ru`.
+- `API_BASE_URL=https://temichev-posthub.ru`.
+
+В текущем frontend runtime API paths добавляются кодом сервиса, поэтому base URL должен быть origin без `/api/v1`.
 
 Такой вариант проще для HttpOnly cookies, SameSite и CSRF forwarding. Если позже API переедет на отдельный поддомен, нужно заново подтвердить cookie domain, SameSite, Secure, CSRF header forwarding и CORS.
 
@@ -89,6 +102,36 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 - `OPENAI_API_KEY` и provider budgets подтверждены, если включаются live AI/STT.
 - Email provider выбран до включения real verification/reset email.
 - Payment provider остаётся `mock` или `manual` до юридического решения; real capture нельзя включать без fiscal/refund/legal approval.
+
+## Pilot runtime commands
+
+Проверка статуса на VPS:
+
+```bash
+cd /var/www/media-hub
+docker compose -f docker-compose.pilot.yml ps
+```
+
+Миграции:
+
+```bash
+cd /var/www/media-hub
+docker compose -f docker-compose.pilot.yml run --rm api python -m alembic -c alembic.ini upgrade head
+```
+
+Baseline seed:
+
+```bash
+cd /var/www/media-hub
+docker compose -f docker-compose.pilot.yml run --rm api python /app/tools/seed_baseline.py
+```
+
+Restart после `git pull`:
+
+```bash
+cd /var/www/media-hub
+docker compose -f docker-compose.pilot.yml up -d --build api worker web
+```
 
 ## Pilot scope 2026-06-22
 
@@ -122,7 +165,7 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 
 Не считать публичную выкладку готовой, если остаётся хотя бы один blocker:
 
-- Media Hub приложение ещё не развернуто за доменом.
+- Web runtime всё ещё использует `next dev`; нужен production Docker/runtime перед коммерческим запуском.
 - Нет production backup destination и restore drill.
 - Нет решения по секретам и encryption keys.
 - Нет staging separation для live connector tests.
@@ -137,8 +180,8 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 
 ```bash
 curl -I https://temichev-posthub.ru
-curl -I https://temichev-posthub.ru/api/v1/health/live
-curl -I https://temichev-posthub.ru/api/v1/health/ready
+curl -sS https://temichev-posthub.ru/api/v1/health/live
+curl -sS https://temichev-posthub.ru/api/v1/health/ready
 node tools/check_public_domain_readiness.mjs --domain temichev-posthub.ru
 ```
 

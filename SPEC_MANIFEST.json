@@ -1,7 +1,7 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T10:03:08.140199+00:00",
+  "generated_at": "2026-06-22T10:19:34.913357+00:00",
   "canonical_language": "en",
   "file_count": 511,
   "files": [
@@ -832,8 +832,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 9237,
-      "sha256": "da682c8415c8a1c3fafdfdbaa7d5a32a6e7021a41709605b7dade2a33b9ea4fa"
+      "size_bytes": 9734,
+      "sha256": "1604bac1d46bb1be022a54b363813e4f977beab7a33c05f7809578affab4a8b5"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -1457,13 +1457,13 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10BD_PILOT_DEPLOYMENT_READINESS.md",
-      "size_bytes": 5560,
-      "sha256": "f466a709210b25cb3e3e820248e565f4c5bdca6da76a155e457893aaffb6cdfd"
+      "size_bytes": 6594,
+      "sha256": "ba8d5e347d9e3a656601d40632cd61d6762e72f250ac16811a1ad109b060d4c7"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10BD_REPORT_RU.md",
-      "size_bytes": 5174,
-      "sha256": "71ef4726463defcaa007965ed00a3a5e1219eed82793e5778254148fe526c7fe"
+      "size_bytes": 8288,
+      "sha256": "ec0d69f9350b950cd9b154129c42d1f76c4b4a48f2f0af0beb0f82e58efac211"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -1817,8 +1817,8 @@
     },
     {
       "path": "docs/runbooks/public-domain-readiness-ru.md",
-      "size_bytes": 8432,
-      "sha256": "745fea32263977d9c91b89cd38f17ad58640388d9685ecb16c85e7dee0b471bc"
+      "size_bytes": 9628,
+      "sha256": "4d446337eff7dbff3df5538658e1f3f35bfd21aec7764f7c0b67a9e9ac66a6bf"
     },
     {
       "path": "fixtures/example-import-template.json",

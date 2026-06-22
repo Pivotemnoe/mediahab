@@ -62,6 +62,17 @@ The first pilot is not the full production SaaS launch. It targets the A -> B sc
   - temporary placeholder: `/var/www/media-hub-placeholder`;
   - `temichev-posthub.ru` HTTPS returns `200`;
   - `node tools/check_public_domain_readiness.mjs --domain temichev-posthub.ru` returns `ready=true`.
+- Pilot runtime deployment completed:
+  - repository cloned to `/var/www/media-hub`;
+  - protected server env created at `/var/www/media-hub/.env`;
+  - server-only compose file created at `/var/www/media-hub/docker-compose.pilot.yml`;
+  - separate services started for PostgreSQL, Redis, API, worker, and web;
+  - API listens only on `127.0.0.1:8120`;
+  - web listens only on `127.0.0.1:3120`;
+  - Caddy routes `https://temichev-posthub.ru/api/v1/*` to API and all other paths to web;
+  - Caddyfile backup before runtime switch: `/etc/caddy/Caddyfile.backup-before-mediahub-runtime-20260622-101606`;
+  - `https://temichev-posthub.ru/` returns the Russian Media Hub app, not the placeholder;
+  - `https://temichev-posthub.ru/api/v1/health/live` and `/ready` return `ok`.
 - OpenAI key exists in an adjacent local project env.
 - Filled Timeweb S3 variables exist in an old local "Что поесть" `.env`.
 
@@ -96,6 +107,11 @@ The first pilot is not the full production SaaS launch. It targets the A -> B sc
 - Existing local gate for code changes if runbook/templates are edited:
   - `make validate-spec`
   - `git diff --check`
+- Public deployment smoke after runtime switch:
+  - `curl -I https://temichev-posthub.ru/`
+  - `curl -sS https://temichev-posthub.ru/api/v1/health/live`
+  - `curl -sS https://temichev-posthub.ru/api/v1/health/ready`
+  - browser smoke at `390x844` and `1440x1000`.
 
 ## Risks
 
