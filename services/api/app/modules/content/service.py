@@ -335,7 +335,7 @@ def make_s3_client(settings: Settings, endpoint_url: str | None = None) -> BaseC
 def make_presigned_upload_url(settings: Settings, storage_key: str, mime_type: str) -> str:
     if not settings.s3_upload_enabled:
         return make_mock_presigned_upload_url(settings, storage_key)
-    client = make_s3_client(settings, endpoint_url=settings.resolved_s3_public_base_url)
+    client = make_s3_client(settings, endpoint_url=settings.s3_endpoint_url)
     try:
         return str(
             client.generate_presigned_url(

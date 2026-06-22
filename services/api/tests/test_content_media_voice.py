@@ -268,7 +268,7 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         workspace_id = auth["workspace"]["id"]
         settings = Settings(
             s3_endpoint_url="https://s3.timeweb.example",
-            s3_public_base_url="https://s3.timeweb.example",
+            s3_public_base_url="https://cdn.timeweb.example",
             s3_bucket="timeweb-media",
             s3_access_key_id="access",
             s3_secret_access_key="secret",
@@ -278,7 +278,7 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         fake_s3.generate_presigned_url.return_value = "https://s3.timeweb.example/timeweb-media/signed"
         self.override_settings(settings)
         try:
-            with patch("app.modules.content.service.make_s3_client", return_value=fake_s3):
+            with patch("app.modules.content.service.make_s3_client", return_value=fake_s3) as make_client:
                 presign = self.client.post(
                     "/api/v1/media/presign-upload",
                     headers=self.csrf_headers(auth),
@@ -296,6 +296,7 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         body = presign.json()
         self.assertEqual(body["bucket"], "timeweb-media")
         self.assertEqual(body["upload_url"], "https://s3.timeweb.example/timeweb-media/signed")
+        make_client.assert_called_once_with(settings, endpoint_url="https://s3.timeweb.example")
         fake_s3.generate_presigned_url.assert_called_once()
         call = fake_s3.generate_presigned_url.call_args.kwargs
         self.assertEqual(call["Params"]["Bucket"], "timeweb-media")
