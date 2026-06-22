@@ -87,6 +87,21 @@ def run_smoke(client: TestClient, session_local) -> None:
 
     current = client.get(f"/api/v1/content-items/{content['id']}")
     assert current.status_code == 200, current.text
+    stale_dish = client.post(
+        f"/api/v1/content-items/{content['id']}/repeatable-groups/dishes",
+        headers=csrf_headers(auth),
+        json={
+            "version": content["version"],
+            "lock": True,
+            "values": {
+                "name": {"text": "Старая уха"},
+                "price": {"amount": 320, "currency": "RUB"},
+            },
+        },
+    )
+    assert stale_dish.status_code == 409, stale_dish.text
+    assert stale_dish.json()["error"]["code"] == "version_conflict", stale_dish.text
+
     dish = client.post(
         f"/api/v1/content-items/{content['id']}/repeatable-groups/dishes",
         headers=csrf_headers(auth),

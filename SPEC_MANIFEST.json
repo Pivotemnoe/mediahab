@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T04:11:53.883391+00:00",
+  "generated_at": "2026-06-22T04:18:10.515701+00:00",
   "canonical_language": "en",
-  "file_count": 483,
+  "file_count": 485,
   "files": [
     {
       "path": ".dockerignore",
@@ -1356,6 +1356,16 @@
       "sha256": "bc2d14531a54e985ede5a0602e01e7558eb4aeb34afc35b435fa765b15ffae7f"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10AT_REPEATABLE_QUEUE_FAILURE_API_SMOKE.md",
+      "size_bytes": 3465,
+      "sha256": "113e6d9edc8115b5f900cc98f3bad4c704601a7faf8fa0e6f033c0814cfafea6"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AT_REPORT_RU.md",
+      "size_bytes": 4041,
+      "sha256": "aab8b7b5e8950372faf05efc14835e79a8283e85971d976180ea9bbb219a62b0"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2357,8 +2367,8 @@
     },
     {
       "path": "tools/check_guided_form_api_mode.py",
-      "size_bytes": 6004,
-      "sha256": "bb213040feb9081ada6d267e5eec0fa2c877dee64cd078a0bb7c421e23eb884b"
+      "size_bytes": 6547,
+      "sha256": "57e0969bf860089ba3b8cdf9e7f25b331ad6ad6e6bc05e1e9db42ef0170a44c6"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",
