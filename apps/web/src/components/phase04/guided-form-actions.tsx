@@ -35,6 +35,7 @@ type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "s
 type DraftStatus = "cleared" | "empty" | "restored" | "saved";
 type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "unavailable";
 type DraftValues = GuidedQueueValues;
+type ReplayPreflightRoute = "field_block" | "field_item" | "incomplete" | "repeatable_group";
 
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -533,10 +534,13 @@ function QueueStatusLine({
   const canRetryJob = canRetry && job?.recoveryAction !== "refresh" && (status === "queued" || status === "blocked");
   const canRefreshJob = status === "blocked" && job?.recoveryAction === "refresh";
   const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
+  const replayPreflight = job ? manualReplayPreflight(job) : null;
 
   return (
     <div
       className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}
+      data-guided-queue-preflight={replayPreflight?.status ?? "none"}
+      data-guided-queue-preflight-route={replayPreflight?.route ?? "none"}
       data-guided-queue-kind={job?.metadata?.kind ?? "none"}
       data-guided-queue-recovery={job?.recoveryAction ?? "none"}
       data-guided-queue-status={status}
@@ -547,6 +551,11 @@ function QueueStatusLine({
         {job?.code ? <span className="block">Код: {job.code}</span> : null}
         {job?.requestId ? <span className="block">ID запроса: {job.requestId}</span> : null}
         {replayReadiness ? <span className="block">{replayReadiness}</span> : null}
+        {replayPreflight ? (
+          <span className="block" data-testid="guided-queue-preflight">
+            {replayPreflight.label}
+          </span>
+        ) : null}
       </div>
       {job ? (
         <div className="flex flex-wrap gap-2">
@@ -607,6 +616,48 @@ function manualReplayReadinessLabel(job: GuidedQueueJob): string {
   }
 
   return `Ручной повтор не готов: не хватает ${draft.missing.map(manualReplayMissingLabel).join(", ")}.`;
+}
+
+function manualReplayPreflight(job: GuidedQueueJob): {
+  label: string;
+  route: ReplayPreflightRoute;
+  status: "incomplete" | "ready";
+} {
+  const draft = buildGuidedQueueReplayRequestDraft(job);
+  if (draft.status === "incomplete") {
+    return {
+      label: `Проверка повтора: запрос не собран, не хватает ${draft.missing.map(manualReplayMissingLabel).join(", ")}.`,
+      route: "incomplete",
+      status: "incomplete",
+    };
+  }
+
+  return {
+    label: `Проверка повтора: ${draft.request.method} ${manualReplayRouteLabel(draft.request.path)} подготовлен локально, значения скрыты и запрос не отправлен.`,
+    route: manualReplayRoute(draft.request.path),
+    status: "ready",
+  };
+}
+
+function manualReplayRoute(path: string): ReplayPreflightRoute {
+  if (path.includes("/repeatable-groups/")) {
+    return "repeatable_group";
+  }
+  if (path.includes("/content-blocks/")) {
+    return "field_block";
+  }
+  return "field_item";
+}
+
+function manualReplayRouteLabel(path: string): string {
+  const route = manualReplayRoute(path);
+  if (route === "repeatable_group") {
+    return "/content-items/{id}/repeatable-groups/{key}";
+  }
+  if (route === "field_block") {
+    return "/content-blocks/{id}";
+  }
+  return "/content-items/{id}/blocks/{key}";
 }
 
 function manualReplayMissingLabel(key: string): string {

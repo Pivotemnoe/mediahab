@@ -210,9 +210,12 @@ async function runBrowserCheck(browserCdp, params) {
         clientWidth: document.documentElement.clientWidth,
         hasClear: Boolean(clear),
         hasMain: Boolean(document.querySelector('main')),
+        hasPreflight: Boolean(blocked?.querySelector('[data-testid="guided-queue-preflight"]')),
         hasRefresh: Boolean(refresh),
         hasRetry: Boolean(retry),
         modeTextVisible: bodyText.includes('api'),
+        preflightRoute: blocked?.getAttribute('data-guided-queue-preflight-route') || '',
+        preflightStatus: blocked?.getAttribute('data-guided-queue-preflight') || '',
         scrollWidth: document.documentElement.scrollWidth,
       };
     })()`,
@@ -222,9 +225,14 @@ async function runBrowserCheck(browserCdp, params) {
   assert.equal(value.hasRefresh, true, `${params.check.width}px refresh button missing`);
   assert.equal(value.hasRetry, false, `${params.check.width}px retry button must be absent for refresh recovery`);
   assert.equal(value.hasClear, true, `${params.check.width}px clear button missing`);
+  assert.equal(value.hasPreflight, true, `${params.check.width}px replay preflight missing`);
+  assert.equal(value.preflightRoute, "repeatable_group", `${params.check.width}px replay preflight route mismatch`);
+  assert.equal(value.preflightStatus, "ready", `${params.check.width}px replay preflight status mismatch`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${params.check.width}px horizontal overflow`);
   assert.match(value.blockedText, /Обновить страницу/);
   assert.match(value.blockedText, /Очистить локальную очередь/);
+  assert.match(value.blockedText, /Проверка повтора: POST \/content-items\/\{id\}\/repeatable-groups\/\{key\}/);
+  assert.doesNotMatch(value.blockedText, /Старая уха|Рыбный вкус нормальный|320/);
   assert.match(value.blockedText, /Код: version_conflict/);
   assert.match(value.blockedText, /ID запроса: ui10ax-seeded/);
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -284,6 +292,8 @@ async function runBrowserCheck(browserCdp, params) {
     clearRemovedStorage: clearResult.result.value.storedJob === null,
     refreshPreservedStorage: refreshResult.result.value.storedJob !== null,
     scrollWidth: value.scrollWidth,
+    preflightRoute: value.preflightRoute,
+    preflightStatus: value.preflightStatus,
     hasRefresh: value.hasRefresh,
     hasRetry: value.hasRetry,
   };

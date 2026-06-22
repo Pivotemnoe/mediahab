@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T08:59:36.536092+00:00",
+  "generated_at": "2026-06-22T09:20:00.183871+00:00",
   "canonical_language": "en",
-  "file_count": 503,
+  "file_count": 506,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2359,
-      "sha256": "65ced866e9d62f2cd0b3f5c2dd25dbbacac3a55c0eb45483f932970ea3b9387f"
+      "size_bytes": 2411,
+      "sha256": "84ea8f5d5a09225f6f858da04be0e128fb04310da3281049f485344eb0972223"
     },
     {
       "path": "README.md",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 30821,
-      "sha256": "7923148b824eeb21bf92de9686244086aacc61d16d7b9a6c51dc60ccbdd5fad9"
+      "size_bytes": 32658,
+      "sha256": "fcb0317c6cf0eabd3ef5f10bc6b7de8afbda90368a8194ce07aeefe048a5a830"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1436,6 +1436,16 @@
       "sha256": "45d5747bcc46db4f736b3cf4dd7d1bc524f9a25d43ca0b0fcd1bd50e1715c2e5"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10BB_GUIDED_QUEUE_PREFLIGHT.md",
+      "size_bytes": 4048,
+      "sha256": "95e94fe04b0e69f89ce2e9315ebcf703658a3c26e31b5ad4195adba7fe595a8c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BB_REPORT_RU.md",
+      "size_bytes": 4201,
+      "sha256": "b0fe1d02971cae43eb927fc74c2a22482899ede31fde76fe3973833cb3802b82"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2452,8 +2462,8 @@
     },
     {
       "path": "tools/check_guided_queue_api_seeded_smoke.mjs",
-      "size_bytes": 18450,
-      "sha256": "0e975ba9c2e78f4b0a7246d819e4653216d0e96e7660e8aadb6e5974834b437f"
+      "size_bytes": 19367,
+      "sha256": "ad21b287f01963ecfbd9893347cb5a5a0c205d06bc24ef811fbf898b3779e9bc"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",
@@ -2469,6 +2479,11 @@
       "path": "tools/check_guided_queue_replay.mjs",
       "size_bytes": 12643,
       "sha256": "5248a02ead40ef9f512940c84c9c4a651757d4b63e5d3e08e5f86915d028d1ae"
+    },
+    {
+      "path": "tools/check_guided_queue_replay_preflight.mjs",
+      "size_bytes": 3853,
+      "sha256": "fe614baf0309334a2540b6f4462b2c680d866fdca87af39e3de579796ad4dcaf"
     },
     {
       "path": "tools/check_guided_queue_store.mjs",

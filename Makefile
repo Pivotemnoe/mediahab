@@ -47,6 +47,7 @@ test-ui-hardening: deps
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs
 	node tools/check_guided_queue_replay.mjs
+	node tools/check_guided_queue_replay_preflight.mjs
 	node tools/check_guided_repeatable_queue_ui.mjs
 	node tools/check_guided_action_errors.mjs
 	node tools/check_guided_action_payloads.mjs
