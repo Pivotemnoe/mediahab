@@ -1,0 +1,82 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const sourcePath = new URL("../apps/web/src/components/phase04/guided-form-actions.tsx", import.meta.url);
+const source = await readFile(sourcePath, "utf8");
+
+assert.match(
+  source,
+  /guidedRepeatableGroupQueueKey/,
+  "repeatable queue storage key helper must be imported and used",
+);
+assert.match(
+  source,
+  /function repeatableGroupQueueMetadata\(form: HTMLFormElement\): GuidedQueueMetadata \| null \{/,
+  "repeatable queue metadata builder must exist",
+);
+
+const metadataSource = functionBody(source, "repeatableGroupQueueMetadata");
+assert.match(metadataSource, /formTextValue\(form, "contentId"\)/);
+assert.match(metadataSource, /formTextValue\(form, "groupKey"\)/);
+assert.match(metadataSource, /guidedSubmitIntent\(form\.dataset\.guidedSubmitIntent\)/);
+assert.match(metadataSource, /kind: "repeatable_group"/);
+assert.match(metadataSource, /sourceType: formTextValue\(form, "sourceType"\) \?\? "user_text"/);
+
+const formSource = functionBody(source, "AddRepeatableGroupActionForm");
+assert.match(formSource, /const saveButtonRef = useRef<HTMLButtonElement>\(null\)/);
+assert.match(formSource, /const lockButtonRef = useRef<HTMLButtonElement>\(null\)/);
+assert.match(formSource, /const queue = useGuidedQueue\(\{/);
+assert.match(formSource, /metadata: repeatableGroupQueueMetadata/);
+assert.match(formSource, /storageKey: guidedRepeatableGroupQueueKey\(\{/);
+assert.match(formSource, /groupKey: field\.fieldKey/);
+assert.match(formSource, /recordSubmitIntent\(event\)/);
+assert.match(formSource, /<QueueStatusLine/);
+assert.match(formSource, /job=\{queue\.queueJob\}/);
+assert.match(formSource, /onClear=\{queue\.clearQueue\}/);
+assert.match(formSource, /onRetry=\{retryQueuedAdd\}/);
+assert.match(formSource, /status=\{queue\.queueStatus\}/);
+
+const retrySource = functionBody(formSource, "retryQueuedAdd");
+assert.match(retrySource, /draft\.flushDraft\(\)/);
+assert.match(retrySource, /queue\.queueJob\?\.metadata\?\.kind === "repeatable_group"/);
+assert.match(retrySource, /queue\.queueJob\.metadata\.intent === "lock"/);
+assert.match(retrySource, /lockButtonRef\.current\?\.click\(\)/);
+assert.match(retrySource, /saveButtonRef\.current\?\.click\(\)/);
+
+const hiddenSubmitButtons = Array.from(
+  formSource.matchAll(/<button[\s\S]*?aria-hidden="true"[\s\S]*?name="intent"[\s\S]*?value="(save|lock)"[\s\S]*?\/>/g),
+  (match) => match[1],
+);
+assert.deepEqual(
+  hiddenSubmitButtons.sort(),
+  ["lock", "save"],
+  "repeatable retry must keep hidden native submit buttons for both intents",
+);
+
+console.log("guided repeatable queue UI checks passed");
+
+function functionBody(text, functionName) {
+  const signature = `function ${functionName}`;
+  const start = text.indexOf(signature);
+  assert.notEqual(start, -1, `${functionName} must exist`);
+  const componentBodyStart = text.indexOf("\n}) {", start);
+  const openBrace = functionName === "AddRepeatableGroupActionForm"
+    ? (componentBodyStart === -1 ? -1 : componentBodyStart + "\n}) ".length)
+    : text.indexOf("{", start);
+  assert.notEqual(openBrace, -1, `${functionName} must have a body`);
+
+  let depth = 0;
+  for (let index = openBrace; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === "{") {
+      depth += 1;
+    }
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(openBrace + 1, index);
+      }
+    }
+  }
+  throw new Error(`${functionName} body is incomplete`);
+}
