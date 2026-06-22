@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T05:19:03.089051+00:00",
+  "generated_at": "2026-06-22T05:40:24.825508+00:00",
   "canonical_language": "en",
-  "file_count": 495,
+  "file_count": 497,
   "files": [
     {
       "path": ".dockerignore",
@@ -1406,6 +1406,16 @@
       "sha256": "1830f6575d878c4e785a3b317740503a37f131423ad99cd2860252b8eb5232cf"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10AY_BLOCKED_QUEUE_CLEAR_SMOKE.md",
+      "size_bytes": 3619,
+      "sha256": "c6d6bffa3207bbbb2c29a5d6f83584fe3af3e86416a92a1e2c1a7d76d16c46f8"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AY_REPORT_RU.md",
+      "size_bytes": 3680,
+      "sha256": "ce39a679374586500a898891e7a56c1879b56b392903fe5076bf46fff7ae2aa3"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2417,8 +2427,8 @@
     },
     {
       "path": "tools/check_guided_queue_api_seeded_smoke.mjs",
-      "size_bytes": 14594,
-      "sha256": "f798e389e4be612660899fc754146d65b8722584f74ee35cd6e21db2a1d306cd"
+      "size_bytes": 16474,
+      "sha256": "ddbf58c65d8e1b142f08eb22f72f89e075e08138cff50bee668ddbaba2cac0f4"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",

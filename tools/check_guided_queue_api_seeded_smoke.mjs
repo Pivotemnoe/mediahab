@@ -229,11 +229,34 @@ async function runBrowserCheck(browserCdp, params) {
   assert.match(value.blockedText, /ID запроса: ui10ax-seeded/);
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(params.check.path, Buffer.from(screenshot.data, "base64"));
+  await send("Runtime.evaluate", {
+    expression: `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"] [data-testid="guided-queue-clear"]')?.click()`,
+  });
+  await waitForExpression(
+    send,
+    `localStorage.getItem(${JSON.stringify(storageKey)}) === null && !document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"]')`,
+    10000,
+  );
+  const clearResult = await send("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `(() => {
+      const emptyStatuses = Array.from(document.querySelectorAll('[data-testid="guided-queue-status"][data-guided-queue-status="empty"]'));
+      return {
+        hasBlockedRepeatableRefresh: Boolean(document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"]')),
+        hasEmptyRepeatableStatus: emptyStatuses.some((node) => node.getAttribute('data-guided-queue-kind') === 'none' && node.innerText.includes('Очередь автосохранения пуста.')),
+        storedJob: localStorage.getItem(${JSON.stringify(storageKey)}),
+      };
+    })()`,
+  });
+  assert.equal(clearResult.result.value.storedJob, null, `${params.check.width}px queue job must be removed from localStorage`);
+  assert.equal(clearResult.result.value.hasBlockedRepeatableRefresh, false, `${params.check.width}px blocked repeatable queue must disappear after clear`);
+  assert.equal(clearResult.result.value.hasEmptyRepeatableStatus, true, `${params.check.width}px empty queue status must be visible after clear`);
   await browserCdp.send("Target.closeTarget", { targetId });
   return {
     width: params.check.width,
     path: params.check.path,
     clientWidth: value.clientWidth,
+    clearRemovedStorage: clearResult.result.value.storedJob === null,
     scrollWidth: value.scrollWidth,
     hasRefresh: value.hasRefresh,
     hasRetry: value.hasRetry,
