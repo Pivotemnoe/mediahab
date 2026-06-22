@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T05:40:24.825508+00:00",
+  "generated_at": "2026-06-22T05:48:42.679851+00:00",
   "canonical_language": "en",
-  "file_count": 497,
+  "file_count": 499,
   "files": [
     {
       "path": ".dockerignore",
@@ -832,8 +832,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 5817,
-      "sha256": "d4ccfef1e5b6e7383833edab3e1f15902839e422c652cf20f2af47203fdb4623"
+      "size_bytes": 6382,
+      "sha256": "2d9ce24a7aad4a07485b921fbec6d9a5a40d536001038af3d8a404e6b3498452"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -1414,6 +1414,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AY_REPORT_RU.md",
       "size_bytes": 3680,
       "sha256": "ce39a679374586500a898891e7a56c1879b56b392903fe5076bf46fff7ae2aa3"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AZ_BLOCKED_QUEUE_REFRESH_SMOKE.md",
+      "size_bytes": 4335,
+      "sha256": "2edad689ec209272ce82c123beebd864d945bc2603a7cb709eb8eb227deee638"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AZ_REPORT_RU.md",
+      "size_bytes": 4534,
+      "sha256": "3ea0004b594f3c8cdcd7e2919d12aae79d78637b041b213f27b58fe2e139e0f1"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2427,8 +2437,8 @@
     },
     {
       "path": "tools/check_guided_queue_api_seeded_smoke.mjs",
-      "size_bytes": 16474,
-      "sha256": "ddbf58c65d8e1b142f08eb22f72f89e075e08138cff50bee668ddbaba2cac0f4"
+      "size_bytes": 18450,
+      "sha256": "0e975ba9c2e78f4b0a7246d819e4653216d0e96e7660e8aadb6e5974834b437f"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",

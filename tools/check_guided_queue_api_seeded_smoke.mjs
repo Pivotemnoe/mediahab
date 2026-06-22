@@ -230,6 +230,31 @@ async function runBrowserCheck(browserCdp, params) {
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(params.check.path, Buffer.from(screenshot.data, "base64"));
   await send("Runtime.evaluate", {
+    expression: `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"] [data-testid="guided-queue-refresh"]')?.click()`,
+  });
+  await waitForExpression(
+    send,
+    `performance.getEntriesByType('navigation')[0]?.type === 'reload' && Boolean(document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"]'))`,
+    20000,
+  );
+  const refreshResult = await send("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `(() => {
+      const blocked = document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"]');
+      return {
+        blockedText: blocked?.innerText || '',
+        hasRefresh: Boolean(blocked?.querySelector('[data-testid="guided-queue-refresh"]')),
+        navigationType: performance.getEntriesByType('navigation')[0]?.type || null,
+        storedJob: localStorage.getItem(${JSON.stringify(storageKey)}),
+      };
+    })()`,
+  });
+  assert.equal(refreshResult.result.value.navigationType, "reload", `${params.check.width}px refresh control must reload the page`);
+  assert.notEqual(refreshResult.result.value.storedJob, null, `${params.check.width}px queue job must remain after refresh`);
+  assert.equal(refreshResult.result.value.hasRefresh, true, `${params.check.width}px refresh control must remain visible after reload`);
+  assert.match(refreshResult.result.value.blockedText, /В очереди есть несинхронизированное добавление позиции/);
+  assert.match(refreshResult.result.value.blockedText, /ID запроса: ui10ax-seeded/);
+  await send("Runtime.evaluate", {
     expression: `document.querySelector('[data-testid="guided-queue-status"][data-guided-queue-status="blocked"][data-guided-queue-kind="repeatable_group"][data-guided-queue-recovery="refresh"] [data-testid="guided-queue-clear"]')?.click()`,
   });
   await waitForExpression(
@@ -257,6 +282,7 @@ async function runBrowserCheck(browserCdp, params) {
     path: params.check.path,
     clientWidth: value.clientWidth,
     clearRemovedStorage: clearResult.result.value.storedJob === null,
+    refreshPreservedStorage: refreshResult.result.value.storedJob !== null,
     scrollWidth: value.scrollWidth,
     hasRefresh: value.hasRefresh,
     hasRetry: value.hasRetry,

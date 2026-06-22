@@ -19,7 +19,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 
 ## Infrastructure and launch dependencies
 
-1. Confirm production domain and sender email service for verification and password reset.
+1. Production domain is confirmed as `temichev-posthub.ru`; still confirm sender email service for verification and password reset.
 2. Confirm initial VPS provider, Timeweb S3 region/bucket policy for production, and backup destination.
 3. Confirm whether the first deployment uses one VPS plus external object storage or a managed database/object-storage split.
 4. Confirm where encryption keys and connector secrets will be stored for personal pilot and production.
@@ -56,3 +56,9 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 17. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
 18. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.
 19. Confirm whether mock payment webhook simulation may remain available in staging after a real provider is added, and who can trigger it.
+
+## Deployment notes from owner-provided infrastructure
+
+- 2026-06-22: Owner reported the purchased domain `temichev-posthub.ru` and shared Timeweb DNS UI evidence. The screenshot shows an A record for `temichev-posthub.ru` pointing to `89.169.46.92`.
+- 2026-06-22: Local HTTP check returned `308 Permanent Redirect` from Caddy to `https://temichev-posthub.ru/`.
+- 2026-06-22: Local HTTPS check currently fails with TLS internal error, so certificate/virtual-host setup still needs to be completed before public deployment.
