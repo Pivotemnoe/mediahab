@@ -51,6 +51,18 @@ for (const privateValue of ["Черновик", "secret", "legacy", "unclassifie
   );
 }
 
+const queueStatusSource = source.slice(
+  source.indexOf("function QueueStatusLine"),
+  source.indexOf("function queueStatusLabel"),
+);
+assert.notEqual(queueStatusSource.length, 0, "QueueStatusLine source must be extractable");
+assert.match(queueStatusSource, /const canRetryJob = canRetry && job\?\.recoveryAction !== "refresh"/);
+assert.match(queueStatusSource, /const canRefreshJob = status === "blocked" && job\?\.recoveryAction === "refresh"/);
+assert.match(queueStatusSource, /canRefreshJob \? \(/);
+assert.match(queueStatusSource, /onClick=\{refreshPage\}/);
+assert.match(queueStatusSource, /Обновить страницу/);
+assert.match(queueStatusSource, /Повторить из очереди/);
+
 const retrySource = functionBody(formSource, "retryQueuedAdd");
 assert.match(retrySource, /draft\.flushDraft\(\)/);
 assert.match(retrySource, /queue\.queueJob\?\.metadata\?\.kind === "repeatable_group"/);

@@ -531,6 +531,7 @@ function QueueStatusLine({
         ? "success"
         : "idle";
   const canRetryJob = canRetry && job?.recoveryAction !== "refresh" && (status === "queued" || status === "blocked");
+  const canRefreshJob = status === "blocked" && job?.recoveryAction === "refresh";
   const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
 
   return (
@@ -543,6 +544,12 @@ function QueueStatusLine({
       </div>
       {job ? (
         <div className="flex flex-wrap gap-2">
+          {canRefreshJob ? (
+            <Button onClick={refreshPage} size="sm" type="button" variant="secondary">
+              <RotateCcw size={14} />
+              Обновить страницу
+            </Button>
+          ) : null}
           {canRetryJob ? (
             <Button onClick={onRetry} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
