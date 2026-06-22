@@ -62,3 +62,4 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 - 2026-06-22: Owner reported the purchased domain `temichev-posthub.ru` and shared Timeweb DNS UI evidence. The screenshot shows an A record for `temichev-posthub.ru` pointing to `89.169.46.92`.
 - 2026-06-22: Local HTTP check returned `308 Permanent Redirect` from Caddy to `https://temichev-posthub.ru/`.
 - 2026-06-22: Local HTTPS check currently fails with TLS internal error, so certificate/virtual-host setup still needs to be completed before public deployment.
+- 2026-06-22: Non-interactive SSH probe to `root@89.169.46.92` failed with `Permission denied (publickey,password)`. Deployment needs a working SSH key/session or owner-side server commands.

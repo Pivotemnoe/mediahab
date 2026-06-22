@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T05:48:42.679851+00:00",
+  "generated_at": "2026-06-22T08:59:36.536092+00:00",
   "canonical_language": "en",
-  "file_count": 499,
+  "file_count": 503,
   "files": [
     {
       "path": ".dockerignore",
@@ -832,8 +832,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 6382,
-      "sha256": "2d9ce24a7aad4a07485b921fbec6d9a5a40d536001038af3d8a404e6b3498452"
+      "size_bytes": 6573,
+      "sha256": "2509d760e90cf59765a97f08a672fd6676c4f3a05003c0e386409a4e5865ad7b"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -1426,6 +1426,16 @@
       "sha256": "3ea0004b594f3c8cdcd7e2919d12aae79d78637b041b213f27b58fe2e139e0f1"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10BA_PUBLIC_DOMAIN_READINESS.md",
+      "size_bytes": 4631,
+      "sha256": "3d113827220a0ddb02563bb54bfbb5e49d668b7504a30f4437d5ff1be165bde0"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BA_REPORT_RU.md",
+      "size_bytes": 4236,
+      "sha256": "45d5747bcc46db4f736b3cf4dd7d1bc524f9a25d43ca0b0fcd1bd50e1715c2e5"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -1762,8 +1772,8 @@
     },
     {
       "path": "docs/runbooks/README.md",
-      "size_bytes": 394,
-      "sha256": "a1e6c9f5ce6e21063a7c3b8675901f5a1ff205c42f01ae552329459c0116a41c"
+      "size_bytes": 595,
+      "sha256": "02f02b085fd89aa397ccc05961f5edd65d03ff377efe87af0c56788ec7a2736d"
     },
     {
       "path": "docs/runbooks/local-development.md",
@@ -1774,6 +1784,11 @@
       "path": "docs/runbooks/phase10-hardening-ru.md",
       "size_bytes": 2057,
       "sha256": "8972548401074f36a46c803b150afa43ffbfab9d539397afaf786d7775eac3f7"
+    },
+    {
+      "path": "docs/runbooks/public-domain-readiness-ru.md",
+      "size_bytes": 5698,
+      "sha256": "fc9774ddbf5028a9b4c50c407823692b0e12bfcca7a750a683b710b5733fcee4"
     },
     {
       "path": "fixtures/example-import-template.json",
@@ -2464,6 +2479,11 @@
       "path": "tools/check_guided_repeatable_queue_ui.mjs",
       "size_bytes": 5905,
       "sha256": "70978be47758ea5ea0126721aca95030b414dbf6c5fc5d416dcd02eedfc75952"
+    },
+    {
+      "path": "tools/check_public_domain_readiness.mjs",
+      "size_bytes": 5044,
+      "sha256": "dbf8bb513b3e3e971dd9dd9f5c54125cd8bfcf24427172c76a1f0d33a802393d"
     },
     {
       "path": "tools/check_sw_capabilities.mjs",
