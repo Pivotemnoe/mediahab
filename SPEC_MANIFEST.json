@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T04:04:38.135049+00:00",
+  "generated_at": "2026-06-22T04:11:53.883391+00:00",
   "canonical_language": "en",
-  "file_count": 479,
+  "file_count": 483,
   "files": [
     {
       "path": ".dockerignore",
@@ -27,8 +27,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2312,
-      "sha256": "30d6581d0e98553392586994e5108cee8c8f6c5eebedeb0cb36c07db0c970f96"
+      "size_bytes": 2359,
+      "sha256": "65ced866e9d62f2cd0b3f5c2dd25dbbacac3a55c0eb45483f932970ea3b9387f"
     },
     {
       "path": "README.md",
@@ -362,8 +362,8 @@
     },
     {
       "path": "apps/web/src/components/pwa/offline-status.tsx",
-      "size_bytes": 1770,
-      "sha256": "e38ab12aec65ebd6dd474e3821d41bc6f672977fea4f0cce728bcad7eaa635d2"
+      "size_bytes": 2438,
+      "sha256": "74a6baac17313bc2667ec9d3c571219392b51b14f899af1b9e559e153a1787e3"
     },
     {
       "path": "apps/web/src/components/pwa/pwa-runtime.tsx",
@@ -504,6 +504,11 @@
       "path": "apps/web/src/services/guided-queue-contract.ts",
       "size_bytes": 6736,
       "sha256": "aa11d9a14b8150607fb27a7c7b8c4c3104eed36ccbcd71ef913a6ea5a22e7689"
+    },
+    {
+      "path": "apps/web/src/services/guided-queue-diagnostics.ts",
+      "size_bytes": 1667,
+      "sha256": "4a66f0f11a636091ef7f68cdc31dcdc24da4dd0d165fc2b0032a312b847b0673"
     },
     {
       "path": "apps/web/src/services/guided-queue-replay.ts",
@@ -1339,6 +1344,16 @@
       "path": "docs/exec-plans/UI_PHASE_10AR_REPORT_RU.md",
       "size_bytes": 3911,
       "sha256": "400e293a6d3c968d971b6b576bce76b1b8a42b5bfcbe2fe14b80290c37b3115a"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AS_GUIDED_QUEUE_SAFE_DIAGNOSTICS.md",
+      "size_bytes": 3502,
+      "sha256": "5892b34b436b77151fa4425a67f3bcbecd1a86f157cdf8583b099558487a0b28"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AS_REPORT_RU.md",
+      "size_bytes": 4392,
+      "sha256": "bc2d14531a54e985ede5a0602e01e7558eb4aeb34afc35b435fa765b15ffae7f"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -2349,6 +2364,11 @@
       "path": "tools/check_guided_queue_contract.mjs",
       "size_bytes": 6146,
       "sha256": "50d829d9fadf7f5efcda0c6598eaef22648eea9abf31dc6564678526a92bf30b"
+    },
+    {
+      "path": "tools/check_guided_queue_diagnostics.mjs",
+      "size_bytes": 3582,
+      "sha256": "2466af77ddd2ad79600d3998eddbd7a515b3b55cf41a883532fe68edb81b5dbf"
     },
     {
       "path": "tools/check_guided_queue_replay.mjs",
