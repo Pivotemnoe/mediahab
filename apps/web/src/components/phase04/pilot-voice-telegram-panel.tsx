@@ -17,6 +17,7 @@ import {
 } from "@/services/guided-action-state";
 import {
   type BlockOut,
+  type ContentMediaResponse,
   type ContentItemOut,
   type MediaOut,
   type MediaPresignResponse,
@@ -157,6 +158,9 @@ export function PilotVoiceTelegramPanel({
   const [message, setMessage] = useState("Нажмите «Запись», продиктуйте факт и остановите запись.");
   const [transcript, setTranscript] = useState(initialTranscript);
   const [targetField, setTargetField] = useState<PilotFieldKey>("atmosphere");
+  const [mediaStatus, setMediaStatus] = useState("Фото и видео можно прикрепить перед подготовкой Telegram-поста.");
+  const [attachedMediaCount, setAttachedMediaCount] = useState<number | null>(null);
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [jobTargetField, setJobTargetField] = useState<PilotFieldKey | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -304,6 +308,90 @@ export function PilotVoiceTelegramPanel({
     }
   }
 
+  async function uploadPilotMedia(files: FileList | null) {
+    const selectedFiles = Array.from(files ?? []).filter((file) => (
+      file.type.startsWith("image/") || file.type.startsWith("video/")
+    ));
+    if (!selectedFiles.length) {
+      setMediaStatus("Выберите фото или видеофайлы.");
+      return;
+    }
+    if (disabled || !workspaceId) {
+      setMediaStatus("Загрузка медиа доступна только для реального API-материала.");
+      return;
+    }
+
+    try {
+      setIsMediaUploading(true);
+      setMediaStatus(`Загружаю медиа: 0 из ${selectedFiles.length}.`);
+      const existing = await apiRequest<ContentMediaResponse>(`/api/v1/content-items/${contentId}/media`, {
+        method: "GET",
+      });
+      const uploadedIds: string[] = [];
+      for (const [index, file] of selectedFiles.entries()) {
+        const kind = file.type.startsWith("video/") ? "video" : "image";
+        const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
+          body: {
+            content_item_id: contentId,
+            filename: file.name || `media-${Date.now()}-${index}`,
+            kind,
+            mime_type: file.type || (kind === "video" ? "video/mp4" : "image/jpeg"),
+            size_bytes: file.size,
+            workspace_id: workspaceId,
+          },
+          method: "POST",
+        });
+        const uploadResponse = await fetch(presign.upload_url, {
+          body: file,
+          headers: { "Content-Type": file.type || presign.headers["Content-Type"] || "application/octet-stream" },
+          method: "PUT",
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(`S3 отклонил файл «${file.name}»: ${uploadResponse.status}.`);
+        }
+        await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
+          body: {
+            codec_metadata: { source: "content-studio-ui", original_name: file.name },
+            size_bytes: file.size,
+          },
+          method: "POST",
+        });
+        uploadedIds.push(presign.media_id);
+        setMediaStatus(`Загружаю медиа: ${index + 1} из ${selectedFiles.length}.`);
+      }
+
+      const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentId}`, {
+        method: "GET",
+      });
+      const media = [
+        ...existing.media.map((item, index) => ({
+          caption: item.caption,
+          media_id: item.media_asset_id,
+          role: item.role,
+          sort_order: index,
+        })),
+        ...uploadedIds.map((mediaId, index) => ({
+          media_id: mediaId,
+          role: "gallery",
+          sort_order: existing.media.length + index,
+        })),
+      ];
+      const attached = await apiRequest<ContentMediaResponse>(`/api/v1/content-items/${contentId}/media-order`, {
+        body: {
+          media,
+          version: currentItem.version,
+        },
+        method: "PUT",
+      });
+      setAttachedMediaCount(attached.media.length);
+      setMediaStatus(`Медиа прикреплены: ${attached.media.length}. Теперь подготовьте Telegram-пост заново.`);
+    } catch (error) {
+      setMediaStatus(error instanceof Error ? error.message : "Не удалось загрузить медиа.");
+    } finally {
+      setIsMediaUploading(false);
+    }
+  }
+
   async function acceptTranscript() {
     if (!jobId || !transcript.trim()) {
       setMessage("Сначала нужна расшифровка с текстом.");
@@ -423,6 +511,30 @@ export function PilotVoiceTelegramPanel({
         <LockKeyhole size={16} />
         Принять текст
       </Button>
+      <div className="grid gap-2 rounded-md border border-border p-3">
+        <div className="text-sm font-medium text-foreground">Фото и видео для Telegram</div>
+        <label className="grid gap-2 rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted">
+          <span className="flex items-center gap-2 font-medium text-foreground">
+            <Upload size={16} className="text-primary" />
+            Прикрепить фото или видео
+          </span>
+          <input
+            accept="image/*,video/*"
+            disabled={disabled || isMediaUploading}
+            multiple
+            type="file"
+            onChange={(event) => {
+              void uploadPilotMedia(event.currentTarget.files);
+              event.currentTarget.value = "";
+            }}
+          />
+        </label>
+        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(isMediaUploading ? "warning" : "idle")}`}>
+          {isMediaUploading ? <Loader2 className="mr-2 inline animate-spin" size={14} /> : null}
+          {mediaStatus}
+          {attachedMediaCount !== null ? ` Всего в материале: ${attachedMediaCount}.` : ""}
+        </div>
+      </div>
       <div className="grid gap-2 rounded-md border border-border p-3">
         <div className="text-sm font-medium text-foreground">Мастер и Telegram</div>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(analysisState.tone)}`}>
