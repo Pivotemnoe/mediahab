@@ -58,6 +58,7 @@
   - API порт только локально: `127.0.0.1:8120`;
   - web порт только локально: `127.0.0.1:3120`.
 - В серверный `.env` перенесены значения OpenAI и Timeweb S3 только как protected env values. Секреты не печатались и не коммитились.
+- Для общего Timeweb S3 bucket требуется отдельный object-key prefix `MEDIA_STORAGE_PREFIX=temichev-posthub`, чтобы файлы Media Hub не смешивались с объектами проекта «Что поесть? Армавир».
 - Применены Alembic migrations до `phase11 billing launch`.
 - Применён baseline seed из `database/seeds`.
 - Caddy переключен с placeholder на приложение:

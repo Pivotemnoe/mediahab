@@ -288,9 +288,23 @@ async def next_group_index(session: AsyncSession, item: ContentItem, group_key: 
     return int(latest if latest is not None else -1) + 1
 
 
-def make_storage_key(workspace_id: UUID, media_id: UUID, filename: str) -> str:
+def normalize_storage_prefix(storage_prefix: str) -> str:
+    return "/".join(
+        segment
+        for segment in storage_prefix.replace("\\", "/").strip().split("/")
+        if segment
+    )
+
+
+def make_storage_key(
+    workspace_id: UUID, media_id: UUID, filename: str, storage_prefix: str = ""
+) -> str:
     safe_name = filename.replace("/", "_").replace("\\", "_") or "upload.bin"
-    return f"workspaces/{workspace_id}/media/{media_id}/{safe_name}"
+    scoped_key = f"workspaces/{workspace_id}/media/{media_id}/{safe_name}"
+    prefix = normalize_storage_prefix(storage_prefix)
+    if not prefix:
+        return scoped_key
+    return f"{prefix}/{scoped_key}"
 
 
 def make_mock_presigned_upload_url(settings: Settings, storage_key: str) -> str:

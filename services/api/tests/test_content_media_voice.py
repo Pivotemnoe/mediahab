@@ -301,6 +301,47 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         self.assertEqual(call["Params"]["Bucket"], "timeweb-media")
         self.assertEqual(call["Params"]["ContentType"], "audio/webm")
 
+    def test_s3_presign_uses_configured_storage_prefix(self) -> None:
+        auth = self.register(
+            self.client,
+            email="s3-prefix-04@example.com",
+            workspace_name="S3 Prefix Workspace",
+        )
+        workspace_id = auth["workspace"]["id"]
+        settings = Settings(
+            s3_endpoint_url="https://s3.timeweb.example",
+            s3_public_base_url="https://s3.timeweb.example",
+            s3_bucket="shared-timeweb-media",
+            s3_access_key_id="access",
+            s3_secret_access_key="secret",
+            media_storage_prefix="/temichev-posthub/",
+        )
+        fake_s3 = Mock()
+        fake_s3.generate_presigned_url.return_value = "https://s3.timeweb.example/shared/signed"
+        self.override_settings(settings)
+        try:
+            with patch("app.modules.content.service.make_s3_client", return_value=fake_s3):
+                presign = self.client.post(
+                    "/api/v1/media/presign-upload",
+                    headers=self.csrf_headers(auth),
+                    json={
+                        "workspace_id": workspace_id,
+                        "filename": "folder/voice.webm",
+                        "kind": "voice",
+                        "mime_type": "audio/webm",
+                        "size_bytes": 10,
+                    },
+                )
+        finally:
+            self.clear_settings_override()
+        self.assertEqual(presign.status_code, 200, presign.text)
+        body = presign.json()
+        self.assertTrue(body["storage_key"].startswith(f"temichev-posthub/workspaces/{workspace_id}/"))
+        self.assertTrue(body["storage_key"].endswith("/folder_voice.webm"))
+        call = fake_s3.generate_presigned_url.call_args.kwargs
+        self.assertEqual(call["Params"]["Bucket"], "shared-timeweb-media")
+        self.assertEqual(call["Params"]["Key"], body["storage_key"])
+
     def test_openai_transcription_provider_updates_job(self) -> None:
         auth = self.register(self.client, email="openai-stt04@example.com", workspace_name="OpenAI Workspace")
         workspace_id = auth["workspace"]["id"]

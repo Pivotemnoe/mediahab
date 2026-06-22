@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T10:19:34.913357+00:00",
+  "generated_at": "2026-06-22T10:34:31.484847+00:00",
   "canonical_language": "en",
-  "file_count": 511,
+  "file_count": 512,
   "files": [
     {
       "path": ".dockerignore",
@@ -12,8 +12,8 @@
     },
     {
       "path": ".env.example",
-      "size_bytes": 946,
-      "sha256": "09e2409af9f0831f5ed14b01cedf1d8420b8a3027e15389571cf51c02d2cd4bf"
+      "size_bytes": 983,
+      "sha256": "71f583aac7bd939829dabf6c4a4f2c226762ea60bf16f4407e7159062a0e597b"
     },
     {
       "path": ".gitignore",
@@ -1462,8 +1462,13 @@
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10BD_REPORT_RU.md",
-      "size_bytes": 8288,
-      "sha256": "ec0d69f9350b950cd9b154129c42d1f76c4b4a48f2f0af0beb0f82e58efac211"
+      "size_bytes": 8563,
+      "sha256": "68a6fcc8188f76c198118abb146b8e2525e59ba98d6fd091c6271a409a68cfd3"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10BE_S3_BUCKET_ISOLATION.md",
+      "size_bytes": 1643,
+      "sha256": "fbf47f885fd5115b0176589a45532f4a57359125cd5378a86da6b31b7946cedb"
     },
     {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
@@ -1817,8 +1822,8 @@
     },
     {
       "path": "docs/runbooks/public-domain-readiness-ru.md",
-      "size_bytes": 9628,
-      "sha256": "4d446337eff7dbff3df5538658e1f3f35bfd21aec7764f7c0b67a9e9ac66a6bf"
+      "size_bytes": 9965,
+      "sha256": "f259ee144b28eee7dc0d74fe576554a5841356bd435e6d622a748a080d520974"
     },
     {
       "path": "fixtures/example-import-template.json",
@@ -2162,8 +2167,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/content.py",
-      "size_bytes": 36365,
-      "sha256": "79a062bc52ee231ecafe950d4ed1fa856372c84c477cda2081d345f77c4f028c"
+      "size_bytes": 36435,
+      "sha256": "84e66b79b84e42e91f5409bf0dc595f358a8f7f76e94a7c3db755ce3370b87f1"
     },
     {
       "path": "services/api/app/api/v1/routes/health.py",
@@ -2197,8 +2202,8 @@
     },
     {
       "path": "services/api/app/core/config.py",
-      "size_bytes": 5257,
-      "sha256": "3c22770f2b8cd980ad2e3f60fb43e1a8b5e7e3f7d4a9939a1808999d68db7412"
+      "size_bytes": 5337,
+      "sha256": "70e98f2c04057c71c941fac2ee5fbae4f3cebe4c23b0cfb702e99dd54d3dd063"
     },
     {
       "path": "services/api/app/core/logging.py",
@@ -2297,8 +2302,8 @@
     },
     {
       "path": "services/api/app/modules/content/service.py",
-      "size_bytes": 14883,
-      "sha256": "a1c0f8f1ef275c613c50f80da25b043202a1abc700ba40e669a735506d96f37f"
+      "size_bytes": 15254,
+      "sha256": "36f567cefe117cb676fd8881f818cb5a135a71c9cc45c4a9c41b00768638af23"
     },
     {
       "path": "services/api/app/modules/projects/__init__.py",
@@ -2372,8 +2377,8 @@
     },
     {
       "path": "services/api/tests/test_content_media_voice.py",
-      "size_bytes": 16940,
-      "sha256": "d5c33404cb213dd25f4bbc6e8e4b3a97af8eba03c632d0fe0cbb976a21cd0917"
+      "size_bytes": 18832,
+      "sha256": "e2083e07cc7b916cbe77507424791be49654fd412aad90052fb89fece3bb25ae"
     },
     {
       "path": "services/api/tests/test_health.py",

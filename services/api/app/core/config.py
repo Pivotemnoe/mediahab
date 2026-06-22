@@ -28,6 +28,7 @@ class Settings(BaseSettings):
         default="local-mock-payment-secret", alias="MOCK_PAYMENT_WEBHOOK_SECRET"
     )
     media_bucket: str = Field(default="media-hub", alias="MEDIA_BUCKET")
+    media_storage_prefix: str = Field(default="", alias="MEDIA_STORAGE_PREFIX")
     media_public_base_url: str = Field(
         default="http://localhost:9100", alias="MEDIA_PUBLIC_BASE_URL"
     )

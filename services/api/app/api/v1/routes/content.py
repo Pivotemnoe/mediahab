@@ -785,7 +785,12 @@ async def presign_upload(
         if item.workspace_id != payload.workspace_id:
             raise api_error(404, "content_not_found", "Content item not found.", request=request)
     media_id = uuid4()
-    storage_key = make_storage_key(payload.workspace_id, media_id, payload.filename)
+    storage_key = make_storage_key(
+        payload.workspace_id,
+        media_id,
+        payload.filename,
+        settings.media_storage_prefix,
+    )
     media = MediaAsset(
         id=media_id,
         workspace_id=payload.workspace_id,

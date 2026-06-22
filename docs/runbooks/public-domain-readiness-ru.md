@@ -16,6 +16,7 @@
   - app directory: `/var/www/media-hub`;
   - server env: `/var/www/media-hub/.env`, права `600`;
   - server compose: `/var/www/media-hub/docker-compose.pilot.yml`;
+  - shared Timeweb S3 bucket uses `MEDIA_STORAGE_PREFIX=temichev-posthub`;
   - API: `127.0.0.1:8120`;
   - web: `127.0.0.1:3120`;
   - public web: `https://temichev-posthub.ru/`;
@@ -99,6 +100,7 @@ ssh -i ~/.ssh/mediahub_codex_deploy_20260622 \
 - `REDIS_URL` указывает на production Redis.
 - `ADMIN_API_TOKEN` заменён на сильный временный секрет или отключён после появления real operator identity.
 - `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_PUBLIC_BASE_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` настроены для production object storage.
+- `MEDIA_STORAGE_PREFIX=temichev-posthub` настроен, если bucket общий с другим проектом. Это разделяет объекты Media Hub внутри общего bucket: `temichev-posthub/workspaces/{workspace_id}/media/...`.
 - `OPENAI_API_KEY` и provider budgets подтверждены, если включаются live AI/STT.
 - Email provider выбран до включения real verification/reset email.
 - Payment provider остаётся `mock` или `manual` до юридического решения; real capture нельзя включать без fiscal/refund/legal approval.
