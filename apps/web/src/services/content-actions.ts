@@ -143,6 +143,19 @@ function firstHookText(value: unknown): string | null {
   return typeof text === "string" && text.trim() ? text.trim() : null;
 }
 
+function warningCountFromRun(run: GenerationRunOut): number {
+  const response = run.response_json ?? {};
+  const warnings = response.warnings;
+  const quality = response.quality;
+  const qualityWarnings = quality && typeof quality === "object" && !Array.isArray(quality)
+    ? (quality as Record<string, unknown>).warnings
+    : null;
+  const qualityErrors = quality && typeof quality === "object" && !Array.isArray(quality)
+    ? (quality as Record<string, unknown>).errors
+    : null;
+  return arraySize(warnings) + arraySize(qualityWarnings) + arraySize(qualityErrors);
+}
+
 function aiAnalysisMessage(factsRun: GenerationRunOut, hookRun: GenerationRunOut): GuidedActionState {
   if (factsRun.status !== "completed") {
     return messageState(factsRun.error_message || "ИИ не смог разобрать факты из диктовки.", {
@@ -174,6 +187,56 @@ function aiAnalysisMessage(factsRun: GenerationRunOut, hookRun: GenerationRunOut
   );
 }
 
+function fullTelegramDraftMessage(
+  factsRun: GenerationRunOut,
+  ratingsRun: GenerationRunOut,
+  hookRun: GenerationRunOut,
+  masterRun: GenerationRunOut,
+  telegramVariant: PlatformVariantOut,
+): GuidedActionState {
+  const failedRun = [factsRun, ratingsRun, hookRun, masterRun].find((run) => run.status !== "completed");
+  if (failedRun) {
+    return messageState(failedRun.error_message || "AI не смог подготовить полный Telegram-пост.", {
+      code: failedRun.error_code ?? "full_telegram_draft_failed",
+      tone: "danger",
+    });
+  }
+
+  const masterResponse = masterRun.response_json ?? {};
+  const hookResponse = hookRun.response_json ?? {};
+  const masterText = typeof masterResponse.master_text === "string" ? masterResponse.master_text : "";
+  const exampleCount = new Set([
+    ...factsRun.retrieved_example_ids,
+    ...ratingsRun.retrieved_example_ids,
+    ...hookRun.retrieved_example_ids,
+    ...masterRun.retrieved_example_ids,
+  ]).size;
+  const warningCount = [
+    factsRun,
+    ratingsRun,
+    hookRun,
+    masterRun,
+  ].reduce((total, run) => total + warningCountFromRun(run), 0);
+  const validation = telegramVariant.validation ?? {};
+  const validationWarnings = validation.warnings;
+  const validationErrors = validation.errors;
+  const validationIssueCount = arraySize(validationWarnings) + arraySize(validationErrors);
+  const hook = firstHookText(hookResponse.hook_candidates) ?? firstHookText(masterResponse.hook_candidates);
+  const tone: GuidedActionState["tone"] = validationIssueCount > 0 || warningCount > 0 ? "warning" : "success";
+
+  return messageState(
+    [
+      `Telegram-черновик готов: мастер ${masterText.length} знаков, Telegram ${telegramVariant.character_count} знаков.`,
+      `Референсов учтено ${exampleCount}.`,
+      hook ? `Первый хук: ${hook}` : "",
+      warningCount || validationIssueCount
+        ? `Проверить перед публикацией: предупреждений ${warningCount}, замечаний Telegram ${validationIssueCount}.`
+        : "Валидация Telegram прошла без замечаний.",
+    ].filter(Boolean).join(" "),
+    { tone },
+  );
+}
+
 export async function analyzePilotDraftAction(
   _previousState: GuidedActionState,
   formData: FormData,
@@ -188,6 +251,77 @@ export async function analyzePilotDraftAction(
     });
     revalidatePath(`/app/content/${contentId}`);
     return aiAnalysisMessage(factsRun, hookRun);
+  } catch (error) {
+    return actionErrorState(error);
+  }
+}
+
+export async function prepareFullTelegramDraftAction(
+  _previousState: GuidedActionState,
+  formData: FormData,
+): Promise<GuidedActionState> {
+  const contentId = formDataString(formData, "contentId");
+  try {
+    const factsRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/extract-facts`, {
+      method: "POST",
+    });
+    const ratingsRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/suggest-ratings`, {
+      method: "POST",
+    });
+    const hookRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/suggest-hook`, {
+      method: "POST",
+    });
+    const masterRun = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${contentId}/assemble-master`, {
+      method: "POST",
+    });
+    if (masterRun.status !== "completed") {
+      return fullTelegramDraftMessage(
+        factsRun,
+        ratingsRun,
+        hookRun,
+        masterRun,
+        {
+          character_count: 0,
+          content_item_id: contentId,
+          created_at: "",
+          id: "",
+          master_revision_id: "",
+          parent_variant_id: null,
+          platform_key: "telegram",
+          payload: {},
+          rendered_text: "",
+          revision_number: 0,
+          status: "invalid",
+          superseded_by_variant_id: null,
+          text: "",
+          updated_at: "",
+          validation: {},
+          workspace_id: "",
+          approved_at: null,
+        },
+      );
+    }
+
+    const generated = await apiRequest<PlatformVariantsResponse>(
+      `/api/v1/content-items/${contentId}/generate-variants`,
+      {
+        body: { platform_keys: ["telegram"] },
+        method: "POST",
+      },
+    );
+    const variant = generated.variants.find((item) => item.platform_key === "telegram");
+    if (!variant) {
+      return messageState("Мастер собран, но backend не вернул Telegram-вариант.", {
+        code: "telegram_variant_missing",
+        tone: "danger",
+      });
+    }
+    const validated = await apiRequest<PlatformVariantOut>(`/api/v1/platform-variants/${variant.id}/validate`, {
+      method: "POST",
+    });
+
+    revalidatePath(`/app/content/${contentId}`);
+    return fullTelegramDraftMessage(factsRun, ratingsRun, hookRun, masterRun, validated);
   } catch (error) {
     return actionErrorState(error);
   }

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   analyzePilotDraftAction,
   assemblePilotMasterAction,
+  prepareFullTelegramDraftAction,
   publishPilotTelegramAction,
 } from "@/services/content-actions";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/services/openapi-types";
 
 type CaptureState = "idle" | "recording" | "uploading" | "transcribing" | "ready" | "accepted" | "error";
-type PilotFieldKey = "address" | "atmosphere" | "venue_name";
+type PilotFieldKey = "address" | "atmosphere" | "conclusion" | "venue_name";
 
 const pilotFields: Array<{ description: string; key: PilotFieldKey; label: string }> = [
   {
@@ -40,6 +41,11 @@ const pilotFields: Array<{ description: string; key: PilotFieldKey; label: strin
     description: "адрес или ориентир",
     key: "address",
     label: "Адрес",
+  },
+  {
+    description: "вывод, стоит ли идти и кому подойдёт",
+    key: "conclusion",
+    label: "Итоговое впечатление",
   },
 ];
 
@@ -157,12 +163,15 @@ export function PilotVoiceTelegramPanel({
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const [analysisState, analysisAction, isAnalysisPending] = useActionState(analyzePilotDraftAction, initialGuidedActionState);
+  const [fullDraftState, fullDraftAction, isFullDraftPending] = useActionState(prepareFullTelegramDraftAction, initialGuidedActionState);
   const [masterState, masterAction, isMasterPending] = useActionState(assemblePilotMasterAction, initialGuidedActionState);
   const [publishState, publishAction, isPublishPending] = useActionState(publishPilotTelegramAction, initialGuidedActionState);
   const [isAnalysisTransitionPending, startAnalysisTransition] = useTransition();
+  const [isFullDraftTransitionPending, startFullDraftTransition] = useTransition();
   const [isMasterTransitionPending, startMasterTransition] = useTransition();
   const [isPublishTransitionPending, startPublishTransition] = useTransition();
   const analysisBusy = isAnalysisPending || isAnalysisTransitionPending;
+  const fullDraftBusy = isFullDraftPending || isFullDraftTransitionPending;
   const masterBusy = isMasterPending || isMasterTransitionPending;
   const publishBusy = isPublishPending || isPublishTransitionPending;
   const disabled = !canMutate || !workspaceId || itemVersion === null;
@@ -427,6 +436,17 @@ export function PilotVoiceTelegramPanel({
         >
           {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
           AI-разбор диктовки
+        </Button>
+        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(fullDraftState.tone)}`}>
+          {fullDraftState.message}
+        </div>
+        <Button
+          disabled={disabled || fullDraftBusy}
+          type="button"
+          onClick={() => startFullDraftTransition(() => submitAction(fullDraftAction))}
+        >
+          {fullDraftBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+          Подготовить полный Telegram-пост
         </Button>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(masterState.tone)}`}>
           {masterState.message}

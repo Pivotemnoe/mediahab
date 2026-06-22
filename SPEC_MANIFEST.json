@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T16:26:42.852159+00:00",
+  "generated_at": "2026-06-22T17:01:24.610661+00:00",
   "canonical_language": "en",
-  "file_count": 517,
+  "file_count": 518,
   "files": [
     {
       "path": ".dockerignore",
@@ -352,8 +352,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 18271,
-      "sha256": "15fb05952e3182541d47977b3b1a154ee3aa383af41491c3d9e541236d78eb61"
+      "size_bytes": 19330,
+      "sha256": "2f53a433e8b146c5fa753fda07170d28759ff9e4256718aeb8298494e58a363a"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -472,8 +472,8 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 12827,
-      "sha256": "a9ca2868834a04ad3a46df6fc142ba65f4bbd38b583ef0d04a7fb199d99a261f"
+      "size_bytes": 17983,
+      "sha256": "21da77f241c5c9990777a7f53b42d3ba276342f1b2d30b48871419bda8e2023e"
     },
     {
       "path": "apps/web/src/services/content.ts",
@@ -1754,6 +1754,11 @@
       "path": "docs/exec-plans/UI_PHASE_11D_AI_GUIDED_TELEGRAM_DRAFT.md",
       "size_bytes": 1869,
       "sha256": "7ff43ef206e8d1031adeb8efdc9cd50c6b378a4445a6092d4f55853d70271e4f"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11E_FULL_TELEGRAM_DRAFT.md",
+      "size_bytes": 1955,
+      "sha256": "489b2a8fcef6a7528a6521786b80c3930f845e99891e11f7aee3b13010f3060b"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
