@@ -2,13 +2,11 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
-  AudioLines,
   Bot,
   CheckCircle2,
   Clock3,
   Download,
   FileCheck2,
-  FileText,
   Filter,
   GripVertical,
   History,
@@ -18,20 +16,17 @@ import {
   MessageSquareText,
   Mic,
   PanelRight,
-  Pause,
   Plus,
-  Play,
   RotateCcw,
   Save,
   Send,
   Smartphone,
   Sparkles,
-  Upload,
   WandSparkles,
-  WifiOff,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { LearningHints } from "@/components/layout/learning-hints";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -336,41 +331,133 @@ export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewMo
   );
 }
 
-export function NewContentShell({ viewModel }: { viewModel: NewContentViewModel }) {
+function pilotCreateErrorMessage(code?: string): string | null {
+  if (!code) {
+    return null;
+  }
+  if (code === "workspace_missing") {
+    return "Рабочее пространство не найдено. Войдите заново или откройте кабинет из основного браузера.";
+  }
+  if (code === "rubric_missing") {
+    return "В проекте пока нет рубрики для пилотного черновика.";
+  }
+  return "Не удалось создать черновик. Обновите страницу, войдите заново и попробуйте ещё раз.";
+}
+
+export function NewContentShell({
+  pilotError,
+  viewModel,
+}: {
+  pilotError?: string;
+  viewModel: NewContentViewModel;
+}) {
+  const createError = pilotCreateErrorMessage(pilotError);
+
   return (
     <div className="grid min-w-0 gap-5">
-      <StudioHeader label="Этап UI 06" title="Мобильная диктовка" />
-      <section className="mx-auto grid w-full max-w-6xl min-w-0 gap-4 lg:grid-cols-[420px_minmax(0,1fr)]">
+      <StudioHeader label="Пилот Telegram" title="Новый материал" />
+      <section className="mx-auto grid w-full max-w-5xl min-w-0 gap-4 lg:grid-cols-[minmax(0,1.1fr)_360px]">
         <div className="grid min-w-0 content-start gap-4">
+          <LearningHints
+            hints={[
+              {
+                title: "Начинайте с одной кнопки",
+                body: "На этом экране не нужно выбирать рубрику или искать проект. Кнопка создаёт рабочий черновик и переносит вас туда.",
+              },
+              {
+                title: "Запись будет на следующем экране",
+                body: "Если нужен голос или фото с телефона, сначала создайте черновик. Все реальные действия находятся внутри него.",
+              },
+            ]}
+            storageKey="tmh-learning-pilot-start"
+          />
           <Card className="grid gap-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone="info">PWA-запись</Badge>
-                  <Badge>Данные: {viewModel.modeLabel}</Badge>
+                  <Badge tone="success">рабочий пилот</Badge>
+                  <Badge>{viewModel.modeLabel}</Badge>
                 </div>
                 <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
-                  Новый материал голосом
+                  Создать черновик для Telegram
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  {viewModel.contextLabel}
+                  Нажмите кнопку ниже. После создания откроется рабочий черновик:
+                  там можно продиктовать текст, прикрепить фото или видео, собрать пост через ИИ и отправить его в тестовый Telegram.
                 </p>
               </div>
               <Smartphone className="shrink-0 text-primary" size={24} />
+            </div>
+            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
+              Проект для теста: <span className="font-medium text-foreground">{viewModel.contextLabel}</span>
             </div>
             {viewModel.notice ? (
               <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
                 {viewModel.notice}
               </div>
             ) : null}
+            {createError ? (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm leading-6 text-destructive">
+                {createError}
+              </div>
+            ) : null}
             {viewModel.modeLabel === "api" ? (
               <form action={startPilotContentAction}>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="h-12 w-full text-base">
                   <Plus size={16} />
-                  Создать реальный черновик
+                  Создать черновик и перейти к записи
                 </Button>
               </form>
             ) : null}
+          </Card>
+
+          <Card className="grid gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ListChecks size={18} className="text-primary" />
+              Что делать после создания
+            </div>
+            <div className="grid gap-2">
+              {[
+                ["Диктовка", "Нажать «Запись», надиктовать факт или впечатление, затем принять текст."],
+                ["Фото и видео", "Прикрепить файлы с телефона перед сборкой поста."],
+                ["ИИ-сборка", "Нажать «Подготовить полный Telegram-пост»."],
+                ["Публикация", "Проверить текст и нажать «Опубликовать в тестовый Telegram»."],
+              ].map(([step, helper], index) => (
+                <div
+                  className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
+                  key={step}
+                >
+                  <span className="grid size-8 place-items-center rounded bg-surface-muted text-xs text-muted">
+                    {index + 1}
+                  </span>
+                  <span>
+                    <span className="block font-medium text-foreground">{step}</span>
+                    <span className="mt-1 block leading-5 text-muted">{helper}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid min-w-0 content-start gap-4">
+          <Card className="grid gap-4">
+            <div>
+              <Badge tone="neutral">не запись</Badge>
+              <h2 className="mt-3 text-xl font-semibold text-foreground">
+                Здесь запись не идёт
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Эта страница только открывает рабочий черновик. Если вы видели таймер записи на этом экране, это был старый демо-макет, а не реальная активная запись.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-muted p-4 text-center">
+              <Mic className="mx-auto text-primary" size={32} />
+              <div className="mt-3 text-2xl font-semibold text-foreground">
+                00:00
+              </div>
+              <div className="mt-1 text-sm text-muted">ожидает создания черновика</div>
+            </div>
             <div className="grid gap-2 text-sm">
               {viewModel.resumeItems.map(({ label, value }) => (
                 <div
@@ -392,143 +479,18 @@ export function NewContentShell({ viewModel }: { viewModel: NewContentViewModel 
 
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <ListChecks size={18} className="text-primary" />
-              Шаги записи
-            </div>
-            <div className="grid gap-2">
-              {viewModel.captureSteps.map(({ status, step }, index) => (
-                <div
-                  className="grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-md border border-border p-2 text-sm"
-                  key={step}
-                >
-                  <span className="grid size-7 place-items-center rounded bg-surface-muted text-xs text-muted">
-                    {index + 1}
-                  </span>
-                  <span className="font-medium text-foreground">{step}</span>
-                  <Badge tone={status === "done" ? "success" : status === "active" ? "info" : "neutral"}>
-                    {status === "done" ? "готово" : status === "active" ? "сейчас" : "дальше"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="grid gap-4">
-            <div>
-              <Badge tone="info">{viewModel.activeCaptureBlock.progress}</Badge>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">
-                {viewModel.activeCaptureBlock.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                {viewModel.activeCaptureBlock.prompt}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-muted p-4 text-center">
-              <Mic className="mx-auto text-primary" size={32} />
-              <div className="mt-3 text-2xl font-semibold text-foreground">
-                {viewModel.activeCaptureBlock.duration}
-              </div>
-              <div className="mt-1 text-sm text-muted">идёт запись</div>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Button aria-label="Начать запись" size="sm" type="button">
-                <Play size={14} />
-                Запись
-              </Button>
-              <Button aria-label="Поставить запись на паузу" size="sm" type="button" variant="secondary">
-                <Pause size={14} />
-                Пауза
-              </Button>
-              <Button aria-label="Перезаписать блок" size="sm" type="button" variant="secondary">
-                <RotateCcw size={14} />
-                Заново
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {viewModel.recordingStates.map(({ label, state }) => (
-                <Badge key={state} tone={state === "recording" ? "success" : state === "error" ? "danger" : "neutral"}>
-                  {label}
-                </Badge>
-              ))}
-            </div>
-            <textarea
-              className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-              defaultValue={viewModel.activeCaptureBlock.transcript}
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary">
-                Назад
-              </Button>
-              <Button type="button">
-                <CheckCircle2 size={16} />
-                Зафиксировать
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid min-w-0 content-start gap-4">
-          <Card className="grid gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <WifiOff size={18} className="text-warning" />
-              Локальный черновик
-            </div>
-            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm">
-              <div className="font-medium text-foreground">{viewModel.offlineDraft.status}</div>
-              <div className="mt-1 text-muted">{viewModel.offlineDraft.saved}</div>
-              <div className="mt-1 text-muted">{viewModel.offlineDraft.queue}</div>
-            </div>
-            <Button disabled type="button">
-              <WandSparkles size={16} />
-              Собрать после синхронизации
-            </Button>
-            <p className="text-xs leading-5 text-muted">
-              ИИ и публикация недоступны, пока черновик не синхронизирован.
-            </p>
-          </Card>
-
-          <Card className="grid gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <FileText size={18} className="text-primary" />
-              Проверка перед сборкой
-            </div>
-            {viewModel.reviewBlocks.map(({ name, status, text }) => (
-              <div className="rounded-md border border-border p-3" key={name}>
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                  <div className="font-medium text-foreground">{name}</div>
-                  <Badge tone={status === "locked" ? "success" : status === "review" ? "warning" : "neutral"}>
-                    {status === "locked" ? "зафиксировано" : status === "review" ? "проверка" : "пусто"}
-                  </Badge>
-                </div>
-                <div className="mt-1 text-sm leading-6 text-muted">{text}</div>
-              </div>
-            ))}
-            <Button type="button">
-              <Upload size={16} />
-              Синхронизировать черновик
-            </Button>
-          </Card>
-
-          <Card className="grid gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <PanelRight size={18} className="text-primary" />
-              Краткие превью
+              Что уже подключено в пилоте
             </div>
             {viewModel.compactPreviews.map(({ note, platform, status }) => (
               <div className="rounded-md border border-border p-3 text-sm" key={platform}>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-foreground">{platform}</div>
-                  <Badge tone={status === "черновик" ? "info" : "warning"}>{status}</Badge>
+                  <Badge tone={platform === "Telegram" ? "success" : "warning"}>{status}</Badge>
                 </div>
                 <div className="mt-1 text-muted">{note}</div>
               </div>
             ))}
-            <Button asChild variant="secondary">
-              <Link href="/app/content/demo-review">
-                <MessageSquareText size={16} />
-                Открыть студию на компьютере
-              </Link>
-            </Button>
           </Card>
         </div>
       </section>
@@ -598,6 +560,24 @@ export function ContentStudioShell({
             {viewModel.notice}
           </Card>
         ) : null}
+
+        <LearningHints
+          hints={[
+            {
+              title: "Для теста нужен левый блок «Голосовой пилот»",
+              body: "Надиктуйте текст или вставьте его вручную, примите текст, прикрепите фото и нажмите подготовку полного Telegram-поста.",
+            },
+            {
+              title: "Средняя форма нужна для фактов",
+              body: "Она фиксирует отдельные поля вроде адреса, чека и блюд. Сейчас можно не заполнять всё, если проверяем только Telegram-публикацию.",
+            },
+            {
+              title: "Правая колонка показывает результат",
+              body: "Там видно превью площадок, факт-локи и проверки. Публикация всё равно остаётся ручной, после вашей команды.",
+            },
+          ]}
+          storageKey="tmh-learning-content-studio"
+        />
 
         <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
           <div className="grid min-w-0 content-start gap-4">

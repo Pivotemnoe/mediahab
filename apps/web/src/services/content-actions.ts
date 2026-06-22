@@ -468,41 +468,54 @@ export async function publishPilotTelegramAction(
 }
 
 export async function startPilotContentAction(): Promise<void> {
-  const me = await apiGet<MeResponse>("/api/v1/me");
-  const workspace = me.workspaces[0];
-  if (!workspace) {
-    throw new Error("Workspace is not available.");
-  }
+  let itemId: string;
 
-  const projectsResponse = await apiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
-  let project = projectsResponse.projects[0];
+  try {
+    const me = await apiGet<MeResponse>("/api/v1/me");
+    const workspace = me.workspaces[0];
+    if (!workspace) {
+      redirect("/app/content/new?pilot_error=workspace_missing");
+    }
 
-  if (!project) {
-    const imported = await apiRequest<{ project: ProjectOut }>(
-      `/api/v1/workspaces/${workspace.id}/projects/from-preset`,
-      {
-        body: { preset_key: "chto-poest-armavir" },
-        method: "POST",
+    const projectsResponse = await apiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
+    let project = projectsResponse.projects[0];
+
+    if (!project) {
+      const imported = await apiRequest<{ project: ProjectOut }>(
+        `/api/v1/workspaces/${workspace.id}/projects/from-preset`,
+        {
+          body: { preset_key: "chto-poest-armavir" },
+          method: "POST",
+        },
+      );
+      project = imported.project;
+    }
+
+    const rubricsResponse = await apiGet<RubricListResponse>(`/api/v1/projects/${project.id}/rubrics`);
+    const rubric = rubricsResponse.rubrics[0];
+    if (!rubric) {
+      redirect("/app/content/new?pilot_error=rubric_missing");
+    }
+
+    const item = await apiRequest<ContentItemOut>(`/api/v1/projects/${project.id}/content-items`, {
+      body: {
+        rubric_id: rubric.id,
+        title_internal: `Пилотный черновик: ${rubric.name}`,
       },
-    );
-    project = imported.project;
+      method: "POST",
+    });
+    itemId = item.id;
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      if (error.status === 401 || error.code === "csrf_required" || error.code === "csrf_invalid") {
+        redirect("/login?next=/app/content/new");
+      }
+      redirect(`/app/content/new?pilot_error=${encodeURIComponent(error.code)}`);
+    }
+    throw error;
   }
-
-  const rubricsResponse = await apiGet<RubricListResponse>(`/api/v1/projects/${project.id}/rubrics`);
-  const rubric = rubricsResponse.rubrics[0];
-  if (!rubric) {
-    throw new Error("Rubric is not available.");
-  }
-
-  const item = await apiRequest<ContentItemOut>(`/api/v1/projects/${project.id}/content-items`, {
-    body: {
-      rubric_id: rubric.id,
-      title_internal: `Пилотный черновик: ${rubric.name}`,
-    },
-    method: "POST",
-  });
 
   revalidatePath("/app");
   revalidatePath("/app/content");
-  redirect(`/app/content/${item.id}`);
+  redirect(`/app/content/${itemId}`);
 }

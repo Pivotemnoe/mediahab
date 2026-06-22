@@ -1,6 +1,13 @@
 import { AuthPage } from "@/components/phase02/auth-page";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ next?: string }>;
+}) {
+  const params = await searchParams;
+  const redirectTo = params?.next?.startsWith("/app") ? params.next : undefined;
+
   return (
     <AuthPage
       action="login"
@@ -22,6 +29,7 @@ export default function LoginPage() {
           type: "password",
         },
       ]}
+      redirectTo={redirectTo}
       submitLabel="Войти"
       secondaryHref="/forgot-password"
       secondaryLabel="Восстановить пароль"

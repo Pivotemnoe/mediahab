@@ -23,6 +23,7 @@ type AuthPageProps = {
   description: string;
   eyebrow?: string;
   fields: AuthField[];
+  redirectTo?: string;
   secondaryHref: string;
   secondaryLabel: string;
   submitLabel: string;
@@ -34,6 +35,7 @@ export function AuthPage({
   description,
   eyebrow = "Безопасный доступ",
   fields,
+  redirectTo,
   secondaryHref,
   secondaryLabel,
   submitLabel,
@@ -73,7 +75,7 @@ export function AuthPage({
         return;
       }
 
-      router.push("/app");
+      router.push(redirectTo ?? "/app");
       router.refresh();
     } catch {
       setError("Не удалось связаться с сервером. Проверьте соединение и попробуйте ещё раз.");

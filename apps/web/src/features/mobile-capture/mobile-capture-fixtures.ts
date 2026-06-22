@@ -1,7 +1,7 @@
 export const captureSteps = [
   ["Проект", "done"],
   ["Рубрика", "done"],
-  ["Атмосфера", "active"],
+  ["Создать черновик", "active"],
   ["Блюда", "next"],
   ["Проверка", "next"],
 ] as const;
@@ -16,12 +16,11 @@ export const recordingStates = [
 ] as const;
 
 export const activeCaptureBlock = {
-  title: "Атмосфера и сервис",
-  prompt: "Опишите посадку, музыку, ожидание, работу официантов и общее ощущение от места.",
-  progress: "3 из 7",
-  duration: "01:42",
-  transcript:
-    "Музыка местами играла слишком громко, потом её выключили. В зале было красиво, но официантов приходилось искать глазами.",
+  title: "Черновик ещё не создан",
+  prompt: "Сначала создайте рабочий черновик. Запись, фото, ИИ-сборка и Telegram-публикация находятся внутри материала.",
+  progress: "старт",
+  duration: "00:00",
+  transcript: "",
 } as const;
 
 export const offlineDraft = {

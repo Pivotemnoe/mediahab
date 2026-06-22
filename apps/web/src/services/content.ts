@@ -983,7 +983,7 @@ async function apiNewContent(): Promise<NewContentViewModel> {
     return {
       ...fallback,
       modeLabel: "api",
-      notice: "API-режим включён, но проект не найден. Показаны демо-данные мобильной диктовки.",
+      notice: "Проект для пилота не найден. Нажмите создание черновика: система подготовит тестовый проект, если это разрешено вашей сессией.",
     };
   }
 
@@ -992,7 +992,7 @@ async function apiNewContent(): Promise<NewContentViewModel> {
     ...fallback,
     contextLabel: `${project.name} · ${rubrics[0]?.name ?? "рубрика не выбрана"}`,
     modeLabel: "api",
-    notice: "Создание материала и live-запись пока не подключены к API. Показан технический mobile-capture сценарий.",
+    notice: "Это старт пилота. Реальная запись, фото, ИИ-сборка и публикация откроются после создания черновика.",
   };
 }
 

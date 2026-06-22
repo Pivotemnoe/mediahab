@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T17:15:43.610585+00:00",
+  "generated_at": "2026-06-22T17:48:43.878482+00:00",
   "canonical_language": "en",
-  "file_count": 519,
+  "file_count": 522,
   "files": [
     {
       "path": ".dockerignore",
@@ -107,8 +107,8 @@
     },
     {
       "path": "apps/web/src/app/app/content/new/page.tsx",
-      "size_bytes": 294,
-      "sha256": "809bc03d8a8834a5945aa2233f384e08ef10cd32003b674767a85dce386426d8"
+      "size_bytes": 440,
+      "sha256": "82d9b7982755dff93727473ae263929b8b00e3aa16d2e3063bdd303ddd32cd65"
     },
     {
       "path": "apps/web/src/app/app/content/page.tsx",
@@ -247,8 +247,8 @@
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
-      "size_bytes": 915,
-      "sha256": "ecebcf5ff1a65cf171efad4f64ef9d69a0bb8127dba1a22917efd1807effeed3"
+      "size_bytes": 1139,
+      "sha256": "7d9f34ac07f0ce7751b00c10212bae844ea82cdb70a8146127f1348ac32f349e"
     },
     {
       "path": "apps/web/src/app/page.tsx",
@@ -296,6 +296,11 @@
       "sha256": "789d20e050af4530d0671b6aa98b2db3325bc144af9d9cd0f230b94897e27f37"
     },
     {
+      "path": "apps/web/src/components/layout/learning-hints.tsx",
+      "size_bytes": 2332,
+      "sha256": "adebadb24d71336f5abacc924781e21de425e5350ab08a3fc2e1c94e62d33ddb"
+    },
+    {
       "path": "apps/web/src/components/layout/mobile-nav.tsx",
       "size_bytes": 1389,
       "sha256": "7f54f6401fb224d452a67a3e711bfdf1245a93c2e33181e5953c6cc01aa570f8"
@@ -322,8 +327,8 @@
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
-      "size_bytes": 5246,
-      "sha256": "4c300ad4fde67255f592818d90a52e4b2db7fdc5145abef774e23850f3322a12"
+      "size_bytes": 5297,
+      "sha256": "4565e963581363c7b146573513c6ca6cf6d7d9dacbfbad13e35f589de93f96f7"
     },
     {
       "path": "apps/web/src/components/phase02/cabinet-page.tsx",
@@ -342,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 36639,
-      "sha256": "0dfe75b2cdab3f6135fa7afbb91716f6000b1c877a8aa769f7f64c6c86316281"
+      "size_bytes": 36864,
+      "sha256": "f6d8be5540bd2630d003b232b4a0f8de4bdc4e60f8e255df6c9916b1036927b4"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -437,8 +442,8 @@
     },
     {
       "path": "apps/web/src/features/mobile-capture/mobile-capture-fixtures.ts",
-      "size_bytes": 2236,
-      "sha256": "bf96aefed39e5c7a3ca0841ad9b434d0693cdfef61d9fbd76f28622fd99e493e"
+      "size_bytes": 2081,
+      "sha256": "7cd9310888cc5aadc3f6bce1ed2661e1d86a59623c89bdd9470ec0f58b2936c3"
     },
     {
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
@@ -472,13 +477,13 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 17983,
-      "sha256": "21da77f241c5c9990777a7f53b42d3ba276342f1b2d30b48871419bda8e2023e"
+      "size_bytes": 18449,
+      "sha256": "cf46a1d20953b54667b6bf373515e9ab775df7a8375d18d11fca0b0fc9ba5318"
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 34210,
-      "sha256": "cc4a02c0f8303f2f8e75847231a89b4667fa90f972629f84acdf88cea99c1e78"
+      "size_bytes": 34310,
+      "sha256": "14fdc84f289b9379f0b93004af7562ddd7b7485302d82a5a04e38d9f8b7048b8"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -1764,6 +1769,16 @@
       "path": "docs/exec-plans/UI_PHASE_11F_PILOT_MEDIA_UPLOAD.md",
       "size_bytes": 1694,
       "sha256": "89e90b49e984e627029f1e44c63c6d9c58be95173bdf28efbf55d4e593a5e0b2"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11G_PILOT_UX_RECOVERY.md",
+      "size_bytes": 2160,
+      "sha256": "9be608463cb79c4683cd09f241fda2eabaec38456eb65a59b68b03086659a527"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11G_REPORT_RU.md",
+      "size_bytes": 2944,
+      "sha256": "35d342bb8e7928f6a88660d873207532114bb63d99e8e5f94483264f8334a25c"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
