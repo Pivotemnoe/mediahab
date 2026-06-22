@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T04:50:54.712563+00:00",
+  "generated_at": "2026-06-22T05:19:03.089051+00:00",
   "canonical_language": "en",
-  "file_count": 491,
+  "file_count": 495,
   "files": [
     {
       "path": ".dockerignore",
@@ -1396,6 +1396,16 @@
       "sha256": "18f9543f9cb61a67dc22bef667ce00e2dcb493f9fe371f1ea059854a0661e38f"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_10AX_API_SEEDED_BLOCKED_QUEUE_SMOKE.md",
+      "size_bytes": 4174,
+      "sha256": "8e11c38613513c298f31d3699a83813d78601154a83f6ce54612d6af3465785c"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_10AX_REPORT_RU.md",
+      "size_bytes": 4873,
+      "sha256": "1830f6575d878c4e785a3b317740503a37f131423ad99cd2860252b8eb5232cf"
+    },
+    {
       "path": "docs/exec-plans/UI_PHASE_10B_API_CONTRACTS.md",
       "size_bytes": 3938,
       "sha256": "c0f50ebe9f9cc9ca7fee55844dbc9a56b69501bc97965a965674fe2aa5e3196e"
@@ -2381,6 +2391,11 @@
       "sha256": "b6ca01c1d60fee10e2fad2c7fa36722e8eff8338f3cf957748977a8e9c1a2275"
     },
     {
+      "path": "tools/api_smoke_server.py",
+      "size_bytes": 1044,
+      "sha256": "8a599767a541ed902db3d227de1f6a0c36f3f105eadf4fb1f05ea8e9fb159cc7"
+    },
+    {
       "path": "tools/check_api_request_headers.mjs",
       "size_bytes": 3169,
       "sha256": "d601b251c5ddd5a3a68d1df3c8cebef9bf2e93f60c81f46f7f8c64325cb89717"
@@ -2399,6 +2414,11 @@
       "path": "tools/check_guided_form_api_mode.py",
       "size_bytes": 6547,
       "sha256": "57e0969bf860089ba3b8cdf9e7f25b331ad6ad6e6bc05e1e9db42ef0170a44c6"
+    },
+    {
+      "path": "tools/check_guided_queue_api_seeded_smoke.mjs",
+      "size_bytes": 14594,
+      "sha256": "f798e389e4be612660899fc754146d65b8722584f74ee35cd6e21db2a1d306cd"
     },
     {
       "path": "tools/check_guided_queue_contract.mjs",
