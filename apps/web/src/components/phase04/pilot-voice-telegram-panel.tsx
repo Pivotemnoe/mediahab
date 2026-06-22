@@ -15,12 +15,32 @@ import {
 } from "@/services/guided-action-state";
 import {
   type BlockOut,
+  type ContentItemOut,
   type MediaOut,
   type MediaPresignResponse,
   type TranscriptionJobOut,
 } from "@/services/openapi-types";
 
 type CaptureState = "idle" | "recording" | "uploading" | "transcribing" | "ready" | "accepted" | "error";
+type PilotFieldKey = "address" | "atmosphere" | "venue_name";
+
+const pilotFields: Array<{ description: string; key: PilotFieldKey; label: string }> = [
+  {
+    description: "общее впечатление, сервис, обстановка",
+    key: "atmosphere",
+    label: "Атмосфера",
+  },
+  {
+    description: "название места коротко",
+    key: "venue_name",
+    label: "Заведение",
+  },
+  {
+    description: "адрес или ориентир",
+    key: "address",
+    label: "Адрес",
+  },
+];
 
 interface PilotVoiceTelegramPanelProps {
   canMutate: boolean;
@@ -41,7 +61,7 @@ async function apiRequest<T>(
   path: string,
   options: {
     body?: unknown;
-    method: "POST" | "PUT";
+    method: "GET" | "POST" | "PUT";
   },
 ): Promise<T> {
   const token = csrfToken();
@@ -79,6 +99,10 @@ async function apiRequest<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+function pilotFieldLabel(fieldKey: PilotFieldKey): string {
+  return pilotFields.find((field) => field.key === fieldKey)?.label ?? fieldKey;
 }
 
 function actionToneClass(tone: GuidedActionState["tone"]): string {
@@ -125,6 +149,8 @@ export function PilotVoiceTelegramPanel({
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [message, setMessage] = useState("Нажмите «Запись», продиктуйте факт и остановите запись.");
   const [transcript, setTranscript] = useState(initialTranscript);
+  const [targetField, setTargetField] = useState<PilotFieldKey>("atmosphere");
+  const [jobTargetField, setJobTargetField] = useState<PilotFieldKey | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -136,6 +162,7 @@ export function PilotVoiceTelegramPanel({
   const masterBusy = isMasterPending || isMasterTransitionPending;
   const publishBusy = isPublishPending || isPublishTransitionPending;
   const disabled = !canMutate || !workspaceId || itemVersion === null;
+  const targetLocked = captureState === "recording" || captureState === "uploading" || captureState === "transcribing" || Boolean(jobId);
 
   async function startRecording() {
     if (disabled) {
@@ -184,6 +211,7 @@ export function PilotVoiceTelegramPanel({
     setMediaRecorder(null);
     setRecordedBlob(null);
     setJobId(null);
+    setJobTargetField(null);
     setCaptureState("idle");
     setMessage("Запись сброшена. Можно продиктовать заново или загрузить файл.");
   }
@@ -229,18 +257,22 @@ export function PilotVoiceTelegramPanel({
         method: "POST",
       });
 
-      const block = await apiRequest<BlockOut>(`/api/v1/content-items/${contentId}/blocks/atmosphere`, {
+      const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentId}`, {
+        method: "GET",
+      });
+      const fieldLabel = pilotFieldLabel(targetField);
+      const block = await apiRequest<BlockOut>(`/api/v1/content-items/${contentId}/blocks/${targetField}`, {
         body: {
           source_media_id: presign.media_id,
           source_type: "voice",
           value: "",
-          version: itemVersion,
+          version: currentItem.version,
         },
         method: "PUT",
       });
 
       setCaptureState("transcribing");
-      setMessage("Расшифровываю голос через OpenAI STT...");
+      setMessage(`Расшифровываю голос для поля «${fieldLabel}» через OpenAI STT...`);
       const job = await apiRequest<TranscriptionJobOut>(`/api/v1/content-blocks/${block.id}/transcribe`, {
         body: {
           media_id: presign.media_id,
@@ -249,9 +281,10 @@ export function PilotVoiceTelegramPanel({
         method: "POST",
       });
       setJobId(job.id);
+      setJobTargetField(targetField);
       setTranscript(job.transcript_text);
       setCaptureState("ready");
-      setMessage("Текст готов. Проверьте его и нажмите «Принять текст».");
+      setMessage(`Текст для поля «${fieldLabel}» готов. Проверьте его и нажмите «Принять текст».`);
     } catch (error) {
       setCaptureState("error");
       setMessage(error instanceof Error ? error.message : "Не удалось расшифровать запись.");
@@ -271,8 +304,12 @@ export function PilotVoiceTelegramPanel({
         },
         method: "POST",
       });
+      const fieldLabel = pilotFieldLabel(jobTargetField ?? targetField);
       setCaptureState("accepted");
-      setMessage("Текст принят и зафиксирован в поле «Атмосфера». Теперь можно собрать мастер-текст.");
+      setRecordedBlob(null);
+      setJobId(null);
+      setJobTargetField(null);
+      setMessage(`Текст принят и зафиксирован в поле «${fieldLabel}». Можно заполнить следующее поле или собрать мастер-текст.`);
     } catch (error) {
       setCaptureState("error");
       setMessage(error instanceof Error ? error.message : "Не удалось принять текст.");
@@ -302,6 +339,25 @@ export function PilotVoiceTelegramPanel({
       <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
         {message}
       </div>
+      <label className="grid gap-2 text-sm">
+        <span className="font-medium text-foreground">Куда сохранить следующую диктовку</span>
+        <select
+          className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+          disabled={disabled || targetLocked}
+          value={targetField}
+          onChange={(event) => {
+            const nextField = event.currentTarget.value as PilotFieldKey;
+            setTargetField(nextField);
+            setMessage(`Следующая запись будет сохранена в поле «${pilotFieldLabel(nextField)}».`);
+          }}
+        >
+          {pilotFields.map((field) => (
+            <option key={field.key} value={field.key}>
+              {field.label} — {field.description}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="grid grid-cols-3 gap-2">
         <Button disabled={disabled || captureState === "recording"} size="sm" type="button" onClick={startRecording}>
           <Play size={14} />

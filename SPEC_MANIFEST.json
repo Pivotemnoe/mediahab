@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T15:38:45.783237+00:00",
+  "generated_at": "2026-06-22T16:13:12.869990+00:00",
   "canonical_language": "en",
-  "file_count": 515,
+  "file_count": 516,
   "files": [
     {
       "path": ".dockerignore",
@@ -352,8 +352,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 14899,
-      "sha256": "2862a75ef26965503b5a4f06a7b381852abda24d11004610d1e120dd140bab72"
+      "size_bytes": 17418,
+      "sha256": "924a2032b2967feec92edab89415da1e7ef6232ea4e8bc15ff4237c162ba68a3"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1744,6 +1744,11 @@
       "path": "docs/exec-plans/UI_PHASE_11B_TELEGRAM_PILOT_HARDENING.md",
       "size_bytes": 1866,
       "sha256": "add15024f1627693a4a013de6a6b3351c72004d4e61882bad75a2a2baf7eb2b0"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11C_MULTI_FIELD_VOICE_PILOT.md",
+      "size_bytes": 1946,
+      "sha256": "d23dc5c3ca4b772663b16b914b6def4bb14ae99d1cc8c2d509efa698b7b84173"
     },
     {
       "path": "docs/frontend/COMPONENT_MAP.md",
