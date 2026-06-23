@@ -71,7 +71,7 @@ try {
   const browser = await CdpClient.connect(version.webSocketDebuggerUrl);
   const checks = [];
 
-  for (const width of [390, 1440]) {
+  for (const width of [390, 1440, 1920]) {
     checks.push(await runCheck(browser, { width }));
   }
 
@@ -109,6 +109,12 @@ async function runCheck(browser, check) {
       const visibleTelegramButtons = Array.from(document.querySelectorAll('button'))
         .filter((button) => button.innerText.trim() === 'Опубликовать в тестовый Telegram' && isVisible(button));
       const visibleDetails = Array.from(document.querySelectorAll('details')).filter(isVisible);
+      const desktopAdvanced = document.querySelector('[data-testid="desktop-advanced-studio"]');
+      const visibleMaterialWizards = Array.from(document.querySelectorAll('[data-testid="material-wizard"]'))
+        .filter(isVisible);
+      const visibleWizardText = visibleMaterialWizards.map((node) => node.textContent ?? '').join('\\n');
+      const visibleCapturePanel = Array.from(document.querySelectorAll('[data-testid="material-capture-panel"]'))
+        .find(isVisible);
       const materialSteps = Array.from(document.querySelectorAll('[data-testid="material-wizard-step"]'))
         .filter(isVisible)
         .map((node) => node.innerText);
@@ -124,18 +130,24 @@ async function runCheck(browser, check) {
       ];
       return {
         clientWidth: document.documentElement.clientWidth,
+        desktopAdvancedStartsClosed: Boolean(desktopAdvanced && !desktopAdvanced.open),
+        desktopAdvancedVisible: isVisible(desktopAdvanced),
         detailsOpenCount: visibleDetails.filter((details) => details.open).length,
         hasDisabledButton: Array.from(document.querySelectorAll('button')).some((button) => button.disabled),
         hasGuidedField: Boolean(document.querySelector('form [name="fieldKey"]')),
         hasMain: Boolean(document.querySelector('main')),
-        hasMaterialWizard: text.includes('Мастер материала'),
+        hasMaterialWizard: visibleWizardText.includes('Мастер материала'),
         hasPlatformPreviews: text.includes('Превью площадок'),
         hasPreflightHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-preflight')),
         hasQueueStatus: queueStatuses.length > 0,
         hasRepeatableGroup: Boolean(document.querySelector('form [name="groupKey"]')),
         hasRetryShellHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-retry-shell')),
-        hasTemplateName: text.includes('Шаблон: Обзор места'),
-        hasTechnicalStudio: text.includes('Фактическая форма рубрики') && text.includes('Факт-локи') && text.includes('Проверки'),
+        hasVisibleCapturePanel: Boolean(visibleCapturePanel?.textContent?.includes('Сбор материала')),
+        hasVisiblePrimaryPreview: text.includes('Превью площадок'),
+        hasTemplateName: visibleWizardText.includes('Шаблон: Обзор места'),
+        hasTechnicalStudio: Boolean(desktopAdvanced?.textContent?.includes('Фактическая форма рубрики')) &&
+          Boolean(desktopAdvanced?.textContent?.includes('Факт-локи')) &&
+          Boolean(desktopAdvanced?.textContent?.includes('Проверки')),
         legacyCopyPresent: ['Голосовой пилот', 'Мастер и Telegram', 'Мобильный путь теста', 'Обучение на телефоне']
           .some((value) => text.includes(value)),
         materialStepCount: materialSteps.length,
@@ -144,9 +156,8 @@ async function runCheck(browser, check) {
         telegramButtonsInsideOutput: visibleTelegramButtons.length > 0 &&
           visibleTelegramButtons.every((button) => Boolean(button.closest('[data-testid="telegram-output-block"]'))),
         visibleDetailsCount: visibleDetails.length,
-        wizardBeforeCapture: text.indexOf('Мастер материала') !== -1 &&
-          text.indexOf('Сбор материала') !== -1 &&
-          text.indexOf('Мастер материала') < text.indexOf('Сбор материала'),
+        wizardBeforeCapture: Boolean(visibleMaterialWizards[0] && visibleCapturePanel) &&
+          visibleMaterialWizards[0].getBoundingClientRect().top <= visibleCapturePanel.getBoundingClientRect().top,
       };
     })()`,
   });
@@ -171,6 +182,10 @@ async function runCheck(browser, check) {
     assert.equal(value.visibleDetailsCount >= 3, true, `${check.width}px mobile details sections missing`);
     assert.equal(value.detailsOpenCount, 0, `${check.width}px mobile details must start collapsed`);
   } else {
+    assert.equal(value.desktopAdvancedVisible, true, `${check.width}px desktop advanced studio summary missing`);
+    assert.equal(value.desktopAdvancedStartsClosed, true, `${check.width}px desktop advanced studio must start collapsed`);
+    assert.equal(value.hasVisibleCapturePanel, true, `${check.width}px desktop capture panel missing from primary workspace`);
+    assert.equal(value.hasVisiblePrimaryPreview, true, `${check.width}px desktop platform preview missing from primary workspace`);
     assert.equal(value.hasTechnicalStudio, true, `${check.width}px desktop technical studio missing`);
     assert.equal(value.hasPlatformPreviews, true, `${check.width}px desktop platform previews missing`);
   }

@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-23T15:41:47.743839+00:00",
+  "generated_at": "2026-06-23T17:22:06.376661+00:00",
   "canonical_language": "en",
-  "file_count": 526,
+  "file_count": 528,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 41157,
-      "sha256": "c4fa38eb8ea8d459033be26d2e6d9960883c95fb17aac34cb4264a2a699bf7ab"
+      "size_bytes": 41255,
+      "sha256": "a832e1fb89438d50dd775d9c81a1707a3fff7ee93ebeb9e4d46db46c7055c0b6"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -357,8 +357,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 27237,
-      "sha256": "7a35f51c75456b898dc71914bb2e88c922bd98064cdd926b031d8e008a7c4d7e"
+      "size_bytes": 27274,
+      "sha256": "9839c662f4b170b72f8039a0461f8ded0936f20a03042b635f7d305722112208"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -1801,6 +1801,16 @@
       "sha256": "6ff795bffd11418f6f52db4dd96524077050e0517e639878c5ae06e5b3bb0b69"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11J_DESKTOP_PRIMARY_MATERIAL_WORKSPACE.md",
+      "size_bytes": 1915,
+      "sha256": "e9e6530199aa6f32fb1f9995b7f6b1982ae49a85f5d7bc1d9eb6ffac6fabf0e8"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11J_REPORT_RU.md",
+      "size_bytes": 3811,
+      "sha256": "41c875bdad769900ce046d4e30306c0aa8ac6d883d8aba14e0abe40f0b7875b8"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -2542,8 +2552,8 @@
     },
     {
       "path": "tools/check_content_fixture_visual_smoke.mjs",
-      "size_bytes": 10567,
-      "sha256": "f397c16bd1ee0ad1ecc4d89db9e8c2319485c4ff2409784363d23ad1146ef98d"
+      "size_bytes": 11995,
+      "sha256": "4bf11fbd19c60d17f601704ee3e26528cbae80e5cbfab617744dddaa8de122ee"
     },
     {
       "path": "tools/check_guided_action_errors.mjs",

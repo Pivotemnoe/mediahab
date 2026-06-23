@@ -425,7 +425,7 @@ export function PilotVoiceTelegramPanel({
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3" data-testid="material-capture-panel">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Mic size={18} className="text-primary" />
         Сбор материала

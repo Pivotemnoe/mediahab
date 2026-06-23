@@ -736,25 +736,6 @@ export function ContentStudioShell({
           </Card>
         ) : null}
 
-        <LearningHints
-          className="hidden xl:grid"
-          hints={[
-            {
-              title: "Начинайте с мастера материала",
-              body: "Сначала проверьте шаги шаблона, затем соберите факты голосом, текстом или медиа.",
-            },
-            {
-              title: "Форма нужна для фактов",
-              body: "Она фиксирует отдельные поля вроде адреса, чека и блюд. Эти данные защищают ИИ-сборку от выдуманных деталей.",
-            },
-            {
-              title: "Правая колонка показывает версии",
-              body: "Там видно превью площадок, факт-локи и проверки. Публикация остаётся ручной, после вашей команды.",
-            },
-          ]}
-          storageKey="tmh-learning-content-studio"
-        />
-
         <div className="grid min-w-0 gap-4 xl:hidden">
           <MaterialWizardCard flow={viewModel.materialFlow} />
           <Card>
@@ -798,10 +779,9 @@ export function ContentStudioShell({
           </MobileDetails>
         </div>
 
-        <div className="hidden min-w-0 gap-4 xl:grid xl:grid-cols-[340px_minmax(0,1fr)_360px]">
-          <div className="grid min-w-0 content-start gap-4">
+        <div className="hidden min-w-0 gap-5 xl:grid">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)_360px]">
             <MaterialWizardCard flow={viewModel.materialFlow} />
-            <InputBlocksCard viewModel={viewModel} />
 
             <Card>
               <PilotVoiceTelegramPanel
@@ -812,91 +792,112 @@ export function ContentStudioShell({
                 workspaceId={viewModel.workspaceId}
               />
             </Card>
+
+            <div className="hidden 2xl:block">
+              <PlatformPreviewsCard viewModel={viewModel} />
+            </div>
           </div>
 
-          <div className="grid min-w-0 content-start gap-4">
-            <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
-
-            <Card className="grid gap-4">
-              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <MessageSquareText size={18} className="text-primary" />
-                    Мастер-черновик
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-muted">
-                    Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
-                  </p>
-                </div>
-                <Badge tone="info">{viewModel.masterBudget}</Badge>
-              </div>
-              <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
-                {viewModel.masterDraftParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </article>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary">
-                  <Sparkles size={16} />
-                  Пересобрать выбранный раздел
-                </Button>
-                <Button type="button">
-                  <FileCheck2 size={16} />
-                  Принять мастер-текст
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Bot size={18} className="text-primary" />
-                ИИ-предложения
-              </div>
-              {viewModel.aiSuggestions.map(({ action, name, text }) => (
-                <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{name}</div>
-                    <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" type="button">
-                      <CheckCircle2 size={14} />
-                      {action === "принять" ? "Принять" : "Принять правку"}
-                    </Button>
-                    <Button size="sm" type="button" variant="secondary">
-                      <MessageSquareText size={14} />
-                      Изменить
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </Card>
-
-            <Card className="grid gap-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <History size={18} className="text-primary" />
-                История версий
-              </div>
-              {viewModel.revisionEvents.map(({ event, time, version }) => (
-                <div
-                  className="grid grid-cols-[48px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
-                  key={version}
-                >
-                  <Badge>{version}</Badge>
-                  <div>
-                    <div className="font-medium text-foreground">{event}</div>
-                    <div className="mt-1 text-xs text-muted">{time}</div>
-                  </div>
-                </div>
-              ))}
-            </Card>
-          </div>
-
-          <div className="grid min-w-0 content-start gap-4">
+          <div className="2xl:hidden">
             <PlatformPreviewsCard viewModel={viewModel} />
-            <FactLocksCard viewModel={viewModel} />
-            <ChecksCard viewModel={viewModel} />
           </div>
+
+          <details
+            className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+            data-testid="desktop-advanced-studio"
+          >
+            <summary className="cursor-pointer text-sm font-medium text-foreground">
+              Расширенный режим: факты, проверки, мастер-черновик и история
+            </summary>
+            <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+              <div className="grid min-w-0 content-start gap-4">
+                <InputBlocksCard viewModel={viewModel} />
+                <FactLocksCard viewModel={viewModel} />
+              </div>
+
+              <div className="grid min-w-0 content-start gap-4">
+                <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
+
+                <Card className="grid gap-4">
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <MessageSquareText size={18} className="text-primary" />
+                        Мастер-черновик
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-muted">
+                        Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
+                      </p>
+                    </div>
+                    <Badge tone="info">{viewModel.masterBudget}</Badge>
+                  </div>
+                  <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
+                    {viewModel.masterDraftParagraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="secondary">
+                      <Sparkles size={16} />
+                      Пересобрать выбранный раздел
+                    </Button>
+                    <Button type="button">
+                      <FileCheck2 size={16} />
+                      Принять мастер-текст
+                    </Button>
+                  </div>
+                </Card>
+
+                <Card className="grid gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Bot size={18} className="text-primary" />
+                    ИИ-предложения
+                  </div>
+                  {viewModel.aiSuggestions.map(({ action, name, text }) => (
+                    <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
+                      <div>
+                        <div className="text-sm font-medium text-foreground">{name}</div>
+                        <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" type="button">
+                          <CheckCircle2 size={14} />
+                          {action === "принять" ? "Принять" : "Принять правку"}
+                        </Button>
+                        <Button size="sm" type="button" variant="secondary">
+                          <MessageSquareText size={14} />
+                          Изменить
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+
+                <Card className="grid gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <History size={18} className="text-primary" />
+                    История версий
+                  </div>
+                  {viewModel.revisionEvents.map(({ event, time, version }) => (
+                    <div
+                      className="grid grid-cols-[48px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
+                      key={version}
+                    >
+                      <Badge>{version}</Badge>
+                      <div>
+                        <div className="font-medium text-foreground">{event}</div>
+                        <div className="mt-1 text-xs text-muted">{time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+              </div>
+
+              <div className="grid min-w-0 content-start gap-4">
+                <ChecksCard viewModel={viewModel} />
+              </div>
+            </div>
+          </details>
         </div>
       </section>
     </div>
