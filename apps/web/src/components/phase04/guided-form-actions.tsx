@@ -497,9 +497,9 @@ function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
     disabled: "Автосохранение включится в API-режиме для изменяемых полей.",
     failed: "Автосохранение не прошло. Локальный черновик сохранён в браузере.",
     idle: "Автосохранение ждёт ввода.",
-    pending: "Автосохраняем через backend...",
+    pending: "Автосохраняем через сервер...",
     queued: "Автосохранение запланировано.",
-    synced: "Автосохранено через backend.",
+    synced: "Автосохранено через сервер.",
   };
 
   const tone: GuidedActionState["tone"] =

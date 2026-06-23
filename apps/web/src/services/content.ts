@@ -47,6 +47,20 @@ export interface ContentIndexViewModel {
   notice?: string;
 }
 
+type Tone = "info" | "neutral" | "success" | "warning" | "danger";
+
+export interface MaterialCaptureFlowViewModel {
+  primaryOutput: string;
+  sourceLabel: string;
+  steps: Array<{
+    helper: string;
+    label: string;
+    status: string;
+    tone: Tone;
+  }>;
+  templateName: string;
+}
+
 export interface ContentStudioViewModel {
   aiSuggestions: Array<{
     action: string;
@@ -80,6 +94,7 @@ export interface ContentStudioViewModel {
   }>;
   masterDraftParagraphs: string[];
   materialLabel: string;
+  materialFlow: MaterialCaptureFlowViewModel;
   masterBudget: string;
   modeLabel: string;
   notice?: string;
@@ -167,6 +182,7 @@ export interface NewContentViewModel {
     status: string;
   }>;
   contextLabel: string;
+  materialFlow: MaterialCaptureFlowViewModel;
   modeLabel: string;
   notice?: string;
   offlineDraft: {
@@ -207,6 +223,64 @@ const fixtureItems = [
     version: "v7",
   },
 ] as const;
+
+function placeReviewMaterialFlow(sourceLabel: string): MaterialCaptureFlowViewModel {
+  return {
+    primaryOutput: "Telegram: первая площадка",
+    sourceLabel,
+    templateName: "Обзор места",
+    steps: [
+      {
+        label: "Место и адрес",
+        helper: "Название, адрес, ориентир и чек фиксируются как факты.",
+        status: "факты",
+        tone: "success",
+      },
+      {
+        label: "Медиа",
+        helper: "Фото и видео прикрепляются к материалу до сборки версий.",
+        status: "медиа",
+        tone: "info",
+      },
+      {
+        label: "Атмосфера",
+        helper: "Обстановка, сервис, ожидание и важные наблюдения.",
+        status: "сбор",
+        tone: "info",
+      },
+      {
+        label: "Блюда",
+        helper: "Повторяемые позиции: название, цена, впечатления.",
+        status: "сбор",
+        tone: "info",
+      },
+      {
+        label: "Итог",
+        helper: "Вывод, кому подходит место и честные оговорки.",
+        status: "сбор",
+        tone: "warning",
+      },
+      {
+        label: "ИИ-блоки",
+        helper: "ИИ предлагает крючок, призыв к действию, оценки и собирает мастер-материал.",
+        status: "после фактов",
+        tone: "neutral",
+      },
+      {
+        label: "Версии платформ",
+        helper: "Мастер адаптируется отдельно под Telegram, MAX, Instagram и будущие площадки.",
+        status: "после ИИ",
+        tone: "neutral",
+      },
+      {
+        label: "Публикация",
+        helper: "Отправка остаётся ручной и выбирается отдельно для каждой платформы.",
+        status: "подтверждение",
+        tone: "neutral",
+      },
+    ],
+  };
+}
 
 type GuidedBlockSource = Pick<
   BlockOut,
@@ -492,7 +566,7 @@ function inputKind(fieldType: string): GuidedFormFieldViewModel["inputKind"] {
 
 function generatedFieldLabel(fieldKey: string): string {
   const labels: Record<string, string> = {
-    cta: "CTA",
+    cta: "Призыв к действию",
     hook: "Хук",
     master_text: "Мастер-текст",
     platform_variants: "Варианты площадок",
@@ -653,8 +727,8 @@ function guidedFormView(
     canMutate: params.canMutate,
     description:
       params.canMutate
-        ? "Поля построены из активной версии рубрики. Сохранение идёт через backend с CSRF и проверкой версии материала."
-        : "Поля построены из активной версии рубрики. В fixture mode сохранение отключено.",
+        ? "Поля построены из активной версии рубрики. Сохранение идёт через сервер с CSRF и проверкой версии материала."
+        : "Поля построены из активной версии рубрики. В демо-режиме сохранение отключено.",
     fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
     generatedFields: params.generatedFields.map(generatedFieldLabel),
     itemVersion: params.itemVersion,
@@ -743,7 +817,7 @@ function stringFromJson(object: Record<string, unknown>, key: string): string | 
 function fixtureContentIndex(): ContentIndexViewModel {
   return {
     items: fixtureItems.map((item) => item),
-    modeLabel: "fixtures",
+    modeLabel: "демо",
   };
 }
 
@@ -763,10 +837,11 @@ function fixtureContentStudio(contentId: string): ContentStudioViewModel {
       source,
       status,
     })),
+    materialFlow: placeReviewMaterialFlow(studioSummary.rubric),
     masterBudget: "3 860 / 4 096",
     masterDraftParagraphs: [...masterDraftParagraphs],
     materialLabel: contentId,
-    modeLabel: "fixtures",
+    modeLabel: "демо",
     platformPreviews: platformPreviews.map((preview) => ({ ...preview })),
     revisionEvents: revisionEvents.map(([version, event, time]) => ({ event, time, version })),
     summary: { ...studioSummary },
@@ -781,7 +856,8 @@ function fixtureNewContent(): NewContentViewModel {
     captureSteps: captureSteps.map(([step, status]) => ({ status, step })),
     compactPreviews: compactPreviews.map(([platform, status, note]) => ({ note, platform, status })),
     contextLabel: "Что поесть? Армавир · Обзор недели",
-    modeLabel: "fixtures",
+    materialFlow: placeReviewMaterialFlow("Обзор недели"),
+    modeLabel: "демо",
     offlineDraft: { ...offlineDraft },
     recordingStates: recordingStates.map(([state, label]) => ({ label, state })),
     resumeItems: resumeItems.map(([label, value]) => ({ label, value })),
@@ -892,8 +968,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     guidedFormResponse ? null : "Форма рубрики из API недоступна.",
     blocksResponse ? null : "Блоки материала из API недоступны.",
     variantsResponse ? null : "Платформенные превью из API недоступны.",
-    "История версий пока fallback: backend не даёт list endpoint для content revisions.",
+    "История версий пока показана демо-данными: сервер ещё не отдаёт список редакций материала.",
   ].filter(Boolean);
+  const rubricLabel = rubricNames.get(item.rubric_id) ?? "Рубрика";
 
   return {
     aiSuggestions: fallback.aiSuggestions,
@@ -934,10 +1011,11 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
         }))
       : fallback.inputBlocks,
     materialLabel: item.id,
+    materialFlow: placeReviewMaterialFlow(rubricLabel),
     masterBudget: variants[0] ? `${variants[0].character_count} знаков` : fallback.masterBudget,
     masterDraftParagraphs: textBlocks.length ? textBlocks : fallback.masterDraftParagraphs,
     modeLabel: "api",
-    notice: notices.length ? `${notices.join(" ")} Панели без read endpoint показаны fallback-данными.` : undefined,
+    notice: notices.length ? `${notices.join(" ")} Панели без серверного чтения показаны демо-данными.` : undefined,
     platformPreviews: variants.length
       ? latestVariantsByPlatform(variants).map((variant) => ({
           budget: `${variant.character_count} знаков`,
@@ -958,7 +1036,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
         : fallback.summary.range,
       project: project?.id === item.project_id ? project.name : "Проект",
       revision: `v${item.version}`,
-      rubric: rubricNames.get(item.rubric_id) ?? "Рубрика",
+      rubric: rubricLabel,
       status: statusLabel(item.status),
       title: item.title_internal,
       lockedFacts: lockedBlocks.length ? `${lockedBlocks.length} зафиксировано` : fallback.summary.lockedFacts,
@@ -988,9 +1066,11 @@ async function apiNewContent(): Promise<NewContentViewModel> {
   }
 
   const rubrics = await rubricsForProject(project.id);
+  const rubricName = rubrics[0]?.name ?? "рубрика не выбрана";
   return {
     ...fallback,
-    contextLabel: `${project.name} · ${rubrics[0]?.name ?? "рубрика не выбрана"}`,
+    contextLabel: `${project.name} · ${rubricName}`,
+    materialFlow: placeReviewMaterialFlow(rubricName),
     modeLabel: "api",
     notice: "Это старт пилота. Реальная запись, фото, ИИ-сборка и публикация откроются после создания черновика.",
   };
@@ -1006,8 +1086,8 @@ export async function getContentIndexViewModel(): Promise<ContentIndexViewModel>
   } catch {
     return {
       ...fixtureContentIndex(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "демо после ошибки API",
+      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
     };
   }
 }
@@ -1022,8 +1102,8 @@ export async function getContentStudioViewModel(contentId: string): Promise<Cont
   } catch {
     return {
       ...fixtureContentStudio(contentId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "демо после ошибки API",
+      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
     };
   }
 }
@@ -1038,8 +1118,8 @@ export async function getNewContentViewModel(): Promise<NewContentViewModel> {
   } catch {
     return {
       ...fixtureNewContent(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "демо после ошибки API",
+      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
     };
   }
 }

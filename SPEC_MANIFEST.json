@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-22T18:27:05.994430+00:00",
+  "generated_at": "2026-06-23T15:41:47.743839+00:00",
   "canonical_language": "en",
-  "file_count": 524,
+  "file_count": 526,
   "files": [
     {
       "path": ".dockerignore",
@@ -347,18 +347,18 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 41531,
-      "sha256": "7258f8393cf895d0887ddeccc6df3bbc04c370f2063bf3eb408c8584837dc8e1"
+      "size_bytes": 41157,
+      "sha256": "c4fa38eb8ea8d459033be26d2e6d9960883c95fb17aac34cb4264a2a699bf7ab"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
-      "size_bytes": 34164,
-      "sha256": "1219c44693432844385154e5492b235af52777e137f835f7f1b9018fee25762f"
+      "size_bytes": 34174,
+      "sha256": "1c71e777972f8b3f873d8a29adf885a68da29355b006da0ed4f6309590e630c9"
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 26704,
-      "sha256": "c34f2df49501b6fe0aa33fd775db6555ee732d6453095526059c383510724ba7"
+      "size_bytes": 27237,
+      "sha256": "7a35f51c75456b898dc71914bb2e88c922bd98064cdd926b031d8e008a7c4d7e"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -477,13 +477,13 @@
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
-      "size_bytes": 18449,
-      "sha256": "cf46a1d20953b54667b6bf373515e9ab775df7a8375d18d11fca0b0fc9ba5318"
+      "size_bytes": 18471,
+      "sha256": "296cb1c7691f1a4d871d557abed095b0a4d055780ed6246029d538ff14f01f96"
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 34310,
-      "sha256": "14fdc84f289b9379f0b93004af7562ddd7b7485302d82a5a04e38d9f8b7048b8"
+      "size_bytes": 37280,
+      "sha256": "ac9271b131054e0f19945c612107249c4369f754ffbab1a824f7f18b49864755"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -842,8 +842,8 @@
     },
     {
       "path": "docs/OPEN_QUESTIONS.md",
-      "size_bytes": 9734,
-      "sha256": "1604bac1d46bb1be022a54b363813e4f977beab7a33c05f7809578affab4a8b5"
+      "size_bytes": 9956,
+      "sha256": "49b2926d66a2f7930ebac7d9d94d3a3c908679435e9658382dc9ddf6b6133075"
     },
     {
       "path": "docs/adr/0001-monorepo-and-tooling.md",
@@ -1791,6 +1791,16 @@
       "sha256": "465bf3c47ddd8f45dd77fedbdefd7ecdc4e996844d3984ecb19b3a0f6642c1d0"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11I_REPORT_RU.md",
+      "size_bytes": 4099,
+      "sha256": "b26fe05fcd5219a5aa3eafc84465121611cef6f6b5889cf05851a8aa6163b7c4"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11I_UNIVERSAL_TEMPLATE_CAPTURE.md",
+      "size_bytes": 3479,
+      "sha256": "6ff795bffd11418f6f52db4dd96524077050e0517e639878c5ae06e5b3bb0b69"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -2532,8 +2542,8 @@
     },
     {
       "path": "tools/check_content_fixture_visual_smoke.mjs",
-      "size_bytes": 7002,
-      "sha256": "a715bb17aed55dc0ed083b23f7f5461b8af37aa94917520d7482b40b6a615e93"
+      "size_bytes": 10567,
+      "sha256": "f397c16bd1ee0ad1ecc4d89db9e8c2319485c4ff2409784363d23ad1146ef98d"
     },
     {
       "path": "tools/check_guided_action_errors.mjs",

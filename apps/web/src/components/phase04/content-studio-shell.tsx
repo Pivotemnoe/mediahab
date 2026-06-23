@@ -12,6 +12,7 @@ import {
   GripVertical,
   History,
   ImagePlus,
+  LayoutTemplate,
   ListChecks,
   LockKeyhole,
   MessageSquareText,
@@ -40,6 +41,7 @@ import { startPilotContentAction } from "@/services/content-actions";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
+  type MaterialCaptureFlowViewModel,
   type NewContentViewModel,
 } from "@/services/content";
 import { type MediaLibraryViewModel } from "@/services/library-planning";
@@ -356,41 +358,42 @@ export function NewContentShell({
 
   return (
     <div className="grid min-w-0 gap-5">
-      <StudioHeader label="Пилот Telegram" title="Новый материал" />
+      <StudioHeader label="Мастер материала" title="Новый материал" />
       <section className="mx-auto grid w-full max-w-5xl min-w-0 gap-4 lg:grid-cols-[minmax(0,1.1fr)_360px]">
         <div className="grid min-w-0 content-start gap-4">
           <LearningHints
             hints={[
               {
-                title: "Начинайте с одной кнопки",
-                body: "На этом экране не нужно выбирать рубрику или искать проект. Кнопка создаёт рабочий черновик и переносит вас туда.",
+                title: "Начинайте с материала",
+                body: "Кнопка создаёт рабочий материал по текущему шаблону и переносит вас в мастер сбора.",
               },
               {
-                title: "Запись будет на следующем экране",
-                body: "Если нужен голос или фото с телефона, сначала создайте черновик. Все реальные действия находятся внутри него.",
+                title: "Сбор будет на следующем экране",
+                body: "Голос, текст, фото, видео, ИИ-сборка и версии площадок находятся внутри созданного материала.",
               },
             ]}
             storageKey="tmh-learning-pilot-start"
           />
+          <MaterialWizardCard flow={viewModel.materialFlow} />
           <Card className="grid gap-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone="success">рабочий пилот</Badge>
+                  <Badge tone="success">рабочий мастер</Badge>
                   <Badge>{viewModel.modeLabel}</Badge>
                 </div>
                 <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
-                  Создать черновик для Telegram
+                  Создать материал по шаблону
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Нажмите кнопку ниже. После создания откроется рабочий черновик:
-                  там можно продиктовать текст, прикрепить фото или видео, собрать пост через ИИ и отправить его в тестовый Telegram.
+                  Нажмите кнопку ниже. После создания откроется рабочий материал:
+                  там можно собрать факты, прикрепить медиа, подготовить мастер через ИИ и получить первую версию для площадки.
                 </p>
               </div>
               <Smartphone className="shrink-0 text-primary" size={24} />
             </div>
             <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
-              Проект для теста: <span className="font-medium text-foreground">{viewModel.contextLabel}</span>
+              Проект и рубрика: <span className="font-medium text-foreground">{viewModel.contextLabel}</span>
             </div>
             {viewModel.notice ? (
               <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
@@ -406,7 +409,7 @@ export function NewContentShell({
               <form action={startPilotContentAction}>
                 <Button type="submit" className="h-12 w-full text-base">
                   <Plus size={16} />
-                  Создать черновик и перейти к записи
+                  Создать материал и перейти к сбору
                 </Button>
               </form>
             ) : null}
@@ -418,22 +421,17 @@ export function NewContentShell({
               Что делать после создания
             </div>
             <div className="grid gap-2">
-              {[
-                ["Диктовка", "Нажать «Запись», надиктовать факт или впечатление, затем принять текст."],
-                ["Фото и видео", "Прикрепить файлы с телефона перед сборкой поста."],
-                ["ИИ-сборка", "Нажать «Подготовить полный Telegram-пост»."],
-                ["Публикация", "Проверить текст и нажать «Опубликовать в тестовый Telegram»."],
-              ].map(([step, helper], index) => (
+              {viewModel.materialFlow.steps.slice(0, 4).map((step, index) => (
                 <div
                   className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
-                  key={step}
+                  key={step.label}
                 >
                   <span className="grid size-8 place-items-center rounded bg-surface-muted text-xs text-muted">
                     {index + 1}
                   </span>
                   <span>
-                    <span className="block font-medium text-foreground">{step}</span>
-                    <span className="mt-1 block leading-5 text-muted">{helper}</span>
+                    <span className="block font-medium text-foreground">{step.label}</span>
+                    <span className="mt-1 block leading-5 text-muted">{step.helper}</span>
                   </span>
                 </div>
               ))}
@@ -457,7 +455,7 @@ export function NewContentShell({
               <div className="mt-3 text-2xl font-semibold text-foreground">
                 00:00
               </div>
-              <div className="mt-1 text-sm text-muted">ожидает создания черновика</div>
+              <div className="mt-1 text-sm text-muted">ожидает создания материала</div>
             </div>
             <div className="grid gap-2 text-sm">
               {viewModel.resumeItems.map(({ label, value }) => (
@@ -612,29 +610,49 @@ function ChecksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
   );
 }
 
-function MobilePilotSteps() {
-  const steps = [
-    ["1", "Диктовка", "Надиктуйте или вставьте текст и примите его."],
-    ["2", "Фото", "Прикрепите фото или видео с телефона."],
-    ["3", "ИИ", "Подготовьте полный Telegram-пост."],
-    ["4", "Публикация", "Проверьте и отправьте в тестовый канал."],
-  ];
-
+function MaterialWizardCard({ flow }: { flow: MaterialCaptureFlowViewModel }) {
   return (
-    <Card className="grid gap-3 border-primary/30 bg-[color-mix(in_srgb,var(--primary),transparent_96%)] xl:hidden">
-      <div className="text-sm font-medium text-foreground">Мобильный путь теста</div>
-      <div className="grid gap-2">
-        {steps.map(([number, title, helper]) => (
-          <div className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border bg-background p-3 text-sm" key={number}>
+    <Card
+      className="grid gap-4 border-primary/30 bg-[color-mix(in_srgb,var(--primary),transparent_96%)]"
+      data-testid="material-wizard"
+    >
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+            <LayoutTemplate className="shrink-0 text-primary" size={18} />
+            Мастер материала
+          </div>
+          <h2 className="mt-3 break-words text-xl font-semibold text-foreground">
+            Шаблон: {flow.templateName}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Сначала собираем материал по блокам, потом ИИ готовит мастер и отдельные версии для площадок.
+          </p>
+        </div>
+        <Badge className="max-w-full whitespace-normal text-left" tone="success">{flow.primaryOutput}</Badge>
+      </div>
+      <div className="grid gap-2 text-sm">
+        {flow.steps.map((step, index) => (
+          <div
+            className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border bg-background p-3"
+            data-testid="material-wizard-step"
+            key={step.label}
+          >
             <span className="grid size-8 place-items-center rounded bg-primary text-xs font-medium text-primary-foreground">
-              {number}
+              {index + 1}
             </span>
-            <span>
-              <span className="block font-medium text-foreground">{title}</span>
-              <span className="mt-1 block leading-5 text-muted">{helper}</span>
+            <span className="min-w-0">
+              <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <span className="break-words font-medium text-foreground">{step.label}</span>
+                <Badge tone={step.tone}>{step.status}</Badge>
+              </span>
+              <span className="mt-1 block leading-5 text-muted">{step.helper}</span>
             </span>
           </div>
         ))}
+      </div>
+      <div className="rounded-md border border-border bg-background p-3 text-sm leading-6 text-muted">
+        Рубрика проекта: <span className="font-medium text-foreground">{flow.sourceLabel}</span>
       </div>
     </Card>
   );
@@ -722,37 +740,23 @@ export function ContentStudioShell({
           className="hidden xl:grid"
           hints={[
             {
-              title: "Для теста нужен левый блок «Голосовой пилот»",
-              body: "Надиктуйте текст или вставьте его вручную, примите текст, прикрепите фото и нажмите подготовку полного Telegram-поста.",
+              title: "Начинайте с мастера материала",
+              body: "Сначала проверьте шаги шаблона, затем соберите факты голосом, текстом или медиа.",
             },
             {
-              title: "Средняя форма нужна для фактов",
-              body: "Она фиксирует отдельные поля вроде адреса, чека и блюд. Сейчас можно не заполнять всё, если проверяем только Telegram-публикацию.",
+              title: "Форма нужна для фактов",
+              body: "Она фиксирует отдельные поля вроде адреса, чека и блюд. Эти данные защищают ИИ-сборку от выдуманных деталей.",
             },
             {
-              title: "Правая колонка показывает результат",
-              body: "Там видно превью площадок, факт-локи и проверки. Публикация всё равно остаётся ручной, после вашей команды.",
+              title: "Правая колонка показывает версии",
+              body: "Там видно превью площадок, факт-локи и проверки. Публикация остаётся ручной, после вашей команды.",
             },
           ]}
           storageKey="tmh-learning-content-studio"
         />
 
         <div className="grid min-w-0 gap-4 xl:hidden">
-          <LearningHints
-            hints={[
-              {
-                title: "Идите сверху вниз",
-                body: "На телефоне основной путь начинается здесь: диктовка, фото, ИИ-сборка, публикация. Остальные панели раскрывайте только если нужно.",
-              },
-              {
-                title: "Кнопки с вопросом",
-                body: "Нажимайте маленький значок вопроса рядом с блоком, чтобы увидеть короткое объяснение.",
-              },
-            ]}
-            storageKey="tmh-learning-content-studio"
-            title="Обучение на телефоне"
-          />
-          <MobilePilotSteps />
+          <MaterialWizardCard flow={viewModel.materialFlow} />
           <Card>
             <PilotVoiceTelegramPanel
               canMutate={viewModel.guidedForm.canMutate}
@@ -762,16 +766,16 @@ export function ContentStudioShell({
               workspaceId={viewModel.workspaceId}
             />
           </Card>
-          <MobileDetails summary="Факты и поля материала">
+          <MobileDetails summary="Подробности: факты и поля">
             <InputBlocksCard viewModel={viewModel} />
             <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
           </MobileDetails>
-          <MobileDetails summary="Превью, проверки и факт-локи">
+          <MobileDetails summary="Подробности: версии, проверки и факт-локи">
             <PlatformPreviewsCard viewModel={viewModel} />
             <FactLocksCard viewModel={viewModel} />
             <ChecksCard viewModel={viewModel} />
           </MobileDetails>
-          <MobileDetails summary="Мастер-черновик и история">
+          <MobileDetails summary="Подробности: мастер-черновик и история">
             <Card className="grid gap-4">
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -796,6 +800,7 @@ export function ContentStudioShell({
 
         <div className="hidden min-w-0 gap-4 xl:grid xl:grid-cols-[340px_minmax(0,1fr)_360px]">
           <div className="grid min-w-0 content-start gap-4">
+            <MaterialWizardCard flow={viewModel.materialFlow} />
             <InputBlocksCard viewModel={viewModel} />
 
             <Card>

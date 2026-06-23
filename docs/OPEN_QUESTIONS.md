@@ -56,6 +56,7 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 17. Confirm whether Command Center dark mode waits until operations hardening or starts earlier with publication operations.
 18. Confirm whether visual-regression screenshots should be stored as repo baselines or kept as local/CI artifacts only.
 19. Confirm whether mock payment webhook simulation may remain available in staging after a real provider is added, and who can trigger it.
+20. Confirm whether the first place-review UX template should be persisted/renamed as `Обзор места` in project configuration, or remain a frontend label over the existing preset rubric `Обзор недели`.
 
 ## Deployment notes from owner-provided infrastructure
 

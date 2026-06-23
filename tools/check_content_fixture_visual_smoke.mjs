@@ -98,27 +98,67 @@ async function runCheck(browser, check) {
   await send("Page.navigate", { url });
   await waitForExpression(send, `location.href === ${JSON.stringify(url)} && document.readyState !== 'loading'`, 20000);
   await waitForExpression(send, `Boolean(document.querySelector('[data-testid="guided-queue-status"]'))`, 20000);
+  await waitForExpression(send, `Boolean(document.querySelector('[data-testid="material-wizard"]'))`, 20000);
 
   const inspected = await send("Runtime.evaluate", {
     returnByValue: true,
     expression: `(() => {
+      const isVisible = (node) => Boolean(node && node.getClientRects().length);
+      const text = document.body.innerText;
       const queueStatuses = Array.from(document.querySelectorAll('[data-testid="guided-queue-status"]'));
+      const visibleTelegramButtons = Array.from(document.querySelectorAll('button'))
+        .filter((button) => button.innerText.trim() === 'Опубликовать в тестовый Telegram' && isVisible(button));
+      const visibleDetails = Array.from(document.querySelectorAll('details')).filter(isVisible);
+      const materialSteps = Array.from(document.querySelectorAll('[data-testid="material-wizard-step"]'))
+        .filter(isVisible)
+        .map((node) => node.innerText);
+      const requiredSteps = [
+        'Место и адрес',
+        'Медиа',
+        'Атмосфера',
+        'Блюда',
+        'Итог',
+        'ИИ-блоки',
+        'Версии платформ',
+        'Публикация',
+      ];
       return {
         clientWidth: document.documentElement.clientWidth,
+        detailsOpenCount: visibleDetails.filter((details) => details.open).length,
         hasDisabledButton: Array.from(document.querySelectorAll('button')).some((button) => button.disabled),
         hasGuidedField: Boolean(document.querySelector('form [name="fieldKey"]')),
         hasMain: Boolean(document.querySelector('main')),
+        hasMaterialWizard: text.includes('Мастер материала'),
+        hasPlatformPreviews: text.includes('Превью площадок'),
         hasPreflightHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-preflight')),
         hasQueueStatus: queueStatuses.length > 0,
         hasRepeatableGroup: Boolean(document.querySelector('form [name="groupKey"]')),
         hasRetryShellHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-retry-shell')),
+        hasTemplateName: text.includes('Шаблон: Обзор места'),
+        hasTechnicalStudio: text.includes('Фактическая форма рубрики') && text.includes('Факт-локи') && text.includes('Проверки'),
+        legacyCopyPresent: ['Голосовой пилот', 'Мастер и Telegram', 'Мобильный путь теста', 'Обучение на телефоне']
+          .some((value) => text.includes(value)),
+        materialStepCount: materialSteps.length,
+        missingMaterialSteps: requiredSteps.filter((step) => !materialSteps.some((textValue) => textValue.includes(step))),
         scrollWidth: document.documentElement.scrollWidth,
+        telegramButtonsInsideOutput: visibleTelegramButtons.length > 0 &&
+          visibleTelegramButtons.every((button) => Boolean(button.closest('[data-testid="telegram-output-block"]'))),
+        visibleDetailsCount: visibleDetails.length,
+        wizardBeforeCapture: text.indexOf('Мастер материала') !== -1 &&
+          text.indexOf('Сбор материала') !== -1 &&
+          text.indexOf('Мастер материала') < text.indexOf('Сбор материала'),
       };
     })()`,
   });
 
   const value = inspected.result.value;
   assert.equal(value.hasMain, true, `${check.width}px main missing`);
+  assert.equal(value.hasMaterialWizard, true, `${check.width}px material wizard missing`);
+  assert.equal(value.hasTemplateName, true, `${check.width}px template name missing`);
+  assert.equal(value.legacyCopyPresent, false, `${check.width}px legacy pilot copy still visible`);
+  assert.equal(value.materialStepCount, 8, `${check.width}px material wizard must show eight visible steps`);
+  assert.deepEqual(value.missingMaterialSteps, [], `${check.width}px material wizard missing steps`);
+  assert.equal(value.telegramButtonsInsideOutput, true, `${check.width}px Telegram publish button must stay inside output block`);
   assert.equal(value.hasGuidedField, true, `${check.width}px guided field form missing`);
   assert.equal(value.hasRepeatableGroup, true, `${check.width}px repeatable group form missing`);
   assert.equal(value.hasQueueStatus, true, `${check.width}px queue status slot missing`);
@@ -126,6 +166,14 @@ async function runCheck(browser, check) {
   assert.equal(value.hasRetryShellHook, true, `${check.width}px retry shell hook missing`);
   assert.equal(value.hasDisabledButton, true, `${check.width}px fixture mutation buttons must be disabled`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${check.width}px horizontal overflow`);
+  if (check.width < 600) {
+    assert.equal(value.wizardBeforeCapture, true, `${check.width}px wizard must come before capture panel`);
+    assert.equal(value.visibleDetailsCount >= 3, true, `${check.width}px mobile details sections missing`);
+    assert.equal(value.detailsOpenCount, 0, `${check.width}px mobile details must start collapsed`);
+  } else {
+    assert.equal(value.hasTechnicalStudio, true, `${check.width}px desktop technical studio missing`);
+    assert.equal(value.hasPlatformPreviews, true, `${check.width}px desktop platform previews missing`);
+  }
 
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   const screenshotPath = `/private/tmp/mediahub-ui10bc-content-${check.width}.png`;

@@ -159,7 +159,7 @@ export function PilotVoiceTelegramPanel({
   const [message, setMessage] = useState("Нажмите «Запись», продиктуйте факт и остановите запись.");
   const [transcript, setTranscript] = useState(initialTranscript);
   const [targetField, setTargetField] = useState<PilotFieldKey>("atmosphere");
-  const [mediaStatus, setMediaStatus] = useState("Фото и видео можно прикрепить перед подготовкой Telegram-поста.");
+  const [mediaStatus, setMediaStatus] = useState("Фото и видео можно прикрепить перед сборкой версий.");
   const [attachedMediaCount, setAttachedMediaCount] = useState<number | null>(null);
   const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [jobTargetField, setJobTargetField] = useState<PilotFieldKey | null>(null);
@@ -385,7 +385,7 @@ export function PilotVoiceTelegramPanel({
         method: "PUT",
       });
       setAttachedMediaCount(attached.media.length);
-      setMediaStatus(`Медиа прикреплены: ${attached.media.length}. Теперь подготовьте Telegram-пост заново.`);
+      setMediaStatus(`Медиа прикреплены: ${attached.media.length}. Теперь подготовьте версии заново.`);
     } catch (error) {
       setMediaStatus(error instanceof Error ? error.message : "Не удалось загрузить медиа.");
     } finally {
@@ -428,11 +428,11 @@ export function PilotVoiceTelegramPanel({
     <div className="grid gap-3">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Mic size={18} className="text-primary" />
-        Голосовой пилот
+        Сбор материала
         <HintPopover
-          body="Это главный мобильный блок пилота: сюда надиктовывается текст, прикрепляются фото, затем собирается и публикуется Telegram-пост."
+          body="Это основной блок сбора: сюда надиктовываются факты, прикрепляются медиа, затем материал передаётся на ИИ-сборку и версии площадок."
           storageKey="tmh-learning-content-studio"
-          title="Голосовой пилот"
+          title="Сбор материала"
         />
       </div>
       <div className="flex flex-wrap gap-2">
@@ -450,7 +450,7 @@ export function PilotVoiceTelegramPanel({
         <span className="flex items-center gap-2 font-medium text-foreground">
           Куда сохранить следующую диктовку
           <HintPopover
-            body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего поста."
+            body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего материала."
             storageKey="tmh-learning-content-studio"
             title="Поле диктовки"
           />
@@ -534,9 +534,9 @@ export function PilotVoiceTelegramPanel({
       </Button>
       <div className="grid gap-2 rounded-md border border-border p-3">
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          Фото и видео для Telegram
+          Медиа материала
           <HintPopover
-            body="Выберите фото или видео с телефона. Файлы прикрепятся к этому материалу и попадут в Telegram-публикацию после новой подготовки поста."
+            body="Выберите фото или видео с телефона. Файлы прикрепятся к материалу и попадут в версии площадок после новой сборки."
             storageKey="tmh-learning-content-studio"
             title="Фото и видео"
           />
@@ -565,11 +565,11 @@ export function PilotVoiceTelegramPanel({
       </div>
       <div className="grid gap-2 rounded-md border border-border p-3">
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          Мастер и Telegram
+          ИИ-сборка и версии
           <HintPopover
-            body="Здесь ИИ собирает текст из диктовки и фактов. Для текущего теста основной путь: подготовить полный Telegram-пост, проверить и опубликовать."
+            body="Здесь ИИ собирает мастер-материал из диктовки, фактов и медиа, а затем готовит первую платформенную версию."
             storageKey="tmh-learning-content-studio"
-            title="ИИ и публикация"
+            title="ИИ-сборка и версии"
           />
         </div>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(analysisState.tone)}`}>
@@ -582,7 +582,7 @@ export function PilotVoiceTelegramPanel({
           onClick={() => startAnalysisTransition(() => submitAction(analysisAction))}
         >
           {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-          AI-разбор диктовки
+          ИИ-разбор материала
         </Button>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(fullDraftState.tone)}`}>
           {fullDraftState.message}
@@ -593,7 +593,7 @@ export function PilotVoiceTelegramPanel({
           onClick={() => startFullDraftTransition(() => submitAction(fullDraftAction))}
         >
           {fullDraftBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-          Подготовить полный Telegram-пост
+          Собрать мастер и первую версию
         </Button>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(masterState.tone)}`}>
           {masterState.message}
@@ -607,6 +607,16 @@ export function PilotVoiceTelegramPanel({
           {masterBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
           Собрать мастер-текст
         </Button>
+      </div>
+      <div className="grid gap-2 rounded-md border border-border p-3" data-testid="telegram-output-block">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          Площадка: Telegram
+          <HintPopover
+            body="Telegram остаётся первой подключённой площадкой. Отправка запускается отдельно после проверки версии."
+            storageKey="tmh-learning-content-studio"
+            title="Площадка Telegram"
+          />
+        </div>
         <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
           {publishState.message}
         </div>
@@ -620,7 +630,7 @@ export function PilotVoiceTelegramPanel({
         </Button>
         <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
           <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={14} />
-          <span>Публикация идёт только в канал @temichev_posthub_test через подтверждённый backend-коннектор.</span>
+          <span>Публикация идёт только в канал @temichev_posthub_test через подтверждённый серверный коннектор.</span>
         </div>
       </div>
     </div>

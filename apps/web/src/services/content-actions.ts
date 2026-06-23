@@ -118,8 +118,8 @@ function generationMessage(run: GenerationRunOut): GuidedActionState {
   const masterText = typeof response.master_text === "string" ? response.master_text : "";
   return messageState(
     masterText
-      ? `Мастер-текст собран: ${masterText.length} знаков. Проверьте превью и затем публикуйте в тестовый Telegram.`
-      : "Мастер-текст собран, но backend не вернул текст в ответе. Обновите страницу перед публикацией.",
+      ? `Мастер-текст собран: ${masterText.length} знаков. Проверьте версии и выберите площадку публикации.`
+      : "Мастер-текст собран, но сервер не вернул текст в ответе. Обновите страницу перед публикацией.",
   );
 }
 
@@ -180,7 +180,7 @@ function aiAnalysisMessage(factsRun: GenerationRunOut, hookRun: GenerationRunOut
 
   return messageState(
     [
-      `AI-разбор готов: фактов понято ${factCount}, вопросов к уточнению ${uncertaintyCount}, референсов учтено ${exampleCount}.`,
+      `ИИ-разбор готов: фактов понято ${factCount}, вопросов к уточнению ${uncertaintyCount}, референсов учтено ${exampleCount}.`,
       hook ? `Первый хук: ${hook}` : "Хук не вернулся, но факты сохранены для следующей сборки.",
       warningCount ? `Предупреждений: ${warningCount}.` : "",
     ].filter(Boolean).join(" "),
@@ -196,7 +196,7 @@ function fullTelegramDraftMessage(
 ): GuidedActionState {
   const failedRun = [factsRun, ratingsRun, hookRun, masterRun].find((run) => run.status !== "completed");
   if (failedRun) {
-    return messageState(failedRun.error_message || "AI не смог подготовить полный Telegram-пост.", {
+    return messageState(failedRun.error_message || "ИИ не смог подготовить мастер и первую версию.", {
       code: failedRun.error_code ?? "full_telegram_draft_failed",
       tone: "danger",
     });
@@ -226,7 +226,7 @@ function fullTelegramDraftMessage(
 
   return messageState(
     [
-      `Telegram-черновик готов: мастер ${masterText.length} знаков, Telegram ${telegramVariant.character_count} знаков.`,
+      `Первая версия готова: мастер ${masterText.length} знаков, Telegram ${telegramVariant.character_count} знаков.`,
       `Референсов учтено ${exampleCount}.`,
       hook ? `Первый хук: ${hook}` : "",
       warningCount || validationIssueCount
@@ -311,7 +311,7 @@ export async function prepareFullTelegramDraftAction(
     );
     const variant = generated.variants.find((item) => item.platform_key === "telegram");
     if (!variant) {
-      return messageState("Мастер собран, но backend не вернул Telegram-вариант.", {
+      return messageState("Мастер собран, но сервер не вернул Telegram-версию.", {
         code: "telegram_variant_missing",
         tone: "danger",
       });
@@ -427,7 +427,7 @@ export async function publishPilotTelegramAction(
     );
     const variant = generated.variants.find((item) => item.platform_key === "telegram");
     if (!variant) {
-      return messageState("Backend не вернул Telegram-вариант. Повторите после обновления страницы.", {
+      return messageState("Сервер не вернул Telegram-версию. Повторите после обновления страницы.", {
         code: "telegram_variant_missing",
         tone: "danger",
       });
