@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-23T17:22:06.376661+00:00",
+  "generated_at": "2026-06-24T14:00:52.165752+00:00",
   "canonical_language": "en",
-  "file_count": 528,
+  "file_count": 530,
   "files": [
     {
       "path": ".dockerignore",
@@ -1811,6 +1811,16 @@
       "sha256": "41c875bdad769900ce046d4e30306c0aa8ac6d883d8aba14e0abe40f0b7875b8"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11K_OPENAI_FACT_EXTRACTION_RECOVERY.md",
+      "size_bytes": 2523,
+      "sha256": "e2127398a429bda7c97e8736eb60cfde410a19ca13a3a03e8f8655548c60cfe9"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11K_REPORT_RU.md",
+      "size_bytes": 3228,
+      "sha256": "0c117392b3767978791129dd07f75e4aa387d0b951517e13c1ae21540250df0c"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -2327,8 +2337,8 @@
     },
     {
       "path": "services/api/app/modules/ai/service.py",
-      "size_bytes": 40793,
-      "sha256": "f20dca07d5a59ce507a16da30a860db7b9f6df4298a2356a3b9975ee30480fb1"
+      "size_bytes": 44504,
+      "sha256": "dcbe27b96c22ec6090de2fe1beaad55899862b8a61c9c96fae5236c4b853bdc4"
     },
     {
       "path": "services/api/app/modules/audit/__init__.py",
@@ -2447,8 +2457,8 @@
     },
     {
       "path": "services/api/tests/test_ai_examples_pipeline.py",
-      "size_bytes": 13276,
-      "sha256": "217d1407384c4958ff0c62db2693642d7a79d648a7c2ce8f1d42b16b613fdb4a"
+      "size_bytes": 17373,
+      "sha256": "583df1d7f7798485b67cd2a4dfced384a1b10544156211dfca005b3d95e3ab9e"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",

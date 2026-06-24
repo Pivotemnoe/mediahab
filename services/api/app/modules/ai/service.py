@@ -5,6 +5,7 @@ import json
 import math
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -185,6 +186,39 @@ FACTS_OUTPUT_SCHEMA: dict[str, Any] = {
     "$defs": MASTER_OUTPUT_SCHEMA["$defs"],
 }
 
+FACTS_PROVIDER_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["facts", "uncertainties", "warnings"],
+    "properties": {
+        "facts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["fact_key", "value_json", "source"],
+                "properties": {
+                    "fact_key": {
+                        "type": "string",
+                        "description": "Stable source block key, for example venue_name or atmosphere.",
+                    },
+                    "value_json": {
+                        "type": "string",
+                        "description": "A JSON-encoded value for this fact.",
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Where the fact came from, usually source_block or locked_fact.",
+                    },
+                },
+            },
+        },
+        "uncertainties": {"type": "array", "items": {"type": "string"}},
+        "warnings": MASTER_OUTPUT_SCHEMA["properties"]["warnings"],
+    },
+    "$defs": MASTER_OUTPUT_SCHEMA["$defs"],
+}
+
 QUALITY_OUTPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -241,6 +275,29 @@ def validate_structured_payload(payload: dict[str, Any], schema: dict[str, Any])
             "invalid_structured_output",
             f"Structured provider output failed schema validation at {path}: {first.message}",
         )
+
+
+def normalize_fact_extraction_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    facts = payload.get("facts")
+    if isinstance(facts, list):
+        normalized_facts: dict[str, Any] = {}
+        for fact in facts:
+            if not isinstance(fact, dict):
+                continue
+            fact_key = fact.get("fact_key")
+            if not isinstance(fact_key, str) or not fact_key:
+                continue
+            value_json = fact.get("value_json")
+            if isinstance(value_json, str):
+                try:
+                    normalized_facts[fact_key] = json.loads(value_json)
+                except json.JSONDecodeError:
+                    normalized_facts[fact_key] = {"text": value_json}
+            else:
+                normalized_facts[fact_key] = value_json
+        payload = dict(payload)
+        payload["facts"] = normalized_facts
+    return payload
 
 
 def usage_number(usage: dict[str, Any], *keys: str) -> int | None:
@@ -895,8 +952,11 @@ async def run_structured_task(
     schema_name: str,
     schema: dict[str, Any],
     fallback_payload: dict[str, Any],
+    provider_schema: dict[str, Any] | None = None,
+    normalize_payload: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
 ) -> GenerationRun:
     started = time.monotonic()
+    provider_fallback_warning: dict[str, Any] | None = None
     project_version, rubric_version, blocks, locked_facts = await content_generation_context(session, item)
     source_text = source_text_from_blocks(blocks)
     retrieval_config = project_version.example_retrieval if isinstance(project_version.example_retrieval, dict) else {}
@@ -934,14 +994,14 @@ async def run_structured_task(
             StructuredGenerationRequest(
                 task_type=task_type,
                 schema_name=schema_name,
-                json_schema=schema,
+                json_schema=provider_schema or schema,
                 system_prompt=system_prompt(project_version, rubric_version),
                 user_prompt=prompt,
                 fallback_payload=fallback_payload,
             )
         )
-        validate_structured_payload(result.payload, schema)
-        response_payload = dict(result.payload)
+        response_payload = normalize_payload(result.payload) if normalize_payload else dict(result.payload)
+        validate_structured_payload(response_payload, schema)
         usage = result.usage
         await add_generation_step(
             session,
@@ -952,21 +1012,43 @@ async def run_structured_task(
     except (ProviderError, AiPipelineError) as exc:
         code = getattr(exc, "code", "generation_failed")
         message = getattr(exc, "message", str(exc))
-        response_payload = {"errors": [{"code": code, "message": message}], "warnings": []}
-        usage = {}
-        await add_generation_step(
-            session,
-            run,
-            "generation",
-            status="failed",
-            error_code=code,
-            error_message=message,
-        )
-        complete_generation_run(run, "failed", response_payload, started, usage, code, message)
-        await session.flush()
-        return run
+        if task_type == "assemble_master":
+            response_payload = mock_master_payload(item, project_version, rubric_version, blocks, locked_facts)
+            usage = {}
+            provider_fallback_warning = {
+                "code": "ai_provider_fallback",
+                "message": (
+                    "ИИ-сервис не вернул структурированный мастер, поэтому черновик собран "
+                    "из принятых пользователем данных."
+                ),
+                "field": "master_text",
+            }
+            await add_generation_step(
+                session,
+                run,
+                "generation",
+                status="failed",
+                error_code=code,
+                error_message=message,
+            )
+        else:
+            response_payload = {"errors": [{"code": code, "message": message}], "warnings": []}
+            usage = {}
+            await add_generation_step(
+                session,
+                run,
+                "generation",
+                status="failed",
+                error_code=code,
+                error_message=message,
+            )
+            complete_generation_run(run, "failed", response_payload, started, usage, code, message)
+            await session.flush()
+            return run
     if task_type == "assemble_master":
         quality = quality_result(response_payload, source_text, rubric_version, locked_facts)
+        if provider_fallback_warning is not None:
+            quality["warnings"] = [provider_fallback_warning, *quality["warnings"]]
         response_payload["quality"] = quality
         validate_structured_payload(quality, QUALITY_OUTPUT_SCHEMA)
         await add_generation_step(session, run, "quality_check", output_metadata=quality)
@@ -974,6 +1056,7 @@ async def run_structured_task(
             fallback_response = mock_master_payload(item, project_version, rubric_version, blocks, locked_facts)
             fallback_quality = quality_result(fallback_response, source_text, rubric_version, locked_facts)
             fallback_quality["warnings"] = [
+                *([provider_fallback_warning] if provider_fallback_warning is not None else []),
                 {
                     "code": "ai_fact_conflict_fallback",
                     "message": (
@@ -1117,6 +1200,8 @@ async def extract_facts(
         "fact_extraction",
         FACTS_OUTPUT_SCHEMA,
         fallback,
+        provider_schema=FACTS_PROVIDER_OUTPUT_SCHEMA,
+        normalize_payload=normalize_fact_extraction_payload,
     )
 
 

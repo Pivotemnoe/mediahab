@@ -20,7 +20,7 @@ from app.core.config import Settings, get_settings  # noqa: E402
 from app.db.base import Base, ContentItem, ExampleEmbedding, GenerationRun  # noqa: E402
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.modules.ai.providers import StructuredGenerationResult  # noqa: E402
+from app.modules.ai.providers import ProviderError, StructuredGenerationResult  # noqa: E402
 
 
 class Phase05AiExamplesPipelineTest(unittest.TestCase):
@@ -267,6 +267,88 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertIn("ПуриПури", response["master_text"])
         content_row, _ = asyncio.run(self._content_and_run(content["id"], body["id"]))
         self.assertIsNotNone(content_row.current_master_revision_id)
+
+    def test_fact_extraction_uses_openai_safe_schema_and_normalizes_response(self) -> None:
+        auth = self.register(self.client, email="facts05@example.com", workspace_name="Facts Workspace")
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class FactProvider:
+            provider_key = "openai"
+            model_id = "facts-schema-test"
+
+            def __init__(self) -> None:
+                self.schema: dict[str, object] | None = None
+
+            async def generate_structured(self, request):
+                self.schema = request.json_schema
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload={
+                        "facts": [
+                            {
+                                "fact_key": "venue_name",
+                                "value_json": '{"text": "ПуриПури"}',
+                                "source": "source_block",
+                            },
+                            {
+                                "fact_key": "atmosphere",
+                                "value_json": '{"text": "Красивый зал, но сервис сыроват."}',
+                                "source": "source_block",
+                            },
+                        ],
+                        "uncertainties": [],
+                        "warnings": [],
+                    },
+                    usage={"input_tokens": 12, "output_tokens": 8},
+                )
+
+        provider = FactProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/extract-facts",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        self.assertIsNotNone(provider.schema)
+        self.assertEqual(provider.schema["properties"]["facts"]["type"], "array")  # type: ignore[index]
+        body = generated.json()
+        self.assertEqual(body["status"], "completed")
+        facts = body["response_json"]["facts"]
+        self.assertEqual(facts["venue_name"]["text"], "ПуриПури")
+        self.assertEqual(facts["atmosphere"]["text"], "Красивый зал, но сервис сыроват.")
+
+    def test_master_generation_provider_failure_creates_source_fallback_revision(self) -> None:
+        auth = self.register(self.client, email="fallback05@example.com", workspace_name="Fallback Workspace")
+        project, rubric, content = self.create_content(auth)
+        self.import_examples(auth, project["id"], rubric["id"], count=3)
+        self.seed_content_blocks(auth, content)
+
+        class FailingProvider:
+            provider_key = "openai"
+            model_id = "failing-openai-test"
+
+            async def generate_structured(self, request):
+                raise ProviderError("openai_request_failed", "OpenAI text generation returned HTTP 400.")
+
+        with patch("app.modules.ai.service.text_provider_for", return_value=FailingProvider()):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(body["status"], "completed")
+        self.assertIsNone(body["error_code"])
+        response = body["response_json"]
+        self.assertIn("revision_id", response)
+        self.assertIn("ПуриПури", response["master_text"])
+        warnings = response["quality"]["warnings"]
+        self.assertEqual(warnings[0]["code"], "ai_provider_fallback")
+        content_row, run_row = asyncio.run(self._content_and_run(content["id"], body["id"]))
+        self.assertIsNotNone(content_row.current_master_revision_id)
+        self.assertEqual(run_row.provider_key, "openai")
 
     def test_cross_workspace_ai_run_access_returns_404(self) -> None:
         owner_a = self.register(self.client, email="owner-a05@example.com", workspace_name="A Workspace")
