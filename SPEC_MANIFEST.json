@@ -1,9 +1,9 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-06-24T14:00:52.165752+00:00",
+  "generated_at": "2026-07-08T13:55:53.716240+00:00",
   "canonical_language": "en",
-  "file_count": 530,
+  "file_count": 535,
   "files": [
     {
       "path": ".dockerignore",
@@ -252,8 +252,8 @@
     },
     {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 5317,
-      "sha256": "517982e1c4b10b0bed31a872bf5dcd6b51dd57d4b66de59789c681f0f51874c3"
+      "size_bytes": 18230,
+      "sha256": "758376861c59907e700964cfdfec96f44e761c6d4547f53d4857c2cf99a995cd"
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
@@ -313,7 +313,7 @@
     {
       "path": "apps/web/src/components/layout/shells.tsx",
       "size_bytes": 2950,
-      "sha256": "af2a6a7c5a62d7321838c4ae369cab62d2a2db3d2a46a19125dea7ab9d29e615"
+      "sha256": "a3abee56452a6bcc0970a750e641633843b386266c7851b2289fae9b1a830c53"
     },
     {
       "path": "apps/web/src/components/layout/sidebar.tsx",
@@ -347,8 +347,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 41255,
-      "sha256": "a832e1fb89438d50dd775d9c81a1707a3fff7ee93ebeb9e4d46db46c7055c0b6"
+      "size_bytes": 42170,
+      "sha256": "7eb78b34c5a3c6956dfad1cf1f10504639ce64b3d775670debae0e519496569c"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -357,8 +357,8 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 27274,
-      "sha256": "9839c662f4b170b72f8039a0461f8ded0936f20a03042b635f7d305722112208"
+      "size_bytes": 31395,
+      "sha256": "104d9bd9fe20f2913d782b413dc06e626ff8ba1ccd7ef7de658861bd6587b30b"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
@@ -427,8 +427,8 @@
     },
     {
       "path": "apps/web/src/features/content-studio/content-studio-fixtures.ts",
-      "size_bytes": 4260,
-      "sha256": "a15c0517ca4cb15b439d4fa8266244b7cf0f5c8d9afd488a71a9a39fea7868fd"
+      "size_bytes": 4285,
+      "sha256": "f422cc9ae13c597533c2a7c546c7c56cf3fb452506455fbd9c55466fff8b985d"
     },
     {
       "path": "apps/web/src/features/dashboard/dashboard-fixtures.ts",
@@ -482,8 +482,8 @@
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 37280,
-      "sha256": "ac9271b131054e0f19945c612107249c4369f754ffbab1a824f7f18b49864755"
+      "size_bytes": 37297,
+      "sha256": "a5df164ea29b6d3d3dad7505aa3e5ae0b89cb0d7e4d641b36c6374e343fa9592"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
@@ -492,8 +492,8 @@
     },
     {
       "path": "apps/web/src/services/guided-action-errors.ts",
-      "size_bytes": 2180,
-      "sha256": "88ff56c414e2b801999e0348f718ea3061eba705b3ea023a2b6004050a1db8a0"
+      "size_bytes": 2111,
+      "sha256": "370a766325b267790286439b2a8d14e22fbe87687a50317a2bc54956fd393cc8"
     },
     {
       "path": "apps/web/src/services/guided-action-payloads.ts",
@@ -1821,6 +1821,26 @@
       "sha256": "0c117392b3767978791129dd07f75e4aa387d0b951517e13c1ae21540250df0c"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11L_PREMIUM_CONTENT_STUDIO_SURFACE.md",
+      "size_bytes": 4864,
+      "sha256": "bbe9d0945353fe858bb7e4753840d3eba635f9a1eb34752e16d8081c0036573d"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11L_REPORT_RU.md",
+      "size_bytes": 4815,
+      "sha256": "4884b767a5402195c599ea15a18eddc52ff1c915cadf3acd9258239230351121"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11M_PUBLIC_ENTRY_HOME.md",
+      "size_bytes": 3823,
+      "sha256": "db015461a78c85e97c08bedd0d385c823a159a169f485fca1a380f59676b7de0"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11M_REPORT_RU.md",
+      "size_bytes": 4451,
+      "sha256": "669ff66ede78b9fd957e20cb371b4139ad5761c2e4a2c56cb17cd7a766670c2f"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -2562,13 +2582,13 @@
     },
     {
       "path": "tools/check_content_fixture_visual_smoke.mjs",
-      "size_bytes": 11995,
-      "sha256": "4bf11fbd19c60d17f601704ee3e26528cbae80e5cbfab617744dddaa8de122ee"
+      "size_bytes": 14038,
+      "sha256": "2b4bf30fb18d99bec7ec4f9721db8cbfb63872369e3efda21a2974c5b507724d"
     },
     {
       "path": "tools/check_guided_action_errors.mjs",
-      "size_bytes": 3643,
-      "sha256": "7615f4e92b34f780a844ba90a7595992654544b16931139c9506e28aeaa126fb"
+      "size_bytes": 3622,
+      "sha256": "1f017fdeeb56885d7b35410c611259eb38887f1ee765df0a15ec27f3222dd8ef"
     },
     {
       "path": "tools/check_guided_action_payloads.mjs",
@@ -2619,6 +2639,11 @@
       "path": "tools/check_public_domain_readiness.mjs",
       "size_bytes": 5044,
       "sha256": "dbf8bb513b3e3e971dd9dd9f5c54125cd8bfcf24427172c76a1f0d33a802393d"
+    },
+    {
+      "path": "tools/check_public_home_visual_smoke.mjs",
+      "size_bytes": 8692,
+      "sha256": "6a5fe9d87ecd5032d0cc68dc114b5d3ed262ed6a1a323bd3fb25ebeee9a498b8"
     },
     {
       "path": "tools/check_sw_capabilities.mjs",

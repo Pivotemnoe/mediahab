@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { type ReactNode, useActionState, useRef, useState, useTransition } from "react";
 import { CheckCircle2, FileAudio, Loader2, LockKeyhole, Mic, Pause, Play, RotateCcw, Send, Upload, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,16 @@ const pilotFields: Array<{ description: string; key: PilotFieldKey; label: strin
   },
 ];
 
+const captureStateLabels: Record<CaptureState, string> = {
+  accepted: "текст принят",
+  error: "нужна проверка",
+  idle: "готов к диктовке",
+  ready: "проверьте текст",
+  recording: "идёт запись",
+  transcribing: "расшифровка",
+  uploading: "загрузка",
+};
+
 interface PilotVoiceTelegramPanelProps {
   canMutate: boolean;
   contentId: string;
@@ -75,7 +85,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const token = csrfToken();
   if (!token) {
-    throw new Error("Нет CSRF-токена. Обновите страницу и повторите.");
+    throw new Error("Сессия страницы устарела. Обновите страницу и повторите.");
   }
 
   const response = await fetch(path, {
@@ -90,7 +100,7 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    let message = `API вернул ${response.status}.`;
+    let message = `Сервер вернул ошибку ${response.status}.`;
     try {
       const payload = await response.json() as {
         error?: {
@@ -99,7 +109,7 @@ async function apiRequest<T>(
         };
       };
       if (payload.error?.message) {
-        message = `${payload.error.code ?? "api_error"}: ${payload.error.message}`;
+        message = payload.error.message;
       }
     } catch {
       // Keep normalized fallback.
@@ -125,6 +135,34 @@ function actionToneClass(tone: GuidedActionState["tone"]): string {
     return "border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)]";
   }
   return "border-border bg-surface-muted";
+}
+
+function captureToneClass(state: CaptureState): string {
+  if (state === "accepted") {
+    return "border-success bg-[color-mix(in_srgb,var(--success),transparent_92%)]";
+  }
+  if (state === "error") {
+    return "border-danger bg-[color-mix(in_srgb,var(--danger),transparent_92%)]";
+  }
+  if (state === "recording" || state === "uploading" || state === "transcribing") {
+    return "border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)]";
+  }
+  return "border-border bg-surface-muted";
+}
+
+function ComposerSection({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <section className="grid gap-3 rounded-md border border-border bg-background p-3">
+      <div className="text-sm font-medium text-foreground">{title}</div>
+      {children}
+    </section>
+  );
 }
 
 function preferredMimeType(): string {
@@ -184,7 +222,7 @@ export function PilotVoiceTelegramPanel({
 
   async function startRecording() {
     if (disabled) {
-      setMessage("Запись доступна только для реального API-материала.");
+      setMessage("Запись доступна после создания реального материала.");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
@@ -237,13 +275,13 @@ export function PilotVoiceTelegramPanel({
   async function transcribeBlob(blob: Blob) {
     if (disabled || !workspaceId || itemVersion === null) {
       setCaptureState("error");
-      setMessage("Нет workspace/version для сохранения. Обновите страницу.");
+      setMessage("Не удалось определить материал для сохранения. Обновите страницу.");
       return;
     }
 
     try {
       setCaptureState("uploading");
-      setMessage("Загружаю аудио в S3...");
+      setMessage("Загружаю аудио...");
       const mimeType = blob.type || "audio/webm";
       const filename = `voice-${Date.now()}.${extensionForMimeType(mimeType)}`;
       const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
@@ -264,7 +302,7 @@ export function PilotVoiceTelegramPanel({
         method: "PUT",
       });
       if (!putResponse.ok) {
-        throw new Error(`S3 отклонил загрузку: ${putResponse.status}.`);
+        throw new Error(`Не удалось загрузить аудио: ${putResponse.status}.`);
       }
 
       await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
@@ -290,7 +328,7 @@ export function PilotVoiceTelegramPanel({
       });
 
       setCaptureState("transcribing");
-      setMessage(`Расшифровываю голос для поля «${fieldLabel}» через OpenAI STT...`);
+      setMessage(`Расшифровываю голос для блока «${fieldLabel}»...`);
       const job = await apiRequest<TranscriptionJobOut>(`/api/v1/content-blocks/${block.id}/transcribe`, {
         body: {
           media_id: presign.media_id,
@@ -302,7 +340,7 @@ export function PilotVoiceTelegramPanel({
       setJobTargetField(targetField);
       setTranscript(job.transcript_text);
       setCaptureState("ready");
-      setMessage(`Текст для поля «${fieldLabel}» готов. Проверьте его и нажмите «Принять текст».`);
+      setMessage(`Текст для блока «${fieldLabel}» готов. Проверьте его и нажмите «Принять текст».`);
     } catch (error) {
       setCaptureState("error");
       setMessage(error instanceof Error ? error.message : "Не удалось расшифровать запись.");
@@ -318,7 +356,7 @@ export function PilotVoiceTelegramPanel({
       return;
     }
     if (disabled || !workspaceId) {
-      setMediaStatus("Загрузка медиа доступна только для реального API-материала.");
+      setMediaStatus("Загрузка медиа доступна после создания реального материала.");
       return;
     }
 
@@ -348,7 +386,7 @@ export function PilotVoiceTelegramPanel({
           method: "PUT",
         });
         if (!uploadResponse.ok) {
-          throw new Error(`S3 отклонил файл «${file.name}»: ${uploadResponse.status}.`);
+          throw new Error(`Не удалось загрузить файл «${file.name}»: ${uploadResponse.status}.`);
         }
         await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
           body: {
@@ -425,129 +463,160 @@ export function PilotVoiceTelegramPanel({
   }
 
   return (
-    <div className="grid gap-3" data-testid="material-capture-panel">
-      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <Mic size={18} className="text-primary" />
-        Сбор материала
-        <HintPopover
-          body="Это основной блок сбора: сюда надиктовываются факты, прикрепляются медиа, затем материал передаётся на ИИ-сборку и версии площадок."
-          storageKey="tmh-learning-content-studio"
-          title="Сбор материала"
-        />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Badge tone={disabled ? "neutral" : "success"}>
-          {disabled ? "только просмотр" : "API-сценарий включён"}
-        </Badge>
-        <Badge tone={captureState === "error" ? "danger" : captureState === "accepted" ? "success" : "info"}>
-          {captureState === "idle" ? "ожидает" : captureState}
-        </Badge>
-      </div>
-      <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
-        {message}
-      </div>
-      <label className="grid gap-2 text-sm">
-        <span className="flex items-center gap-2 font-medium text-foreground">
-          Куда сохранить следующую диктовку
+    <div className="grid gap-4" data-testid="material-capture-panel">
+      <section className="grid gap-3 rounded-md border border-primary/20 bg-[color-mix(in_srgb,var(--primary),transparent_96%)] p-4">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Mic size={18} className="text-primary" />
+              Сбор материала
+              <HintPopover
+                body="Это основной блок сбора: сюда надиктовываются факты, прикрепляются медиа, затем материал передаётся на ИИ-сборку и версии площадок."
+                storageKey="tmh-learning-content-studio"
+                title="Сбор материала"
+              />
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Выберите блок, надиктуйте или вставьте текст, проверьте расшифровку и только потом запускайте ИИ-сборку.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Badge tone={disabled ? "neutral" : "success"}>
+              {disabled ? "только просмотр" : "готов к сохранению"}
+            </Badge>
+            <Badge
+              tone={
+                captureState === "error"
+                  ? "danger"
+                  : captureState === "accepted"
+                    ? "success"
+                    : captureState === "recording" || captureState === "uploading" || captureState === "transcribing"
+                      ? "warning"
+                      : "info"
+              }
+            >
+              {captureStateLabels[captureState]}
+            </Badge>
+          </div>
+        </div>
+        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${captureToneClass(captureState)}`}>
+          {message}
+        </div>
+      </section>
+
+      <ComposerSection title="1. Куда сохраняем факт">
+        <label className="grid gap-2 text-sm">
+          <span className="flex items-center gap-2 font-medium text-foreground">
+            Следующий блок материала
+            <HintPopover
+              body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего материала."
+              storageKey="tmh-learning-content-studio"
+              title="Поле диктовки"
+            />
+          </span>
+          <select
+            className="min-h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+            disabled={disabled || targetLocked}
+            value={targetField}
+            onChange={(event) => {
+              const nextField = event.currentTarget.value as PilotFieldKey;
+              setTargetField(nextField);
+              setMessage(`Следующая запись будет сохранена в блок «${pilotFieldLabel(nextField)}».`);
+            }}
+          >
+            {pilotFields.map((field) => (
+              <option key={field.key} value={field.key}>
+                {field.label} — {field.description}
+              </option>
+            ))}
+          </select>
+        </label>
+      </ComposerSection>
+
+      <ComposerSection title="2. Диктовка или аудиофайл">
+        <div className="grid grid-cols-3 gap-2">
+          <Button disabled={disabled || captureState === "recording"} size="sm" type="button" onClick={startRecording}>
+            <Play size={14} />
+            Запись
+          </Button>
+          <Button disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={stopRecording}>
+            <Pause size={14} />
+            Стоп
+          </Button>
+          <Button size="sm" type="button" variant="secondary" onClick={resetRecording}>
+            <RotateCcw size={14} />
+            Заново
+          </Button>
+        </div>
+        <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
           <HintPopover
-            body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего материала."
+            body="На телефоне браузер спросит разрешение на микрофон. После диктовки нажмите «Стоп», потом «Загрузить и расшифровать»."
             storageKey="tmh-learning-content-studio"
-            title="Поле диктовки"
+            title="Как записывать"
           />
-        </span>
-        <select
-          className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-          disabled={disabled || targetLocked}
-          value={targetField}
-          onChange={(event) => {
-            const nextField = event.currentTarget.value as PilotFieldKey;
-            setTargetField(nextField);
-            setMessage(`Следующая запись будет сохранена в поле «${pilotFieldLabel(nextField)}».`);
-          }}
+          <span>Сначала запись, потом расшифровка, затем проверка текста и принятие.</span>
+        </div>
+        <label className="grid gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
+          <span className="flex items-center gap-2 font-medium text-foreground">
+            <FileAudio size={16} className="text-primary" />
+            Загрузить аудиофайл вместо записи
+          </span>
+          <input
+            accept="audio/*"
+            className="w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-surface-muted file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground"
+            disabled={disabled || captureState === "recording" || captureState === "uploading" || captureState === "transcribing"}
+            type="file"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (!file) {
+                return;
+              }
+              setRecordedBlob(file);
+              setCaptureState("ready");
+              setMessage("Файл выбран. Нажмите «Загрузить и расшифровать».");
+            }}
+          />
+        </label>
+        <Button
+          disabled={!recordedBlob || disabled || captureState === "uploading" || captureState === "transcribing"}
+          type="button"
+          onClick={() => recordedBlob ? void transcribeBlob(recordedBlob) : undefined}
         >
-          {pilotFields.map((field) => (
-            <option key={field.key} value={field.key}>
-              {field.label} — {field.description}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="grid grid-cols-3 gap-2">
-        <Button disabled={disabled || captureState === "recording"} size="sm" type="button" onClick={startRecording}>
-          <Play size={14} />
-          Запись
+          {captureState === "uploading" || captureState === "transcribing" ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+          Загрузить и расшифровать
         </Button>
-        <Button disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={stopRecording}>
-          <Pause size={14} />
-          Стоп
-        </Button>
-        <Button size="sm" type="button" variant="secondary" onClick={resetRecording}>
-          <RotateCcw size={14} />
-          Заново
-        </Button>
-      </div>
-      <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
-        <HintPopover
-          body="На телефоне браузер спросит разрешение на микрофон. После диктовки нажмите «Стоп», потом «Загрузить и расшифровать»."
-          storageKey="tmh-learning-content-studio"
-          title="Как записывать"
+      </ComposerSection>
+
+      <ComposerSection title="3. Проверка текста">
+        <textarea
+          className="min-h-32 rounded-md border border-border bg-surface px-3 py-2 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+          placeholder="После расшифровки текст появится здесь. Его можно поправить перед принятием."
+          value={transcript}
+          onChange={(event) => setTranscript(event.target.value)}
         />
-        <span>Сначала запись, потом расшифровка, затем проверка текста и принятие.</span>
-      </div>
-      <label className="grid gap-2 rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted">
-        <span className="flex items-center gap-2 font-medium text-foreground">
-          <FileAudio size={16} className="text-primary" />
-          Загрузить аудиофайл вместо записи
-        </span>
-        <input
-          accept="audio/*"
-          disabled={disabled || captureState === "recording" || captureState === "uploading" || captureState === "transcribing"}
-          type="file"
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            if (!file) {
-              return;
-            }
-            setRecordedBlob(file);
-            setCaptureState("ready");
-            setMessage("Файл выбран. Нажмите «Загрузить и расшифровать».");
-          }}
-        />
-      </label>
-      <Button
-        disabled={!recordedBlob || disabled || captureState === "uploading" || captureState === "transcribing"}
-        type="button"
-        onClick={() => recordedBlob ? void transcribeBlob(recordedBlob) : undefined}
-      >
-        {captureState === "uploading" || captureState === "transcribing" ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-        Загрузить и расшифровать
-      </Button>
-      <textarea
-        className="min-h-32 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
-        placeholder="После расшифровки текст появится здесь. Его можно поправить перед принятием."
-        value={transcript}
-        onChange={(event) => setTranscript(event.target.value)}
-      />
-      <Button disabled={!jobId || !transcript.trim() || disabled} type="button" onClick={acceptTranscript}>
-        <LockKeyhole size={16} />
-        Принять текст
-      </Button>
-      <div className="grid gap-2 rounded-md border border-border p-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          Медиа материала
+        <Button disabled={!jobId || !transcript.trim() || disabled} type="button" onClick={acceptTranscript}>
+          <LockKeyhole size={16} />
+          Принять текст
+        </Button>
+      </ComposerSection>
+
+      <ComposerSection title="4. Медиа материала">
+        <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
           <HintPopover
             body="Выберите фото или видео с телефона. Файлы прикрепятся к материалу и попадут в версии площадок после новой сборки."
             storageKey="tmh-learning-content-studio"
             title="Фото и видео"
           />
+          <span>Фото и видео можно прикрепить до сборки версий. Порядок позже проверяется в превью площадок.</span>
         </div>
-        <label className="grid gap-2 rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted">
+        <label className="grid gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
           <span className="flex items-center gap-2 font-medium text-foreground">
             <Upload size={16} className="text-primary" />
             Прикрепить фото или видео
           </span>
           <input
             accept="image/*,video/*"
+            className="w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-surface-muted file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground"
             disabled={disabled || isMediaUploading}
             multiple
             type="file"
@@ -562,77 +631,89 @@ export function PilotVoiceTelegramPanel({
           {mediaStatus}
           {attachedMediaCount !== null ? ` Всего в материале: ${attachedMediaCount}.` : ""}
         </div>
-      </div>
-      <div className="grid gap-2 rounded-md border border-border p-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          ИИ-сборка и версии
+      </ComposerSection>
+
+      <ComposerSection title="5. ИИ-сборка и версии">
+        <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
           <HintPopover
             body="Здесь ИИ собирает мастер-материал из диктовки, фактов и медиа, а затем готовит первую платформенную версию."
             storageKey="tmh-learning-content-studio"
             title="ИИ-сборка и версии"
           />
+          <span>ИИ работает после сбора фактов. Версии площадок проверяются отдельно перед публикацией.</span>
         </div>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(analysisState.tone)}`}>
-          {analysisState.message}
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(analysisState.tone)}`}>
+            <div className="text-sm leading-6 text-muted">{analysisState.message}</div>
+            <Button
+              disabled={disabled || analysisBusy}
+              size="sm"
+              type="button"
+              variant="secondary"
+              onClick={() => startAnalysisTransition(() => submitAction(analysisAction))}
+            >
+              {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+              ИИ-разбор
+            </Button>
+          </div>
+          <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(fullDraftState.tone)}`}>
+            <div className="text-sm leading-6 text-muted">{fullDraftState.message}</div>
+            <Button
+              disabled={disabled || fullDraftBusy}
+              size="sm"
+              type="button"
+              onClick={() => startFullDraftTransition(() => submitAction(fullDraftAction))}
+            >
+              {fullDraftBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+              Мастер и версия
+            </Button>
+          </div>
+          <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(masterState.tone)}`}>
+            <div className="text-sm leading-6 text-muted">{masterState.message}</div>
+            <Button
+              disabled={disabled || masterBusy}
+              size="sm"
+              type="button"
+              variant="secondary"
+              onClick={() => startMasterTransition(() => submitAction(masterAction))}
+            >
+              {masterBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+              Мастер-текст
+            </Button>
+          </div>
         </div>
-        <Button
-          disabled={disabled || analysisBusy}
-          type="button"
-          variant="secondary"
-          onClick={() => startAnalysisTransition(() => submitAction(analysisAction))}
-        >
-          {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-          ИИ-разбор материала
-        </Button>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(fullDraftState.tone)}`}>
-          {fullDraftState.message}
+      </ComposerSection>
+
+      <ComposerSection title="6. Ручное подтверждение публикации">
+        <div className="grid gap-3 rounded-md border border-border bg-surface p-3" data-testid="telegram-output-block">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              Площадка: Telegram
+              <HintPopover
+                body="Telegram остаётся первой подключённой площадкой. Отправка запускается отдельно после проверки версии."
+                storageKey="tmh-learning-content-studio"
+                title="Площадка Telegram"
+              />
+            </div>
+            <Badge tone="success">ручное подтверждение</Badge>
+          </div>
+          <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
+            {publishState.message}
+          </div>
+          <Button
+            disabled={disabled || publishBusy}
+            type="button"
+            onClick={() => startPublishTransition(() => submitAction(publishAction))}
+          >
+            {publishBusy ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+            Опубликовать в тестовый Telegram
+          </Button>
+          <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
+            <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={14} />
+            <span>Отправка начнётся только после нажатия этой кнопки. Скачивание или ручной экспорт не отмечают материал как опубликованный.</span>
+          </div>
         </div>
-        <Button
-          disabled={disabled || fullDraftBusy}
-          type="button"
-          onClick={() => startFullDraftTransition(() => submitAction(fullDraftAction))}
-        >
-          {fullDraftBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-          Собрать мастер и первую версию
-        </Button>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(masterState.tone)}`}>
-          {masterState.message}
-        </div>
-        <Button
-          disabled={disabled || masterBusy}
-          type="button"
-          variant="secondary"
-          onClick={() => startMasterTransition(() => submitAction(masterAction))}
-        >
-          {masterBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-          Собрать мастер-текст
-        </Button>
-      </div>
-      <div className="grid gap-2 rounded-md border border-border p-3" data-testid="telegram-output-block">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          Площадка: Telegram
-          <HintPopover
-            body="Telegram остаётся первой подключённой площадкой. Отправка запускается отдельно после проверки версии."
-            storageKey="tmh-learning-content-studio"
-            title="Площадка Telegram"
-          />
-        </div>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
-          {publishState.message}
-        </div>
-        <Button
-          disabled={disabled || publishBusy}
-          type="button"
-          onClick={() => startPublishTransition(() => submitAction(publishAction))}
-        >
-          {publishBusy ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-          Опубликовать в тестовый Telegram
-        </Button>
-        <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
-          <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={14} />
-          <span>Публикация идёт только в канал @temichev_posthub_test через подтверждённый серверный коннектор.</span>
-        </div>
-      </div>
+      </ComposerSection>
     </div>
   );
 }

@@ -16,7 +16,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
           <BrandMark />
-          <nav className="hidden items-center gap-2 md:flex">
+          <nav className="hidden items-center gap-2 lg:flex">
             {marketingNavItems.map((item) => (
               <Button asChild key={item.href} variant="ghost">
                 <Link href={item.href}>{item.label}</Link>

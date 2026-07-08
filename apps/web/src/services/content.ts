@@ -727,7 +727,7 @@ function guidedFormView(
     canMutate: params.canMutate,
     description:
       params.canMutate
-        ? "Поля построены из активной версии рубрики. Сохранение идёт через сервер с CSRF и проверкой версии материала."
+        ? "Поля построены из активной версии рубрики. Сохранение идёт через сервер с проверкой версии материала."
         : "Поля построены из активной версии рубрики. В демо-режиме сохранение отключено.",
     fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
     generatedFields: params.generatedFields.map(generatedFieldLabel),
@@ -1045,7 +1045,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
       ? {
           confidence: "нет оценки",
           duration: `блок v${transcriptBlock.revision_number}`,
-          provider: "OpenAI STT",
+          provider: "сервис расшифровки",
           status: transcriptBlock.is_locked ? "принято" : "готово к проверке",
           text: transcriptBlock.transcript_text,
         }

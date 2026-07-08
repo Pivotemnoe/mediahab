@@ -533,13 +533,21 @@ function InputBlocksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
 
 function PlatformPreviewsCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
   return (
-    <Card className="grid gap-3">
-      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <PanelRight size={18} className="text-primary" />
-        Превью площадок
+    <Card className="grid gap-3" data-testid="publication-review">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <PanelRight size={18} className="text-primary" />
+            Проверка перед публикацией
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Превью площадок проверяются отдельно. Отправка остаётся ручной.
+          </p>
+        </div>
+        <Badge tone="info">Превью площадок</Badge>
       </div>
       {viewModel.platformPreviews.map((preview) => (
-        <div className="grid gap-3 rounded-md border border-border p-3" key={preview.id}>
+        <div className="grid gap-3 rounded-md border border-border bg-background p-3" key={preview.id}>
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
             <div className="font-medium text-foreground">{preview.platform}</div>
             <Badge tone={preview.status === "готово к проверке" ? "success" : "warning"}>
@@ -610,19 +618,76 @@ function ChecksCard({ viewModel }: { viewModel: ContentStudioViewModel }) {
   );
 }
 
+function MaterialOverviewCard({
+  contentId,
+  viewModel,
+}: {
+  contentId: string;
+  viewModel: ContentStudioViewModel;
+}) {
+  const { summary } = viewModel;
+  const stats = [
+    ["Статус", summary.status],
+    ["Версия", summary.revision],
+    ["Факт-локи", summary.lockedFacts],
+    ["Публикация", "после проверки"],
+  ] as const;
+
+  return (
+    <Card className="grid gap-4 bg-surface/95" data-testid="material-overview">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap gap-2">
+            <Badge>Материал {viewModel.materialLabel || contentId}</Badge>
+            <Badge>{viewModel.modeLabel === "api" ? "рабочий материал" : "демо-режим"}</Badge>
+          </div>
+          <h1 className="mt-3 break-words text-2xl font-semibold leading-tight text-foreground lg:text-3xl">
+            {summary.title}
+          </h1>
+          <div className="mt-2 flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-sm leading-6 text-muted">
+            <span>{summary.project}</span>
+            <span>·</span>
+            <span>{summary.rubric}</span>
+            <span>·</span>
+            <span>{summary.range}</span>
+          </div>
+        </div>
+        <div className="grid gap-2 sm:flex sm:flex-wrap lg:justify-end">
+          <Button type="button" variant="secondary">
+            <Save size={16} />
+            {summary.autosave}
+          </Button>
+          <Button type="button">
+            <WandSparkles size={16} />
+            Собрать мастер-текст
+          </Button>
+        </div>
+      </div>
+      <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(([label, value]) => (
+          <div className="min-w-0 rounded-md border border-border bg-surface-muted px-3 py-2" key={label}>
+            <div className="text-xs text-muted">{label}</div>
+            <div className="mt-1 break-words font-medium text-foreground">{value}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function MaterialWizardCard({ flow }: { flow: MaterialCaptureFlowViewModel }) {
   return (
     <Card
-      className="grid gap-4 border-primary/30 bg-[color-mix(in_srgb,var(--primary),transparent_96%)]"
+      className="grid content-start gap-4 border-primary/25 bg-[color-mix(in_srgb,var(--primary),transparent_97%)]"
       data-testid="material-wizard"
     >
-      <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
             <LayoutTemplate className="shrink-0 text-primary" size={18} />
             Мастер материала
           </div>
-          <h2 className="mt-3 break-words text-xl font-semibold text-foreground">
+          <h2 className="mt-2 break-words text-xl font-semibold leading-tight text-foreground">
             Шаблон: {flow.templateName}
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted">
@@ -631,23 +696,21 @@ function MaterialWizardCard({ flow }: { flow: MaterialCaptureFlowViewModel }) {
         </div>
         <Badge className="max-w-full whitespace-normal text-left" tone="success">{flow.primaryOutput}</Badge>
       </div>
-      <div className="grid gap-2 text-sm">
+      <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-1">
         {flow.steps.map((step, index) => (
           <div
-            className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border bg-background p-3"
+            className="grid min-w-0 grid-cols-[28px_1fr_auto] items-start gap-3 rounded-md border border-border bg-background px-3 py-2"
             data-testid="material-wizard-step"
             key={step.label}
           >
-            <span className="grid size-8 place-items-center rounded bg-primary text-xs font-medium text-primary-foreground">
+            <span className="grid size-7 place-items-center rounded bg-primary text-xs font-medium text-primary-foreground">
               {index + 1}
             </span>
             <span className="min-w-0">
-              <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                <span className="break-words font-medium text-foreground">{step.label}</span>
-                <Badge tone={step.tone}>{step.status}</Badge>
-              </span>
-              <span className="mt-1 block leading-5 text-muted">{step.helper}</span>
+              <span className="block break-words font-medium text-foreground">{step.label}</span>
+              <span className="mt-1 hidden leading-5 text-muted sm:block">{step.helper}</span>
             </span>
+            <Badge className="max-w-[7rem] whitespace-normal text-left" tone={step.tone}>{step.status}</Badge>
           </div>
         ))}
       </div>
@@ -680,56 +743,10 @@ export function ContentStudioShell({
   contentId: string;
   viewModel: ContentStudioViewModel;
 }) {
-  const { summary } = viewModel;
-
   return (
     <div className="grid min-w-0 gap-5">
       <StudioHeader label="Этап UI 05" title="Контент-студия" />
       <section className="grid min-w-0 gap-5">
-        <Card className="grid gap-4">
-          <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap gap-2">
-                <Badge>Материал {viewModel.materialLabel || contentId}</Badge>
-                <Badge>{viewModel.modeLabel}</Badge>
-              </div>
-              <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
-                {summary.title}
-              </h1>
-              <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
-                <span>{summary.project}</span>
-                <span>·</span>
-                <span>{summary.rubric}</span>
-                <span>·</span>
-                <span>{summary.range}</span>
-              </div>
-            </div>
-            <div className="flex max-w-full flex-wrap gap-2">
-              <Button type="button" variant="secondary">
-                <Save size={16} />
-                {summary.autosave}
-              </Button>
-              <Button type="button">
-                <WandSparkles size={16} />
-                Собрать мастер-текст
-              </Button>
-            </div>
-          </div>
-          <div className="grid gap-3 text-sm md:grid-cols-4">
-            {[
-              ["Статус", summary.status],
-              ["Версия", summary.revision],
-              ["Факт-локи", summary.lockedFacts],
-              ["Публикация", "только после проверки"],
-            ].map(([label, value]) => (
-              <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
-                <div className="text-xs text-muted">{label}</div>
-                <div className="mt-1 font-medium text-foreground">{value}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
         {viewModel.notice ? (
           <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
             {viewModel.notice}
@@ -738,6 +755,7 @@ export function ContentStudioShell({
 
         <div className="grid min-w-0 gap-4 xl:hidden">
           <MaterialWizardCard flow={viewModel.materialFlow} />
+          <MaterialOverviewCard contentId={contentId} viewModel={viewModel} />
           <Card>
             <PilotVoiceTelegramPanel
               canMutate={viewModel.guidedForm.canMutate}
@@ -780,6 +798,8 @@ export function ContentStudioShell({
         </div>
 
         <div className="hidden min-w-0 gap-5 xl:grid">
+          <MaterialOverviewCard contentId={contentId} viewModel={viewModel} />
+
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)_360px]">
             <MaterialWizardCard flow={viewModel.materialFlow} />
 

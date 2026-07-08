@@ -71,7 +71,7 @@ try {
   const browser = await CdpClient.connect(version.webSocketDebuggerUrl);
   const checks = [];
 
-  for (const width of [390, 1440, 1920]) {
+  for (const width of [390, 768, 1440, 1920]) {
     checks.push(await runCheck(browser, { width }));
   }
 
@@ -99,6 +99,7 @@ async function runCheck(browser, check) {
   await waitForExpression(send, `location.href === ${JSON.stringify(url)} && document.readyState !== 'loading'`, 20000);
   await waitForExpression(send, `Boolean(document.querySelector('[data-testid="guided-queue-status"]'))`, 20000);
   await waitForExpression(send, `Boolean(document.querySelector('[data-testid="material-wizard"]'))`, 20000);
+  await new Promise((resolve) => setTimeout(resolve, 750));
 
   const inspected = await send("Runtime.evaluate", {
     returnByValue: true,
@@ -110,6 +111,10 @@ async function runCheck(browser, check) {
         .filter((button) => button.innerText.trim() === 'Опубликовать в тестовый Telegram' && isVisible(button));
       const visibleDetails = Array.from(document.querySelectorAll('details')).filter(isVisible);
       const desktopAdvanced = document.querySelector('[data-testid="desktop-advanced-studio"]');
+      const visibleMaterialOverview = Array.from(document.querySelectorAll('[data-testid="material-overview"]'))
+        .find(isVisible);
+      const visiblePublicationReview = Array.from(document.querySelectorAll('[data-testid="publication-review"]'))
+        .find(isVisible);
       const visibleMaterialWizards = Array.from(document.querySelectorAll('[data-testid="material-wizard"]'))
         .filter(isVisible);
       const visibleWizardText = visibleMaterialWizards.map((node) => node.textContent ?? '').join('\\n');
@@ -137,11 +142,16 @@ async function runCheck(browser, check) {
         hasGuidedField: Boolean(document.querySelector('form [name="fieldKey"]')),
         hasMain: Boolean(document.querySelector('main')),
         hasMaterialWizard: visibleWizardText.includes('Мастер материала'),
+        hasMaterialOverview: Boolean(visibleMaterialOverview),
+        hasManualPublishConfirmation: text.includes('ручное подтверждение') &&
+          text.includes('Отправка начнётся только после нажатия этой кнопки'),
         hasPlatformPreviews: text.includes('Превью площадок'),
+        hasPublicationReview: Boolean(visiblePublicationReview?.textContent?.includes('Проверка перед публикацией')),
         hasPreflightHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-preflight')),
         hasQueueStatus: queueStatuses.length > 0,
         hasRepeatableGroup: Boolean(document.querySelector('form [name="groupKey"]')),
         hasRetryShellHook: queueStatuses.some((node) => node.hasAttribute('data-guided-queue-retry-shell')),
+        hasRussianCaptureState: text.includes('готов к диктовке') || text.includes('текст принят') || text.includes('нужна проверка'),
         hasVisibleCapturePanel: Boolean(visibleCapturePanel?.textContent?.includes('Сбор материала')),
         hasVisiblePrimaryPreview: text.includes('Превью площадок'),
         hasTemplateName: visibleWizardText.includes('Шаблон: Обзор места'),
@@ -150,12 +160,16 @@ async function runCheck(browser, check) {
           Boolean(desktopAdvanced?.textContent?.includes('Проверки')),
         legacyCopyPresent: ['Голосовой пилот', 'Мастер и Telegram', 'Мобильный путь теста', 'Обучение на телефоне']
           .some((value) => text.includes(value)),
+        technicalCopyPresent: ['API-сценарий', 'OpenAI STT', 'CSRF-токен', 'Backend', 'S3 отклонил', 'через OpenAI STT']
+          .some((value) => text.includes(value)),
         materialStepCount: materialSteps.length,
         missingMaterialSteps: requiredSteps.filter((step) => !materialSteps.some((textValue) => textValue.includes(step))),
         scrollWidth: document.documentElement.scrollWidth,
         telegramButtonsInsideOutput: visibleTelegramButtons.length > 0 &&
           visibleTelegramButtons.every((button) => Boolean(button.closest('[data-testid="telegram-output-block"]'))),
         visibleDetailsCount: visibleDetails.length,
+        wizardBeforeOverview: Boolean(visibleMaterialWizards[0] && visibleMaterialOverview) &&
+          visibleMaterialWizards[0].getBoundingClientRect().top <= visibleMaterialOverview.getBoundingClientRect().top,
         wizardBeforeCapture: Boolean(visibleMaterialWizards[0] && visibleCapturePanel) &&
           visibleMaterialWizards[0].getBoundingClientRect().top <= visibleCapturePanel.getBoundingClientRect().top,
       };
@@ -165,33 +179,39 @@ async function runCheck(browser, check) {
   const value = inspected.result.value;
   assert.equal(value.hasMain, true, `${check.width}px main missing`);
   assert.equal(value.hasMaterialWizard, true, `${check.width}px material wizard missing`);
+  assert.equal(value.hasMaterialOverview, true, `${check.width}px material overview missing`);
   assert.equal(value.hasTemplateName, true, `${check.width}px template name missing`);
   assert.equal(value.legacyCopyPresent, false, `${check.width}px legacy pilot copy still visible`);
+  assert.equal(value.technicalCopyPresent, false, `${check.width}px technical copy still visible in normal flow`);
   assert.equal(value.materialStepCount, 8, `${check.width}px material wizard must show eight visible steps`);
   assert.deepEqual(value.missingMaterialSteps, [], `${check.width}px material wizard missing steps`);
   assert.equal(value.telegramButtonsInsideOutput, true, `${check.width}px Telegram publish button must stay inside output block`);
+  assert.equal(value.hasManualPublishConfirmation, true, `${check.width}px manual publication confirmation missing`);
   assert.equal(value.hasGuidedField, true, `${check.width}px guided field form missing`);
   assert.equal(value.hasRepeatableGroup, true, `${check.width}px repeatable group form missing`);
   assert.equal(value.hasQueueStatus, true, `${check.width}px queue status slot missing`);
   assert.equal(value.hasPreflightHook, true, `${check.width}px preflight hook missing`);
   assert.equal(value.hasRetryShellHook, true, `${check.width}px retry shell hook missing`);
   assert.equal(value.hasDisabledButton, true, `${check.width}px fixture mutation buttons must be disabled`);
+  assert.equal(value.hasRussianCaptureState, true, `${check.width}px capture state should be localized`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${check.width}px horizontal overflow`);
-  if (check.width < 600) {
+  if (check.width < 1280) {
+    assert.equal(value.wizardBeforeOverview, true, `${check.width}px wizard must come before material overview on single-column layouts`);
     assert.equal(value.wizardBeforeCapture, true, `${check.width}px wizard must come before capture panel`);
     assert.equal(value.visibleDetailsCount >= 3, true, `${check.width}px mobile details sections missing`);
-    assert.equal(value.detailsOpenCount, 0, `${check.width}px mobile details must start collapsed`);
+    assert.equal(value.detailsOpenCount, 0, `${check.width}px single-column details must start collapsed`);
   } else {
     assert.equal(value.desktopAdvancedVisible, true, `${check.width}px desktop advanced studio summary missing`);
     assert.equal(value.desktopAdvancedStartsClosed, true, `${check.width}px desktop advanced studio must start collapsed`);
     assert.equal(value.hasVisibleCapturePanel, true, `${check.width}px desktop capture panel missing from primary workspace`);
+    assert.equal(value.hasPublicationReview, true, `${check.width}px desktop publication review missing`);
     assert.equal(value.hasVisiblePrimaryPreview, true, `${check.width}px desktop platform preview missing from primary workspace`);
     assert.equal(value.hasTechnicalStudio, true, `${check.width}px desktop technical studio missing`);
     assert.equal(value.hasPlatformPreviews, true, `${check.width}px desktop platform previews missing`);
   }
 
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-  const screenshotPath = `/private/tmp/mediahub-ui10bc-content-${check.width}.png`;
+  const screenshotPath = `/private/tmp/mediahub-ui11l-content-${check.width}.png`;
   await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
   await browser.send("Target.closeTarget", { targetId });
 

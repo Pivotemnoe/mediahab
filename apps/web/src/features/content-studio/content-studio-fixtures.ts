@@ -17,7 +17,7 @@ export const inputBlocks = [
 ] as const;
 
 export const transcriptReview = {
-  provider: "OpenAI STT",
+  provider: "сервис расшифровки",
   status: "готово к проверке",
   duration: "01:42",
   confidence: "0.91",

@@ -37,15 +37,14 @@ assert.equal(typeof guidedActionUnavailableState, "function");
 
 const csrfRequired = guidedActionStateFromApiError(apiError("csrf_required", 403, "req-csrf-required"));
 assert.equal(csrfRequired.code, "csrf_required");
-assert.match(csrfRequired.message, /CSRF-токена/);
-assert.match(csrfRequired.message, /split-domain/);
+assert.match(csrfRequired.message, /Сессия страницы устарела/);
 assert.equal(csrfRequired.recoveryAction, "refresh");
 assert.equal(csrfRequired.requestId, "req-csrf-required");
 assert.equal(csrfRequired.tone, "danger");
 
 const csrfInvalid = guidedActionStateFromApiError(apiError("csrf_invalid", 403, "req-csrf-invalid"));
 assert.equal(csrfInvalid.recoveryAction, "refresh");
-assert.match(csrfInvalid.message, /CSRF-токен устарели/);
+assert.match(csrfInvalid.message, /Сессия страницы устарела/);
 assert.equal(csrfInvalid.tone, "danger");
 
 const conflict = guidedActionStateFromApiError(apiError("version_conflict", 409, "req-conflict"));
@@ -56,18 +55,18 @@ assert.equal(conflict.tone, "warning");
 
 const rejected = guidedActionStateFromApiError(apiError("validation_error", 400, "req-validation"));
 assert.equal(rejected.recoveryAction, "retry");
-assert.match(rejected.message, /Backend отклонил сохранение/);
+assert.match(rejected.message, /Сервер отклонил сохранение/);
 assert.equal(rejected.tone, "danger");
 
 const serverError = guidedActionStateFromApiError(apiError("backend_error", 503, "req-backend"));
 assert.equal(serverError.recoveryAction, "retry");
-assert.match(serverError.message, /Backend сейчас недоступен/);
+assert.match(serverError.message, /Сервер сейчас недоступен/);
 assert.equal(serverError.requestId, "req-backend");
 
 const unavailable = guidedActionUnavailableState();
 assert.deepEqual(normalize(unavailable), {
   code: "api_unavailable",
-  message: "API недоступен или соединение прервано. Изменение не сохранено.",
+  message: "Соединение прервано. Изменение не сохранено.",
   recoveryAction: "retry",
   requestId: null,
   tone: "danger",
@@ -75,8 +74,8 @@ assert.deepEqual(normalize(unavailable), {
 
 assert.equal(guidedActionRecoveryAction("version_conflict"), "refresh");
 assert.equal(guidedActionRecoveryAction("unknown_code"), "retry");
-assert.match(guidedActionMessageForCode("unknown_code", 500), /Backend сейчас недоступен/);
-assert.match(guidedActionMessageForCode("unknown_code", 422), /Backend отклонил сохранение/);
+assert.match(guidedActionMessageForCode("unknown_code", 500), /Сервер сейчас недоступен/);
+assert.match(guidedActionMessageForCode("unknown_code", 422), /Сервер отклонил сохранение/);
 
 console.log("guided action error mapping checks passed");
 

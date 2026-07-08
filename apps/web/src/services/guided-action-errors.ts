@@ -9,8 +9,8 @@ interface GuidedActionApiError {
 const refreshRequiredCodes = new Set(["csrf_invalid", "csrf_required", "version_conflict"]);
 
 const guidedActionErrorMessages: Record<string, string> = {
-  csrf_invalid: "Сессия или CSRF-токен устарели. Обновите страницу и повторите сохранение.",
-  csrf_required: "Нет CSRF-токена для сохранения. Обновите страницу; для split-domain нужен отдельный cookie/CSRF-настрой.",
+  csrf_invalid: "Сессия страницы устарела. Обновите страницу и повторите сохранение.",
+  csrf_required: "Сессия страницы устарела. Обновите страницу и повторите сохранение.",
   version_conflict: "Материал изменился в другой вкладке или сессии. Обновите страницу перед повторным сохранением.",
 };
 
@@ -24,8 +24,8 @@ export function guidedActionMessageForCode(code: string, status: number): string
     return explicitMessage;
   }
   return status >= 500
-    ? "Backend сейчас недоступен для сохранения. Повторите позже."
-    : "Backend отклонил сохранение. Проверьте поле и повторите действие.";
+    ? "Сервер сейчас недоступен для сохранения. Повторите позже."
+    : "Сервер отклонил сохранение. Проверьте поле и повторите действие.";
 }
 
 export function guidedActionStateFromApiError(error: GuidedActionApiError): GuidedActionState {
@@ -41,7 +41,7 @@ export function guidedActionStateFromApiError(error: GuidedActionApiError): Guid
 export function guidedActionUnavailableState(): GuidedActionState {
   return {
     code: "api_unavailable",
-    message: "API недоступен или соединение прервано. Изменение не сохранено.",
+    message: "Соединение прервано. Изменение не сохранено.",
     recoveryAction: "retry",
     requestId: null,
     tone: "danger",
