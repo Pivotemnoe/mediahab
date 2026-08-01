@@ -275,9 +275,9 @@ class Phase09InstagramConnectorTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
 
-    def test_long_master_becomes_manual_required_instagram_package(self) -> None:
+    def test_complete_variant_becomes_manual_required_instagram_package(self) -> None:
         auth = self.register()
-        project, content = self.create_content_with_master(auth, "Очень длинный текст. " * 260)
+        project, content = self.create_content_with_master(auth, "Полный текст для Instagram. " * 40)
         asyncio.run(self._add_media(content["id"], count=10))
         variant = self.generate_instagram_variant(auth, content["id"])
         self.assertEqual(variant["payload"]["connector_key"], "instagram_media")

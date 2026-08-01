@@ -30,6 +30,16 @@ class ManualPlatformProfilesTestCase(unittest.TestCase):
         self.assertIn("Подпись", rendered)
         self.assertEqual(validate_variant("reels", rendered)["errors"], [])
 
+    def test_long_instagram_master_is_not_mechanically_truncated(self) -> None:
+        master = "Полный исходный абзац с фактами. " * 100
+
+        rendered = adapt_text_for_platform(master, "instagram")
+
+        self.assertEqual(rendered, master)
+        self.assertNotIn("[сокращено под лимит площадки]", rendered)
+        self.assertNotIn("Сокращённая версия для INSTAGRAM", rendered)
+        self.assertFalse(validate_variant("instagram", rendered)["valid"])
+
     def test_preflight_blocks_a_connector_hard_text_limit(self) -> None:
         text = "д" * 4001
         validation = validate_variant("max", text)

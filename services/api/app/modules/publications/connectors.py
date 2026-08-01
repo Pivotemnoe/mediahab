@@ -243,7 +243,12 @@ def adapt_text_for_platform(master_text: str, platform_key: str) -> str:
         return f"Сценарий Reels\n\n{script}\n\nПодпись\n\n{caption}"
     if character_count(master_text) <= capability.hard_text_limit:
         return master_text
-    if platform_key in {"max", "instagram"}:
+    if platform_key == "instagram":
+        # Instagram must receive a separately written editorial version. Returning the
+        # complete master keeps every source fact available to the AI refinement step;
+        # validation deliberately blocks this interim draft until that rewrite finishes.
+        return master_text
+    if platform_key == "max":
         return _condensed_text(master_text, platform_key, capability.hard_text_limit)
     return master_text
 

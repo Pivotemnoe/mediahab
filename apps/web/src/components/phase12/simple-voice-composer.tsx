@@ -167,14 +167,26 @@ function lengthRefinementInstruction(variant: PlatformVariantOut): string {
   return `Пересобери основной текст специально для этой площадки в диапазоне ${minChars}–${maxChars} знаков. Сохрани факты, цену, адрес, оценки и вывод автора. Не обрезай хвост механически, не добавляй фактов и не добавляй постоянный подвал — приложение вернёт его само.`;
 }
 
-function instagramFormatInstruction(format: InstagramFormat): string {
+function instagramFormatInstruction(format: InstagramFormat, variant: PlatformVariantOut): string {
+  const target = lengthTargetFromVariant(variant);
+  const minChars = target?.min_chars ?? 1000;
+  const maxChars = target?.max_chars ?? 1800;
+  const shared = `Напиши отдельную цельную версию специально для Instagram в диапазоне ${minChars}–${maxChars} знаков основного текста. Пересобери композицию по полному исходнику: выбери главное, сохрани факты и авторский вывод. Не обрезай готовый текст, не используй фразы «Сокращённая версия для INSTAGRAM» и «[сокращено под лимит площадки]».`;
   if (format === "carousel") {
-    return "Подготовь результат для карусели Instagram. Сначала дай готовую общую подпись к публикации, затем отдельный раздел «Карточки карусели» с коротким планом для каждого прикреплённого медиа по порядку. Не выдумывай факты и не добавляй постоянный подвал — приложение вернёт его само.";
+    return `${shared} Подготовь результат для карусели Instagram. Сначала дай готовую общую подпись к публикации, затем отдельный раздел «Карточки карусели» с коротким планом для каждого прикреплённого медиа по порядку. Не выдумывай факты и не добавляй постоянный подвал — приложение вернёт его само.`;
   }
   if (format === "reel") {
-    return "Подготовь результат для Reel Instagram: короткий хук, сценарий речи или титров по шагам, подпись к ролику и короткую фразу для обложки. Используй только факты исходника и не добавляй постоянный подвал — приложение вернёт его само.";
+    return `${shared} Подготовь результат для Reel Instagram: короткий хук, сценарий речи или титров по шагам, подпись к ролику и короткую фразу для обложки. Используй только факты исходника и не добавляй постоянный подвал — приложение вернёт его само.`;
   }
-  return "Подготовь подпись для одной публикации Instagram с прикреплённым медиа. Сохрани факты, авторский вывод и естественный тон. Не добавляй постоянный подвал — приложение вернёт его само.";
+  return `${shared} Подготовь подпись для одной публикации Instagram с прикреплённым медиа. Сохрани естественный тон и не добавляй постоянный подвал — приложение вернёт его само.`;
+}
+
+function hasMechanicalPlatformTruncation(variant: PlatformVariantOut): boolean {
+  const text = variantText(variant);
+  const body = typeof variant.payload.body_text === "string" ? variant.payload.body_text : "";
+  return text.includes("[сокращено под лимит площадки]")
+    || body.includes("[сокращено под лимит площадки]")
+    || body.startsWith("Сокращённая версия для INSTAGRAM:");
 }
 
 function usageSummary({
@@ -861,7 +873,7 @@ export function SimpleVoiceComposer({
       const needsFormatAdaptation = key === "instagram" && instagramFormat !== null;
       if (missesLengthTarget(variant) || needsFormatAdaptation) {
         const instructions = [
-          needsFormatAdaptation ? instagramFormatInstruction(instagramFormat) : "",
+          needsFormatAdaptation ? instagramFormatInstruction(instagramFormat, variant) : "",
           missesLengthTarget(variant) ? lengthRefinementInstruction(variant) : "",
         ].filter(Boolean);
         const refined = await apiRequest<PlatformVariantRefinementResponse>(
@@ -1440,7 +1452,9 @@ export function SimpleVoiceComposer({
           {activeResult.status === "ready" && activeResult.variant ? (
             <div className="grid min-w-0 gap-4">
               <div className="flex min-w-0 flex-wrap gap-2">
-                <Badge tone="success">готово</Badge>
+                <Badge tone={hasMechanicalPlatformTruncation(activeResult.variant) ? "warning" : "success"}>
+                  {hasMechanicalPlatformTruncation(activeResult.variant) ? "нужна полноценная пересборка" : "готово"}
+                </Badge>
                 <Badge>{activeResult.variant.character_count.toLocaleString("ru-RU")} знаков</Badge>
                 {lengthTargetFromVariant(activeResult.variant) ? (
                   <Badge>
@@ -1530,6 +1544,11 @@ export function SimpleVoiceComposer({
                   )}
                 </div>
               ) : null}
+              {hasMechanicalPlatformTruncation(activeResult.variant) ? (
+                <div className="rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3 text-sm leading-6 text-foreground">
+                  Эта старая версия была механически обрезана. Нажмите «Пересобрать»: ИИ напишет для Instagram отдельный цельный текст по полному исходнику.
+                </div>
+              ) : null}
               {editingPlatform === activePlatform ? (
                 <textarea
                   className="min-h-64 w-full resize-y rounded-lg border border-primary bg-background p-4 text-sm leading-6 outline-none"
@@ -1542,7 +1561,11 @@ export function SimpleVoiceComposer({
                 </article>
               )}
               <div className="flex min-w-0 flex-wrap gap-2">
-                <Button type="button" onClick={() => void copyActive()}>
+                <Button
+                  disabled={hasMechanicalPlatformTruncation(activeResult.variant)}
+                  type="button"
+                  onClick={() => void copyActive()}
+                >
                   <Clipboard size={16} />
                   Копировать
                 </Button>

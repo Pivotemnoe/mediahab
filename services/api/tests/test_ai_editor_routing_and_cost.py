@@ -9,7 +9,11 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 
 from app.core.config import Settings  # noqa: E402
 from app.modules.ai.providers import text_provider_for  # noqa: E402
-from app.modules.ai.service import estimate_text_cost_micro_usd, mock_ratings  # noqa: E402
+from app.modules.ai.service import (  # noqa: E402
+    _platform_refinement_requirements,
+    estimate_text_cost_micro_usd,
+    mock_ratings,
+)
 
 
 class AiEditorRoutingAndCostTest(unittest.TestCase):
@@ -46,6 +50,15 @@ class AiEditorRoutingAndCostTest(unittest.TestCase):
         self.assertEqual(set(ratings), {"taste", "impression", "fatness", "spiciness"})
         self.assertTrue(all(isinstance(rating["value"], int) for rating in ratings.values()))
         self.assertTrue(all(rating["source"] == "ai" for rating in ratings.values()))
+
+    def test_instagram_refinement_requires_a_complete_platform_rewrite(self) -> None:
+        requirements = " ".join(_platform_refinement_requirements("instagram"))
+
+        self.assertIn("самостоятельную цельную версию", requirements)
+        self.assertIn("полному source_blocks", requirements)
+        self.assertIn("никогда не отрезай хвост", requirements)
+        self.assertIn("[сокращено под лимит площадки]", requirements)
+        self.assertEqual(_platform_refinement_requirements("telegram"), [])
 
 
 if __name__ == "__main__":

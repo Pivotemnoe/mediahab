@@ -1398,6 +1398,17 @@ async def assemble_master(
     )
 
 
+def _platform_refinement_requirements(platform_key: str) -> list[str]:
+    if platform_key != "instagram":
+        return []
+    return [
+        "Для Instagram напиши самостоятельную цельную версию специально для этой площадки, а не обрезанный фрагмент общего текста.",
+        "Пересобери композицию по полному source_blocks: выбери главное, сохрани ключевые факты и заверши авторским выводом.",
+        "Сокращай редакторски — переписывай и уплотняй смысл; никогда не отрезай хвост текста механически.",
+        "Не используй служебные фразы «Сокращённая версия для INSTAGRAM» и «[сокращено под лимит площадки]».",
+    ]
+
+
 async def refine_platform_variant_text(
     session: AsyncSession,
     settings: Settings,
@@ -1464,6 +1475,7 @@ async def refine_platform_variant_text(
                 "Если передана editorial_length_target, итоговый основной текст должен попасть в её диапазон min_chars-max_chars.",
                 "Не используй двойные пустые строки подряд.",
                 "Не добавляй постоянный подвал и ссылки проекта: приложение вернёт их после доработки.",
+                *_platform_refinement_requirements(variant.platform_key),
             ],
         }
     )

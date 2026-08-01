@@ -320,16 +320,17 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
 
-    def test_platform_variants_respect_destination_limits(self) -> None:
+    def test_raw_platform_variants_block_instead_of_truncating_instagram(self) -> None:
         auth = self.register()
         _, _, content, _ = self.create_content_with_master(auth, text="Очень длинный текст. " * 320)
         variants = self.generate_variants(auth, content["id"], ["telegram", "max", "instagram"])
 
         self.assertLessEqual(variants["telegram"]["character_count"], 32768)
         self.assertLessEqual(variants["max"]["character_count"], 4000)
-        self.assertLessEqual(variants["instagram"]["character_count"], 2200)
         self.assertEqual(variants["max"]["validation"]["valid"], True)
-        self.assertEqual(variants["instagram"]["validation"]["valid"], True)
+        self.assertGreater(variants["instagram"]["character_count"], 2200)
+        self.assertEqual(variants["instagram"]["validation"]["valid"], False)
+        self.assertNotIn("[сокращено под лимит площадки]", variants["instagram"]["text"])
 
     def test_project_link_footer_survives_generation_and_manual_edit(self) -> None:
         auth = self.register(email="boilerplate-owner@example.com")

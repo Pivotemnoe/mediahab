@@ -54,8 +54,23 @@ Verification on 1 August 2026:
 
 No database migration was required. Production was not changed.
 
+## Post-deploy correction: complete Instagram rewrite
+
+Observed production defect: a long master was first passed through `_condensed_text`, so the editor model received an already cut prefix ending with `[сокращено под лимит площадки]`. This violates the Phase 12B rule to regenerate rather than truncate.
+
+Correction scope:
+
+- keep the complete master as the interim Instagram body and let hard-limit validation block it until AI adaptation finishes;
+- require the editor model to rebuild a self-contained Instagram version from full `source_blocks` within the resolved editorial target;
+- explicitly prohibit truncation markers, generic `Сокращённая версия` prefixes, and mechanical tail cutting;
+- mark legacy mechanically truncated variants as requiring a full rebuild and disable copying them;
+- preserve the same ContentItem, revisions, media, format, project, rubric, selected platforms, and application-managed footer.
+
+No database migration or architecture change is required. Local tests cover the non-truncating interim draft, platform-specific prompt requirements, and legacy UI guard. The owner separately confirmed the production hotfix deployment after verification; release and rollback evidence are recorded after cutover.
+
 ## Risks and rollback
 
 - Existing Phase 09 connector tests use legacy API requests; compatibility is retained while the normal PWA adopts the stricter contract.
 - Media processing readiness is still governed by existing media state; only attached, non-deleted assets participate.
+- If the AI rewrite fails, the full interim draft remains blocked instead of exposing a cut text as ready; the last good saved revision is preserved.
 - Rollback removes the request field, payload metadata, validation, and UI block. No stored-data rollback is required.
