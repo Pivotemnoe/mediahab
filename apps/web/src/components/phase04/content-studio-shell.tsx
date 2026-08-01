@@ -4,10 +4,12 @@ import {
   AlertTriangle,
   ArrowLeft,
   Bot,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Clock3,
-  Download,
   FileCheck2,
+  FileText,
   Filter,
   GripVertical,
   History,
@@ -18,17 +20,17 @@ import {
   MessageSquareText,
   Mic,
   PanelRight,
+  Pencil,
   Plus,
   RotateCcw,
   Save,
   Send,
-  Smartphone,
   Sparkles,
+  Upload,
   WandSparkles,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { LearningHints } from "@/components/layout/learning-hints";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,7 +39,8 @@ import {
   GuidedFieldActionForm,
 } from "@/components/phase04/guided-form-actions";
 import { PilotVoiceTelegramPanel } from "@/components/phase04/pilot-voice-telegram-panel";
-import { startPilotContentAction } from "@/services/content-actions";
+import { SimpleVoiceComposer } from "@/components/phase12/simple-voice-composer";
+import { CopyTextButton } from "@/components/phase12/copy-text-button";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
@@ -46,7 +49,7 @@ import {
 } from "@/services/content";
 import { type MediaLibraryViewModel } from "@/services/library-planning";
 
-function StudioHeader({ title, label = "Этап 04" }: { title: string; label?: string }) {
+function StudioHeader({ title, label = "Публикации" }: { title: string; label?: string }) {
   return (
     <PageHeader
       actions={
@@ -57,7 +60,7 @@ function StudioHeader({ title, label = "Этап 04" }: { title: string; label?:
           </Link>
         </Button>
       }
-      description="Редакционная студия для сбора фактов, диктовки, медиа и фиксации источников."
+      description="Создавайте, проверяйте и продолжайте свои реальные материалы."
       eyebrow={label}
       title={title}
     />
@@ -273,22 +276,20 @@ function GuidedFormPanel({
 export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewModel }) {
   return (
     <div className="grid gap-4">
-      <StudioHeader title="Контент" />
+      <StudioHeader title="История" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-ink">Черновики и материалы</h1>
+            <h1 className="text-3xl font-semibold text-ink">Ваши публикации</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Единица работы здесь — материал, а не пост под одну площадку.
-              Факты собираются отдельно от будущей сборки ИИ.
+              Здесь сохраняются только ваши черновики и готовые материалы по всем проектам.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge>{viewModel.modeLabel}</Badge>
             <Button asChild>
               <Link href="/app/content/new">
                 <Plus size={16} />
-                Создать материал
+                Новая публикация
               </Link>
             </Button>
           </div>
@@ -301,7 +302,7 @@ export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewMo
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
-          {viewModel.items.map((item) => (
+          {viewModel.items.length ? viewModel.items.map((item) => (
             <Card className="grid gap-4" key={item.href}>
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -316,18 +317,34 @@ export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewMo
               <div className="grid gap-2 text-sm text-muted">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-success" />
-                  Автосохранение и конфликт версий проверяются сервером
+                  Текст и версии для площадок сохранены в материале
                 </div>
                 <div className="flex items-center gap-2">
                   <LockKeyhole size={16} className="text-accent" />
-                  Зафиксированные факты будут защищать сборку от подмен
+                  Исходный текст остаётся доступен для проверки
                 </div>
               </div>
               <Button asChild variant="secondary">
-                <Link href={item.href}>Открыть студию</Link>
+                <Link href={item.href}>Открыть материал</Link>
               </Button>
             </Card>
-          ))}
+          )) : (
+            <Card className="grid justify-items-start gap-4 border-dashed p-6 md:col-span-2">
+              <FileText className="text-muted" size={24} />
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">История пока пуста</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Здесь появятся только ваши реальные материалы. Демо-публикации в рабочем кабинете не показываются.
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/app/content/new">
+                  <Plus size={16} />
+                  Создать первую публикацию
+                </Link>
+              </Button>
+            </Card>
+          )}
         </div>
       </section>
     </div>
@@ -339,160 +356,42 @@ function pilotCreateErrorMessage(code?: string): string | null {
     return null;
   }
   if (code === "workspace_missing") {
-    return "Рабочее пространство не найдено. Войдите заново или откройте кабинет из основного браузера.";
+    return "Не удалось найти рабочее пространство. Войдите заново и попробуйте создать материал ещё раз.";
   }
   if (code === "rubric_missing") {
-    return "В проекте пока нет рубрики для пилотного черновика.";
+    return "В проекте пока нет рубрики для нового материала.";
   }
-  return "Не удалось создать черновик. Обновите страницу, войдите заново и попробуйте ещё раз.";
+  return "Не удалось создать материал. Обновите страницу, войдите заново и попробуйте ещё раз.";
 }
 
 export function NewContentShell({
+  initialPlatformKey,
+  initialProjectId,
+  initialRubricId,
   pilotError,
   viewModel,
 }: {
+  initialPlatformKey?: string;
+  initialProjectId?: string;
+  initialRubricId?: string;
   pilotError?: string;
   viewModel: NewContentViewModel;
 }) {
   const createError = pilotCreateErrorMessage(pilotError);
 
   return (
-    <div className="grid min-w-0 gap-5">
-      <StudioHeader label="Мастер материала" title="Новый материал" />
-      <section className="mx-auto grid w-full max-w-5xl min-w-0 gap-4 lg:grid-cols-[minmax(0,1.1fr)_360px]">
-        <div className="grid min-w-0 content-start gap-4">
-          <LearningHints
-            hints={[
-              {
-                title: "Начинайте с материала",
-                body: "Кнопка создаёт рабочий материал по текущему шаблону и переносит вас в мастер сбора.",
-              },
-              {
-                title: "Сбор будет на следующем экране",
-                body: "Голос, текст, фото, видео, ИИ-сборка и версии площадок находятся внутри созданного материала.",
-              },
-            ]}
-            storageKey="tmh-learning-pilot-start"
-          />
-          <MaterialWizardCard flow={viewModel.materialFlow} />
-          <Card className="grid gap-4">
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap gap-2">
-                  <Badge tone="success">рабочий мастер</Badge>
-                  <Badge>{viewModel.modeLabel}</Badge>
-                </div>
-                <h1 className="mt-3 break-words text-2xl font-semibold text-foreground">
-                  Создать материал по шаблону
-                </h1>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Нажмите кнопку ниже. После создания откроется рабочий материал:
-                  там можно собрать факты, прикрепить медиа, подготовить мастер через ИИ и получить первую версию для площадки.
-                </p>
-              </div>
-              <Smartphone className="shrink-0 text-primary" size={24} />
-            </div>
-            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm leading-6 text-muted">
-              Проект и рубрика: <span className="font-medium text-foreground">{viewModel.contextLabel}</span>
-            </div>
-            {viewModel.notice ? (
-              <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
-                {viewModel.notice}
-              </div>
-            ) : null}
-            {createError ? (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm leading-6 text-destructive">
-                {createError}
-              </div>
-            ) : null}
-            {viewModel.modeLabel === "api" ? (
-              <form action={startPilotContentAction}>
-                <Button type="submit" className="h-12 w-full text-base">
-                  <Plus size={16} />
-                  Создать материал и перейти к сбору
-                </Button>
-              </form>
-            ) : null}
-          </Card>
-
-          <Card className="grid gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <ListChecks size={18} className="text-primary" />
-              Что делать после создания
-            </div>
-            <div className="grid gap-2">
-              {viewModel.materialFlow.steps.slice(0, 4).map((step, index) => (
-                <div
-                  className="grid grid-cols-[32px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
-                  key={step.label}
-                >
-                  <span className="grid size-8 place-items-center rounded bg-surface-muted text-xs text-muted">
-                    {index + 1}
-                  </span>
-                  <span>
-                    <span className="block font-medium text-foreground">{step.label}</span>
-                    <span className="mt-1 block leading-5 text-muted">{step.helper}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
+    <div className="grid min-w-0 gap-4" data-testid="new-content-composer">
+      {createError ? (
+        <div className="rounded-md border border-danger bg-[color-mix(in_srgb,var(--danger),transparent_92%)] p-3 text-sm leading-6 text-danger">
+          {createError}
         </div>
-
-        <div className="grid min-w-0 content-start gap-4">
-          <Card className="grid gap-4">
-            <div>
-              <Badge tone="neutral">не запись</Badge>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">
-                Здесь запись не идёт
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Эта страница только открывает рабочий черновик. Если вы видели таймер записи на этом экране, это был старый демо-макет, а не реальная активная запись.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-muted p-4 text-center">
-              <Mic className="mx-auto text-primary" size={32} />
-              <div className="mt-3 text-2xl font-semibold text-foreground">
-                00:00
-              </div>
-              <div className="mt-1 text-sm text-muted">ожидает создания материала</div>
-            </div>
-            <div className="grid gap-2 text-sm">
-              {viewModel.resumeItems.map(({ label, value }) => (
-                <div
-                  className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border bg-surface-muted p-3"
-                  key={label}
-                >
-                  <span className="text-muted">{label}</span>
-                  <span className="min-w-0 break-words text-right font-medium text-foreground">
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Button type="button" variant="secondary">
-              <Download size={16} />
-              Установить PWA
-            </Button>
-          </Card>
-
-          <Card className="grid gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <PanelRight size={18} className="text-primary" />
-              Что уже подключено в пилоте
-            </div>
-            {viewModel.compactPreviews.map(({ note, platform, status }) => (
-              <div className="rounded-md border border-border p-3 text-sm" key={platform}>
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                  <div className="font-medium text-foreground">{platform}</div>
-                  <Badge tone={platform === "Telegram" ? "success" : "warning"}>{status}</Badge>
-                </div>
-                <div className="mt-1 text-muted">{note}</div>
-              </div>
-            ))}
-          </Card>
-        </div>
-      </section>
+      ) : null}
+      <SimpleVoiceComposer
+        initialPlatformKey={initialPlatformKey}
+        initialProjectId={initialProjectId}
+        initialRubricId={initialRubricId}
+        viewModel={viewModel}
+      />
     </div>
   );
 }
@@ -743,9 +642,195 @@ export function ContentStudioShell({
   contentId: string;
   viewModel: ContentStudioViewModel;
 }) {
+  if (!viewModel.available) {
+    return (
+      <Card className="mx-auto grid w-full max-w-2xl justify-items-start gap-4 border-dashed p-6 sm:p-8">
+        <Badge tone="warning">Материал недоступен</Badge>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Не удалось открыть материал</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">{viewModel.notice}</p>
+        </div>
+        <Button asChild variant="secondary">
+          <Link href="/app/content">
+            <ArrowLeft size={16} />
+            Вернуться в историю
+          </Link>
+        </Button>
+      </Card>
+    );
+  }
+
+  if (viewModel.modeLabel === "api") {
+    const sourceText =
+      viewModel.transcriptReview.text || viewModel.masterDraftParagraphs.join("\n\n");
+    const newContentHref = viewModel.projectId
+      ? `/app/content/new?project=${encodeURIComponent(viewModel.projectId)}`
+      : "/app/content/new";
+
+    return (
+      <div className="grid min-w-0 gap-5" data-testid="content-studio-real">
+        {viewModel.notice ? (
+          <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+            {viewModel.notice}
+          </Card>
+        ) : null}
+
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="success">{viewModel.summary.project}</Badge>
+              <Badge>{viewModel.summary.rubric}</Badge>
+              <Badge tone="info">{viewModel.summary.status}</Badge>
+            </div>
+            <h1 className="mt-3 break-words text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+              {viewModel.summary.title}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Сохранено {viewModel.summary.autosave} · версия {viewModel.summary.revision}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/app/content">
+                <ArrowLeft size={16} />
+                История
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href={newContentHref}>
+                <Plus size={16} />
+                Новая публикация
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <div className="grid min-w-0 content-start gap-4">
+            <Card className="grid min-w-0 gap-3">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <FileText size={20} />
+                  Исходный текст
+                </div>
+                {sourceText ? (
+                  <Button asChild size="sm" variant="secondary">
+                    <Link
+                      data-testid="edit-source-and-rebuild"
+                      href={`/app/content/new?edit=${encodeURIComponent(contentId)}`}
+                    >
+                      <Pencil size={15} />
+                      Поправить исходник и пересобрать
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+              {sourceText ? (
+                <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground">
+                  {sourceText}
+                </p>
+              ) : (
+                <p className="text-sm leading-6 text-muted">Исходный текст для этого материала не сохранён.</p>
+              )}
+            </Card>
+
+            <Card className="grid min-w-0 gap-3">
+              <div className="text-lg font-semibold text-foreground">Что сохранено</div>
+              {viewModel.inputBlocks.length ? (
+                <div className="grid gap-2">
+                  {viewModel.inputBlocks.map((block) => (
+                    <div className="rounded-lg border border-border bg-background p-3" key={`${block.name}-${block.source}`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-foreground">{block.name}</span>
+                        <Badge>{block.status}</Badge>
+                      </div>
+                      <p className="mt-2 break-words text-sm leading-6 text-muted">{block.helper}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm leading-6 text-muted">Дополнительных блоков нет.</p>
+              )}
+            </Card>
+          </div>
+
+          <Card className="grid min-w-0 content-start gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <CheckCircle2 size={20} />
+                Готовые версии
+              </div>
+              <p className="mt-1 text-sm leading-6 text-muted">
+                Каждая площадка получает отдельный текст с собственными ограничениями.
+              </p>
+            </div>
+
+            {viewModel.platformPreviews.length ? (
+              <div className="grid min-w-0 gap-3">
+                {viewModel.platformPreviews.map((preview) => (
+                  <article
+                    className="grid min-w-0 gap-3 rounded-lg border border-border bg-background p-4"
+                    data-testid="saved-platform-version"
+                    key={preview.id}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-foreground">{preview.platform}</h2>
+                        <p className="mt-1 text-xs text-muted">{preview.budget}</p>
+                      </div>
+                      <Badge tone={preview.status.includes("готов") ? "success" : "warning"}>
+                        {preview.status}
+                      </Badge>
+                    </div>
+                    {preview.text ? (
+                      <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground">
+                        {preview.text}
+                      </p>
+                    ) : (
+                      <p className="text-sm leading-6 text-muted">Текст версии пока не сформирован.</p>
+                    )}
+                    {preview.warning ? (
+                      <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-sm leading-6 text-muted">
+                        <AlertTriangle className="mt-0.5 shrink-0" size={16} />
+                        <span>{preview.warning}</span>
+                      </div>
+                    ) : null}
+                    {preview.text ? (
+                      <div className="flex flex-wrap gap-2">
+                        <CopyTextButton label={preview.platform} text={preview.text} />
+                        <Button asChild variant="secondary">
+                          <Link
+                            data-testid="refine-saved-platform-version"
+                            href={`/app/content/new?edit=${encodeURIComponent(contentId)}&platform=${encodeURIComponent(preview.platformKey)}#platform-results`}
+                          >
+                            <WandSparkles size={16} />
+                            Доработать
+                          </Link>
+                        </Button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-5 text-sm leading-6 text-muted">
+                Версии для площадок ещё не собраны. Создайте новую публикацию и завершите сборку.
+              </div>
+            )}
+
+            <div className="rounded-lg bg-surface-muted p-4 text-sm leading-6 text-muted">
+              Перед публикацией проверьте каждую версию. Отправка без подтверждения человека не выполняется.
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const activeStep = viewModel.materialFlow.steps[2] ?? viewModel.materialFlow.steps[0];
+
   return (
-    <div className="grid min-w-0 gap-5">
-      <StudioHeader label="Этап UI 05" title="Контент-студия" />
+    <div className="grid min-w-0 gap-5" data-testid="content-composer">
       <section className="grid min-w-0 gap-5">
         {viewModel.notice ? (
           <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
@@ -753,57 +838,73 @@ export function ContentStudioShell({
           </Card>
         ) : null}
 
-        <div className="grid min-w-0 gap-4 xl:hidden">
-          <MaterialWizardCard flow={viewModel.materialFlow} />
-          <MaterialOverviewCard contentId={contentId} viewModel={viewModel} />
-          <Card>
-            <PilotVoiceTelegramPanel
-              canMutate={viewModel.guidedForm.canMutate}
-              contentId={contentId}
-              initialTranscript={viewModel.transcriptReview.text}
-              itemVersion={viewModel.guidedForm.itemVersion}
-              workspaceId={viewModel.workspaceId}
-            />
-          </Card>
-          <MobileDetails summary="Подробности: факты и поля">
-            <InputBlocksCard viewModel={viewModel} />
-            <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
-          </MobileDetails>
-          <MobileDetails summary="Подробности: версии, проверки и факт-локи">
-            <PlatformPreviewsCard viewModel={viewModel} />
-            <FactLocksCard viewModel={viewModel} />
-            <ChecksCard viewModel={viewModel} />
-          </MobileDetails>
-          <MobileDetails summary="Подробности: мастер-черновик и история">
-            <Card className="grid gap-4">
-              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <MessageSquareText size={18} className="text-primary" />
-                    Мастер-черновик
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-muted">
-                    Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
-                  </p>
-                </div>
-                <Badge tone="info">{viewModel.masterBudget}</Badge>
-              </div>
-              <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
-                {viewModel.masterDraftParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </article>
-            </Card>
-          </MobileDetails>
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="success">{viewModel.summary.project}</Badge>
+              <Badge>{viewModel.summary.rubric}</Badge>
+              <Badge tone="info">Telegram + MAX + Instagram</Badge>
+            </div>
+            <h1 className="mt-3 break-words text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+              {viewModel.summary.title}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted sm:text-base">
+              Выберите блок, продиктуйте или вставьте текст, прикрепите медиа и соберите версии для площадок.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary">
+              <Save size={16} />
+              {viewModel.summary.autosave}
+            </Button>
+            <Button type="button">
+              <WandSparkles size={16} />
+              Собрать текст
+            </Button>
+          </div>
         </div>
 
-        <div className="hidden min-w-0 gap-5 xl:grid">
-          <MaterialOverviewCard contentId={contentId} viewModel={viewModel} />
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_380px]">
+          <Card className="grid min-w-0 content-start gap-3" data-testid="material-wizard">
+            <div className="text-lg font-semibold text-foreground">Блоки</div>
+            {viewModel.materialFlow.steps.slice(0, 5).map((step, index) => (
+              <button
+                className={
+                  index === 2
+                    ? "grid min-w-0 grid-cols-[32px_1fr] gap-3 rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_92%)] p-3 text-left"
+                    : "grid min-w-0 grid-cols-[32px_1fr] gap-3 rounded-lg border border-border bg-background p-3 text-left"
+                }
+                data-testid="material-wizard-step"
+                key={step.label}
+                type="button"
+              >
+                <span className="grid size-8 place-items-center rounded-md bg-surface-muted text-sm font-semibold text-foreground">
+                  {index + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block break-words text-sm font-semibold text-foreground">{step.label}</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted">
+                    {index < 2 ? "готово" : index === 2 ? "сейчас" : "ожидает"}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </Card>
 
-          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)_360px]">
-            <MaterialWizardCard flow={viewModel.materialFlow} />
-
-            <Card>
+          <Card className="grid min-w-0 content-start gap-4 overflow-hidden">
+            <div className="rounded-lg bg-[color-mix(in_srgb,var(--primary),transparent_92%)] p-4">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-xl font-semibold text-primary">
+                <Mic size={22} />
+                {activeStep?.label ?? "Диктовка"}
+              </div>
+              <p className="mt-2 break-words text-sm leading-6 text-muted">
+                {activeStep?.helper ?? "Продиктуйте блок, проверьте текст и примите его в материал."}
+              </p>
+            </div>
+            <div
+              className="min-w-0 rounded-t-[28px] border border-border bg-surface p-3 shadow-popover sm:rounded-lg"
+              data-testid="voice-bottom-sheet"
+            >
               <PilotVoiceTelegramPanel
                 canMutate={viewModel.guidedForm.canMutate}
                 contentId={contentId}
@@ -811,117 +912,81 @@ export function ContentStudioShell({
                 itemVersion={viewModel.guidedForm.itemVersion}
                 workspaceId={viewModel.workspaceId}
               />
-            </Card>
-
-            <div className="hidden 2xl:block">
-              <PlatformPreviewsCard viewModel={viewModel} />
             </div>
-          </div>
+          </Card>
 
-          <div className="2xl:hidden">
+          <div className="grid min-w-0 content-start gap-4">
             <PlatformPreviewsCard viewModel={viewModel} />
+            <Card className="grid gap-3">
+              <div className="text-sm font-semibold text-foreground">Что уже есть</div>
+              {viewModel.factLocks.slice(0, 3).map(({ fact, source, status }) => (
+                <div className="rounded-md border border-border bg-background p-3 text-sm" key={fact}>
+                  <div className="break-words font-medium text-foreground">{fact}</div>
+                  <div className="mt-1 text-xs leading-5 text-muted">{source}</div>
+                  <Badge className="mt-2 w-fit" tone={status === "locked" ? "success" : "warning"}>
+                    {status === "locked" ? "готово" : "проверить"}
+                  </Badge>
+                </div>
+              ))}
+            </Card>
           </div>
-
-          <details
-            className="rounded-lg border border-border bg-surface p-4 shadow-panel"
-            data-testid="desktop-advanced-studio"
-          >
-            <summary className="cursor-pointer text-sm font-medium text-foreground">
-              Расширенный режим: факты, проверки, мастер-черновик и история
-            </summary>
-            <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
-              <div className="grid min-w-0 content-start gap-4">
-                <InputBlocksCard viewModel={viewModel} />
-                <FactLocksCard viewModel={viewModel} />
-              </div>
-
-              <div className="grid min-w-0 content-start gap-4">
-                <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
-
-                <Card className="grid gap-4">
-                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <MessageSquareText size={18} className="text-primary" />
-                        Мастер-черновик
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-muted">
-                        Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
-                      </p>
-                    </div>
-                    <Badge tone="info">{viewModel.masterBudget}</Badge>
-                  </div>
-                  <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
-                    {viewModel.masterDraftParagraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
-                  </article>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="secondary">
-                      <Sparkles size={16} />
-                      Пересобрать выбранный раздел
-                    </Button>
-                    <Button type="button">
-                      <FileCheck2 size={16} />
-                      Принять мастер-текст
-                    </Button>
-                  </div>
-                </Card>
-
-                <Card className="grid gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Bot size={18} className="text-primary" />
-                    ИИ-предложения
-                  </div>
-                  {viewModel.aiSuggestions.map(({ action, name, text }) => (
-                    <div className="grid gap-3 rounded-md border border-border p-3" key={name}>
-                      <div>
-                        <div className="text-sm font-medium text-foreground">{name}</div>
-                        <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" type="button">
-                          <CheckCircle2 size={14} />
-                          {action === "принять" ? "Принять" : "Принять правку"}
-                        </Button>
-                        <Button size="sm" type="button" variant="secondary">
-                          <MessageSquareText size={14} />
-                          Изменить
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-
-                <Card className="grid gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <History size={18} className="text-primary" />
-                    История версий
-                  </div>
-                  {viewModel.revisionEvents.map(({ event, time, version }) => (
-                    <div
-                      className="grid grid-cols-[48px_1fr] gap-3 rounded-md border border-border p-3 text-sm"
-                      key={version}
-                    >
-                      <Badge>{version}</Badge>
-                      <div>
-                        <div className="font-medium text-foreground">{event}</div>
-                        <div className="mt-1 text-xs text-muted">{time}</div>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-              </div>
-
-              <div className="grid min-w-0 content-start gap-4">
-                <ChecksCard viewModel={viewModel} />
-              </div>
-            </div>
-          </details>
         </div>
+
+        <details
+          className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+          data-testid="desktop-advanced-studio"
+        >
+          <summary className="cursor-pointer text-sm font-semibold text-foreground">
+            Расширенный режим: поля, проверки, история и точная правка
+          </summary>
+          <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+            <div className="grid min-w-0 content-start gap-4">
+              <InputBlocksCard viewModel={viewModel} />
+              <FactLocksCard viewModel={viewModel} />
+            </div>
+            <div className="grid min-w-0 content-start gap-4">
+              <GuidedFormPanel contentId={contentId} viewModel={viewModel.guidedForm} />
+              <Card className="grid gap-4">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <MessageSquareText size={18} className="text-primary" />
+                      Мастер-черновик
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted">
+                      Черновик собирается из зафиксированных фактов, примеров и правил рубрики.
+                    </p>
+                  </div>
+                  <Badge tone="info">{viewModel.masterBudget}</Badge>
+                </div>
+                <article className="grid gap-3 rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
+                  {viewModel.masterDraftParagraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </article>
+              </Card>
+            </div>
+            <div className="grid min-w-0 content-start gap-4">
+              <ChecksCard viewModel={viewModel} />
+              <Card className="grid gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <History size={18} className="text-primary" />
+                  История
+                </div>
+                {viewModel.revisionEvents.map(({ event, time, version }) => (
+                  <div className="rounded-md border border-border p-3 text-sm" key={`${version}-${event}`}>
+                    <div className="font-medium text-foreground">{event}</div>
+                    <div className="mt-1 text-xs text-muted">{version} · {time}</div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          </div>
+        </details>
       </section>
     </div>
   );
+
 }
 
 export function MediaLibraryShell({ viewModel }: { viewModel: MediaLibraryViewModel }) {

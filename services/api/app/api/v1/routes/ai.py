@@ -103,6 +103,7 @@ class GenerationRunOut(BaseModel):
     output_tokens: int | None
     input_characters: int | None
     output_characters: int | None
+    cost_estimate_micro_usd: int | None
     error_code: str | None
     error_message: str | None
     retry_count: int
@@ -154,6 +155,7 @@ def generation_run_out(run: GenerationRun) -> GenerationRunOut:
         output_tokens=run.output_tokens,
         input_characters=run.input_characters,
         output_characters=run.output_characters,
+        cost_estimate_micro_usd=run.cost_estimate_micro_usd,
         error_code=run.error_code,
         error_message=run.error_message,
         retry_count=run.retry_count,

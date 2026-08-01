@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import base64
 import hashlib
 import json
 import math
@@ -19,6 +21,7 @@ from app.core.config import Settings
 from app.db.base import (
     ContentBlock,
     ContentItem,
+    ContentMedia,
     ContentRevision,
     ExampleEmbedding,
     ExampleMetric,
@@ -26,6 +29,8 @@ from app.db.base import (
     GenerationRun,
     GenerationStep,
     LockedFact,
+    MediaAsset,
+    PlatformVariant,
     ProjectVersion,
     RubricVersion,
     utc_now,
@@ -38,9 +43,11 @@ from app.modules.ai.providers import (
 )
 from app.modules.content.service import (
     fact_key_for_block,
+    fetch_s3_object_bytes,
     next_content_revision_number,
     text_from_value,
 )
+from app.modules.projects.boilerplate import ai_cta_config, strip_project_boilerplate
 
 
 class AiPipelineError(RuntimeError):
@@ -56,6 +63,33 @@ class ExampleMatch:
     example: ExamplePost
     score: float
     reasons: list[str]
+
+
+REFINEMENT_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["text", "warnings"],
+    "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "warnings": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+        },
+    },
+}
+
+
+MODEL_PRICES_USD_PER_MILLION_TOKENS: dict[str, tuple[Decimal, Decimal]] = {
+    "gpt-4.1-mini": (Decimal("0.40"), Decimal("1.60")),
+    "gpt-5.4-mini": (Decimal("0.75"), Decimal("4.50")),
+    "gpt-5.6-luna": (Decimal("1.00"), Decimal("6.00")),
+    "gpt-5.6-terra": (Decimal("2.50"), Decimal("15.00")),
+    "gpt-5.6-sol": (Decimal("5.00"), Decimal("30.00")),
+}
+
+AI_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+AI_IMAGE_MAX_COUNT = 3
+AI_IMAGE_MAX_BYTES = 8 * 1024 * 1024
 
 
 MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
@@ -123,7 +157,7 @@ MASTER_OUTPUT_SCHEMA: dict[str, Any] = {
             "additionalProperties": False,
             "required": ["value", "source", "evidence"],
             "properties": {
-                "value": {"type": ["integer", "null"], "minimum": 1, "maximum": 9},
+                "value": {"type": "integer", "minimum": 1, "maximum": 9},
                 "source": {"type": "string"},
                 "evidence": {"type": "string"},
             },
@@ -308,6 +342,20 @@ def usage_number(usage: dict[str, Any], *keys: str) -> int | None:
     return None
 
 
+def estimate_text_cost_micro_usd(
+    model_id: str,
+    input_tokens: int | None,
+    output_tokens: int | None,
+) -> int | None:
+    prices = MODEL_PRICES_USD_PER_MILLION_TOKENS.get(model_id)
+    if prices is None or input_tokens is None or output_tokens is None:
+        return None
+    input_price, output_price = prices
+    # USD per million tokens numerically equals micro-USD per token.
+    estimate = Decimal(input_tokens) * input_price + Decimal(output_tokens) * output_price
+    return int(estimate.quantize(Decimal("1")))
+
+
 def source_text_from_blocks(blocks: list[ContentBlock]) -> str:
     parts = []
     for block in blocks:
@@ -486,6 +534,74 @@ async def content_generation_context(
     return project_version, rubric_version, list(blocks), list(locked)
 
 
+async def ai_image_inputs_for_content(
+    session: AsyncSession,
+    settings: Settings,
+    item: ContentItem,
+) -> tuple[list[str], dict[str, Any]]:
+    """Load a small, bounded set of attached photos for one multimodal pass."""
+    rows = (
+        await session.execute(
+            select(ContentMedia, MediaAsset)
+            .join(MediaAsset, MediaAsset.id == ContentMedia.media_asset_id)
+            .where(
+                ContentMedia.content_item_id == item.id,
+                MediaAsset.deleted_at.is_(None),
+                MediaAsset.upload_status == "completed",
+                MediaAsset.kind == "image",
+            )
+            .order_by(ContentMedia.sort_order.asc())
+        )
+    ).all()
+    eligible = [
+        media
+        for _, media in rows
+        if media.mime_type.lower() in AI_IMAGE_MIME_TYPES
+        and media.size_bytes <= AI_IMAGE_MAX_BYTES
+    ][:AI_IMAGE_MAX_COUNT]
+    images: list[str] = []
+    failed = 0
+    for media in eligible:
+        try:
+            payload = await asyncio.to_thread(fetch_s3_object_bytes, settings, media)
+        except Exception:  # Storage failures must not erase an otherwise usable text draft.
+            failed += 1
+            continue
+        encoded = base64.b64encode(payload).decode("ascii")
+        images.append(f"data:{media.mime_type.lower()};base64,{encoded}")
+    return images, {
+        "attached_image_count": len(rows),
+        "eligible_image_count": len(eligible),
+        "submitted_image_count": len(images),
+        "failed_image_count": failed,
+        "image_detail": "low" if images else None,
+    }
+
+
+async def latest_auxiliary_results(
+    session: AsyncSession,
+    item: ContentItem,
+) -> dict[str, Any]:
+    rows = (
+        await session.scalars(
+            select(GenerationRun)
+            .where(
+                GenerationRun.content_item_id == item.id,
+                GenerationRun.status == "completed",
+                GenerationRun.task_type.in_(
+                    ["extract_facts", "suggest_hook", "suggest_ratings"]
+                ),
+            )
+            .order_by(GenerationRun.created_at.desc())
+        )
+    ).all()
+    latest: dict[str, Any] = {}
+    for run in rows:
+        if run.task_type not in latest and isinstance(run.response_json, dict):
+            latest[run.task_type] = run.response_json
+    return latest
+
+
 async def retrieve_examples(
     session: AsyncSession,
     settings: Settings,
@@ -493,7 +609,9 @@ async def retrieve_examples(
     query_text: str,
     max_examples: int,
 ) -> list[ExampleMatch]:
-    max_examples = min(max(max_examples, 3), 8)
+    max_examples = min(max(max_examples, 0), 8)
+    if max_examples == 0:
+        return []
     candidates = (
         await session.scalars(
             select(ExamplePost)
@@ -512,13 +630,18 @@ async def retrieve_examples(
     query_vector = (await provider.embed([query_text or ""])).embeddings[0]
     query_tokens = token_set(query_text)
     matches: list[ExampleMatch] = []
+    seen_content_hashes: set[str] = set()
     for example in candidates:
+        example_hash = content_hash(example.normalized_text)
+        if example_hash in seen_content_hashes:
+            continue
+        seen_content_hashes.add(example_hash)
         embedding = await session.scalar(
             select(ExampleEmbedding).where(
                 ExampleEmbedding.example_post_id == example.id,
                 ExampleEmbedding.provider_key == provider.provider_key,
                 ExampleEmbedding.model_id == provider.model_id,
-                ExampleEmbedding.content_hash == content_hash(example.normalized_text),
+                ExampleEmbedding.content_hash == example_hash,
             )
         )
         vector_score = cosine(query_vector, embedding.embedding_json) if embedding else 0.0
@@ -557,13 +680,42 @@ def context_manifest(
 
 
 def system_prompt(project_version: ProjectVersion, rubric_version: RubricVersion) -> str:
+    project_rules = {
+        "description": project_version.description,
+        "content_domain": project_version.content_domain,
+        "tone": project_version.tone_config if isinstance(project_version.tone_config, dict) else {},
+        "editing": (
+            project_version.editing_strength
+            if isinstance(project_version.editing_strength, dict)
+            else project_version.editing_strength
+        ),
+        "humor": project_version.humor_config if isinstance(project_version.humor_config, dict) else {},
+        "cta": ai_cta_config(project_version.cta_config),
+    }
+    rubric_rules = {
+        "description": rubric_version.description,
+        "editorial_min_chars": rubric_version.editorial_min_chars,
+        "editorial_max_chars": rubric_version.editorial_max_chars,
+        "ai_mode": rubric_version.ai_mode,
+        "configuration": (
+            rubric_version.source_payload
+            if isinstance(rubric_version.source_payload, dict)
+            else {}
+        ),
+    }
     return "\n".join(
         [
             "Ты редактор русскоязычного медиа-проекта.",
-            "Используй только переданные факты. Не выдумывай цены, адреса, блюда и оценки.",
+            "Используй только переданные факты. Не выдумывай цены, адреса и блюда.",
+            "Оценки модели являются редактируемыми редакторскими предложениями: явно отличай "
+            "их от оценок, названных пользователем, и объясняй основание.",
             "Верни только JSON по схеме. Никакого свободного текста вне JSON.",
             f"Проект: {project_version.name}",
             f"Рубрика: {rubric_version.name}",
+            f"Общие правила проекта: {canonical_json(project_rules)[:6000]}",
+            f"Правила выбранной рубрики: {canonical_json(rubric_rules)[:6000]}",
+            "Если правила рубрики уточняют общие правила проекта, применяй уточнение рубрики.",
+            "Постоянный подвал добавляется приложением после генерации; не воспроизводи его сам.",
         ]
     )
 
@@ -574,10 +726,38 @@ def user_prompt(
     examples: list[ExampleMatch],
     locked_facts: list[LockedFact],
     task_type: str,
+    auxiliary_results: dict[str, Any] | None = None,
 ) -> str:
+    task_instructions = {
+        "extract_facts": (
+            "Выдели явно названные факты и наблюдения с приложенных фотографий. Фото можно "
+            "использовать для чтения чека, меню, упаковки и описания внешнего вида. Неясные "
+            "цифры и надписи обязательно помечай как неопределённые; не делай выводов, которых "
+            "нет в источнике."
+        ),
+        "suggest_hook": (
+            "Предложи короткие естественные начала на основе главной мысли источника. "
+            "Не используй внутреннее название материала, имена полей, слово source, "
+            "универсальные рекламные клише или тему, которой нет в исходном тексте."
+        ),
+        "suggest_ratings": (
+            "Верни все четыре оценки от 1 до 9: вкус, общее впечатление, жирность и остроту. "
+            "Если пользователь назвал оценку прямо, сохрани её с source=user. Иначе оцени "
+            "по смыслу всей диктовки и описания с source=ai и коротко объясни основание. "
+            "Это редактируемые предложения модели, а не подтверждённые факты."
+        ),
+        "assemble_master": (
+            "Собери самостоятельную готовую публикацию на русском языке. Не печатай имена "
+            "внутренних полей, ключи блоков, слово source или внутреннее название материала. "
+            "Сохрани факты, применяй общие правила проекта, выбранной рубрики и стиль примеров. "
+            "Верни все четыре оценки 1-9. Прямые оценки пользователя не меняй; остальные "
+            "предложи сам по смыслу диктовки и описания, чтобы пользователь мог их поправить."
+        ),
+    }
     return canonical_json(
         {
             "task": task_type,
+            "instruction": task_instructions.get(task_type, "Выполни задачу строго по схеме."),
             "content_item": {"id": str(item.id), "title": item.title_internal},
             "source_blocks": blocks_manifest(blocks),
             "locked_facts": {fact.fact_key: fact.value_json for fact in locked_facts},
@@ -590,6 +770,7 @@ def user_prompt(
                 }
                 for match in examples
             ],
+            "auxiliary_results": auxiliary_results or {},
         }
     )
 
@@ -616,53 +797,56 @@ def rating_value(value: Any, fallback: int | None = None) -> int | None:
 
 def mock_ratings(blocks: list[ContentBlock], source_text: str) -> dict[str, dict[str, Any]]:
     user = user_ratings_from_blocks(blocks)
-    if user:
-        return {
-            key: {
-                "value": rating_value(user.get(key)),
-                "source": "user",
-                "evidence": "Оценка введена пользователем и не меняется AI.",
-            }
-            for key in ["taste", "impression", "fatness", "spiciness"]
-        }
     lowered = source_text.lower()
     has_negative = any(word in lowered for word in ["плохо", "мимо", "слаб", "горел", "пересол"])
     has_positive = any(word in lowered for word in ["отлич", "хорош", "понрав", "сочно"])
-    taste = 7 if has_positive and not has_negative else 4 if has_negative else None
-    impression = 7 if has_positive else 3 if has_negative else None
-    fatness = 7 if any(word in lowered for word in ["жир", "масл", "майонез"]) else None
-    spiciness = 7 if any(word in lowered for word in ["остр", "аджик", "перец"]) else 1 if "не остро" in lowered else None
-    return {
+    taste = 7 if has_positive and not has_negative else 4 if has_negative else 5
+    impression = 7 if has_positive else 3 if has_negative else 5
+    fatness = 7 if any(word in lowered for word in ["жир", "масл", "майонез"]) else 5
+    spiciness = 7 if any(word in lowered for word in ["остр", "аджик", "перец"]) else 1 if "не остро" in lowered else 5
+    suggested = {
         "taste": {
             "value": taste,
-            "source": "ai" if taste is not None else "insufficient_evidence",
-            "evidence": "Выведено из описания вкуса." if taste is not None else "Недостаточно фактов о вкусе.",
+            "source": "ai",
+            "evidence": "Предложено моделью по описанию вкуса и общему тону.",
         },
         "impression": {
             "value": impression,
-            "source": "ai" if impression is not None else "insufficient_evidence",
-            "evidence": "Выведено из общего тона фактов." if impression is not None else "Недостаточно фактов о впечатлении.",
+            "source": "ai",
+            "evidence": "Предложено моделью по общему впечатлению из диктовки.",
         },
         "fatness": {
             "value": fatness,
-            "source": "ai" if fatness is not None else "insufficient_evidence",
-            "evidence": "Есть явные признаки жирности." if fatness is not None else "Жирность не описана явно.",
+            "source": "ai",
+            "evidence": "Предложено моделью по описанию состава и текстуры.",
         },
         "spiciness": {
             "value": spiciness,
-            "source": "ai" if spiciness is not None else "insufficient_evidence",
-            "evidence": "Есть явные признаки остроты." if spiciness is not None else "Острота не описана явно.",
+            "source": "ai",
+            "evidence": "Предложено моделью по описанию вкуса и ингредиентов.",
         },
     }
+    if not user:
+        return suggested
+    for key, rating in suggested.items():
+        explicit_value = rating_value(user.get(key))
+        if explicit_value is not None:
+            rating.update(
+                {
+                    "value": explicit_value,
+                    "source": "user",
+                    "evidence": "Оценка введена пользователем и не меняется AI.",
+                }
+            )
+    return suggested
 
 
 def hook_candidates(item: ContentItem, source_text: str) -> list[dict[str, Any]]:
-    title = item.title_internal.strip() or "Материал"
-    first_fact = normalize_text(source_text).split(".")[0][:90] if source_text else "фактов пока мало"
+    first_fact = normalize_text(source_text).split(".")[0][:110] if source_text else "важное наблюдение"
     return [
-        {"text": f"🔥 {title}: честный обзор без лишней витрины", "rank": 1, "source": "ai"},
-        {"text": f"Когда {first_fact.lower()} — уже есть повод разобраться", "rank": 2, "source": "ai"},
-        {"text": f"{title}: что вышло хорошо, а где кухня спорит с ожиданием", "rank": 3, "source": "ai"},
+        {"text": first_fact, "rank": 1, "source": "ai"},
+        {"text": f"Что важно знать: {first_fact.lower()}", "rank": 2, "source": "ai"},
+        {"text": "Короткая памятка, которая поможет действовать спокойно", "rank": 3, "source": "ai"},
     ]
 
 
@@ -671,6 +855,9 @@ def cta_candidate(project_version: ProjectVersion) -> str:
     variants = config.get("default_cta_variants") or config.get("variants") or []
     if variants and isinstance(variants[0], str):
         return variants[0]
+    guidance = config.get("guidance")
+    if isinstance(guidance, str) and guidance.strip():
+        return guidance.strip()
     return "А вы как считаете? Напишите в комментариях."
 
 
@@ -705,7 +892,7 @@ def mock_master_payload(
     hooks = hook_candidates(item, source_text)
     ratings = mock_ratings(blocks, source_text)
     cta = cta_candidate(project_version)
-    body_text = "\n\n".join(f"{block['section']}\n{block['text']}" for block in blocks_out)
+    body_text = "\n\n".join(block["text"] for block in blocks_out)
     master_text = "\n\n".join([hooks[0]["text"], body_text, cta])
     warnings = deterministic_warnings(master_text, source_text, rubric_version, len(blocks_out))
     return {
@@ -937,6 +1124,11 @@ def complete_generation_run(
     run.output_tokens = usage_number(usage, "output_tokens", "completion_tokens")
     run.input_characters = usage_number(usage, "input_characters")
     run.output_characters = usage_number(usage, "output_characters")
+    run.cost_estimate_micro_usd = estimate_text_cost_micro_usd(
+        run.model_id,
+        run.input_tokens,
+        run.output_tokens,
+    )
     run.error_code = error_code
     run.error_message = error_message
     run.completed_at = now
@@ -960,11 +1152,45 @@ async def run_structured_task(
     project_version, rubric_version, blocks, locked_facts = await content_generation_context(session, item)
     source_text = source_text_from_blocks(blocks)
     retrieval_config = project_version.example_retrieval if isinstance(project_version.example_retrieval, dict) else {}
-    max_examples = int(retrieval_config.get("max_examples_per_generation") or 8)
+    configured_max_examples = int(retrieval_config.get("max_examples_per_generation") or 8)
+    task_example_limits = {
+        "extract_facts": 0,
+        "suggest_hook": 2,
+        "suggest_ratings": 0,
+        "assemble_master": 4,
+    }
+    max_examples = min(
+        configured_max_examples,
+        task_example_limits.get(task_type, configured_max_examples),
+    )
     examples = await retrieve_examples(session, settings, item, source_text, max_examples=max_examples)
-    provider = text_provider_for(settings)
+    provider = text_provider_for(settings, task_type)
     manifest = context_manifest(item, project_version, rubric_version, examples, locked_facts)
-    prompt = user_prompt(item, blocks, examples, locked_facts, task_type)
+    auxiliary_results = (
+        await latest_auxiliary_results(session, item)
+        if task_type == "assemble_master"
+        else {}
+    )
+    input_images: list[str] = []
+    image_metadata: dict[str, Any] = {
+        "attached_image_count": 0,
+        "eligible_image_count": 0,
+        "submitted_image_count": 0,
+        "failed_image_count": 0,
+        "image_detail": None,
+    }
+    if task_type == "extract_facts":
+        input_images, image_metadata = await ai_image_inputs_for_content(session, settings, item)
+    manifest["image_context"] = image_metadata
+    manifest["auxiliary_task_types"] = sorted(auxiliary_results)
+    prompt = user_prompt(
+        item,
+        blocks,
+        examples,
+        locked_facts,
+        task_type,
+        auxiliary_results=auxiliary_results,
+    )
     run = await create_generation_run(
         session,
         item,
@@ -977,6 +1203,8 @@ async def run_structured_task(
             "schema_name": schema_name,
             "retrieved_example_count": len(examples),
             "source_block_count": len(blocks),
+            "submitted_image_count": image_metadata["submitted_image_count"],
+            "auxiliary_task_types": sorted(auxiliary_results),
         },
         examples,
     )
@@ -998,6 +1226,7 @@ async def run_structured_task(
                 system_prompt=system_prompt(project_version, rubric_version),
                 user_prompt=prompt,
                 fallback_payload=fallback_payload,
+                input_images=input_images,
             )
         )
         response_payload = normalize_payload(result.payload) if normalize_payload else dict(result.payload)
@@ -1013,6 +1242,40 @@ async def run_structured_task(
         code = getattr(exc, "code", "generation_failed")
         message = getattr(exc, "message", str(exc))
         if task_type == "assemble_master":
+            if item.current_master_revision_id is not None:
+                response_payload = {
+                    "errors": [{"code": code, "message": message}],
+                    "warnings": [
+                        {
+                            "code": "last_good_master_preserved",
+                            "message": (
+                                "Повторная сборка не удалась. Последний хороший мастер-текст "
+                                "оставлен без изменений."
+                            ),
+                            "field": "master_text",
+                        }
+                    ],
+                }
+                usage = {}
+                await add_generation_step(
+                    session,
+                    run,
+                    "generation",
+                    status="failed",
+                    error_code=code,
+                    error_message=message,
+                )
+                complete_generation_run(
+                    run,
+                    "failed",
+                    response_payload,
+                    started,
+                    usage,
+                    code,
+                    message,
+                )
+                await session.flush()
+                return run
             response_payload = mock_master_payload(item, project_version, rubric_version, blocks, locked_facts)
             usage = {}
             provider_fallback_warning = {
@@ -1133,6 +1396,152 @@ async def assemble_master(
         MASTER_OUTPUT_SCHEMA,
         fallback,
     )
+
+
+async def refine_platform_variant_text(
+    session: AsyncSession,
+    settings: Settings,
+    variant: PlatformVariant,
+    actor_user_id: UUID,
+    instruction: str,
+) -> tuple[str, list[str], GenerationRun]:
+    item = await session.get(ContentItem, variant.content_item_id)
+    if item is None or item.deleted_at is not None:
+        raise AiPipelineError("content_not_found", "Content item for refinement was not found.")
+    started = time.monotonic()
+    project_version, rubric_version, blocks, locked_facts = await content_generation_context(
+        session,
+        item,
+    )
+    source_text = source_text_from_blocks(blocks)
+    examples = await retrieve_examples(
+        session,
+        settings,
+        item,
+        source_text,
+        max_examples=3,
+    )
+    provider = text_provider_for(settings, "refine_variant")
+    manifest = context_manifest(item, project_version, rubric_version, examples, locked_facts)
+    variant_payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
+    stored_body = variant_payload.get("body_text")
+    stored_boilerplate = variant_payload.get("fixed_boilerplate", project_version.cta_config)
+    current_body = (
+        stored_body.strip()
+        if isinstance(stored_body, str) and stored_body.strip()
+        else strip_project_boilerplate(variant.text, stored_boilerplate)
+    )
+    prompt = canonical_json(
+        {
+            "task": "refine_variant",
+            "instruction": instruction.strip(),
+            "platform": {
+                "key": variant.platform_key,
+                "hard_limits": (
+                    variant.payload_json.get("hard_limits", {})
+                    if isinstance(variant.payload_json, dict)
+                    else {}
+                ),
+                "editorial_length_target": variant_payload.get("length_target", {}),
+            },
+            "current_variant": current_body,
+            "source_blocks": blocks_manifest(blocks),
+            "locked_facts": {fact.fact_key: fact.value_json for fact in locked_facts},
+            "style_examples": [
+                {
+                    "id": str(match.example.id),
+                    "score": round(match.score, 4),
+                    "text": match.example.normalized_text[:2400],
+                    "reasons": match.reasons,
+                }
+                for match in examples
+            ],
+            "requirements": [
+                "Верни полностью готовую новую версию, а не список советов.",
+                "Сохрани все факты, цену, адрес, названия и вывод автора.",
+                "Не добавляй фактов, которых нет в источнике или текущем варианте.",
+                "Соблюдай правила проекта, рубрики и лимит площадки.",
+                "Если передана editorial_length_target, итоговый основной текст должен попасть в её диапазон min_chars-max_chars.",
+                "Не используй двойные пустые строки подряд.",
+                "Не добавляй постоянный подвал и ссылки проекта: приложение вернёт их после доработки.",
+            ],
+        }
+    )
+    run = await create_generation_run(
+        session,
+        item,
+        actor_user_id,
+        "refine_variant",
+        provider.provider_key,
+        provider.model_id,
+        manifest,
+        {
+            "schema_name": "platform_variant_refinement",
+            "platform_key": variant.platform_key,
+            "source_variant_id": str(variant.id),
+            "retrieved_example_count": len(examples),
+        },
+        examples,
+    )
+    await add_generation_step(
+        session,
+        run,
+        "retrieval",
+        output_metadata={
+            "example_ids": [str(match.example.id) for match in examples],
+            "scores": [round(match.score, 4) for match in examples],
+        },
+    )
+    try:
+        result = await provider.generate_structured(
+            StructuredGenerationRequest(
+                task_type="refine_variant",
+                schema_name="platform_variant_refinement",
+                json_schema=REFINEMENT_OUTPUT_SCHEMA,
+                system_prompt=(
+                    f"{system_prompt(project_version, rubric_version)}\n"
+                    "Ты дорабатываешь выбранную версию площадки по одной команде пользователя."
+                ),
+                user_prompt=prompt,
+                fallback_payload={
+                    "text": current_body,
+                    "warnings": [],
+                },
+            )
+        )
+        response_payload = dict(result.payload)
+        validate_structured_payload(response_payload, REFINEMENT_OUTPUT_SCHEMA)
+        refined_text = str(response_payload["text"]).strip()
+        if not refined_text:
+            raise AiPipelineError("empty_refinement", "AI returned an empty refinement.")
+        warnings = [str(value) for value in response_payload.get("warnings", [])]
+        await add_generation_step(
+            session,
+            run,
+            "generation",
+            output_metadata={"provider": result.provider_key, "model": result.model_id},
+        )
+        complete_generation_run(run, "completed", response_payload, started, result.usage)
+        await session.flush()
+        return refined_text, warnings, run
+    except (ProviderError, AiPipelineError) as exc:
+        code = getattr(exc, "code", "refinement_failed")
+        message = getattr(exc, "message", str(exc))
+        response_payload = {
+            "errors": [{"code": code, "message": message}],
+            "warnings": [],
+        }
+        await add_generation_step(
+            session,
+            run,
+            "generation",
+            status="failed",
+            error_code=code,
+            error_message=message,
+        )
+        complete_generation_run(run, "failed", response_payload, started, {}, code, message)
+        await session.flush()
+        raise AiPipelineError(code, message, {"run_id": str(run.id)}) from exc
 
 
 async def suggest_hook(

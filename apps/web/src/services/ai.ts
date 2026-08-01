@@ -31,7 +31,9 @@ export interface ProjectExamplesViewModel {
   }>;
   modeLabel: string;
   notice?: string;
+  projectId: string;
   projectLabel: string;
+  rubrics: Array<{ id: string; name: string }>;
 }
 
 export interface AiStepViewModel {
@@ -181,7 +183,9 @@ function fixtureProjectExamples(projectId: string): ProjectExamplesViewModel {
       },
     ],
     modeLabel: "fixtures",
+    projectId,
     projectLabel: projectId,
+    rubrics: [],
   };
 }
 
@@ -316,18 +320,20 @@ async function apiAiPipeline(): Promise<AiPipelineViewModel> {
 }
 
 async function apiProjectExamples(projectId: string): Promise<ProjectExamplesViewModel> {
-  const fallback = fixtureProjectExamples(projectId);
-  const [project, { examplesResponse, items }] = await Promise.all([
+  const [project, { examplesResponse, items }, rubricsResponse] = await Promise.all([
     projectById(projectId),
     apiExamplesForProject(projectId),
+    safeApiGet<RubricListResponse>(`/api/v1/projects/${projectId}/rubrics`),
   ]);
 
   return {
-    examples: items.length ? items : fallback.examples,
-    metrics: items.length ? exampleMetrics(items) : fallback.metrics,
+    examples: items,
+    metrics: exampleMetrics(items),
     modeLabel: "api",
-    notice: examplesResponse ? undefined : "Список примеров из API недоступен. Показаны демо-данные.",
+    notice: examplesResponse ? undefined : "Не удалось загрузить список примеров. Попробуйте обновить страницу.",
+    projectId,
     projectLabel: project?.name ?? projectId,
+    rubrics: (rubricsResponse?.rubrics ?? []).map((rubric) => ({ id: rubric.id, name: rubric.name })),
   };
 }
 
@@ -356,9 +362,13 @@ export async function getProjectExamplesViewModel(projectId: string): Promise<Pr
     return await apiProjectExamples(projectId);
   } catch {
     return {
-      ...fixtureProjectExamples(projectId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      examples: [],
+      metrics: exampleMetrics([]),
+      modeLabel: "api",
+      notice: "Примеры сейчас не загрузились. Попробуйте обновить страницу.",
+      projectId,
+      projectLabel: "Проект",
+      rubrics: [],
     };
   }
 }

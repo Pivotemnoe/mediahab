@@ -1,4 +1,4 @@
-PNPM ?= /Users/konstantin/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm
+PNPM ?= pnpm
 PYTHON ?= python3
 VENV ?= .venv
 PY := $(VENV)/bin/python

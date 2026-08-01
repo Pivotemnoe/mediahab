@@ -7,6 +7,7 @@ from typing import Any, Protocol
 import httpx
 
 from app.core.config import Settings
+from app.core.openai_http import openai_async_client
 
 
 class ProviderError(RuntimeError):
@@ -24,6 +25,7 @@ class StructuredGenerationRequest:
     system_prompt: str
     user_prompt: str
     fallback_payload: dict[str, Any]
+    input_images: list[str] | None = None
 
 
 @dataclass
@@ -83,9 +85,9 @@ class MockTextGenerationProvider:
 class OpenAITextGenerationProvider:
     provider_key = "openai"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, model_id: str | None = None) -> None:
         self.settings = settings
-        self.model_id = settings.openai_text_model
+        self.model_id = model_id or settings.openai_text_model
 
     async def generate_structured(
         self,
@@ -93,10 +95,28 @@ class OpenAITextGenerationProvider:
     ) -> StructuredGenerationResult:
         if not self.settings.openai_api_key:
             raise ProviderError("openai_not_configured", "OPENAI_API_KEY is not configured.")
+        input_payload: str | list[dict[str, Any]] = request.user_prompt
+        if request.input_images:
+            input_payload = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": request.user_prompt},
+                        *[
+                            {
+                                "type": "input_image",
+                                "image_url": image_url,
+                                "detail": "low",
+                            }
+                            for image_url in request.input_images
+                        ],
+                    ],
+                }
+            ]
         payload = {
             "model": self.model_id,
             "instructions": request.system_prompt,
-            "input": request.user_prompt,
+            "input": input_payload,
             "text": {
                 "format": {
                     "type": "json_schema",
@@ -108,7 +128,10 @@ class OpenAITextGenerationProvider:
         }
         endpoint = f"{self.settings.openai_base_url.rstrip('/')}/responses"
         try:
-            async with httpx.AsyncClient(timeout=self.settings.ai_text_timeout_seconds) as client:
+            async with openai_async_client(
+                self.settings,
+                timeout=self.settings.ai_text_timeout_seconds,
+            ) as client:
                 response = await client.post(
                     endpoint,
                     headers={"Authorization": f"Bearer {self.settings.openai_api_key}"},
@@ -172,7 +195,10 @@ class OpenAIEmbeddingProvider:
             raise ProviderError("openai_not_configured", "OPENAI_API_KEY is not configured.")
         endpoint = f"{self.settings.openai_base_url.rstrip('/')}/embeddings"
         try:
-            async with httpx.AsyncClient(timeout=self.settings.ai_text_timeout_seconds) as client:
+            async with openai_async_client(
+                self.settings,
+                timeout=self.settings.ai_text_timeout_seconds,
+            ) as client:
                 response = await client.post(
                     endpoint,
                     headers={"Authorization": f"Bearer {self.settings.openai_api_key}"},
@@ -203,10 +229,15 @@ class OpenAIEmbeddingProvider:
         )
 
 
-def text_provider_for(settings: Settings) -> TextGenerationProvider:
+def text_provider_for(settings: Settings, task_type: str | None = None) -> TextGenerationProvider:
     provider_key = settings.ai_text_provider.strip().lower()
     if provider_key == "openai":
-        return OpenAITextGenerationProvider(settings)
+        model_id = (
+            settings.openai_editor_model
+            if task_type in {"assemble_master", "refine_variant"}
+            else settings.openai_text_model
+        )
+        return OpenAITextGenerationProvider(settings, model_id=model_id)
     if provider_key in {"yandexgpt", "gigachat"}:
         return ContractMockTextGenerationProvider(provider_key)
     return MockTextGenerationProvider(settings.ai_text_model)

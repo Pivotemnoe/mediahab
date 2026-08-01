@@ -172,6 +172,54 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         self.assertIn((None, "venue_name"), keys)
         self.assertIn(("dishes", "name"), keys)
 
+    def test_content_can_start_without_user_rubric_and_default_profile_stays_hidden(self) -> None:
+        auth = self.register(
+            self.client,
+            email="no-rubric@example.com",
+            workspace_name="No Rubric Workspace",
+        )
+        workspace_id = auth["workspace"]["id"]
+        project_response = self.client.post(
+            f"/api/v1/workspaces/{workspace_id}/projects",
+            headers=self.csrf_headers(auth),
+            json={
+                "name": "Personal channel",
+                "tone_config": {
+                    "audience": "Owners of small businesses",
+                    "voice": "Clear and practical",
+                },
+            },
+        )
+        self.assertEqual(project_response.status_code, 200, project_response.text)
+        project = project_response.json()
+
+        created = self.client.post(
+            f"/api/v1/projects/{project['id']}/content-items",
+            headers=self.csrf_headers(auth),
+            json={"rubric_id": None, "title_internal": "First voice post"},
+        )
+        self.assertEqual(created.status_code, 200, created.text)
+        content = created.json()
+        self.assertEqual(content["title_internal"], "First voice post")
+
+        guided = self.client.get(f"/api/v1/content-items/{content['id']}/guided-form")
+        self.assertEqual(guided.status_code, 200, guided.text)
+        self.assertEqual(
+            [field["key"] for field in guided.json()["ui_schema"]["fields"]],
+            ["source"],
+        )
+
+        visible_rubrics = self.client.get(f"/api/v1/projects/{project['id']}/rubrics")
+        self.assertEqual(visible_rubrics.status_code, 200, visible_rubrics.text)
+        self.assertEqual(visible_rubrics.json()["rubrics"], [])
+
+        usage = self.client.get(f"/api/v1/workspaces/{workspace_id}/usage")
+        self.assertEqual(usage.status_code, 200, usage.text)
+        rubric_limit = next(
+            item for item in usage.json()["limits"] if item["key"] == "rubrics.active.max"
+        )
+        self.assertEqual(rubric_limit["used"], 0.0)
+
     def test_media_presign_order_and_transcription_accept_lock(self) -> None:
         auth = self.register(self.client, email="media04@example.com", workspace_name="Media Workspace")
         workspace_id = auth["workspace"]["id"]

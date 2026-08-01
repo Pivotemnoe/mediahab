@@ -2,8 +2,6 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 
 import { BrandMark } from "@/components/layout/brand-mark";
-import { MobileNav } from "@/components/layout/mobile-nav";
-import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { OfflineStatus } from "@/components/pwa/offline-status";
 import { Button } from "@/components/ui/button";
@@ -61,16 +59,12 @@ export function AuthShell({ children, className }: { children: ReactNode; classN
 
 export function CabinetShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background text-foreground lg:flex">
-      <Sidebar />
-      <div className="min-w-0 flex-1 overflow-x-hidden">
-        <Topbar />
-        <main className="box-border mx-auto w-full max-w-full px-4 pb-24 pt-4 lg:max-w-[1500px] lg:px-6 lg:pb-8">
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
+      <Topbar />
+      <main className="box-border mx-auto w-full max-w-[1500px] px-4 pb-10 pt-5 sm:px-5 lg:px-8">
+        {children}
+      </main>
       <OfflineStatus />
-      <MobileNav />
     </div>
   );
 }

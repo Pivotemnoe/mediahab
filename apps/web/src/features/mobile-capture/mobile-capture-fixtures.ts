@@ -1,7 +1,7 @@
 export const captureSteps = [
   ["Проект", "done"],
   ["Рубрика", "done"],
-  ["Создать черновик", "active"],
+  ["Создать материал", "active"],
   ["Блюда", "next"],
   ["Проверка", "next"],
 ] as const;
@@ -16,8 +16,8 @@ export const recordingStates = [
 ] as const;
 
 export const activeCaptureBlock = {
-  title: "Черновик ещё не создан",
-  prompt: "Сначала создайте рабочий черновик. Запись, фото, ИИ-сборка и Telegram-публикация находятся внутри материала.",
+  title: "Материал ещё не создан",
+  prompt: "Сначала создайте материал. Запись, фото, ИИ-сборка и версии площадок находятся внутри рабочего материала.",
   progress: "старт",
   duration: "00:00",
   transcript: "",

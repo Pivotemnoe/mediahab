@@ -58,6 +58,13 @@ Codex must not silently choose answers for these items. Resolve or record an exp
 19. Confirm whether mock payment webhook simulation may remain available in staging after a real provider is added, and who can trigger it.
 20. Confirm whether the first place-review UX template should be persisted/renamed as `Обзор места` in project configuration, or remain a frontend label over the existing preset rubric `Обзор недели`.
 
+### 2026-07-31 owner direction recorded for roadmap, not yet enabled
+
+- Add a constrained rich-text editor for ready platform versions and the reusable footer. The user selects any word or phrase and attaches a link as in Telegram; separate visible URL fields are not the intended normal UX. Source transcription remains plain by default. Implementation and production rollout require a separate approved slice.
+- Candidate media default: original photos and future videos remain available for 30 days from upload, with visible expiry and warnings. Evaluate a short compressed-preview/archive tier only after measuring its cost; do not keep a hidden indefinite archive.
+- Candidate text default: accepted transcripts and content revisions remain for up to 180 days while the workspace is active. After 90 days without authenticated activity, warn the owner and allow a 30-day return/export grace period before earlier inactive cleanup.
+- Still unresolved before implementation: the exact raw-voice period, notification channels, whether text needs a user-facing `keep longer` action, and whether a compressed media tier is economically useful.
+
 ## Deployment notes from owner-provided infrastructure
 
 - 2026-06-22: Owner reported the purchased domain `temichev-posthub.ru` and shared Timeweb DNS UI evidence. The screenshot shows an A record for `temichev-posthub.ru` pointing to `89.169.46.92`.

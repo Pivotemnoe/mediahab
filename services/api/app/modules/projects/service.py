@@ -19,6 +19,8 @@ from app.modules.auth.security import slugify
 from app.modules.billing.service import entitlement_value
 from app.modules.projects.schema_builder import checksum, input_flow_to_schema
 
+PROJECT_DEFAULT_RUBRIC_SLUG = "project-default"
+
 
 @dataclass
 class ProjectContext:
@@ -122,7 +124,7 @@ def project_version_payload(data: dict[str, Any]) -> dict[str, Any]:
         },
         "ai_mode_default": ai_policy.get("mode", data.get("ai_mode_default", "editor")),
         "editing_strength": ai_policy.get("edit_strength_percent", data.get("editing_strength", {})),
-        "humor_config": {"level": ai_policy.get("humor_level")},
+        "humor_config": data.get("humor_config", {"level": ai_policy.get("humor_level")}),
         "cta_config": data.get("cta_config", {}),
         "provider_preferences": data.get("provider_preferences", {}),
         "character_count_policy": data.get(
@@ -288,6 +290,58 @@ async def create_rubric_with_version(
     input_schema = await session.get(InputSchema, version.input_schema_id)
     assert input_schema is not None
     return RubricContext(rubric=rubric, version=version, input_schema=input_schema)
+
+
+async def get_or_create_project_default_rubric(
+    session: AsyncSession,
+    project: Project,
+    actor_user_id: UUID,
+) -> RubricContext:
+    # Serialize lazy creation so simultaneous first dictations cannot race on
+    # the reserved project-level profile slug.
+    await session.execute(
+        select(Project.id).where(Project.id == project.id).with_for_update()
+    )
+    existing = await session.scalar(
+        select(Rubric).where(
+            Rubric.project_id == project.id,
+            Rubric.slug == PROJECT_DEFAULT_RUBRIC_SLUG,
+        )
+    )
+    if existing is not None:
+        context = await get_active_rubric(session, existing.id)
+        if context is not None:
+            return context
+
+    data = {
+        "schema_version": "1.0",
+        "key": PROJECT_DEFAULT_RUBRIC_SLUG,
+        "name": "Без рубрики",
+        "description": "Общие правила проекта для обычных публикаций без выбранной рубрики.",
+        "active": True,
+        "archived": False,
+        "editorial_limits": {"min_chars": None, "max_chars": 4000},
+        "ai_mode": "editor",
+        "input_flow": [
+            {
+                "key": "source",
+                "label": "Исходный материал",
+                "description": "Факты и пожелания к публикации.",
+                "type": "voice_or_long_text",
+                "required": True,
+                "fact_locked": True,
+            }
+        ],
+        "generated_fields": ["hook", "master_text", "platform_variants"],
+        "platform_overrides": {},
+    }
+    return await create_rubric_with_version(
+        session,
+        project,
+        actor_user_id,
+        data,
+        sort_order=-1,
+    )
 
 
 async def create_rubric_version(

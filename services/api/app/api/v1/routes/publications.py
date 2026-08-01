@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,7 +20,9 @@ from app.db.base import (
     Workspace,
     utc_now,
 )
+from app.core.config import Settings, get_settings
 from app.db.session import get_session
+from app.modules.ai.service import AiPipelineError, refine_platform_variant_text
 from app.modules.auth.dependencies import (
     Actor,
     get_current_actor,
@@ -65,10 +67,16 @@ router = APIRouter()
 
 class GenerateVariantsRequest(BaseModel):
     platform_keys: list[str] | None = Field(default=None, max_length=12)
+    length_overrides: dict[str, dict[str, int | None]] = Field(default_factory=dict)
+    instagram_format: Literal["image", "carousel", "reel"] | None = None
 
 
 class PlatformVariantPatchRequest(BaseModel):
     text: str = Field(min_length=1, max_length=120000)
+
+
+class PlatformVariantRefineRequest(BaseModel):
+    instruction: str = Field(min_length=1, max_length=1000)
 
 
 class PlatformVariantOut(BaseModel):
@@ -93,6 +101,18 @@ class PlatformVariantOut(BaseModel):
 
 class PlatformVariantsResponse(BaseModel):
     variants: list[PlatformVariantOut]
+
+
+class PlatformVariantRefinementResponse(BaseModel):
+    variant: PlatformVariantOut
+    generation_run_id: UUID
+    model_id: str
+    input_tokens: int | None
+    output_tokens: int | None
+    input_characters: int | None
+    output_characters: int | None
+    cost_estimate_micro_usd: int | None
+    warnings: list[str]
 
 
 class DestinationCreateRequest(BaseModel):
@@ -492,7 +512,14 @@ async def generate_variants(
     item, membership = await item_for_actor(content_id, request, actor, db)
     require_preparation_role(membership, request)
     try:
-        variants = await generate_variants_for_content(db, item, actor.user.id, payload.platform_keys)
+        variants = await generate_variants_for_content(
+            db,
+            item,
+            actor.user.id,
+            payload.platform_keys,
+            payload.length_overrides,
+            payload.instagram_format,
+        )
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
     await db.commit()
@@ -540,6 +567,65 @@ async def patch_variant(
         raise handle_publication_error(exc, request) from exc
     await db.commit()
     return variant_out(edited)
+
+
+@router.post(
+    "/platform-variants/{variant_id}/refine",
+    response_model=PlatformVariantRefinementResponse,
+)
+async def refine_variant_endpoint(
+    variant_id: UUID,
+    payload: PlatformVariantRefineRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> PlatformVariantRefinementResponse:
+    variant, membership = await variant_for_actor(variant_id, request, actor, db)
+    require_preparation_role(membership, request)
+    try:
+        refined_text, warnings, run = await refine_platform_variant_text(
+            db,
+            settings,
+            variant,
+            actor.user.id,
+            payload.instruction,
+        )
+        edited = await edit_platform_variant(db, variant, actor.user.id, refined_text)
+        edited_payload = edited.payload_json if isinstance(edited.payload_json, dict) else {}
+        edited.payload_json = {
+            **edited_payload,
+            "ai_refinement": {
+                "generation_run_id": str(run.id),
+                "instruction": payload.instruction,
+                "model_id": run.model_id,
+                "warnings": warnings,
+            },
+        }
+        edited = await validate_platform_variant(db, edited)
+    except AiPipelineError as exc:
+        await db.commit()
+        raise api_error(
+            503,
+            exc.code,
+            "ИИ не смог доработать текст. Последняя хорошая версия сохранена.",
+            {"reason": exc.message, **exc.details},
+            request=request,
+        ) from exc
+    except PublicationCoreError as exc:
+        raise handle_publication_error(exc, request) from exc
+    await db.commit()
+    return PlatformVariantRefinementResponse(
+        variant=variant_out(edited),
+        generation_run_id=run.id,
+        model_id=run.model_id,
+        input_tokens=run.input_tokens,
+        output_tokens=run.output_tokens,
+        input_characters=run.input_characters,
+        output_characters=run.output_characters,
+        cost_estimate_micro_usd=run.cost_estimate_micro_usd,
+        warnings=warnings,
+    )
 
 
 @router.post("/platform-variants/{variant_id}/validate", response_model=PlatformVariantOut)

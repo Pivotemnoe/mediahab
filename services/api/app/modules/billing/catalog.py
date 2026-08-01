@@ -25,7 +25,7 @@ PLAN_SEED = [
 ENTITLEMENT_SEED: dict[str, dict[str, Any]] = {
     "free": {
         "team.seats.max": 1,
-        "projects.max": 1,
+        "projects.max": 3,
         "rubrics.active.max": 3,
         "platform_connections.auto.max": 0,
         "ai.text_generations.monthly": 25,

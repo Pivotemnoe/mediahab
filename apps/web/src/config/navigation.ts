@@ -1,17 +1,7 @@
 import {
-  BadgeDollarSign,
-  BookOpenCheck,
-  CalendarDays,
   FileEdit,
-  FolderKanban,
-  Images,
-  LayoutDashboard,
   Plus,
-  RadioTower,
-  Send,
   Settings,
-  UserRound,
-  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,19 +13,10 @@ export type NavItem = {
 };
 
 export const cabinetNavItems: NavItem[] = [
-  { href: "/app/dashboard", icon: LayoutDashboard, label: "Дашборд", mobile: true },
+  { href: "/app", icon: Plus, label: "Кабинет", mobile: true },
   { href: "/app/content/new", icon: Plus, label: "Создать", mobile: true },
-  { href: "/app/projects", icon: FolderKanban, label: "Проекты", mobile: true },
-  { href: "/app/content", icon: FileEdit, label: "Контент", mobile: true },
-  { href: "/app/calendar", icon: CalendarDays, label: "Календарь" },
-  { href: "/app/media", icon: Images, label: "Медиа" },
-  { href: "/app/examples", icon: BookOpenCheck, label: "Примеры" },
-  { href: "/app/integrations", icon: RadioTower, label: "Интеграции" },
-  { href: "/app/publications", icon: Send, label: "Публикации" },
-  { href: "/app/billing", icon: BadgeDollarSign, label: "Тариф" },
-  { href: "/app/workspace", icon: UsersRound, label: "Команда" },
-  { href: "/app/account", icon: UserRound, label: "Аккаунт" },
-  { href: "/app/settings", icon: Settings, label: "Настройки" },
+  { href: "/app/content", icon: FileEdit, label: "История", mobile: true },
+  { href: "/app/settings", icon: Settings, label: "Настройки", mobile: true },
 ];
 
 export const mobileNavItems = cabinetNavItems.filter((item) => item.mobile);

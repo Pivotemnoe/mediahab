@@ -218,10 +218,66 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertEqual(response["ratings_suggestion"]["taste"]["source"], "user")
         self.assertEqual(response["ratings_suggestion"]["taste"]["value"], 4)
         self.assertIn("revision_id", response)
-
         content_row, run_row = asyncio.run(self._content_and_run(content["id"], body["id"]))
         self.assertIsNotNone(content_row.current_master_revision_id)
         self.assertEqual(run_row.provider_key, "mock")
+
+    def test_variant_refinement_creates_revision_and_failure_preserves_it(self) -> None:
+        auth = self.register(self.client, email="refine05@example.com")
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+        generated = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        variants = self.client.post(
+            f"/api/v1/content-items/{content['id']}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["telegram"]},
+        )
+        self.assertEqual(variants.status_code, 200, variants.text)
+        original = variants.json()["variants"][0]
+
+        refined = self.client.post(
+            f"/api/v1/platform-variants/{original['id']}/refine",
+            headers=self.csrf_headers(auth),
+            json={"instruction": "Сделай текст живее, не меняя факты."},
+        )
+        self.assertEqual(refined.status_code, 200, refined.text)
+        refined_body = refined.json()
+        self.assertEqual(refined_body["variant"]["revision_number"], 2)
+        self.assertEqual(refined_body["variant"]["parent_variant_id"], original["id"])
+        self.assertEqual(refined_body["model_id"], "mock-editor-v1")
+        self.assertIsNone(refined_body["input_tokens"])
+        self.assertIsNone(refined_body["output_tokens"])
+        self.assertGreater(refined_body["input_characters"], 0)
+        self.assertGreater(refined_body["output_characters"], 0)
+
+        self.app.dependency_overrides[get_settings] = lambda: Settings(
+            ai_text_provider="openai",
+            embedding_provider="mock",
+            openai_api_key="test-only",
+        )
+        with patch(
+            "app.modules.ai.providers.OpenAITextGenerationProvider.generate_structured",
+            side_effect=ProviderError("openai_request_failed", "timeout"),
+        ):
+            failed = self.client.post(
+                f"/api/v1/platform-variants/{refined_body['variant']['id']}/refine",
+                headers=self.csrf_headers(auth),
+                json={"instruction": "Пересобери текст."},
+            )
+        self.assertEqual(failed.status_code, 503, failed.text)
+
+        history = self.client.get(f"/api/v1/content-items/{content['id']}/variants")
+        self.assertEqual(history.status_code, 200, history.text)
+        telegram_revisions = [
+            row for row in history.json()["variants"] if row["platform_key"] == "telegram"
+        ]
+        self.assertEqual(len(telegram_revisions), 2)
+        active = next(row for row in telegram_revisions if row["revision_number"] == 2)
+        self.assertIsNone(active["superseded_by_variant_id"])
 
     def test_locked_fact_conflict_uses_source_fallback_master_revision(self) -> None:
         auth = self.register(self.client, email="conflict05@example.com", workspace_name="Conflict Workspace")
@@ -349,6 +405,45 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         content_row, run_row = asyncio.run(self._content_and_run(content["id"], body["id"]))
         self.assertIsNotNone(content_row.current_master_revision_id)
         self.assertEqual(run_row.provider_key, "openai")
+
+    def test_repeat_master_failure_preserves_last_good_revision(self) -> None:
+        auth = self.register(
+            self.client,
+            email="preserve05@example.com",
+            workspace_name="Preserve Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+        first = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(first.status_code, 202, first.text)
+        first_revision_id = first.json()["response_json"]["revision_id"]
+
+        class FailingProvider:
+            provider_key = "openai"
+            model_id = "failing-openai-test"
+
+            async def generate_structured(self, request):
+                raise ProviderError("openai_request_failed", "timeout")
+
+        with patch("app.modules.ai.service.text_provider_for", return_value=FailingProvider()):
+            repeated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(repeated.status_code, 202, repeated.text)
+        repeated_body = repeated.json()
+        self.assertEqual(repeated_body["status"], "failed")
+        self.assertEqual(
+            repeated_body["response_json"]["warnings"][0]["code"],
+            "last_good_master_preserved",
+        )
+        content_row, _ = asyncio.run(
+            self._content_and_run(content["id"], repeated_body["id"])
+        )
+        self.assertEqual(str(content_row.current_master_revision_id), first_revision_id)
 
     def test_cross_workspace_ai_run_access_returns_404(self) -> None:
         owner_a = self.register(self.client, email="owner-a05@example.com", workspace_name="A Workspace")

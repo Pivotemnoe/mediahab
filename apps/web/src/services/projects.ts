@@ -63,6 +63,7 @@ export interface NewProjectViewModel {
     step: string;
     text: string;
   }>;
+  workspaceId: string | null;
 }
 
 export interface ProjectDetailViewModel {
@@ -95,6 +96,7 @@ export interface ProjectSettingsViewModel {
     value: string;
   }>;
   projectLabel: string;
+  project: ProjectOut | null;
   roleNotes: Array<{
     note: string;
     role: string;
@@ -150,6 +152,7 @@ export interface RubricBuilderViewModel extends RubricAssetsViewModel {
 }
 
 export interface RubricDetailViewModel extends RubricBuilderViewModel {
+  rawRubric: import("@/services/openapi-types").RubricOut | null;
   selectedRubric: RubricBuilderViewModel["rubrics"][number];
 }
 
@@ -265,6 +268,7 @@ function fixtureNewProject(): NewProjectViewModel {
     platformOptions: platformOptions.map(([name, note, enabled]) => ({ enabled, name, note })),
     rubricSuggestions: rubricSuggestions.map(([name, text, mode]) => ({ mode, name, text })),
     wizardSteps: projectWizardSteps.map(([step, text, status]) => ({ status, step, text })),
+    workspaceId: null,
   };
 }
 
@@ -303,6 +307,7 @@ function fixtureProjectSettings(projectId: string): ProjectSettingsViewModel {
       { label: "Тематика", value: "Локальные обзоры еды" },
     ],
     projectLabel: projectId,
+    project: null,
     roleNotes: fixtureRoleNotes.map(([role, note]) => ({ note, role })),
     versionNotes: [
       "Текущая версия: v9",
@@ -332,32 +337,36 @@ function fixtureRubricBuilder(projectId: string): RubricBuilderViewModel {
 }
 
 function projectView(project: ProjectOut): ProjectIndexViewModel["projects"][number] {
+  const rubricCount = project.rubric_count ?? 0;
   return {
     description: project.description ?? project.content_domain ?? "Описание проекта не задано.",
     href: `/app/projects/${project.id}`,
     name: project.name,
-    rubrics: `${project.rubric_count ?? 0} рубрик`,
+    rubrics: `${rubricCount} ${rubricCount === 1 ? "рубрика" : rubricCount >= 2 && rubricCount <= 4 ? "рубрики" : "рубрик"}`,
     status: projectStatusLabel(project.status),
     version: `v${project.active_version_number}`,
   };
 }
 
 function apiProjectDetailView(project: ProjectOut): ProjectDetailViewModel {
+  const rubricCount = project.rubric_count ?? 0;
   return {
     modeLabel: "api",
     projectLabel: project.name,
     summaryCards: [
       {
-        note: `Активная версия проекта: v${project.active_version_number}.`,
-        title: "Версии",
+        note: "Аудитория, голос, структура, обязательные элементы и ограничения действуют для всех публикаций канала.",
+        title: "Общие правила",
       },
       {
-        note: `${project.rubric_count ?? 0} рубрик в текущем проекте.`,
+        note: "Добавьте несколько удачных публикаций, чтобы точнее передать стиль канала.",
+        title: "Идеальные примеры",
+      },
+      {
+        note: rubricCount
+          ? `${rubricCount} ${rubricCount === 1 ? "рубрика добавлена" : "рубрики добавлены"}.`
+          : "Рубрик пока нет. Обычные публикации уже можно создавать по общим правилам.",
         title: "Рубрики",
-      },
-      {
-        note: project.preset_key ? `Импортирован пресет: ${project.preset_key}.` : "Проект создан без пресета.",
-        title: "Импорт пресета",
       },
     ],
   };
@@ -388,6 +397,7 @@ function apiProjectSettingsView(project: ProjectOut): ProjectSettingsViewModel {
       { label: "Тематика", value: project.content_domain ?? "не задана" },
     ],
     projectLabel: project.name,
+    project,
     roleNotes: fixtureRoleNotes.map(([role, note]) => ({ note, role })),
     versionNotes: [
       `Текущая версия: v${project.active_version_number}`,
@@ -407,14 +417,14 @@ async function apiProject(projectId: string): Promise<ProjectOut | null> {
 }
 
 async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
-  const fallback = fixtureProjectIndex();
   const workspaceId = await firstWorkspaceId();
 
   if (!workspaceId) {
     return {
-      ...fallback,
+      entryPoints: fixtureProjectIndex().entryPoints,
       modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
+      notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      projects: [],
     };
   }
 
@@ -422,10 +432,10 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
   const projects = projectsResponse?.projects ?? [];
 
   return {
-    ...fallback,
+    entryPoints: fixtureProjectIndex().entryPoints,
     modeLabel: "api",
-    notice: projectsResponse ? undefined : "Список проектов из API недоступен. Показаны демо-данные.",
-    projects: projects.length ? projects.map(projectView) : fallback.projects,
+    notice: projectsResponse ? undefined : "Не удалось загрузить проекты. Попробуйте обновить страницу.",
+    projects: projects.map(projectView),
   };
 }
 
@@ -440,13 +450,12 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
   return {
     ...fallback,
     modeLabel: "api",
-    notice: rubricsResponse ? undefined : "Список рубрик из API недоступен. Показаны демо-данные.",
+    notice: rubricsResponse ? undefined : "Не удалось загрузить рубрики. Попробуйте обновить страницу.",
     projectLabel: project?.name ?? projectId,
-    rubrics: rubrics.length
-      ? rubrics
-          .slice()
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map((rubric) => ({
+    rubrics: rubrics
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((rubric) => ({
             count: rubric.editorial_max_chars
               ? `до ${rubric.editorial_max_chars} знаков`
               : "лимит не задан",
@@ -455,8 +464,7 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
             name: rubric.name,
             status: rubricStatusLabel(rubric.status),
             version: `v${rubric.active_version_number}`,
-          }))
-      : fallback.rubrics,
+          })),
   };
 }
 
@@ -469,9 +477,10 @@ export async function getProjectIndexViewModel(): Promise<ProjectIndexViewModel>
     return await apiProjectIndex();
   } catch {
     return {
-      ...fixtureProjectIndex(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      entryPoints: fixtureProjectIndex().entryPoints,
+      modeLabel: "api",
+      notice: "Данные проектов сейчас не загрузились. Попробуйте обновить страницу.",
+      projects: [],
     };
   }
 }
@@ -481,10 +490,12 @@ export async function getNewProjectViewModel(): Promise<NewProjectViewModel> {
     return fixtureNewProject();
   }
 
+  const workspaceId = await firstWorkspaceId();
   return {
     ...fixtureNewProject(),
     modeLabel: "api",
-    notice: "Создание проекта через API не подключено в этом UI-slice. Показан технический wizard.",
+    notice: workspaceId ? undefined : "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+    workspaceId,
   };
 }
 
@@ -505,8 +516,8 @@ export async function getProjectDetailViewModel(projectId: string): Promise<Proj
   } catch {
     return {
       ...fixtureProjectDetail(projectId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "пример после ошибки загрузки",
+      notice: "Данные проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
     };
   }
 }
@@ -528,8 +539,8 @@ export async function getProjectBuilderViewModel(projectId: string): Promise<Pro
   } catch {
     return {
       ...fixtureProjectBuilder(projectId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "пример после ошибки загрузки",
+      notice: "Настройки проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
     };
   }
 }
@@ -551,8 +562,8 @@ export async function getProjectSettingsViewModel(projectId: string): Promise<Pr
   } catch {
     return {
       ...fixtureProjectSettings(projectId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "пример после ошибки загрузки",
+      notice: "Рубрики проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
     };
   }
 }
@@ -567,8 +578,9 @@ export async function getRubricBuilderViewModel(projectId: string): Promise<Rubr
   } catch {
     return {
       ...fixtureRubricBuilder(projectId),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "api",
+      notice: "Рубрики сейчас не загрузились. Попробуйте обновить страницу.",
+      rubrics: [],
     };
   }
 }
@@ -578,6 +590,9 @@ export async function getRubricDetailViewModel(
   rubricId: string,
 ): Promise<RubricDetailViewModel> {
   const viewModel = await getRubricBuilderViewModel(projectId);
+  const rawRubric = getDataMode() === "api"
+    ? await safeApiGet<import("@/services/openapi-types").RubricOut>(`/api/v1/rubrics/${rubricId}`)
+    : null;
   const selectedRubric =
     viewModel.rubrics.find((rubric) => rubric.id === rubricId) ??
     viewModel.rubrics.find((rubric) => rubric.href.endsWith(`/${rubricId}`)) ??
@@ -592,6 +607,7 @@ export async function getRubricDetailViewModel(
 
   return {
     ...viewModel,
+    rawRubric,
     selectedRubric,
   };
 }

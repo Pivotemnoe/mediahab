@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import (
@@ -20,10 +21,17 @@ from app.db.base import (
     PlatformVariant,
     Project,
     ProjectDestination,
+    ProjectVersion,
+    RubricVersion,
     Publication,
     PublicationAttempt,
     WebhookInbox,
     utc_now,
+)
+from app.modules.projects.boilerplate import (
+    apply_project_boilerplate,
+    project_footer,
+    strip_project_boilerplate,
 )
 from app.modules.publications.connectors import (
     ConnectorValidationError,
@@ -35,6 +43,7 @@ from app.modules.publications.connectors import (
     validate_destination_configuration,
     validate_variant,
 )
+from app.modules.publications.length_targets import LengthTargetError, resolve_length_target
 
 
 CONTENT_PREPARATION_ROLES = {"owner", "admin", "editor"}
@@ -83,6 +92,204 @@ def _connector_error_to_publication_error(exc: ConnectorValidationError) -> Publ
     return PublicationCoreError(422, exc.code, exc.message, exc.details)
 
 
+def build_variant_preflight(
+    platform_key: str,
+    validation: dict[str, Any],
+    payload: dict[str, Any],
+    media_count: int,
+) -> dict[str, Any]:
+    """Build a user-facing, secret-free readiness snapshot for a platform variant."""
+    capability = capability_for(platform_key)
+    errors = validation.get("errors") if isinstance(validation.get("errors"), list) else []
+    warnings = validation.get("warnings") if isinstance(validation.get("warnings"), list) else []
+    error_codes = {
+        str(entry.get("code"))
+        for entry in errors
+        if isinstance(entry, dict) and entry.get("code")
+    }
+    warning_codes = {
+        str(entry.get("code"))
+        for entry in warnings
+        if isinstance(entry, dict) and entry.get("code")
+    }
+    body_text = payload.get("body_text")
+    body_count = len(body_text) if isinstance(body_text, str) else int(validation.get("character_count") or 0)
+    length_target = payload.get("length_target") if isinstance(payload.get("length_target"), dict) else {}
+    min_chars = length_target.get("min_chars")
+    max_chars = length_target.get("max_chars")
+    min_chars = int(min_chars) if isinstance(min_chars, int) else None
+    max_chars = int(max_chars) if isinstance(max_chars, int) else None
+
+    checks: list[dict[str, str]] = []
+    if "text_limit_exceeded" in error_codes:
+        total_count = int(validation.get("character_count") or body_count)
+        checks.append(
+            {
+                "key": "length",
+                "status": "block",
+                "code": "hard_text_limit_exceeded",
+                "label": "Длина",
+                "message": (
+                    f"{total_count} знаков с постоянным подвалом: превышен технический предел площадки "
+                    f"{capability.hard_text_limit}."
+                ),
+            }
+        )
+    elif (min_chars is not None and body_count < min_chars) or (
+        max_chars is not None and body_count > max_chars
+    ):
+        target_label = (
+            f"{min_chars or 1}–{max_chars}"
+            if max_chars is not None
+            else f"от {min_chars}"
+        )
+        checks.append(
+            {
+                "key": "length",
+                "status": "warning",
+                "code": "editorial_length_target_missed",
+                "label": "Длина",
+                "message": f"{body_count} знаков: текст вне выбранной цели {target_label}.",
+            }
+        )
+    else:
+        target_suffix = ""
+        if min_chars is not None or max_chars is not None:
+            target_suffix = f", цель {min_chars or 1}–{max_chars or capability.hard_text_limit}"
+        checks.append(
+            {
+                "key": "length",
+                "status": "pass",
+                "code": "length_ready",
+                "label": "Длина",
+                "message": f"{body_count} знаков{target_suffix}: технический предел соблюдён.",
+            }
+        )
+
+    media_error_codes = {code for code in error_codes if "media" in code or "attachment" in code}
+    if media_error_codes:
+        checks.append(
+            {
+                "key": "media",
+                "status": "block",
+                "code": sorted(media_error_codes)[0],
+                "label": "Медиа",
+                "message": "Количество или тип вложений не соответствует требованиям площадки.",
+            }
+        )
+    elif platform_key == "instagram":
+        plan = payload.get("instagram_media_plan")
+        planned_count = plan.get("count") if isinstance(plan, dict) else None
+        if not isinstance(payload.get("instagram_format"), str):
+            checks.append(
+                {
+                    "key": "media",
+                    "status": "warning",
+                    "code": "instagram_media_not_preflighted",
+                    "label": "Медиа",
+                    "message": f"Добавлено файлов: {media_count}. Выберите формат, чтобы проверить состав медиа.",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "key": "media",
+                    "status": "pass",
+                    "code": "instagram_media_ready",
+                    "label": "Медиа",
+                    "message": f"Проверено вложений: {planned_count if isinstance(planned_count, int) else media_count}.",
+                }
+            )
+    elif platform_key == "vk":
+        package = payload.get("vk_export_package")
+        attachment_count = package.get("attachment_count") if isinstance(package, dict) else media_count
+        checks.append(
+            {
+                "key": "media",
+                "status": "pass",
+                "code": "vk_media_package_ready",
+                "label": "Медиа",
+                "message": f"В пакет ручного экспорта включено вложений: {attachment_count}.",
+            }
+        )
+    else:
+        checks.append(
+            {
+                "key": "media",
+                "status": "pass",
+                "code": "media_limit_ready",
+                "label": "Медиа",
+                "message": f"Добавлено вложений: {media_count}; известный предел не превышен.",
+            }
+        )
+
+    if platform_key == "instagram":
+        instagram_format = payload.get("instagram_format")
+        if isinstance(instagram_format, str):
+            format_labels = {"image": "один пост", "carousel": "карусель", "reel": "Reel"}
+            checks.append(
+                {
+                    "key": "format",
+                    "status": "pass",
+                    "code": "instagram_format_ready",
+                    "label": "Формат",
+                    "message": f"Выбран формат: {format_labels.get(instagram_format, instagram_format)}.",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "key": "format",
+                    "status": "warning",
+                    "code": "instagram_format_review_required",
+                    "label": "Формат",
+                    "message": "Формат Instagram не был выбран старым клиентом — проверьте его вручную.",
+                }
+            )
+    elif platform_key == "vk":
+        checks.append(
+            {
+                "key": "format",
+                "status": "pass",
+                "code": "vk_community_post_ready",
+                "label": "Формат",
+                "message": "Подготовлена запись сообщества.",
+            }
+        )
+    else:
+        checks.append(
+            {
+                "key": "format",
+                "status": "pass",
+                "code": "platform_format_ready",
+                "label": "Формат",
+                "message": "Формат результата соответствует выбранной площадке.",
+            }
+        )
+
+    if not capability.automated_delivery:
+        delivery_message = "Готов ручной экспорт; автоматическая отправка для этой площадки не включена."
+        delivery_code = "manual_export_required"
+    else:
+        delivery_message = "Коннектор поддерживается, но конкретный аккаунт проверяется перед публикацией."
+        delivery_code = "destination_readiness_unverified"
+    if warning_codes and platform_key in {"telegram", "max", "instagram"}:
+        delivery_message += " Live-проверка подключения пока не подтверждена."
+    checks.append(
+        {
+            "key": "delivery",
+            "status": "warning",
+            "code": delivery_code,
+            "label": "Отправка",
+            "message": delivery_message,
+        }
+    )
+
+    statuses = {check["status"] for check in checks}
+    overall_status = "block" if "block" in statuses else "warning" if "warning" in statuses else "pass"
+    return {"status": overall_status, "checks": checks}
+
+
 def normalize_scheduled_at(value: datetime, workspace_timezone: str | None = None) -> datetime:
     timezone_name = workspace_timezone or "UTC"
     if value.tzinfo is None or value.utcoffset() is None:
@@ -100,6 +307,55 @@ def normalize_scheduled_at(value: datetime, workspace_timezone: str | None = Non
 
 
 async def ensure_publication_catalog(session: AsyncSession) -> None:
+    bind = session.bind
+    if bind is not None and bind.dialect.name == "postgresql":
+        for capability in all_capabilities():
+            now = utc_now()
+            platform_insert = pg_insert(Platform).values(
+                key=capability.platform_key,
+                name=capability.name,
+                status="active",
+                native_enabled=capability.automated_delivery,
+                created_at=now,
+                updated_at=now,
+            )
+            await session.execute(
+                platform_insert.on_conflict_do_update(
+                    index_elements=[Platform.key],
+                    set_={
+                        "name": platform_insert.excluded.name,
+                        "status": platform_insert.excluded.status,
+                        "native_enabled": platform_insert.excluded.native_enabled,
+                        "updated_at": platform_insert.excluded.updated_at,
+                    },
+                )
+            )
+
+            capability_insert = pg_insert(PlatformCapability).values(
+                id=uuid4(),
+                platform_key=capability.platform_key,
+                connector_key=capability.connector_key,
+                version=1,
+                capabilities_json=capability.capabilities,
+                hard_limits_json=capability.hard_limits,
+                status="active",
+                created_at=now,
+                updated_at=now,
+            )
+            await session.execute(
+                capability_insert.on_conflict_do_update(
+                    constraint="uq_platform_capabilities_platform_connector_version",
+                    set_={
+                        "capabilities_json": capability_insert.excluded.capabilities_json,
+                        "hard_limits_json": capability_insert.excluded.hard_limits_json,
+                        "status": capability_insert.excluded.status,
+                        "updated_at": capability_insert.excluded.updated_at,
+                    },
+                )
+            )
+        await session.flush()
+        return
+
     for capability in all_capabilities():
         platform = await session.get(Platform, capability.platform_key)
         if platform is None:
@@ -246,14 +502,56 @@ async def create_platform_variant(
     actor_user_id: UUID,
     text_override: str | None = None,
     parent_variant_id: UUID | None = None,
+    length_target: dict[str, Any] | None = None,
+    instagram_format: str | None = None,
+    instagram_media_plan: dict[str, Any] | None = None,
+    vk_export_package: dict[str, Any] | None = None,
 ) -> PlatformVariant:
     try:
         capability = capability_for(platform_key)
     except ConnectorValidationError as exc:
         raise _connector_error_to_publication_error(exc) from exc
     media_count = await media_count_for_content(session, item.id)
-    text = text_override if text_override is not None else adapt_text_for_platform(master_revision.text, platform_key)
+    uses_explicit_editorial_target = bool(
+        isinstance(length_target, dict) and length_target.get("source") in {"post", "rubric", "project"}
+    )
+    body_text = (
+        text_override
+        if text_override is not None
+        else master_revision.text
+        if uses_explicit_editorial_target
+        else adapt_text_for_platform(master_revision.text, platform_key)
+    )
+    project = await session.get(Project, item.project_id)
+    active_version_id = project.active_version_id if project is not None else item.project_version_id
+    project_version = await session.get(ProjectVersion, active_version_id)
+    cta_config = project_version.cta_config if project_version is not None else {}
+    text = apply_project_boilerplate(body_text, cta_config)
+    fixed_footer = project_footer(cta_config)
     validation = validate_variant(platform_key, text, media_count)
+    payload = {
+        "source": "master_revision",
+        "master_revision_id": str(master_revision.id),
+        "platform_key": platform_key,
+        "connector_key": capability.connector_key,
+        "publication_mode": capability.publication_mode,
+        "hard_limits": capability.hard_limits,
+        "body_text": body_text,
+        "fixed_boilerplate": {
+            "footer_template": fixed_footer,
+        },
+        "length_target": length_target or {},
+        **(
+            {
+                "instagram_format": instagram_format,
+                "instagram_media_plan": instagram_media_plan or {},
+            }
+            if platform_key == "instagram" and instagram_format is not None
+            else {}
+        ),
+        **({"vk_export_package": vk_export_package or {}} if platform_key == "vk" else {}),
+    }
+    validation["preflight"] = build_variant_preflight(platform_key, validation, payload, media_count)
     revision_number = await next_variant_revision_number(session, item.id, master_revision.id, platform_key)
     now = utc_now()
     variant = PlatformVariant(
@@ -266,14 +564,7 @@ async def create_platform_variant(
         status="draft",
         text=text,
         rendered_text=text,
-        payload_json={
-            "source": "master_revision",
-            "master_revision_id": str(master_revision.id),
-            "platform_key": platform_key,
-            "connector_key": capability.connector_key,
-            "publication_mode": capability.publication_mode,
-            "hard_limits": capability.hard_limits,
-        },
+        payload_json=payload,
         validation_json=validation,
         character_count=len(text),
         parent_variant_id=parent_variant_id,
@@ -291,20 +582,164 @@ async def generate_variants_for_content(
     item: ContentItem,
     actor_user_id: UUID,
     platform_keys: list[str] | None = None,
+    length_overrides: dict[str, dict[str, int | None]] | None = None,
+    instagram_format: str | None = None,
 ) -> list[PlatformVariant]:
     await ensure_publication_catalog(session)
     master_revision = await master_revision_for_content(session, item)
     keys = platform_keys or DEFAULT_VARIANT_PLATFORMS
+    project_version = await session.get(ProjectVersion, item.project_version_id)
+    rubric_version = await session.get(RubricVersion, item.rubric_version_id)
+    project_policy = project_version.character_count_policy if project_version is not None else {}
+    rubric_overrides = rubric_version.platform_overrides if rubric_version is not None else {}
     variants: list[PlatformVariant] = []
+    instagram_media_plan = (
+        await validate_instagram_format_media(session, item.id, instagram_format)
+        if "instagram" in keys and instagram_format is not None
+        else None
+    )
+    vk_export_package = (
+        await build_vk_export_package(session, item.id)
+        if "vk" in keys
+        else None
+    )
     for platform_key in keys:
+        try:
+            resolved_target = resolve_length_target(
+                platform_key,
+                length_overrides or {},
+                rubric_overrides,
+                project_policy,
+            ).as_payload()
+        except LengthTargetError as exc:
+            raise PublicationCoreError(
+                422,
+                "length_target_invalid",
+                str(exc),
+                {"platform_key": platform_key},
+            ) from exc
         existing = await active_variant_for_platform(session, item.id, master_revision.id, platform_key)
-        if existing is not None:
+        existing_payload = existing.payload_json if existing is not None and isinstance(existing.payload_json, dict) else {}
+        existing_validation = (
+            existing.validation_json
+            if existing is not None and isinstance(existing.validation_json, dict)
+            else {}
+        )
+        existing_has_preflight = isinstance(existing_validation.get("preflight"), dict)
+        same_instagram_format = (
+            platform_key != "instagram"
+            or existing_payload.get("instagram_format") == instagram_format
+        )
+        same_instagram_media = (
+            platform_key != "instagram"
+            or instagram_format is None
+            or existing_payload.get("instagram_media_plan") == instagram_media_plan
+        )
+        same_vk_package = (
+            platform_key != "vk"
+            or existing_payload.get("vk_export_package") == vk_export_package
+        )
+        if (
+            existing is not None
+            and existing_has_preflight
+            and existing_payload.get("length_target") == resolved_target
+            and same_instagram_format
+            and same_instagram_media
+            and same_vk_package
+        ):
             variants.append(existing)
             continue
-        variants.append(
-            await create_platform_variant(session, item, master_revision, platform_key, actor_user_id)
+        created = await create_platform_variant(
+            session,
+            item,
+            master_revision,
+            platform_key,
+            actor_user_id,
+            parent_variant_id=existing.id if existing is not None else None,
+            length_target=resolved_target,
+            instagram_format=instagram_format if platform_key == "instagram" else None,
+            instagram_media_plan=instagram_media_plan if platform_key == "instagram" else None,
+            vk_export_package=vk_export_package if platform_key == "vk" else None,
         )
+        if existing is not None:
+            existing.status = "superseded"
+            existing.superseded_by_variant_id = created.id
+            existing.updated_at = utc_now()
+        variants.append(created)
     return variants
+
+
+async def validate_instagram_format_media(
+    session: AsyncSession,
+    content_id: UUID,
+    instagram_format: str,
+) -> dict[str, Any]:
+    media = await ordered_media_for_content(session, content_id)
+    visual_media = [row for row in media if row.get("kind") in {"image", "video"}]
+    if instagram_format == "image" and len(visual_media) != 1:
+        raise PublicationCoreError(
+            422,
+            "instagram_single_media_required",
+            "Instagram format 'image' requires exactly one image or video.",
+            {"actual": len(visual_media), "required": 1},
+        )
+    if instagram_format == "carousel" and not 2 <= len(visual_media) <= 10:
+        raise PublicationCoreError(
+            422,
+            "instagram_carousel_media_count_invalid",
+            "Instagram carousel requires from 2 to 10 images or videos.",
+            {"actual": len(visual_media), "minimum": 2, "maximum": 10},
+        )
+    if instagram_format == "reel":
+        if len(visual_media) != 1 or visual_media[0].get("kind") != "video":
+            raise PublicationCoreError(
+                422,
+                "instagram_reel_video_required",
+                "Instagram Reel requires exactly one video.",
+                {"actual": len(visual_media), "kinds": [row.get("kind") for row in visual_media]},
+            )
+    items = [
+        {
+            "media_id": row["media_id"],
+            "kind": row["kind"],
+            "mime_type": row["mime_type"],
+            "sort_order": row["sort_order"],
+        }
+        for row in visual_media
+    ]
+    return {
+        "count": len(items),
+        "items": items,
+        "cover_media_id": items[0]["media_id"] if items else None,
+    }
+
+
+async def build_vk_export_package(
+    session: AsyncSession,
+    content_id: UUID,
+) -> dict[str, Any]:
+    media = await ordered_media_for_content(session, content_id)
+    attachments = [
+        {
+            "media_id": row["media_id"],
+            "kind": row["kind"],
+            "mime_type": row["mime_type"],
+            "sort_order": row["sort_order"],
+            "role": row["role"],
+            "caption": row["caption"],
+        }
+        for row in media
+        if row.get("kind") in {"image", "video"}
+    ]
+    return {
+        "result_type": "community_post",
+        "title": "Запись сообщества",
+        "publication_mode": "manual_export",
+        "includes_text": True,
+        "attachment_count": len(attachments),
+        "attachments": attachments,
+        "cover_media_id": attachments[0]["media_id"] if attachments else None,
+    }
 
 
 async def list_variants_for_content(session: AsyncSession, item: ContentItem) -> list[PlatformVariant]:
@@ -326,6 +761,13 @@ async def validate_platform_variant(
         validation = validate_variant(variant.platform_key, variant.text, media_count)
     except ConnectorValidationError as exc:
         raise _connector_error_to_publication_error(exc) from exc
+    payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
+    validation["preflight"] = build_variant_preflight(
+        variant.platform_key,
+        validation,
+        payload,
+        media_count,
+    )
     variant.validation_json = validation
     variant.character_count = len(variant.text)
     variant.updated_at = utc_now()
@@ -382,14 +824,37 @@ async def edit_platform_variant(
     master = await session.get(ContentRevision, variant.master_revision_id)
     if item is None or master is None:
         raise PublicationCoreError(404, "variant_not_found", "Platform variant context not found.")
+    variant_payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
+    stored_boilerplate = variant_payload.get("fixed_boilerplate", {})
+    body_text = strip_project_boilerplate(text, stored_boilerplate)
     edited = await create_platform_variant(
         session,
         item,
         master,
         variant.platform_key,
         actor_user_id,
-        text_override=text,
+        text_override=body_text,
         parent_variant_id=variant.id,
+        length_target=(
+            variant_payload.get("length_target")
+            if isinstance(variant_payload.get("length_target"), dict)
+            else None
+        ),
+        instagram_format=(
+            variant_payload.get("instagram_format")
+            if isinstance(variant_payload.get("instagram_format"), str)
+            else None
+        ),
+        instagram_media_plan=(
+            variant_payload.get("instagram_media_plan")
+            if isinstance(variant_payload.get("instagram_media_plan"), dict)
+            else None
+        ),
+        vk_export_package=(
+            variant_payload.get("vk_export_package")
+            if isinstance(variant_payload.get("vk_export_package"), dict)
+            else None
+        ),
     )
     if variant.status != "superseded":
         variant.status = "superseded"

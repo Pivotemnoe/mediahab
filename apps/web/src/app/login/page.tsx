@@ -31,8 +31,10 @@ export default async function LoginPage({
       ]}
       redirectTo={redirectTo}
       submitLabel="Войти"
-      secondaryHref="/forgot-password"
-      secondaryLabel="Восстановить пароль"
+      secondaryHref="/register"
+      secondaryLabel="Нет аккаунта — зарегистрироваться"
+      tertiaryHref="/forgot-password"
+      tertiaryLabel="Восстановить пароль"
     />
   );
 }

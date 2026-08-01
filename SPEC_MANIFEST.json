@@ -1,19 +1,24 @@
 {
   "specification": "Temichev Media Hub Codex package",
   "version": "1.0.0",
-  "generated_at": "2026-07-08T13:55:53.716240+00:00",
+  "generated_at": "2026-07-31T03:59:32.126697+00:00",
   "canonical_language": "en",
-  "file_count": 535,
+  "file_count": 603,
   "files": [
     {
       "path": ".dockerignore",
-      "size_bytes": 117,
-      "sha256": "5ff4d35f076449953e6f5451acbed37f79b21473b5e441887ce614d0c5f88f2b"
+      "size_bytes": 128,
+      "sha256": "2febfa27116ead7df7171122d9bd2451c85f7eed2488a5df9bcc458d86b42b3f"
     },
     {
       "path": ".env.example",
-      "size_bytes": 983,
-      "sha256": "71f583aac7bd939829dabf6c4a4f2c226762ea60bf16f4407e7159062a0e597b"
+      "size_bytes": 1191,
+      "sha256": "691ac9690c99161fb6763f4205a10ed634161ec401ad9cea89d2983c9a2b2096"
+    },
+    {
+      "path": ".env.local",
+      "size_bytes": 1278,
+      "sha256": "a7758f45d9a034d445177a4a8ea1fb62c3a1c413ceecb49387201fe4e2c92e0d"
     },
     {
       "path": ".gitignore",
@@ -27,8 +32,8 @@
     },
     {
       "path": "Makefile",
-      "size_bytes": 2411,
-      "sha256": "84ea8f5d5a09225f6f858da04be0e128fb04310da3281049f485344eb0972223"
+      "size_bytes": 2332,
+      "sha256": "523550afd71c0a96a138066b025d5064d6cecec0df76f1edf026f8141ec5d563"
     },
     {
       "path": "README.md",
@@ -42,18 +47,18 @@
     },
     {
       "path": "apps/web/next-env.d.ts",
-      "size_bytes": 228,
-      "sha256": "46f003f604b6bc947aed764a36ee0637bf2c058620edc905923a6d0d7b26db0e"
+      "size_bytes": 262,
+      "sha256": "85ae5aee75f011967cf2d25cbc342f62d69314e9d925f7f4aa3456fc2cffcca6"
     },
     {
       "path": "apps/web/next.config.ts",
-      "size_bytes": 156,
-      "sha256": "5fa04a810adc1aaac0575af373dd8b43b61690efb2e13f6a116c270782c6f791"
+      "size_bytes": 490,
+      "sha256": "5c583e642d6650e46756ea5105ce7c5fe85645945d9ab343bc8714d65c05dd59"
     },
     {
       "path": "apps/web/package.json",
-      "size_bytes": 736,
-      "sha256": "6d410492827bb0b38589d78482488264b0396495cb1c3429b48075b53687dfc3"
+      "size_bytes": 794,
+      "sha256": "d1219258a4fe34c37260b8cc205d1808db35d699ae43180558a10601a1486981"
     },
     {
       "path": "apps/web/postcss.config.mjs",
@@ -107,8 +112,8 @@
     },
     {
       "path": "apps/web/src/app/app/content/new/page.tsx",
-      "size_bytes": 440,
-      "sha256": "82d9b7982755dff93727473ae263929b8b00e3aa16d2e3063bdd303ddd32cd65"
+      "size_bytes": 608,
+      "sha256": "999168a18d1cff46ed0c05e1dbd5d2eb4e745ad130f1b2dde0ebaafe07a09887"
     },
     {
       "path": "apps/web/src/app/app/content/page.tsx",
@@ -116,9 +121,14 @@
       "sha256": "e63a9d85f49eb5e321fd2eb72940dbd5c5f049182377b9413a9740b40097795b"
     },
     {
+      "path": "apps/web/src/app/app/dashboard/dashboard-view.tsx",
+      "size_bytes": 9187,
+      "sha256": "7b01d2ff64fac89cb204f4a9e932deb85713112ee3e8978a876a552f883753d1"
+    },
+    {
       "path": "apps/web/src/app/app/dashboard/page.tsx",
-      "size_bytes": 35,
-      "sha256": "ed1e1f74060b6ecdcb1b4bd6fc8cb85bb63e3d9305d17e8523d5f7a575cb2bde"
+      "size_bytes": 44,
+      "sha256": "0f92e8642eac9a2c2c772281fbf52230887ebcf7c764147f590948697a9c3e72"
     },
     {
       "path": "apps/web/src/app/app/error.tsx",
@@ -137,8 +147,8 @@
     },
     {
       "path": "apps/web/src/app/app/layout.tsx",
-      "size_bytes": 238,
-      "sha256": "1f86edae355e4a9df0673d8be251742d69942244122592db5cefc4209dfb9883"
+      "size_bytes": 608,
+      "sha256": "82f6da9a879f65729964921a0d44d0188831c1afd0ea3496fbec5ff6721d1a3d"
     },
     {
       "path": "apps/web/src/app/app/loading.tsx",
@@ -152,8 +162,8 @@
     },
     {
       "path": "apps/web/src/app/app/page.tsx",
-      "size_bytes": 5908,
-      "sha256": "b6b1c720efc91c71e3c49b612d21e66bfcdcd609331e84adde592cfe150868da"
+      "size_bytes": 54,
+      "sha256": "2123140c7552c047c9208144614d92d82ae551e5931262426cbf5267ef04500b"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/builder/page.tsx",
@@ -162,8 +172,8 @@
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/examples/page.tsx",
-      "size_bytes": 453,
-      "sha256": "3d1318d8609baa4853c1ad2b8421692ab37a226a9c0d139b437ed2c951b25abc"
+      "size_bytes": 582,
+      "sha256": "6cdb8e8084df88a9f7859afbf5da292bdda08a22779ecaaeb73256546c4c6eeb"
     },
     {
       "path": "apps/web/src/app/app/projects/[projectId]/page.tsx",
@@ -247,13 +257,13 @@
     },
     {
       "path": "apps/web/src/app/login/page.tsx",
-      "size_bytes": 1139,
-      "sha256": "7d9f34ac07f0ce7751b00c10212bae844ea82cdb70a8146127f1348ac32f349e"
+      "size_bytes": 1257,
+      "sha256": "3832a961c8351ebebff0e6f653fe80ad91b6697809678c2e8e75522d2cc5db60"
     },
     {
       "path": "apps/web/src/app/page.tsx",
-      "size_bytes": 18230,
-      "sha256": "758376861c59907e700964cfdfec96f44e761c6d4547f53d4857c2cf99a995cd"
+      "size_bytes": 18250,
+      "sha256": "aed042fa0ce64e7f70937fb466f47a67d80e11d06bc54680308bdea255574440"
     },
     {
       "path": "apps/web/src/app/pricing/page.tsx",
@@ -267,8 +277,8 @@
     },
     {
       "path": "apps/web/src/app/register/page.tsx",
-      "size_bytes": 1439,
-      "sha256": "2f3c1c6d03c1847204cb2dbba73bf3c6a5c881cd99a4e98a766bdb0857362a84"
+      "size_bytes": 1546,
+      "sha256": "4f66329b070e96cd6968c5d65a53b8454c89b053086c9b409a3fa377fe73a0f5"
     },
     {
       "path": "apps/web/src/app/reset-password/page.tsx",
@@ -311,9 +321,14 @@
       "sha256": "8da46558ea5422b60f7534518b5a01d45744f8206833b0ccf86119993464d84c"
     },
     {
+      "path": "apps/web/src/components/layout/quick-create-palette.tsx",
+      "size_bytes": 4705,
+      "sha256": "a9c1c7bf4343a549becb3e8b1a79ac71c48795f3ec932cd6927326d21dbd60f0"
+    },
+    {
       "path": "apps/web/src/components/layout/shells.tsx",
-      "size_bytes": 2950,
-      "sha256": "a3abee56452a6bcc0970a750e641633843b386266c7851b2289fae9b1a830c53"
+      "size_bytes": 2697,
+      "sha256": "1f65795026523228ca82d2559c236627d754853c611ba842d998733574c34ff0"
     },
     {
       "path": "apps/web/src/components/layout/sidebar.tsx",
@@ -322,13 +337,13 @@
     },
     {
       "path": "apps/web/src/components/layout/topbar.tsx",
-      "size_bytes": 1457,
-      "sha256": "373c1ba489147e2f7fcaed1149d178a84fcf88922f64bfd7d14f2900b1fc6a2b"
+      "size_bytes": 1475,
+      "sha256": "9857158075113b4a5b646effe4061a74880079150e13a5b39651f33fa9737662"
     },
     {
       "path": "apps/web/src/components/phase02/auth-page.tsx",
-      "size_bytes": 5297,
-      "sha256": "4565e963581363c7b146573513c6ca6cf6d7d9dacbfbad13e35f589de93f96f7"
+      "size_bytes": 5650,
+      "sha256": "0192e9aeda089142aa264439f5b004e0dcd3b7bde43573c353237ac5ef07c637"
     },
     {
       "path": "apps/web/src/components/phase02/cabinet-page.tsx",
@@ -342,13 +357,13 @@
     },
     {
       "path": "apps/web/src/components/phase03/project-builder-shell.tsx",
-      "size_bytes": 50203,
-      "sha256": "7755af6a7288c840df8ea27f5f976e4c3628346c4b46ef6f39d754a6797fb85c"
+      "size_bytes": 61674,
+      "sha256": "3ba8675eb709cee2e789a3f7f716509c1a9717b200f26ba57412437275c682d6"
     },
     {
       "path": "apps/web/src/components/phase04/content-studio-shell.tsx",
-      "size_bytes": 42170,
-      "sha256": "7eb78b34c5a3c6956dfad1cf1f10504639ce64b3d775670debae0e519496569c"
+      "size_bytes": 43440,
+      "sha256": "5d1483017f3f03c3a7cbfd7247a106abeed4579c521c7a8cf7763394a852b4ad"
     },
     {
       "path": "apps/web/src/components/phase04/guided-form-actions.tsx",
@@ -357,18 +372,48 @@
     },
     {
       "path": "apps/web/src/components/phase04/pilot-voice-telegram-panel.tsx",
-      "size_bytes": 31395,
-      "sha256": "104d9bd9fe20f2913d782b413dc06e626ff8ba1ccd7ef7de658861bd6587b30b"
+      "size_bytes": 31741,
+      "sha256": "a78dc67ddbd615a508b213539e892df5353d6b43108d50b78e143c2fd3d97f8c"
     },
     {
       "path": "apps/web/src/components/phase05/ai-pipeline-shell.tsx",
-      "size_bytes": 10480,
-      "sha256": "8a1abc6a8f2e847eff90339333974ff046e6e3c4cb869d4b132650d2bab64b07"
+      "size_bytes": 10997,
+      "sha256": "4bca530fabce21f8a8ad6b2f9d09b06aba82bcac1c1cb40bcba36ab098eb8c82"
     },
     {
       "path": "apps/web/src/components/phase06/publication-core-shell.tsx",
-      "size_bytes": 11118,
-      "sha256": "db42ddbaffc6fd4ede04a6b32260989ee3bcd59639347a09a4a6bde17474382c"
+      "size_bytes": 14070,
+      "sha256": "078b33059a3e201828650cc0994ae80bf96e6f99e029a3e68dcf001b02fa67f8"
+    },
+    {
+      "path": "apps/web/src/components/phase12/examples-import-form.tsx",
+      "size_bytes": 5463,
+      "sha256": "dfa827c9449f9c3fbda9a26ddec5ce454fc085d38e6ccddb6aa1ab447e77101e"
+    },
+    {
+      "path": "apps/web/src/components/phase12/project-create-form.tsx",
+      "size_bytes": 9652,
+      "sha256": "743bf52fb2dd9b0198e6774b365c2ea2bb12b1c342326b86b44d27f43dd1ab79"
+    },
+    {
+      "path": "apps/web/src/components/phase12/project-rules-form.tsx",
+      "size_bytes": 8534,
+      "sha256": "fb864d3bd789c4b73bc242df00b896eac9b254ea76661bf851e7680b0ed0b830"
+    },
+    {
+      "path": "apps/web/src/components/phase12/rubric-create-form.tsx",
+      "size_bytes": 10110,
+      "sha256": "f92e2131973f96ad67871215ff38fdcb579ec91ed16be4cec8b6963c86a7ff38"
+    },
+    {
+      "path": "apps/web/src/components/phase12/rubric-rules-form.tsx",
+      "size_bytes": 4935,
+      "sha256": "d64b1f690cdc9c948eb05e30e2ff86fedc8aca5fe5d91cb451a93fa0a51a8456"
+    },
+    {
+      "path": "apps/web/src/components/phase12/simple-voice-composer.tsx",
+      "size_bytes": 56338,
+      "sha256": "3e966f341ca84d9843a7f3f6ce51bc4d4e7681ba1e99006bda1071a1f054a4ee"
     },
     {
       "path": "apps/web/src/components/pwa/offline-status.tsx",
@@ -417,8 +462,8 @@
     },
     {
       "path": "apps/web/src/config/navigation.ts",
-      "size_bytes": 1719,
-      "sha256": "c77c5e680851513c064bece874b181e0d97fcfe00e49803ff7a4b92e9e104129"
+      "size_bytes": 891,
+      "sha256": "5277ce303af3853919d8708ece75e8dd026f6c240d12a6f13f6d8af082e691a9"
     },
     {
       "path": "apps/web/src/features/account-workspace/account-workspace-fixtures.ts",
@@ -442,8 +487,8 @@
     },
     {
       "path": "apps/web/src/features/mobile-capture/mobile-capture-fixtures.ts",
-      "size_bytes": 2081,
-      "sha256": "7cd9310888cc5aadc3f6bce1ed2661e1d86a59623c89bdd9470ec0f58b2936c3"
+      "size_bytes": 2083,
+      "sha256": "7b7193294e49b7531ce16174b957b7efd10dbef9cf9641db0bdeeacc480ce008"
     },
     {
       "path": "apps/web/src/features/project-wizard/project-wizard-fixtures.ts",
@@ -462,8 +507,8 @@
     },
     {
       "path": "apps/web/src/generated-api/openapi.json",
-      "size_bytes": 263815,
-      "sha256": "2e5218801bd8edf101e5533d020e74d6b8eff2d3b830883db1f1dd985290eb82"
+      "size_bytes": 267853,
+      "sha256": "a1c30e9f78036eaed99edc94e5ad03d1420251180ecb14c9c83be57f492de903"
     },
     {
       "path": "apps/web/src/lib/cn.ts",
@@ -472,8 +517,13 @@
     },
     {
       "path": "apps/web/src/services/ai.ts",
-      "size_bytes": 11861,
-      "sha256": "ada4bbaa2f8644aa06388f43434aff97c5cd35046cf77c89bbd94c34bcb43646"
+      "size_bytes": 12133,
+      "sha256": "e7481ff8893f92dff5ea01b2a852ea03b336aab32faf86b1474e80bc0c68e5a0"
+    },
+    {
+      "path": "apps/web/src/services/client-api.ts",
+      "size_bytes": 1871,
+      "sha256": "534b49dd92cd04a7dc2b6d29d3d760ee4d9d4d0b8cdbc795a9a6f4f75c5124b8"
     },
     {
       "path": "apps/web/src/services/content-actions.ts",
@@ -482,13 +532,13 @@
     },
     {
       "path": "apps/web/src/services/content.ts",
-      "size_bytes": 37297,
-      "sha256": "a5df164ea29b6d3d3dad7505aa3e5ae0b89cb0d7e4d641b36c6374e343fa9592"
+      "size_bytes": 43760,
+      "sha256": "6b6d81e2630e29b944cfb0299f00aa7bd3ce14eaed08a559ce70b674097c43b8"
     },
     {
       "path": "apps/web/src/services/dashboard.ts",
-      "size_bytes": 6436,
-      "sha256": "975a55cb88716cfac28b62c746cb6991bd5241674ba9253c55c09d190c1772f9"
+      "size_bytes": 7274,
+      "sha256": "2d679489f055240b919fb48653a53f5f82b7aaf979f5c4a0d09ca14ed1e32dba"
     },
     {
       "path": "apps/web/src/services/guided-action-errors.ts",
@@ -537,23 +587,23 @@
     },
     {
       "path": "apps/web/src/services/openapi-types.ts",
-      "size_bytes": 8957,
-      "sha256": "806e027493bb5d3c063d9b87662e77fd4bc9e9f4c2fec0237ce14fc836327162"
+      "size_bytes": 9112,
+      "sha256": "69c13d070b2e4775fb91249b14fd95ce34b1e8205088b6f0abe589a82d722b8f"
     },
     {
       "path": "apps/web/src/services/projects.ts",
-      "size_bytes": 18859,
-      "sha256": "e4801790eff58fe08b47d35e501dd0eda5625b9823b7e6663cceba060660f2ed"
+      "size_bytes": 19998,
+      "sha256": "1098ed1d5822605ddba10bebd19851014be33e93ebde82ecce4c7e9f142fffc8"
     },
     {
       "path": "apps/web/src/services/publications.ts",
-      "size_bytes": 8800,
-      "sha256": "8fd24cfcfd71d8b9a0501b3c7c9298cf6f6d4cbc57cb355db77b50c604cba4bc"
+      "size_bytes": 8901,
+      "sha256": "c75e35e574a57c4efef69f3e3a2325905d5347bcc46a4f59298f5d9ed096d821"
     },
     {
       "path": "apps/web/src/services/runtime.ts",
-      "size_bytes": 4525,
-      "sha256": "b5f63faafc9d5ecd19d8faff3d47931fa818e14163f1b0b375553f2fc2b98c24"
+      "size_bytes": 4743,
+      "sha256": "c7d30c47e74c561503278211d7e17957c4b4a02460fb844d478ddfa841fa066e"
     },
     {
       "path": "apps/web/src/services/workspace-settings.ts",
@@ -836,6 +886,11 @@
       "sha256": "33e308337e390370cddfc5f490e9386a7a645450688dd784f8212a25907dc42f"
     },
     {
+      "path": "design-qa.md",
+      "size_bytes": 5902,
+      "sha256": "eb83f68eded2936f26f773bd327026959e08ea15ef8c488dbc8252dbfcf11a7e"
+    },
+    {
       "path": "docker-compose.yml",
       "size_bytes": 2006,
       "sha256": "472393bdb15ebd1428879a062f00d63dc76f089b2148a816b12c0563b79c6e75"
@@ -942,8 +997,8 @@
     },
     {
       "path": "docs/en/IMPLEMENTATION_PLAN.md",
-      "size_bytes": 5071,
-      "sha256": "100bf5a19eecfa722dca5e47d2f90e1c106c543e732c605b14b0e82a79dd7d51"
+      "size_bytes": 7352,
+      "sha256": "aa232592b9aaefc4dc1cd577deacaaa3bd21f8459c0ba386d703aecc022a5613"
     },
     {
       "path": "docs/en/MASTER_SPEC.md",
@@ -1841,6 +1896,86 @@
       "sha256": "669ff66ede78b9fd957e20cb371b4139ad5761c2e4a2c56cb17cd7a766670c2f"
     },
     {
+      "path": "docs/exec-plans/UI_PHASE_11N_REAL_CREATE_COMPOSER.md",
+      "size_bytes": 4082,
+      "sha256": "b6cf011323c940021d41bc615c5ac96e4c6f14a991bb188c2705f25cd95afdc3"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11N_REPORT_RU.md",
+      "size_bytes": 4397,
+      "sha256": "54ae6fc7950f267b20182720d3c8ba10015a893ead148118fa81578b3a815ac5"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11O_PREMIUM_APP_FLOW_ROUTES.md",
+      "size_bytes": 5188,
+      "sha256": "86074606dec8378407e859f1153146d698842d133d9e669e0c95e75b319df319"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11O_REPORT_RU.md",
+      "size_bytes": 4586,
+      "sha256": "27ab2772a0c20e988a4a176acac2127bbca195b6d32003f66c5a548b1962a336"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11P_APP_SHELL_RESET.md",
+      "size_bytes": 3845,
+      "sha256": "8a6d78e1c5cc5a34b4dc49743e4be697adc0eb0412ab0827a8c44b0a85f73a6a"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_11P_REPORT_RU.md",
+      "size_bytes": 4469,
+      "sha256": "529ba5ecb1a99cbf0efececa0e27e15ca4084ed3724a80a2e669aef69d49f754"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A1_NL_OPENAI_RELAY_AND_SIGNUP_ENTRY.md",
+      "size_bytes": 6556,
+      "sha256": "64e1513d18f5619aa22137e46599599131d0f4a27855b76b61d19350e69fdc2b"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A1_NL_OPENAI_RELAY_AND_SIGNUP_ENTRY_RU.md",
+      "size_bytes": 9419,
+      "sha256": "fd7a1899c407657c9f420ed21ec90f84f9b8df171d28fbf2b315f4ff74a45788"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A2_FULL_FIRST_RUN_PROJECT_RUBRIC_ONBOARDING.md",
+      "size_bytes": 8442,
+      "sha256": "6abca0e950d708c108c2048bc7280dd595d09aabe27f554fffe00ae0047def20"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A2_FULL_FIRST_RUN_PROJECT_RUBRIC_ONBOARDING_RU.md",
+      "size_bytes": 13684,
+      "sha256": "107f2f260c01bf80dd9482296bbd3a54c98a17a5d4114192837e205bc9168cc4"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A3_EDITORIAL_QUALITY_CONTROLS.md",
+      "size_bytes": 9816,
+      "sha256": "3778edfda0f22d0f1168d6022b1066360eb2794f5e14e363d9e40b9ebad43dae"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A3_EDITORIAL_QUALITY_CONTROLS_RU.md",
+      "size_bytes": 16704,
+      "sha256": "dd45152581aaf5d1271936b742276f6700c32001b54810c8ae993e17e0a17395"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A4_HISTORY_RESUME_AND_BOILERPLATE.md",
+      "size_bytes": 3855,
+      "sha256": "df82908c6f001fc388ddd9b5823fe307155c2e5bbc74096444f48c9fe942e996"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A4_HISTORY_RESUME_AND_BOILERPLATE_RU.md",
+      "size_bytes": 6757,
+      "sha256": "1cdf9067fdb3bbe63681a13ea049eee9f5a78be37947cef4a7adccdefa370428"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A_SIMPLE_VOICE_FIRST_MVP.md",
+      "size_bytes": 12354,
+      "sha256": "05bbec5085c921a556ddb493585738938db8ffcc0ed7255f9221d9aab66deae6"
+    },
+    {
+      "path": "docs/exec-plans/UI_PHASE_12A_SIMPLE_VOICE_FIRST_MVP_RU.md",
+      "size_bytes": 12239,
+      "sha256": "f2253a6fc51917c40f54c8d0e25d0b3e8dd098b8825aa80f0b07f037be9f961b"
+    },
+    {
       "path": "docs/frontend/COMPONENT_MAP.md",
       "size_bytes": 5113,
       "sha256": "105afcf7d155113e7461550f82a64ff940e59a5e7ad0a7a2abed9ee20ea1c10d"
@@ -1897,8 +2032,8 @@
     },
     {
       "path": "docs/ru/IMPLEMENTATION_PLAN.md",
-      "size_bytes": 3994,
-      "sha256": "4c76a1e9738bf35ad816798a40a10d76d516d677660cc126d32af4703ffa31c3"
+      "size_bytes": 8196,
+      "sha256": "48460b5e9ac69dc5b6718363d68df920ca91ebb15125cf32a8ea753429b5b98a"
     },
     {
       "path": "docs/ru/MASTER_SPEC.md",
@@ -1957,13 +2092,18 @@
     },
     {
       "path": "infra/docker/web.Dockerfile",
-      "size_bytes": 305,
-      "sha256": "ef7de71506d9f616faf76944f76041e9a1c685de92488bc2fd0ef370415798b6"
+      "size_bytes": 796,
+      "sha256": "b81a4bf2c3d0ec32ed53771d0fe26ae98ad43cd48485ca47b738dd93ef6c04e8"
     },
     {
       "path": "infra/nginx/dev.conf",
       "size_bytes": 360,
       "sha256": "62dc0562844aa3a4089381be18c0f75b3abe1acebeb2ebb83ba7e28c76adbe0f"
+    },
+    {
+      "path": "output/pdf/MediaHub_Simple_Voice_First_MVP_RU.pdf",
+      "size_bytes": 104218,
+      "sha256": "8506dbbfb6eaf75759594caacc34d1ffd1104bd3760f9635f727e4e956dd6054"
     },
     {
       "path": "package.json",
@@ -1972,8 +2112,8 @@
     },
     {
       "path": "packages/contracts/openapi/openapi.json",
-      "size_bytes": 263815,
-      "sha256": "2e5218801bd8edf101e5533d020e74d6b8eff2d3b830883db1f1dd985290eb82"
+      "size_bytes": 267853,
+      "sha256": "a1c30e9f78036eaed99edc94e5ad03d1420251180ecb14c9c83be57f492de903"
     },
     {
       "path": "packages/contracts/pyproject.toml",
@@ -2262,8 +2402,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/ai.py",
-      "size_bytes": 17233,
-      "sha256": "5d8dfc414dac0752f63caed81bfd6415a741f9918b29200364813403e709492e"
+      "size_bytes": 17334,
+      "sha256": "3a5432b1f56492160368cfe6c73a8d0203e9abecd79b3f4f14fa1c8916c224a3"
     },
     {
       "path": "services/api/app/api/v1/routes/auth.py",
@@ -2277,8 +2417,8 @@
     },
     {
       "path": "services/api/app/api/v1/routes/content.py",
-      "size_bytes": 36435,
-      "sha256": "84e66b79b84e42e91f5409bf0dc595f358a8f7f76e94a7c3db755ce3370b87f1"
+      "size_bytes": 36631,
+      "sha256": "0b2b1d04c352e2caab0afcbd293d298d28318eb28f8a8c9e85111654bb065847"
     },
     {
       "path": "services/api/app/api/v1/routes/health.py",
@@ -2292,13 +2432,13 @@
     },
     {
       "path": "services/api/app/api/v1/routes/projects.py",
-      "size_bytes": 35142,
-      "sha256": "0db2a06ffed1a0c8acc446e25cab5f72d2278b3f8b425b50dfbcbb24846c7deb"
+      "size_bytes": 36419,
+      "sha256": "fb43179c2fad7d6f3306b28d988da13f14b99881cbb7beee5cb676895ce2d7e8"
     },
     {
       "path": "services/api/app/api/v1/routes/publications.py",
-      "size_bytes": 37918,
-      "sha256": "edc0352361e97fa3380f1b949e7e88a80673ab2fbbc11316412b831d573be4aa"
+      "size_bytes": 40381,
+      "sha256": "16af2702a0b560c825d1bf378310478409b087fa2e6d0e68f53cffde3724a795"
     },
     {
       "path": "services/api/app/api/v1/routes/workspaces.py",
@@ -2312,13 +2452,18 @@
     },
     {
       "path": "services/api/app/core/config.py",
-      "size_bytes": 5337,
-      "sha256": "70e98f2c04057c71c941fac2ee5fbae4f3cebe4c23b0cfb702e99dd54d3dd063"
+      "size_bytes": 5521,
+      "sha256": "6cf52fd1a52a28ed8c585f31fb3c9a1561375c6c3eb889595403662c43c120f3"
     },
     {
       "path": "services/api/app/core/logging.py",
       "size_bytes": 660,
       "sha256": "c44bb209f28ea0003ffab9e8e46c9e9ff371556554adba38e940b46d891e4cb9"
+    },
+    {
+      "path": "services/api/app/core/openai_http.py",
+      "size_bytes": 440,
+      "sha256": "b3113fa7d25e0496fe494d03f8fc5a50b1c182d9e0a0f034446ff34706c242f5"
     },
     {
       "path": "services/api/app/db/__init__.py",
@@ -2352,13 +2497,13 @@
     },
     {
       "path": "services/api/app/modules/ai/providers.py",
-      "size_bytes": 8757,
-      "sha256": "c4b4369e3fa29deea705e6e4b6908833138b47c7143441b8a9b8ffe674a28d00"
+      "size_bytes": 9940,
+      "sha256": "7b2212b4e68902ffadab910f81add46cac05086e1abb294bcede692ac5b0fe62"
     },
     {
       "path": "services/api/app/modules/ai/service.py",
-      "size_bytes": 44504,
-      "sha256": "dcbe27b96c22ec6090de2fe1beaad55899862b8a61c9c96fae5236c4b853bdc4"
+      "size_bytes": 61652,
+      "sha256": "ee21785e8a2f312fa5a10af79a6f133896c9938dc47879da57d1cd0bdf8c143d"
     },
     {
       "path": "services/api/app/modules/audit/__init__.py",
@@ -2393,7 +2538,7 @@
     {
       "path": "services/api/app/modules/billing/catalog.py",
       "size_bytes": 5320,
-      "sha256": "3a20b8867e387ba0eaef02145f0a3d90406cedf39fcb6a53c3b1d1b33fe055d0"
+      "sha256": "9c2dc8242e4c91eb11c98ec47ddd2349d577ac2f05ce12231f4572d423a23f44"
     },
     {
       "path": "services/api/app/modules/billing/providers.py",
@@ -2402,8 +2547,8 @@
     },
     {
       "path": "services/api/app/modules/billing/service.py",
-      "size_bytes": 22289,
-      "sha256": "89e20cb37e5f2eabe5cf21c4e4370b8d58a7fee2f737d1a50304bd6c48a9cec8"
+      "size_bytes": 22386,
+      "sha256": "8837cd6ff66d1163e13094d46d0dbd356db3132f4898b08025e1d89e8bbdd640"
     },
     {
       "path": "services/api/app/modules/content/__init__.py",
@@ -2412,13 +2557,18 @@
     },
     {
       "path": "services/api/app/modules/content/service.py",
-      "size_bytes": 15242,
-      "sha256": "0f44232e7a373caef5276a7853ce07ea329da2982929c913b3bf462a534b335b"
+      "size_bytes": 16248,
+      "sha256": "ec9f7f0351f4909a383accbabe518a110f7181da3277623beefc7625582e98cc"
     },
     {
       "path": "services/api/app/modules/projects/__init__.py",
       "size_bytes": 41,
       "sha256": "fba7da007ade0e50733fd35c1e2a3e3473f58791db49665f23b535294e38137b"
+    },
+    {
+      "path": "services/api/app/modules/projects/boilerplate.py",
+      "size_bytes": 1083,
+      "sha256": "39b1f6e94d09d76ac3b7be88ab5f71bf24680254d868e9e362c893504fc36de3"
     },
     {
       "path": "services/api/app/modules/projects/presets.py",
@@ -2432,8 +2582,8 @@
     },
     {
       "path": "services/api/app/modules/projects/service.py",
-      "size_bytes": 10899,
-      "sha256": "6527b92038b3a1ee65127c056fdadb4485bcaf7e136a6e9fb7458cfcb045cf1c"
+      "size_bytes": 12747,
+      "sha256": "2cc58797ad0ec9d424ecf3b89ccf8565e9cb5badfa9ba38aec48ee05bdd34da0"
     },
     {
       "path": "services/api/app/modules/publications/__init__.py",
@@ -2442,13 +2592,13 @@
     },
     {
       "path": "services/api/app/modules/publications/connectors.py",
-      "size_bytes": 62610,
-      "sha256": "33f91e1d5b88282ccde7a8cba52c75f8f8a0aeb243112343fce2183980cff23d"
+      "size_bytes": 64133,
+      "sha256": "ece983be42f426d32b9d7b761cec0b4df91852aa3d3117ac63e334c19ca34a00"
     },
     {
       "path": "services/api/app/modules/publications/service.py",
-      "size_bytes": 36087,
-      "sha256": "2ac0ef0230fcb0fb7000ae3abb8194f0a153057adfce61a6fb31bd329385d69b"
+      "size_bytes": 39182,
+      "sha256": "65894ae634eee97c806649c5405001d77e0bb9b18d6b25a56ab2a582ace2fd0b"
     },
     {
       "path": "services/api/app/modules/shared/__init__.py",
@@ -2476,9 +2626,14 @@
       "sha256": "2bcb3a84034e66184d995f2f708491b996523f60015164b4fec4de1e91c93091"
     },
     {
+      "path": "services/api/tests/test_ai_editor_routing_and_cost.py",
+      "size_bytes": 2215,
+      "sha256": "804028a37cb770869bcd9957963129d714679ec8e2756626d05c36b02e936fad"
+    },
+    {
       "path": "services/api/tests/test_ai_examples_pipeline.py",
-      "size_bytes": 17373,
-      "sha256": "583df1d7f7798485b67cd2a4dfced384a1b10544156211dfca005b3d95e3ab9e"
+      "size_bytes": 21658,
+      "sha256": "ecf915100c71189e5213d07261fdb275658fb5cafc33ba215c8055036ba25d6c"
     },
     {
       "path": "services/api/tests/test_auth_workspace_billing.py",
@@ -2487,8 +2642,8 @@
     },
     {
       "path": "services/api/tests/test_content_media_voice.py",
-      "size_bytes": 18945,
-      "sha256": "fedeb5916a7c0cc061a2181825de603759fb6b55e16b1b033a8dc347ac5d1ee5"
+      "size_bytes": 21021,
+      "sha256": "9491a8857e6a0ae5caff9406bc2b7896f1a083454967a32e1040291a491c1407"
     },
     {
       "path": "services/api/tests/test_health.py",
@@ -2501,19 +2656,39 @@
       "sha256": "b41dab6abb06b0fdd8a06bd701e8bf8b079883f08bc4cf26352450845ed6ea2a"
     },
     {
+      "path": "services/api/tests/test_manual_platform_profiles.py",
+      "size_bytes": 1291,
+      "sha256": "44124ff5d721066c976f2185e0620f2b3dbd88e3dec849771cd20c0314362798"
+    },
+    {
       "path": "services/api/tests/test_max_connector.py",
       "size_bytes": 16520,
       "sha256": "cef95ce5f38b1f3da240d218c661ccf781cf66f42188cac33fa58250c0af7888"
     },
     {
+      "path": "services/api/tests/test_openai_proxy.py",
+      "size_bytes": 5821,
+      "sha256": "2dd4fd119342c62dfabdc2c4fd1daaf3ec2aaa6bbd2f2b7591ec439c54e40d35"
+    },
+    {
+      "path": "services/api/tests/test_project_boilerplate.py",
+      "size_bytes": 2404,
+      "sha256": "9cce91fa47b90a3e8f7146d4e4fc1a57940220545ec51caaac57ca2c7f7b96ac"
+    },
+    {
       "path": "services/api/tests/test_project_rubric_builder.py",
-      "size_bytes": 12704,
-      "sha256": "e8babb315f68276c398e7ff2d444c4ad4f7ee075470af7b4fa4f576d951ca871"
+      "size_bytes": 13621,
+      "sha256": "000b54f830d95ca7db3df7639b35f0f57a3265159f4bb8b0a8bdf933a61133ec"
+    },
+    {
+      "path": "services/api/tests/test_publication_catalog.py",
+      "size_bytes": 1448,
+      "sha256": "36a03c5f4bd20034ec8086ef942d4d0500014a5d44c14ab1bb1b2d21f9b277fa"
     },
     {
       "path": "services/api/tests/test_publication_core.py",
-      "size_bytes": 29421,
-      "sha256": "0d7ee2765170ec1cf7dd82a79c199a0a50340baf35720673fa7620025f3a2984"
+      "size_bytes": 30970,
+      "sha256": "bd1de51dcc7d974245668639119e5d2ed256b339333ea944cce412bd6ee1943f"
     },
     {
       "path": "services/api/tests/test_telegram_connector.py",
@@ -2569,6 +2744,161 @@
       "path": "tests/test_phase00_spikes.py",
       "size_bytes": 3338,
       "sha256": "b6ca01c1d60fee10e2fad2c7fa36722e8eff8338f3cf957748977a8e9c1a2275"
+    },
+    {
+      "path": "tmp/audits/2026-07-30-ufo-post/01-current-post-and-controls.png",
+      "size_bytes": 374571,
+      "sha256": "0474f4f0e1fca9420285d68c33c3e6c51937e515c89f05e55efac61623409a60"
+    },
+    {
+      "path": "tmp/audits/2026-07-30-ufo-post/02-ideal-examples.png",
+      "size_bytes": 165117,
+      "sha256": "d327b473ccd03196d76e48be8b97c8d16ac46b4a2f7668345f369672958bca35"
+    },
+    {
+      "path": "tmp/audits/2026-07-30-ufo-post/03-project-rules.png",
+      "size_bytes": 128562,
+      "sha256": "f559f025d5b8608bc2236fb319e9830fda74419659f6d1f99a176f1c367d3ad4"
+    },
+    {
+      "path": "tmp/audits/2026-07-30-ufo-post/04-rubric-rules.png",
+      "size_bytes": 85225,
+      "sha256": "5024361d6339bf707faeb4d6b2356f656e883f0771e07d37be31f5f1309872c7"
+    },
+    {
+      "path": "tmp/design-qa/implementation-1440.jpg",
+      "size_bytes": 80572,
+      "sha256": "9aa4ffbba2348aff11cd71d04c884a1bd8eb891f55f8f4940383f42326391b2c"
+    },
+    {
+      "path": "tmp/design-qa/implementation-1920.jpg",
+      "size_bytes": 82053,
+      "sha256": "757dcc9d67471c9fdc5e211f474b5352cab80371d0b4d08b4273ce99d65d0a38"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-final.jpg",
+      "size_bytes": 34741,
+      "sha256": "bf32f285f74738dd04f812f901cbba6c7e0628c54af8ca913a5d12e8554542b2"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-pass2.jpg",
+      "size_bytes": 33385,
+      "sha256": "076e143171350664d00fa528fe3b86bb8b23772598fb50f9deac83cbea84f54d"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-pass3.jpg",
+      "size_bytes": 12824,
+      "sha256": "baa5e5eb305b0235d6d3471ecd76314c14411cd8b5e2c9d3d0038f97dfb2989b"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-small.png",
+      "size_bytes": 46677,
+      "sha256": "928b2539263c5a70d45304a2e6f5cac36e692c5c948dab0469f356bdaa5627cc"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-viewport.jpg",
+      "size_bytes": 40788,
+      "sha256": "e9df3f492db111c67310cb6af866b579e2cd5d5fd940d3953f2da4ba241f115f"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390-viewport.png",
+      "size_bytes": 50857,
+      "sha256": "ce5ee35c0f108f9794b892e21662fa1af43cfa3a8da60dfa1777e9b8c65ba1bf"
+    },
+    {
+      "path": "tmp/design-qa/implementation-390.png",
+      "size_bytes": 72528,
+      "sha256": "2b57c5d034bb251d1265d9d400b4cf04c76d08f0ae3409649daf0225ec5c0781"
+    },
+    {
+      "path": "tmp/design-qa/implementation-768.jpg",
+      "size_bytes": 63366,
+      "sha256": "f1e2d74e84abb97e15741931690742d73e0e0f76db8df8d997291dfae19967a7"
+    },
+    {
+      "path": "tmp/design-qa/source-phone.png",
+      "size_bytes": 50823,
+      "sha256": "8b6cf3aea970d202fc18c269d4db88cac4c95b7194e542410fe5de35219d1733"
+    },
+    {
+      "path": "tmp/design-qa/source-vs-implementation-390.png",
+      "size_bytes": 191652,
+      "sha256": "53d3550857f310d1e07de3058c34968da9c9320dfef72d0e278d420e76203c52"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/content.txt",
+      "size_bytes": 9944,
+      "sha256": "b50c55f348f9e14d6e2d8841102104c531b24776db90b8d77cc59a52d82fd284"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-1.png",
+      "size_bytes": 94790,
+      "sha256": "b29e247d7c11f121d71257d623985dc0e9c20fb5271280eaa1f63bad70235cc4"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-2.png",
+      "size_bytes": 94849,
+      "sha256": "84873f37ad945603bb7979fb17438dff97aee4e2c8c6c2e2c50b60a1e321103e"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-3.png",
+      "size_bytes": 145084,
+      "sha256": "91edb51562c3c9bc00486b25cdcb5b5209b233bc6cc8bde678d8a7f85d6e47f2"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-4.png",
+      "size_bytes": 158016,
+      "sha256": "6818fcfa031e744e2b6a8625befe9380e184eb95fd8d8590c46932225f2c0fb1"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-5.png",
+      "size_bytes": 138509,
+      "sha256": "5d5181a3f147026d620b665dc433a33a164cf52b489747d4f63cb2c30e9c34e5"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-6.png",
+      "size_bytes": 125733,
+      "sha256": "6ecc21189fd8f4c460c850b87d646e657592fd19e4d054ac93f5e2505fffe170"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-simple-voice/page-7.png",
+      "size_bytes": 167738,
+      "sha256": "cf3574f4109d4f6d44c9b6845c92a9b67829935591d8c2ae19dbacdb7933d3bd"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-1.png",
+      "size_bytes": 94790,
+      "sha256": "b29e247d7c11f121d71257d623985dc0e9c20fb5271280eaa1f63bad70235cc4"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-2.png",
+      "size_bytes": 94849,
+      "sha256": "84873f37ad945603bb7979fb17438dff97aee4e2c8c6c2e2c50b60a1e321103e"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-3.png",
+      "size_bytes": 145084,
+      "sha256": "91edb51562c3c9bc00486b25cdcb5b5209b233bc6cc8bde678d8a7f85d6e47f2"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-4.png",
+      "size_bytes": 158016,
+      "sha256": "6818fcfa031e744e2b6a8625befe9380e184eb95fd8d8590c46932225f2c0fb1"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-5.png",
+      "size_bytes": 138509,
+      "sha256": "5d5181a3f147026d620b665dc433a33a164cf52b489747d4f63cb2c30e9c34e5"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-6.png",
+      "size_bytes": 125733,
+      "sha256": "6ecc21189fd8f4c460c850b87d646e657592fd19e4d054ac93f5e2505fffe170"
+    },
+    {
+      "path": "tmp/pdfs/mediahub-voice-first-review/page-7.png",
+      "size_bytes": 167738,
+      "sha256": "cf3574f4109d4f6d44c9b6845c92a9b67829935591d8c2ae19dbacdb7933d3bd"
     },
     {
       "path": "tools/api_smoke_server.py",
@@ -2634,6 +2964,16 @@
       "path": "tools/check_guided_repeatable_queue_ui.mjs",
       "size_bytes": 6270,
       "sha256": "aa28d0cce050bb4e4513f083cf17aceba41f36e3d33be036d443a6d8e38cfdfe"
+    },
+    {
+      "path": "tools/check_new_content_composer_visual_smoke.mjs",
+      "size_bytes": 10315,
+      "sha256": "c1ceac5b6afc22828bd1d6d88a1b81bea8aa9a8c7385b8cbf937a07ad0493ebd"
+    },
+    {
+      "path": "tools/check_premium_app_flow_visual_smoke.mjs",
+      "size_bytes": 9780,
+      "sha256": "5a0117b2ae1818f4db93fcb75062cbbf69a0bd9b4bcc7cfbfc5892821d291cb0"
     },
     {
       "path": "tools/check_public_domain_readiness.mjs",

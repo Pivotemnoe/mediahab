@@ -182,7 +182,7 @@ async function apiPublications(): Promise<PublicationOpsViewModel> {
     return {
       ...fallback,
       modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
+      notice: "Рабочее пространство ещё не найдено. Ниже показан пример проверки перед публикацией.",
     };
   }
   const [publicationsResponse, destinationsResponse] = await Promise.all([
@@ -222,7 +222,7 @@ async function apiPublications(): Promise<PublicationOpsViewModel> {
     modeLabel: "api",
     notice: publicationsResponse
       ? undefined
-      : "API-режим включён, но список публикаций недоступен. Показаны демо-данные.",
+      : "Список публикаций сейчас не загрузился. Ниже показан безопасный пример проверки.",
     queue: publications.length
       ? publications.slice(0, 5).map((publication) => ({
           destination: destinationNameById.get(publication.destination_id) ?? "Публикация",
@@ -244,8 +244,8 @@ export async function getPublicationOpsViewModel(): Promise<PublicationOpsViewMo
   } catch {
     return {
       ...fixturePublications(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "пример после ошибки загрузки",
+      notice: "Данные публикаций сейчас не загрузились. Ниже показан безопасный пример проверки.",
     };
   }
 }

@@ -158,7 +158,7 @@ function ComposerSection({
   title: string;
 }) {
   return (
-    <section className="grid gap-3 rounded-md border border-border bg-background p-3">
+    <section className="grid min-w-0 gap-3 rounded-md border border-border bg-background p-3">
       <div className="text-sm font-medium text-foreground">{title}</div>
       {children}
     </section>
@@ -463,11 +463,11 @@ export function PilotVoiceTelegramPanel({
   }
 
   return (
-    <div className="grid gap-4" data-testid="material-capture-panel">
-      <section className="grid gap-3 rounded-md border border-primary/20 bg-[color-mix(in_srgb,var(--primary),transparent_96%)] p-4">
+    <div className="grid min-w-0 gap-4" data-testid="material-capture-panel">
+      <section className="grid min-w-0 gap-3 rounded-md border border-primary/20 bg-[color-mix(in_srgb,var(--primary),transparent_96%)] p-4">
         <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
               <Mic size={18} className="text-primary" />
               Сбор материала
               <HintPopover
@@ -476,7 +476,7 @@ export function PilotVoiceTelegramPanel({
                 title="Сбор материала"
               />
             </div>
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p className="mt-2 break-words text-sm leading-6 text-muted">
               Выберите блок, надиктуйте или вставьте текст, проверьте расшифровку и только потом запускайте ИИ-сборку.
             </p>
           </div>
@@ -499,14 +499,14 @@ export function PilotVoiceTelegramPanel({
             </Badge>
           </div>
         </div>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${captureToneClass(captureState)}`}>
+        <div className={`break-words rounded-md border p-3 text-sm leading-6 text-muted ${captureToneClass(captureState)}`}>
           {message}
         </div>
       </section>
 
       <ComposerSection title="1. Куда сохраняем факт">
-        <label className="grid gap-2 text-sm">
-          <span className="flex items-center gap-2 font-medium text-foreground">
+        <label className="grid min-w-0 gap-2 text-sm">
+          <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground">
             Следующий блок материала
             <HintPopover
               body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего материала."
@@ -515,7 +515,7 @@ export function PilotVoiceTelegramPanel({
             />
           </span>
           <select
-            className="min-h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
+            className="min-h-10 w-full min-w-0 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20"
             disabled={disabled || targetLocked}
             value={targetField}
             onChange={(event) => {
@@ -534,7 +534,7 @@ export function PilotVoiceTelegramPanel({
       </ComposerSection>
 
       <ComposerSection title="2. Диктовка или аудиофайл">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid min-w-0 gap-2 sm:grid-cols-3">
           <Button disabled={disabled || captureState === "recording"} size="sm" type="button" onClick={startRecording}>
             <Play size={14} />
             Запись
@@ -554,10 +554,10 @@ export function PilotVoiceTelegramPanel({
             storageKey="tmh-learning-content-studio"
             title="Как записывать"
           />
-          <span>Сначала запись, потом расшифровка, затем проверка текста и принятие.</span>
+          <span className="min-w-0 break-words">Сначала запись, потом расшифровка, затем проверка текста и принятие.</span>
         </div>
-        <label className="grid gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
-          <span className="flex items-center gap-2 font-medium text-foreground">
+        <label className="grid min-w-0 gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
+          <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground">
             <FileAudio size={16} className="text-primary" />
             Загрузить аудиофайл вместо записи
           </span>
@@ -607,10 +607,10 @@ export function PilotVoiceTelegramPanel({
             storageKey="tmh-learning-content-studio"
             title="Фото и видео"
           />
-          <span>Фото и видео можно прикрепить до сборки версий. Порядок позже проверяется в превью площадок.</span>
+          <span className="min-w-0 break-words">Фото и видео можно прикрепить до сборки версий. Порядок позже проверяется в превью площадок.</span>
         </div>
-        <label className="grid gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
-          <span className="flex items-center gap-2 font-medium text-foreground">
+        <label className="grid min-w-0 gap-2 rounded-md border border-dashed border-border bg-surface p-3 text-sm text-muted">
+          <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground">
             <Upload size={16} className="text-primary" />
             Прикрепить фото или видео
           </span>
@@ -626,7 +626,7 @@ export function PilotVoiceTelegramPanel({
             }}
           />
         </label>
-        <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(isMediaUploading ? "warning" : "idle")}`}>
+        <div className={`break-words rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(isMediaUploading ? "warning" : "idle")}`}>
           {isMediaUploading ? <Loader2 className="mr-2 inline animate-spin" size={14} /> : null}
           {mediaStatus}
           {attachedMediaCount !== null ? ` Всего в материале: ${attachedMediaCount}.` : ""}
@@ -640,9 +640,9 @@ export function PilotVoiceTelegramPanel({
             storageKey="tmh-learning-content-studio"
             title="ИИ-сборка и версии"
           />
-          <span>ИИ работает после сбора фактов. Версии площадок проверяются отдельно перед публикацией.</span>
+          <span className="min-w-0 break-words">ИИ работает после сбора фактов. Версии площадок проверяются отдельно перед публикацией.</span>
         </div>
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-3">
           <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(analysisState.tone)}`}>
             <div className="text-sm leading-6 text-muted">{analysisState.message}</div>
             <Button
@@ -685,9 +685,9 @@ export function PilotVoiceTelegramPanel({
       </ComposerSection>
 
       <ComposerSection title="6. Ручное подтверждение публикации">
-        <div className="grid gap-3 rounded-md border border-border bg-surface p-3" data-testid="telegram-output-block">
+        <div className="grid min-w-0 gap-3 rounded-md border border-border bg-surface p-3" data-testid="telegram-output-block">
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-foreground">
               Площадка: Telegram
               <HintPopover
                 body="Telegram остаётся первой подключённой площадкой. Отправка запускается отдельно после проверки версии."
@@ -697,7 +697,7 @@ export function PilotVoiceTelegramPanel({
             </div>
             <Badge tone="success">ручное подтверждение</Badge>
           </div>
-          <div className={`rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
+          <div className={`break-words rounded-md border p-3 text-sm leading-6 text-muted ${actionToneClass(publishState.tone)}`}>
             {publishState.message}
           </div>
           <Button
@@ -710,7 +710,7 @@ export function PilotVoiceTelegramPanel({
           </Button>
           <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
             <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={14} />
-            <span>Отправка начнётся только после нажатия этой кнопки. Скачивание или ручной экспорт не отмечают материал как опубликованный.</span>
+            <span className="min-w-0 break-words">Отправка начнётся только после нажатия этой кнопки. Скачивание или ручной экспорт не отмечают материал как опубликованный.</span>
           </div>
         </div>
       </ComposerSection>

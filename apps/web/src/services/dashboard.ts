@@ -26,7 +26,15 @@ export interface DashboardViewModel {
   modeLabel: string;
   notice?: string;
   planLabel: string;
+  projects: Array<{
+    href: string;
+    name: string;
+    note: string;
+    rubricCount: number;
+  }>;
   recentDrafts: Array<{
+    href: string;
+    project: string;
     rubric: string;
     status: string;
     title: string;
@@ -58,7 +66,14 @@ function fixtureDashboard(): DashboardViewModel {
     })),
     modeLabel: "fixtures",
     planLabel: "Старт",
-    recentDrafts: recentDrafts.map(([title, rubric, status]) => ({ rubric, status, title })),
+    projects: [],
+    recentDrafts: recentDrafts.map(([title, rubric, status], index) => ({
+      href: `/app/content/demo-${index}`,
+      project: "Что поесть? Армавир",
+      rubric,
+      status,
+      title,
+    })),
     scheduledPublications: scheduledPublications.map(([platform, time, status]) => ({
       platform,
       status,
@@ -114,15 +129,20 @@ function formatScheduledAt(value: string | null): string {
 }
 
 async function apiDashboard(): Promise<DashboardViewModel> {
-  const fallback = fixtureDashboard();
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
 
   if (!workspace) {
     return {
-      ...fallback,
+      integrationAlerts: [],
       modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
+      notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      planLabel: "",
+      projects: [],
+      recentDrafts: [],
+      scheduledPublications: [],
+      stats: [],
+      usageRows: [],
     };
   }
 
@@ -135,11 +155,13 @@ async function apiDashboard(): Promise<DashboardViewModel> {
     ]);
 
   const projects = projectsResponse?.projects ?? [];
-  const firstProject = projects[0];
-  const contentResponse = firstProject
-    ? await safeApiGet<ContentListResponse>(`/api/v1/projects/${firstProject.id}/content-items`)
-    : null;
-  const contentItems = contentResponse?.content_items ?? [];
+  const contentByProject = await Promise.all(projects.map(async (project) => ({
+    project,
+    response: await safeApiGet<ContentListResponse>(`/api/v1/projects/${project.id}/content-items`),
+  })));
+  const contentItems = contentByProject.flatMap(({ project, response }) =>
+    (response?.content_items ?? []).map((item) => ({ item, project })),
+  );
   const publications = publicationsResponse?.publications ?? [];
   const scheduled = publications
     .filter((publication) => publication.status === "scheduled" || publication.scheduled_at)
@@ -147,30 +169,34 @@ async function apiDashboard(): Promise<DashboardViewModel> {
   const limits = usageResponse?.limits?.slice(0, 3) ?? [];
 
   return {
-    integrationAlerts: fallback.integrationAlerts,
+    integrationAlerts: [],
     modeLabel: "api",
     notice: projectsResponse && usageResponse
       ? undefined
-      : "Часть API-данных недоступна. Пустые блоки добраны безопасными демо-значениями.",
-    planLabel: subscriptionResponse?.plan_name ?? fallback.planLabel,
-    recentDrafts: contentItems.length
-      ? contentItems.slice(0, 3).map((item) => ({
-          rubric: `Материал · v${item.version}`,
-          status: statusLabel(item.status),
-          title: item.title_internal,
-        }))
-      : fallback.recentDrafts,
-    scheduledPublications: scheduled.length
-      ? scheduled.map((publication) => ({
+      : "Часть данных кабинета сейчас не загрузилась. Попробуйте обновить страницу.",
+    planLabel: subscriptionResponse?.plan_name ?? "Текущий тариф",
+    projects: projects.map((project) => ({
+      href: `/app/projects/${project.id}`,
+      name: project.name,
+      note: project.description ?? project.content_domain ?? "Общие правила можно дополнить в проекте.",
+      rubricCount: project.rubric_count ?? 0,
+    })),
+    recentDrafts: contentItems.slice(0, 6).map(({ item, project }) => ({
+      href: `/app/content/${item.id}`,
+      project: project.name,
+      rubric: `Материал · v${item.version}`,
+      status: statusLabel(item.status),
+      title: item.title_internal,
+    })),
+    scheduledPublications: scheduled.map((publication) => ({
           platform: "Публикация",
           status: statusLabel(publication.status),
           time: formatScheduledAt(publication.scheduled_at),
-        }))
-      : fallback.scheduledPublications,
+        })),
     stats: [
       {
         label: "Проекты",
-        note: firstProject?.name ?? "Нет активного проекта",
+        note: projects[0]?.name ?? "Создайте первый проект",
         value: String(projects.length),
       },
       {
@@ -191,7 +217,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
           tone: usageTone(limit.status),
           value: Number(limit.used ?? 0),
         }))
-      : fallback.usageRows,
+      : [],
   };
 }
 
@@ -204,9 +230,15 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
     return await apiDashboard();
   } catch {
     return {
-      ...fixtureDashboard(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      integrationAlerts: [],
+      modeLabel: "api",
+      notice: "Данные кабинета сейчас не загрузились. Попробуйте обновить страницу.",
+      planLabel: "",
+      projects: [],
+      recentDrafts: [],
+      scheduledPublications: [],
+      stats: [],
+      usageRows: [],
     };
   }
 }

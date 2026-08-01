@@ -22,9 +22,13 @@ import {
   type BlocksResponse,
   type ContentItemOut,
   type ContentListResponse,
+  type ContentMediaResponse,
+  type ExampleListResponse,
   type GuidedFormResponse,
   type GuidedFormUiField,
+  type JsonObject,
   type MeResponse,
+  type MediaOut,
   type PlatformVariantOut,
   type PlatformVariantsResponse,
   type ProjectListResponse,
@@ -62,6 +66,7 @@ export interface MaterialCaptureFlowViewModel {
 }
 
 export interface ContentStudioViewModel {
+  available: boolean;
   aiSuggestions: Array<{
     action: string;
     name: string;
@@ -97,6 +102,7 @@ export interface ContentStudioViewModel {
   materialFlow: MaterialCaptureFlowViewModel;
   masterBudget: string;
   modeLabel: string;
+  projectId: string | null;
   notice?: string;
   platformPreviews: Array<{
     budget: string;
@@ -104,7 +110,9 @@ export interface ContentStudioViewModel {
     media: string;
     mode: string;
     platform: string;
+    platformKey: string;
     status: string;
+    text: string;
     warning: string;
   }>;
   revisionEvents: Array<{
@@ -185,6 +193,35 @@ export interface NewContentViewModel {
   materialFlow: MaterialCaptureFlowViewModel;
   modeLabel: string;
   notice?: string;
+  projects: Array<{
+    characterCountPolicy: JsonObject;
+    hasFixedBoilerplate: boolean;
+    id: string;
+    name: string;
+    rubrics: Array<{
+      approvedExampleCount: number;
+      editorialMaxChars: number | null;
+      editorialMinChars: number | null;
+      platformOverrides: JsonObject;
+      id: string;
+      name: string;
+      projectFallbackExampleCount: number;
+    }>;
+    workspaceId: string;
+  }>;
+  resumeDraft?: {
+    contentId: string;
+    latestVariants: PlatformVariantOut[];
+    mediaCount: number;
+    mediaKinds: string[];
+    platformKeys: string[];
+    projectId: string;
+    rubricId: string;
+    sourceBlockId: string | null;
+    sourceFieldKey: string;
+    transcript: string;
+  };
+  workspaceId: string | null;
   offlineDraft: {
     queue: string;
     saved: string;
@@ -496,6 +533,7 @@ function fieldLabel(fieldKey: string): string {
     price: "Цена",
     ratings: "Оценки",
     service: "Сервис",
+    source: "Исходный текст",
     total_check: "Чек",
     venue: "Заведение",
     venue_name: "Заведение",
@@ -792,10 +830,29 @@ function platformLabel(platformKey: string): string {
 function validationMessages(variant: PlatformVariantOut): string[] {
   const warnings = variant.validation.warnings;
   const errors = variant.validation.errors;
+  const message = (value: unknown): string => {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object" && "message" in value) {
+      const objectMessage = (value as { message?: unknown }).message;
+      if (typeof objectMessage === "string") return objectMessage;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  };
   return [
-    ...(Array.isArray(warnings) ? warnings.map(String) : []),
-    ...(Array.isArray(errors) ? errors.map(String) : []),
+    ...(Array.isArray(warnings) ? warnings.map(message) : []),
+    ...(Array.isArray(errors) ? errors.map(message) : []),
   ];
+}
+
+function userFacingValidationMessage(message: string, platform: string): string {
+  if (/pending credentials|live fixture evidence|contract is available/i.test(message)) {
+    return `Отправка в ${platform} пока не подключена. Проверьте текст и используйте ручной экспорт.`;
+  }
+  return message;
 }
 
 function latestVariantsByPlatform(variants: PlatformVariantOut[]): PlatformVariantOut[] {
@@ -814,6 +871,10 @@ function stringFromJson(object: Record<string, unknown>, key: string): string | 
   return typeof value === "string" ? value : null;
 }
 
+function flattenGuidedFields(fields: GuidedFormUiField[]): GuidedFormUiField[] {
+  return fields.flatMap((field) => [field, ...flattenGuidedFields(field.fields ?? [])]);
+}
+
 function fixtureContentIndex(): ContentIndexViewModel {
   return {
     items: fixtureItems.map((item) => item),
@@ -823,6 +884,7 @@ function fixtureContentIndex(): ContentIndexViewModel {
 
 function fixtureContentStudio(contentId: string): ContentStudioViewModel {
   return {
+    available: true,
     aiSuggestions: aiSuggestions.map(([name, text, action]) => ({ action, name, text })),
     checks: [
       { label: "Ошибки", tone: "success", value: "0" },
@@ -842,7 +904,12 @@ function fixtureContentStudio(contentId: string): ContentStudioViewModel {
     masterDraftParagraphs: [...masterDraftParagraphs],
     materialLabel: contentId,
     modeLabel: "демо",
-    platformPreviews: platformPreviews.map((preview) => ({ ...preview })),
+    platformPreviews: platformPreviews.map((preview) => ({
+      ...preview,
+      platformKey: preview.platform.toLowerCase(),
+      text: "",
+    })),
+    projectId: null,
     revisionEvents: revisionEvents.map(([version, event, time]) => ({ event, time, version })),
     summary: { ...studioSummary },
     transcriptReview: { ...transcriptReview },
@@ -858,22 +925,48 @@ function fixtureNewContent(): NewContentViewModel {
     contextLabel: "Что поесть? Армавир · Обзор недели",
     materialFlow: placeReviewMaterialFlow("Обзор недели"),
     modeLabel: "демо",
+    projects: [
+      {
+        characterCountPolicy: {},
+        hasFixedBoilerplate: false,
+        id: "demo-project",
+        name: "Что поесть? Армавир",
+        rubrics: [
+          {
+            approvedExampleCount: 5,
+            editorialMaxChars: 4000,
+            editorialMinChars: 3500,
+            platformOverrides: {},
+            id: "demo-rubric",
+            name: "Обзор недели",
+            projectFallbackExampleCount: 8,
+          },
+        ],
+        workspaceId: "demo-workspace",
+      },
+    ],
     offlineDraft: { ...offlineDraft },
     recordingStates: recordingStates.map(([state, label]) => ({ label, state })),
     resumeItems: resumeItems.map(([label, value]) => ({ label, value })),
     reviewBlocks: reviewBlocks.map(([name, status, text]) => ({ name, status, text })),
+    workspaceId: null,
   };
 }
 
 async function firstWorkspaceProject(): Promise<ProjectOut | null> {
+  const projects = await workspaceProjects();
+  return projects[0] ?? null;
+}
+
+async function workspaceProjects(): Promise<ProjectOut[]> {
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   if (!workspace) {
-    return null;
+    return [];
   }
 
   const projectsResponse = await safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
-  return projectsResponse?.projects[0] ?? null;
+  return projectsResponse?.projects ?? [];
 }
 
 async function rubricNameMap(projectId: string): Promise<Map<string, string>> {
@@ -894,7 +987,7 @@ function contentItemView(
   return {
     href: `/app/content/${item.id}`,
     project: projectName,
-    rubric: rubricNames.get(item.rubric_id) ?? "Рубрика",
+    rubric: rubricNames.get(item.rubric_id) ?? "Без рубрики",
     status: statusLabel(item.status),
     title: item.title_internal,
     version: `v${item.version}`,
@@ -902,30 +995,32 @@ function contentItemView(
 }
 
 async function apiContentIndex(): Promise<ContentIndexViewModel> {
-  const fallback = fixtureContentIndex();
-  const project = await firstWorkspaceProject();
+  const projects = await workspaceProjects();
 
-  if (!project) {
+  if (!projects.length) {
     return {
-      ...fallback,
+      items: [],
       modeLabel: "api",
-      notice: "API-режим включён, но активный проект не найден. Показаны демо-данные.",
     };
   }
 
-  const [contentResponse, rubricNames] = await Promise.all([
-    safeApiGet<ContentListResponse>(`/api/v1/projects/${project.id}/content-items`),
-    rubricNameMap(project.id),
-  ]);
-  const items = contentResponse?.content_items ?? [];
+  const projectItems = await Promise.all(projects.map(async (project) => {
+    const [contentResponse, rubricNames] = await Promise.all([
+      safeApiGet<ContentListResponse>(`/api/v1/projects/${project.id}/content-items`),
+      rubricNameMap(project.id),
+    ]);
+    return {
+      available: Boolean(contentResponse),
+      items: (contentResponse?.content_items ?? []).map((item) => contentItemView(item, project.name, rubricNames)),
+    };
+  }));
 
   return {
-    ...fallback,
-    items: items.length
-      ? items.map((item) => contentItemView(item, project.name, rubricNames))
-      : fallback.items,
+    items: projectItems.flatMap((result) => result.items),
     modeLabel: "api",
-    notice: contentResponse ? undefined : "Список материалов из API недоступен. Показаны демо-данные.",
+    notice: projectItems.every((result) => result.available)
+      ? undefined
+      : "Часть истории не загрузилась. Попробуйте обновить страницу.",
   };
 }
 
@@ -936,18 +1031,20 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
   if (!item) {
     return {
       ...fallback,
+      available: false,
       modeLabel: "api",
-      notice: "Материал из API недоступен. Показаны демо-данные студии.",
+      notice: "Материал не найден или у вас нет к нему доступа.",
     };
   }
 
-  const project = await firstWorkspaceProject();
-  const [rubricNames, guidedFormResponse, blocksResponse, variantsResponse] = await Promise.all([
+  const [projects, rubricNames, guidedFormResponse, blocksResponse, variantsResponse] = await Promise.all([
+    workspaceProjects(),
     rubricNameMap(item.project_id),
     safeApiGet<GuidedFormResponse>(`/api/v1/content-items/${contentId}/guided-form`),
     safeApiGet<BlocksResponse>(`/api/v1/content-items/${contentId}/blocks`),
     safeApiGet<PlatformVariantsResponse>(`/api/v1/content-items/${contentId}/variants`),
   ]);
+  const project = projects.find((candidate) => candidate.id === item.project_id) ?? null;
   const blocks = blocksResponse?.blocks ?? [];
   const variants = variantsResponse?.variants ?? [];
   const lockedBlocks = blocks.filter((block) => block.is_locked);
@@ -968,12 +1065,12 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     guidedFormResponse ? null : "Форма рубрики из API недоступна.",
     blocksResponse ? null : "Блоки материала из API недоступны.",
     variantsResponse ? null : "Платформенные превью из API недоступны.",
-    "История версий пока показана демо-данными: сервер ещё не отдаёт список редакций материала.",
   ].filter(Boolean);
-  const rubricLabel = rubricNames.get(item.rubric_id) ?? "Рубрика";
+  const rubricLabel = rubricNames.get(item.rubric_id) ?? "Без рубрики";
 
   return {
-    aiSuggestions: fallback.aiSuggestions,
+    available: true,
+    aiSuggestions: [],
     checks: variantsResponse
       ? [
           { label: "Ошибки", tone: errorCount ? "warning" : "success", value: String(errorCount) },
@@ -984,14 +1081,14 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
             value: variants.length ? `${variants.length} вариант(а)` : "варианты не собраны",
           },
         ]
-      : fallback.checks,
+      : [],
     factLocks: lockedBlocks.length
       ? lockedBlocks.map((block) => ({
           fact: truncateText(valueText(block.value_json) || fieldLabel(block.field_key), 120),
           source: sourceLabel(block.source_type),
           status: "locked",
         }))
-      : fallback.factLocks,
+      : [],
     guidedForm: guidedFormResponse
       ? guidedFormView({
           blocks,
@@ -1001,7 +1098,15 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           generatedFields: guidedFormResponse.generated_fields,
           itemVersion: item.version,
         })
-      : fallback.guidedForm,
+      : {
+          canMutate: false,
+          description: "Форма материала недоступна.",
+          fields: [],
+          generatedFields: [],
+          itemVersion: item.version,
+          limits: "без заданного диапазона",
+          title: "Материал",
+        },
     inputBlocks: blocks.length
       ? blocks.map((block) => ({
           helper: truncateText(valueText(block.value_json) || "Значение пока не заполнено.", 120),
@@ -1009,37 +1114,49 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           source: sourceLabel(block.source_type),
           status: blockStatus(block),
         }))
-      : fallback.inputBlocks,
+      : [],
     materialLabel: item.id,
-    materialFlow: placeReviewMaterialFlow(rubricLabel),
-    masterBudget: variants[0] ? `${variants[0].character_count} знаков` : fallback.masterBudget,
-    masterDraftParagraphs: textBlocks.length ? textBlocks : fallback.masterDraftParagraphs,
+    materialFlow: {
+      primaryOutput: "Версии для выбранных площадок",
+      sourceLabel: rubricLabel,
+      templateName: "Публикация",
+      steps: [],
+    },
+    masterBudget: variants[0] ? `${variants[0].character_count} знаков` : "версии не собраны",
+    masterDraftParagraphs: textBlocks,
     modeLabel: "api",
-    notice: notices.length ? `${notices.join(" ")} Панели без серверного чтения показаны демо-данными.` : undefined,
+    notice: notices.length ? notices.join(" ") : undefined,
     platformPreviews: variants.length
-      ? latestVariantsByPlatform(variants).map((variant) => ({
+      ? latestVariantsByPlatform(variants).map((variant) => {
+          const platform = platformLabel(variant.platform_key);
+          const warning = validationMessages(variant)[0] ?? "";
+          return {
           budget: `${variant.character_count} знаков`,
           id: variant.id,
           media: stringFromJson(variant.payload, "media") ?? "медиа по правилам площадки",
           mode: stringFromJson(variant.payload, "mode") ?? "вариант публикации",
-          platform: platformLabel(variant.platform_key),
+          platform,
+          platformKey: variant.platform_key,
           status: variantStatus(variant.status),
-          warning: validationMessages(variant)[0] ?? `Версия варианта v${variant.revision_number}`,
-        }))
-      : fallback.platformPreviews,
-    revisionEvents: fallback.revisionEvents,
+          text: variant.rendered_text || variant.text || "",
+          warning: warning ? userFacingValidationMessage(warning, platform) : "",
+          };
+        })
+      : [],
+    projectId: item.project_id,
+    revisionEvents: [],
     summary: {
       ...fallback.summary,
       autosave: formatUpdatedAt(item.updated_at),
       range: guidedFormResponse
         ? editorialLimitsLabel(guidedFormResponse.editorial_limits)
         : fallback.summary.range,
-      project: project?.id === item.project_id ? project.name : "Проект",
+      project: project?.name ?? "Проект",
       revision: `v${item.version}`,
       rubric: rubricLabel,
       status: statusLabel(item.status),
       title: item.title_internal,
-      lockedFacts: lockedBlocks.length ? `${lockedBlocks.length} зафиксировано` : fallback.summary.lockedFacts,
+      lockedFacts: lockedBlocks.length ? `${lockedBlocks.length} зафиксировано` : "нет зафиксированных фактов",
     },
     transcriptReview: transcriptBlock?.transcript_text
       ? {
@@ -1049,30 +1166,115 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           status: transcriptBlock.is_locked ? "принято" : "готово к проверке",
           text: transcriptBlock.transcript_text,
         }
-      : fallback.transcriptReview,
+      : {
+          confidence: "нет оценки",
+          duration: "—",
+          provider: "—",
+          status: "исходный текст не сохранён",
+          text: "",
+        },
     workspaceId: item.workspace_id,
   };
 }
 
-async function apiNewContent(): Promise<NewContentViewModel> {
+function projectHasFixedBoilerplate(project: ProjectOut): boolean {
+  return Boolean(stringFromJson(project.cta_config, "footer_template")?.trim());
+}
+
+async function resumeContentDraft(
+  contentId: string,
+  projects: NewContentViewModel["projects"],
+): Promise<NewContentViewModel["resumeDraft"]> {
+  const item = await safeApiGet<ContentItemOut>(`/api/v1/content-items/${contentId}`);
+  const project = item ? projects.find((candidate) => candidate.id === item.project_id) : null;
+  if (!item || !project) return undefined;
+  const [guidedForm, blocksResponse, mediaResponse, variantsResponse] = await Promise.all([
+    safeApiGet<GuidedFormResponse>(`/api/v1/content-items/${contentId}/guided-form`),
+    safeApiGet<BlocksResponse>(`/api/v1/content-items/${contentId}/blocks`),
+    safeApiGet<ContentMediaResponse>(`/api/v1/content-items/${contentId}/media`),
+    safeApiGet<PlatformVariantsResponse>(`/api/v1/content-items/${contentId}/variants`),
+  ]);
+  const blocks = blocksResponse?.blocks ?? [];
+  const transcriptBlock = blocks.find((block) => block.transcript_text?.trim())
+    ?? blocks.find((block) => valueText(block.value_json).trim());
+  const formFields = flattenGuidedFields(guidedForm?.ui_schema.fields ?? []);
+  const preferredField = formFields.find((field) =>
+    ["voice", "voice_or_long_text", "long_text", "text"].includes(field.type),
+  );
+  const supportedPlatforms = new Set(["telegram", "max", "vk", "instagram"]);
+  const latestVariants = latestVariantsByPlatform(variantsResponse?.variants ?? [])
+    .filter((variant) => supportedPlatforms.has(variant.platform_key));
+  const platformKeys = Array.from(new Set(
+    latestVariants
+      .map((variant) => variant.platform_key)
+  ));
+  const mediaAssets = await Promise.all(
+    (mediaResponse?.media ?? []).map((media) => safeApiGet<MediaOut>(`/api/v1/media/${media.media_asset_id}`)),
+  );
+  return {
+    contentId: item.id,
+    latestVariants,
+    mediaCount: mediaResponse?.media.length ?? 0,
+    mediaKinds: mediaAssets.flatMap((media) => media?.kind ? [media.kind] : []),
+    platformKeys,
+    projectId: item.project_id,
+    rubricId: project.rubrics.some((rubric) => rubric.id === item.rubric_id) ? item.rubric_id : "",
+    sourceBlockId: transcriptBlock?.id ?? null,
+    sourceFieldKey: transcriptBlock?.field_key ?? preferredField?.key ?? "source",
+    transcript: transcriptBlock?.transcript_text?.trim() || valueText(transcriptBlock?.value_json).trim(),
+  };
+}
+
+async function apiNewContent(resumeContentId?: string): Promise<NewContentViewModel> {
   const fallback = fixtureNewContent();
-  const project = await firstWorkspaceProject();
-  if (!project) {
+  const me = await safeApiGet<MeResponse>("/api/v1/me");
+  const workspace = me?.workspaces[0];
+  if (!workspace) {
     return {
       ...fallback,
       modeLabel: "api",
-      notice: "Проект для пилота не найден. Нажмите создание черновика: система подготовит тестовый проект, если это разрешено вашей сессией.",
+      notice: "Рабочее пространство пока не найдено. Войдите заново или завершите первоначальную настройку.",
+      projects: [],
     };
   }
 
-  const rubrics = await rubricsForProject(project.id);
-  const rubricName = rubrics[0]?.name ?? "рубрика не выбрана";
+  const projectsResponse = await safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
+  const projects = await Promise.all((projectsResponse?.projects ?? []).map(async (project) => {
+    const [rubricsResponse, examplesResponse] = await Promise.all([
+      safeApiGet<RubricListResponse>(`/api/v1/projects/${project.id}/rubrics`),
+      safeApiGet<ExampleListResponse>(`/api/v1/projects/${project.id}/examples`),
+    ]);
+    const approvedExamples = (examplesResponse?.examples ?? []).filter((example) => example.status === "approved");
+    const projectFallbackExampleCount = approvedExamples.filter((example) => !example.rubric_id).length;
+    return {
+      characterCountPolicy: project.character_count_policy,
+      hasFixedBoilerplate: projectHasFixedBoilerplate(project),
+      id: project.id,
+      name: project.name,
+      rubrics: (rubricsResponse?.rubrics ?? []).map((rubric) => ({
+        approvedExampleCount: approvedExamples.filter((example) => example.rubric_id === rubric.id).length,
+        editorialMaxChars: rubric.editorial_max_chars,
+        editorialMinChars: rubric.editorial_min_chars,
+        platformOverrides: rubric.platform_overrides,
+        id: rubric.id,
+        name: rubric.name,
+        projectFallbackExampleCount,
+      })),
+      workspaceId: project.workspace_id,
+    };
+  }));
+  const firstProject = projects[0];
+  const rubricName = "Без рубрики — общие правила проекта";
+  const resumeDraft = resumeContentId ? await resumeContentDraft(resumeContentId, projects) : undefined;
   return {
     ...fallback,
-    contextLabel: `${project.name} · ${rubricName}`,
+    contextLabel: `${firstProject?.name ?? "Проект"} · ${rubricName}`,
     materialFlow: placeReviewMaterialFlow(rubricName),
     modeLabel: "api",
-    notice: "Это старт пилота. Реальная запись, фото, ИИ-сборка и публикация откроются после создания черновика.",
+    notice: projects.length ? undefined : "Сначала создайте свой проект или канал.",
+    projects,
+    resumeDraft,
+    workspaceId: workspace.id,
   };
 }
 
@@ -1085,9 +1287,9 @@ export async function getContentIndexViewModel(): Promise<ContentIndexViewModel>
     return await apiContentIndex();
   } catch {
     return {
-      ...fixtureContentIndex(),
-      modeLabel: "демо после ошибки API",
-      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
+      items: [],
+      modeLabel: "api",
+      notice: "История сейчас не загрузилась. Попробуйте обновить страницу.",
     };
   }
 }
@@ -1102,24 +1304,25 @@ export async function getContentStudioViewModel(contentId: string): Promise<Cont
   } catch {
     return {
       ...fixtureContentStudio(contentId),
-      modeLabel: "демо после ошибки API",
-      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
+      available: false,
+      modeLabel: "api",
+      notice: "Материал сейчас не загрузился. Попробуйте вернуться в историю и открыть его снова.",
     };
   }
 }
 
-export async function getNewContentViewModel(): Promise<NewContentViewModel> {
+export async function getNewContentViewModel(resumeContentId?: string): Promise<NewContentViewModel> {
   if (getDataMode() !== "api") {
     return fixtureNewContent();
   }
 
   try {
-    return await apiNewContent();
+    return await apiNewContent(resumeContentId);
   } catch {
     return {
       ...fixtureNewContent(),
-      modeLabel: "демо после ошибки API",
-      notice: "API-режим включён, но сервер недоступен. Показаны демо-данные.",
+      modeLabel: "пример",
+      notice: "Сейчас показан пример рабочего экрана. Создание материала станет доступно после восстановления соединения.",
     };
   }
 }

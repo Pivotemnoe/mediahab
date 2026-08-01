@@ -246,19 +246,37 @@ class Phase03ProjectRubricBuilderTest(unittest.TestCase):
     def test_free_plan_project_limit_is_enforced(self) -> None:
         auth = self.register(self.client, email="limit@example.com", workspace_name="Limit Workspace")
         workspace_id = auth["workspace"]["id"]
+        for index in range(1, 4):
+            created = self.client.post(
+                f"/api/v1/workspaces/{workspace_id}/projects",
+                headers=self.csrf_headers(auth),
+                json={"name": f"Project {index}", "slug": f"project-{index}"},
+            )
+            self.assertEqual(created.status_code, 200, created.text)
+        fourth = self.client.post(
+            f"/api/v1/workspaces/{workspace_id}/projects",
+            headers=self.csrf_headers(auth),
+            json={"name": "Project 4", "slug": "project-4"},
+        )
+        self.assertEqual(fourth.status_code, 402)
+        self.assertEqual(fourth.json()["error"]["code"], "limit_exceeded")
+
+    def test_project_slug_is_unique_when_cyrillic_names_are_used(self) -> None:
+        auth = self.register(self.client, email="cyrillic@example.com", workspace_name="Cyrillic Workspace")
+        workspace_id = auth["workspace"]["id"]
         first = self.client.post(
             f"/api/v1/workspaces/{workspace_id}/projects",
             headers=self.csrf_headers(auth),
-            json={"name": "First project", "slug": "first-project"},
+            json={"name": "Канал о здоровье"},
         )
-        self.assertEqual(first.status_code, 200, first.text)
         second = self.client.post(
             f"/api/v1/workspaces/{workspace_id}/projects",
             headers=self.csrf_headers(auth),
-            json={"name": "Second project", "slug": "second-project"},
+            json={"name": "Личный канал врача"},
         )
-        self.assertEqual(second.status_code, 402)
-        self.assertEqual(second.json()["error"]["code"], "limit_exceeded")
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertEqual(second.status_code, 200, second.text)
+        self.assertNotEqual(first.json()["slug"], second.json()["slug"])
 
     def test_mock_rubric_suggestion_is_draft_until_accepted(self) -> None:
         auth = self.register(self.client, email="suggest@example.com", workspace_name="Suggest Workspace")

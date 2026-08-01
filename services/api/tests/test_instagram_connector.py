@@ -203,6 +203,29 @@ class Phase09InstagramConnectorTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()["variants"][0]
 
+    def generate_instagram_format_variant(
+        self,
+        auth: dict[str, object],
+        content_id: str,
+        instagram_format: str,
+    ) -> dict[str, object]:
+        response = self.client.post(
+            f"/api/v1/content-items/{content_id}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["instagram"], "instagram_format": instagram_format},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()["variants"][0]
+
+    def generate_vk_variant(self, auth: dict[str, object], content_id: str) -> dict[str, object]:
+        response = self.client.post(
+            f"/api/v1/content-items/{content_id}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["vk"]},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()["variants"][0]
+
     def approve_variant(self, auth: dict[str, object], variant_id: str) -> dict[str, object]:
         validated = self.client.post(
             f"/api/v1/platform-variants/{variant_id}/validate",
@@ -301,6 +324,124 @@ class Phase09InstagramConnectorTest(unittest.TestCase):
         self.assertEqual(retried.status_code, 200, retried.text)
         self.assertEqual(retried.json()["status"], "manual_required")
         self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
+
+    def test_carousel_format_snapshots_ordered_media_plan(self) -> None:
+        auth = self.register(email="format-carousel09@example.com")
+        _, content = self.create_content_with_master(auth, "Текст для карусели Instagram.")
+        asyncio.run(self._add_media(content["id"], count=3))
+
+        variant = self.generate_instagram_format_variant(auth, content["id"], "carousel")
+
+        self.assertEqual(variant["payload"]["instagram_format"], "carousel")
+        self.assertEqual(variant["validation"]["preflight"]["status"], "warning")
+        self.assertEqual(
+            [check["key"] for check in variant["validation"]["preflight"]["checks"]],
+            ["length", "media", "format", "delivery"],
+        )
+        plan = variant["payload"]["instagram_media_plan"]
+        self.assertEqual(plan["count"], 3)
+        self.assertEqual([item["sort_order"] for item in plan["items"]], [0, 1, 2])
+        self.assertEqual(plan["cover_media_id"], plan["items"][0]["media_id"])
+
+    def test_reel_format_requires_one_video(self) -> None:
+        auth = self.register(email="format-reel-image09@example.com")
+        _, content = self.create_content_with_master(auth, "Текст для Reel Instagram.")
+        asyncio.run(self._add_media(content["id"], count=1))
+
+        response = self.client.post(
+            f"/api/v1/content-items/{content['id']}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["instagram"], "instagram_format": "reel"},
+        )
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error"]["code"], "instagram_reel_video_required")
+
+    def test_reel_format_accepts_one_video_and_preserves_snapshot_on_edit(self) -> None:
+        auth = self.register(email="format-reel-video09@example.com")
+        _, content = self.create_content_with_master(auth, "Текст для Reel Instagram.")
+        asyncio.run(self._add_media(content["id"], count=1, video_index=0))
+        variant = self.generate_instagram_format_variant(auth, content["id"], "reel")
+
+        edited = self.client.patch(
+            f"/api/v1/platform-variants/{variant['id']}",
+            headers=self.csrf_headers(auth),
+            json={"text": "Отредактированный сценарий Reel."},
+        )
+
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual(edited.json()["payload"]["instagram_format"], "reel")
+        self.assertEqual(edited.json()["payload"]["instagram_media_plan"]["items"][0]["kind"], "video")
+        self.assertEqual(
+            edited.json()["validation"]["preflight"]["checks"][2]["code"],
+            "instagram_format_ready",
+        )
+
+    def test_vk_variant_snapshots_ordered_community_post_package(self) -> None:
+        auth = self.register(email="vk-package09@example.com")
+        project, content = self.create_content_with_master(auth, "Текст записи сообщества VK.")
+        asyncio.run(self._add_media(content["id"], count=2, video_index=1))
+        variant = self.generate_vk_variant(auth, content["id"])
+
+        package = variant["payload"]["vk_export_package"]
+        self.assertEqual(package["result_type"], "community_post")
+        self.assertEqual(package["title"], "Запись сообщества")
+        self.assertEqual(package["attachment_count"], 2)
+        self.assertEqual([item["kind"] for item in package["attachments"]], ["image", "video"])
+        self.assertEqual([item["sort_order"] for item in package["attachments"]], [0, 1])
+        self.assertEqual(
+            variant["validation"]["preflight"]["checks"][3]["code"],
+            "manual_export_required",
+        )
+
+        edited = self.client.patch(
+            f"/api/v1/platform-variants/{variant['id']}",
+            headers=self.csrf_headers(auth),
+            json={"text": "Исправленный текст записи сообщества VK."},
+        )
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual(edited.json()["payload"]["vk_export_package"], package)
+
+        approved = self.approve_variant(auth, edited.json()["id"])
+        destination = self.client.post(
+            f"/api/v1/projects/{project['id']}/destinations",
+            headers=self.csrf_headers(auth),
+            json={
+                "name": "VK ручной пакет",
+                "platform_key": "vk",
+                "connector_key": "manual_export",
+                "configuration": {},
+            },
+        )
+        self.assertEqual(destination.status_code, 200, destination.text)
+        publication = self.create_publication(
+            auth,
+            approved["id"],
+            destination.json()["id"],
+            "phase12b3-vk-package",
+        )
+        published = self.client.post(
+            f"/api/v1/publications/{publication['id']}/publish-now",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(published.status_code, 200, published.text)
+        self.assertEqual(published.json()["status"], "manual_required")
+        payloads = asyncio.run(self._attempt_payloads(publication["id"]))
+        manual_package = payloads[0]["package"]
+        self.assertEqual(manual_package["attachment_count"], 2)
+        self.assertEqual([item["kind"] for item in manual_package["attachments"]], ["image", "video"])
+
+    def test_vk_media_change_creates_new_variant_revision(self) -> None:
+        auth = self.register(email="vk-revision09@example.com")
+        _, content = self.create_content_with_master(auth, "Текст записи сообщества VK.")
+        first = self.generate_vk_variant(auth, content["id"])
+        asyncio.run(self._add_media(content["id"], count=1))
+
+        second = self.generate_vk_variant(auth, content["id"])
+
+        self.assertEqual(second["revision_number"], first["revision_number"] + 1)
+        self.assertEqual(second["parent_variant_id"], first["id"])
+        self.assertEqual(second["payload"]["vk_export_package"]["attachment_count"], 1)
 
     def test_carousel_mode_rejects_single_media_with_actionable_error(self) -> None:
         auth = self.register(email="carousel09@example.com")

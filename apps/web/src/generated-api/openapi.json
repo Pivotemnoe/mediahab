@@ -3866,6 +3866,59 @@
         }
       }
     },
+    "/api/v1/platform-variants/{variant_id}/refine": {
+      "post": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Refine Variant Endpoint",
+        "operationId": "refine_variant_endpoint_api_v1_platform_variants__variant_id__refine_post",
+        "parameters": [
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformVariantRefineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformVariantRefinementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/platform-variants/{variant_id}/validate": {
       "post": {
         "tags": [
@@ -5964,8 +6017,15 @@
       "ContentCreateRequest": {
         "properties": {
           "rubric_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Rubric Id"
           },
           "title_internal": {
@@ -5994,9 +6054,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "rubric_id"
-        ],
         "title": "ContentCreateRequest"
       },
       "ContentItemOut": {
@@ -6756,6 +6813,39 @@
               }
             ],
             "title": "Platform Keys"
+          },
+          "length_overrides": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Length Overrides"
+          },
+          "instagram_format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "image",
+                  "carousel",
+                  "reel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram Format"
           }
         },
         "type": "object",
@@ -6878,6 +6968,17 @@
             ],
             "title": "Output Characters"
           },
+          "cost_estimate_micro_usd": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Estimate Micro Usd"
+          },
           "error_code": {
             "anyOf": [
               {
@@ -6938,6 +7039,7 @@
           "output_tokens",
           "input_characters",
           "output_characters",
+          "cost_estimate_micro_usd",
           "error_code",
           "error_message",
           "retry_count",
@@ -8198,6 +8300,112 @@
         ],
         "title": "PlatformVariantPatchRequest"
       },
+      "PlatformVariantRefineRequest": {
+        "properties": {
+          "instruction": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Instruction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruction"
+        ],
+        "title": "PlatformVariantRefineRequest"
+      },
+      "PlatformVariantRefinementResponse": {
+        "properties": {
+          "variant": {
+            "$ref": "#/components/schemas/PlatformVariantOut"
+          },
+          "generation_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Generation Run Id"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "input_characters": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Characters"
+          },
+          "output_characters": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Characters"
+          },
+          "cost_estimate_micro_usd": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Estimate Micro Usd"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant",
+          "generation_run_id",
+          "model_id",
+          "input_tokens",
+          "output_tokens",
+          "input_characters",
+          "output_characters",
+          "cost_estimate_micro_usd",
+          "warnings"
+        ],
+        "title": "PlatformVariantRefinementResponse"
+      },
       "PlatformVariantsResponse": {
         "properties": {
           "variants": {
@@ -8512,6 +8720,31 @@
             ],
             "title": "Content Domain"
           },
+          "tone_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tone Config"
+          },
+          "editing_strength": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Editing Strength"
+          },
+          "humor_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Humor Config"
+          },
+          "cta_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Cta Config"
+          },
+          "character_count_policy": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Character Count Policy"
+          },
           "rubric_count": {
             "type": "integer",
             "title": "Rubric Count",
@@ -8530,7 +8763,12 @@
           "name",
           "description",
           "language",
-          "content_domain"
+          "content_domain",
+          "tone_config",
+          "editing_strength",
+          "humor_config",
+          "cta_config",
+          "character_count_policy"
         ],
         "title": "ProjectOut"
       },
@@ -9338,6 +9576,11 @@
             "type": "array",
             "title": "Generated Fields"
           },
+          "platform_overrides": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Platform Overrides"
+          },
           "input_schema_id": {
             "type": "string",
             "format": "uuid",
@@ -9360,6 +9603,7 @@
           "editorial_min_chars",
           "editorial_max_chars",
           "generated_fields",
+          "platform_overrides",
           "input_schema_id"
         ],
         "title": "RubricOut"

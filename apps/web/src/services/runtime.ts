@@ -49,8 +49,21 @@ export function getApiBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.API_BASE_URL ??
-    "http://127.0.0.1:8000"
+    "http://127.0.0.1:8000/api/v1"
   ).replace(/\/$/, "");
+}
+
+export function getApiUrl(path: string): string {
+  if (path.startsWith("http")) {
+    return path;
+  }
+
+  const baseUrl = getApiBaseUrl();
+  if (baseUrl.endsWith("/api/v1") && path.startsWith("/api/v1")) {
+    return `${baseUrl}${path.slice("/api/v1".length)}`;
+  }
+
+  return `${baseUrl}${path}`;
 }
 
 async function getServerCookies(): Promise<{
@@ -96,7 +109,7 @@ export function createApiRequestHeaders(options: {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
+  const url = getApiUrl(path);
   const headers = new Headers({ Accept: "application/json" });
   const { cookieHeader } = await getServerCookies();
 
@@ -125,7 +138,7 @@ export async function apiRequest<T>(
     requireCsrf?: boolean;
   },
 ): Promise<T> {
-  const url = path.startsWith("http") ? path : `${getApiBaseUrl()}${path}`;
+  const url = getApiUrl(path);
   const { cookieHeader, csrfToken } = await getServerCookies();
   const headers = createApiRequestHeaders({
     body: options.body,

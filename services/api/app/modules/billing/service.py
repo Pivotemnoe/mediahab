@@ -145,7 +145,11 @@ async def _count_active_rubrics(session: AsyncSession, workspace_id: UUID) -> in
         await session.scalar(
             select(func.count())
             .select_from(Rubric)
-            .where(Rubric.workspace_id == workspace_id, Rubric.status == "active")
+            .where(
+                Rubric.workspace_id == workspace_id,
+                Rubric.status == "active",
+                Rubric.slug != "project-default",
+            )
         )
         or 0
     )

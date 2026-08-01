@@ -61,7 +61,11 @@ export interface ProjectOut {
   active_version_id: string;
   active_version_number: number;
   content_domain: string | null;
+  cta_config: JsonObject;
+  character_count_policy: JsonObject;
   description: string | null;
+  editing_strength: JsonObject;
+  humor_config: JsonObject;
   id: string;
   language: string;
   name: string;
@@ -69,6 +73,7 @@ export interface ProjectOut {
   rubric_count?: number;
   slug: string;
   status: string;
+  tone_config: JsonObject;
   workspace_id: string;
 }
 
@@ -87,6 +92,7 @@ export interface RubricOut {
   id: string;
   input_schema_id: string;
   name: string;
+  platform_overrides: JsonObject;
   project_id: string;
   slug: string;
   sort_order: number;
@@ -248,6 +254,7 @@ export interface TranscriptionJobOut {
 export interface GenerationRunOut {
   completed_at: string | null;
   content_item_id: string;
+  cost_estimate_micro_usd: number | null;
   created_at: string;
   error_code: string | null;
   error_message: string | null;

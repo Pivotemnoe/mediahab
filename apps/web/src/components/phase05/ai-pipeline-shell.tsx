@@ -3,19 +3,19 @@ import {
   ArrowLeft,
   BadgeCheck,
   BrainCircuit,
-  FileJson,
   ListChecks,
+  Mic,
   Radar,
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  WandSparkles,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ExamplesImportForm } from "@/components/phase12/examples-import-form";
 import {
   type AiPipelineViewModel,
   type ProjectExamplesViewModel,
@@ -36,7 +36,7 @@ function toneForStatus(status: string): BadgeTone {
   return "neutral";
 }
 
-function AiHeader({ title, label = "Этап 05" }: { title: string; label?: string }) {
+function AiHeader({ title, label = "ИИ и примеры" }: { title: string; label?: string }) {
   return (
     <PageHeader
       actions={
@@ -47,7 +47,7 @@ function AiHeader({ title, label = "Этап 05" }: { title: string; label?: str
           </Link>
         </Button>
       }
-      description="Примеры, подбор, мастер-текст, проверка качества и журнал запусков ИИ."
+      description="Сохраняйте удачные публикации, чтобы MediaHub точнее передавал голос вашего канала."
       eyebrow={label}
       title={title}
     />
@@ -183,7 +183,13 @@ export function AiPipelineShell({ viewModel }: { viewModel: AiPipelineViewModel 
   );
 }
 
-export function ExamplesLibraryShell({ viewModel }: { viewModel: ProjectExamplesViewModel }) {
+export function ExamplesLibraryShell({
+  initialRubricId,
+  viewModel,
+}: {
+  initialRubricId?: string;
+  viewModel: ProjectExamplesViewModel;
+}) {
   return (
     <div className="grid gap-4">
       <AiHeader title="Библиотека примеров" />
@@ -191,30 +197,29 @@ export function ExamplesLibraryShell({ viewModel }: { viewModel: ProjectExamples
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap gap-2">
-              <Badge>Проект</Badge>
-              <Badge tone="info">Данные: {viewModel.modeLabel}</Badge>
+              <Badge>Идеальные примеры</Badge>
             </div>
             <h1 className="mt-3 break-all text-3xl font-semibold text-ink">{viewModel.projectLabel}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Примеры проходят импорт, дедупликацию, проверку, одобрение и векторизацию перед попаданием в подбор.
+              Общие примеры помогают держать единый голос канала, а примеры рубрики уточняют только её формат.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button">
-              <FileJson size={16} />
-              Импорт JSON
-            </Button>
-            <Button type="button" variant="secondary">
-              <WandSparkles size={16} />
-              Разметить
-            </Button>
-          </div>
+          <Button asChild>
+            <Link href={`/app/content/new?project=${viewModel.projectId}`}>
+              <Mic size={16} />
+              Создать публикацию
+            </Link>
+          </Button>
         </div>
 
         {viewModel.notice ? (
           <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] text-sm leading-6 text-ink">
             {viewModel.notice}
           </Card>
+        ) : null}
+
+        {viewModel.modeLabel === "api" ? (
+          <ExamplesImportForm initialRubricId={initialRubricId} projectId={viewModel.projectId} rubrics={viewModel.rubrics} />
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -232,7 +237,7 @@ export function ExamplesLibraryShell({ viewModel }: { viewModel: ProjectExamples
         </div>
 
         <Card className="grid gap-3">
-          {viewModel.examples.map((example) => (
+          {viewModel.examples.length ? viewModel.examples.map((example) => (
             <div className="grid gap-2 rounded-md border border-line p-3" key={example.title}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -247,7 +252,11 @@ export function ExamplesLibraryShell({ viewModel }: { viewModel: ProjectExamples
                 Используется как стиль, а не как источник фактов для нового материала.
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="rounded-lg border border-dashed border-border p-5 text-sm leading-6 text-muted">
+              Пока нет сохранённых примеров. Добавьте 2–5 публикаций, которые лучше всего передают голос канала.
+            </div>
+          )}
         </Card>
       </section>
     </div>

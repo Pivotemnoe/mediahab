@@ -4,9 +4,17 @@ import { getNewContentViewModel } from "@/services/content";
 export default async function NewContentPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ pilot_error?: string }>;
+  searchParams?: Promise<{ edit?: string; pilot_error?: string; platform?: string; project?: string; rubric?: string }>;
 }) {
-  const viewModel = await getNewContentViewModel();
   const params = await searchParams;
-  return <NewContentShell pilotError={params?.pilot_error} viewModel={viewModel} />;
+  const viewModel = await getNewContentViewModel(params?.edit);
+  return (
+    <NewContentShell
+      initialProjectId={params?.project}
+      initialPlatformKey={params?.platform}
+      initialRubricId={params?.rubric}
+      pilotError={params?.pilot_error}
+      viewModel={viewModel}
+    />
+  );
 }

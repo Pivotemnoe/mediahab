@@ -27,6 +27,8 @@ type AuthPageProps = {
   secondaryHref: string;
   secondaryLabel: string;
   submitLabel: string;
+  tertiaryHref?: string;
+  tertiaryLabel?: string;
   title: string;
 };
 
@@ -39,6 +41,8 @@ export function AuthPage({
   secondaryHref,
   secondaryLabel,
   submitLabel,
+  tertiaryHref,
+  tertiaryLabel,
   title,
 }: AuthPageProps) {
   const router = useRouter();
@@ -106,6 +110,7 @@ export function AuthPage({
                 className="h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-ring/20"
                 name={field.name}
                 placeholder={field.placeholder}
+                required
                 type={field.type ?? "text"}
               />
               {field.helper ? <span className="text-xs leading-5 text-muted">{field.helper}</span> : null}
@@ -124,6 +129,11 @@ export function AuthPage({
         <Button asChild variant="ghost">
           <Link href={secondaryHref}>{secondaryLabel}</Link>
         </Button>
+        {tertiaryHref && tertiaryLabel ? (
+          <Link className="text-center text-sm text-muted underline-offset-4 hover:text-foreground hover:underline" href={tertiaryHref}>
+            {tertiaryLabel}
+          </Link>
+        ) : null}
       </div>
     </AuthShell>
   );

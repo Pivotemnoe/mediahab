@@ -14,6 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.core.openai_http import openai_async_client
 from app.db.base import (
     ContentBlock,
     ContentItem,
@@ -29,6 +30,7 @@ from app.db.base import (
     VoiceAsset,
     utc_now,
 )
+from app.modules.projects.service import get_or_create_project_default_rubric
 
 
 CONTENT_MUTATION_ROLES = {"owner", "admin", "editor"}
@@ -89,8 +91,32 @@ def guided_form_from_rubric(version: RubricVersion) -> dict[str, Any]:
 async def resolve_content_create_context(
     session: AsyncSession,
     project_id: UUID,
-    rubric_id: UUID,
+    rubric_id: UUID | None,
+    actor_user_id: UUID,
 ) -> ContentCreateContext | None:
+    if rubric_id is None:
+        project_row = (
+            await session.execute(
+                select(Project, ProjectVersion)
+                .join(ProjectVersion, ProjectVersion.id == Project.active_version_id)
+                .where(Project.id == project_id, Project.deleted_at.is_(None))
+            )
+        ).first()
+        if project_row is None:
+            return None
+        project, project_version = project_row
+        rubric_context = await get_or_create_project_default_rubric(
+            session,
+            project,
+            actor_user_id,
+        )
+        return ContentCreateContext(
+            project=project,
+            project_version=project_version,
+            rubric=rubric_context.rubric,
+            rubric_version=rubric_context.version,
+        )
+
     row = (
         await session.execute(
             select(Project, ProjectVersion, Rubric, RubricVersion)
@@ -407,7 +433,10 @@ async def transcribe_with_openai(
         )
     }
     try:
-        async with httpx.AsyncClient(timeout=settings.openai_stt_timeout_seconds) as client:
+        async with openai_async_client(
+            settings,
+            timeout=settings.openai_stt_timeout_seconds,
+        ) as client:
             response = await client.post(
                 endpoint,
                 headers={"Authorization": f"Bearer {settings.openai_api_key}"},

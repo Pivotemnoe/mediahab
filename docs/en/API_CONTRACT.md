@@ -165,6 +165,16 @@ POST /ai-runs/{run_id}/cancel
 POST /ai-runs/{run_id}/retry
 ```
 
+`POST /content-items/{content_id}/generate-variants` accepts optional `length_overrides` keyed by platform. The override applies only to that build and is snapshotted in `PlatformVariant.payload.length_target`; it does not mutate the project or rubric. `ProjectOut.character_count_policy` and `RubricOut.platform_overrides` expose the active versioned editorial targets.
+
+The same endpoint accepts optional `instagram_format: image | carousel | reel` when `instagram` is selected. When supplied, the backend validates the current ordered media set (`image`: exactly one visual; `carousel`: 2–10 visuals; `reel`: exactly one video) and snapshots the format, media order, and cover media id in `PlatformVariant.payload`. Omitting the field preserves compatibility with existing API clients.
+
+For `vk`, the generated variant snapshots `payload.vk_export_package` with result type `community_post`, manual publication mode, ordered image/video attachments, and cover media id. A change to the ordered media creates a new platform-variant revision even when the master text is unchanged. The existing `manual_export` connector returns the same ordered attachment metadata with the final text.
+
+`POST /platform-variants/{variant_id}/refine` returns the generation run's input/output token and character counts together with `cost_estimate_micro_usd`. Provider token counts are authoritative when present; character counts allow the client to show a clearly labelled fallback estimate.
+
+Every newly generated or explicitly validated platform variant includes `validation.preflight`. It contains an overall `pass | warning | block` status and four ordered checks (`length`, `media`, `format`, `delivery`), each with a stable code and Russian user-facing label/message. Delivery readiness does not imply that a specific account is connected: manual connectors report manual export, while automated connector capabilities remain `warning` until a concrete destination is checked. The snapshot is additive, contains no credentials, and does not replace human approval.
+
 All endpoints create durable jobs and return `202` except cheap deterministic validators.
 
 ## Revisions and approval

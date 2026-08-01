@@ -22,7 +22,7 @@ import { Card } from "@/components/ui/card";
 const workflow = [
   {
     title: "Мастер материала",
-    text: "Выберите проект, рубрику и понятные блоки: факты, голос, медиа, итог.",
+    text: "Выберите проект, при необходимости рубрику и понятные блоки: факты, голос, медиа, итог.",
     icon: FileEdit,
   },
   {
@@ -50,17 +50,17 @@ const productSignals = [
 
 const entryActions = [
   {
-    title: "Создать первый материал",
-    text: "Откройте рабочий сценарий: проект, рубрика, диктовка, медиа, версии площадок.",
-    href: "/app/content/new",
-    label: "Открыть мастер",
+    title: "Зарегистрироваться и начать",
+    text: "Создайте личный кабинет, войдите и откройте голосовой сценарий без отдельной настройки устройства.",
+    href: "/register",
+    label: "Создать аккаунт",
     icon: Sparkles,
   },
   {
-    title: "Собрать рабочее пространство",
-    text: "Создайте кабинет, подключите проекты и держите публикации под контролем.",
-    href: "/register",
-    label: "Создать кабинет",
+    title: "Вернуться в свой кабинет",
+    text: "Если аккаунт уже есть, войдите и продолжите работу с сохранёнными материалами.",
+    href: "/login",
+    label: "Войти",
     icon: Layers3,
   },
   {
@@ -100,13 +100,13 @@ export default function MarketingIndex() {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="w-full sm:w-auto">
-                <Link href="/app/content/new">
-                  Создать материал
+                <Link href="/register">
+                  Зарегистрироваться
                   <ArrowRight size={16} />
                 </Link>
               </Button>
               <Button asChild className="w-full border-sidebar-foreground/20 bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20 sm:w-auto" variant="secondary">
-                <Link href="/register">Создать кабинет</Link>
+                <Link href="/login">Войти</Link>
               </Button>
               <Button asChild className="w-full text-sidebar-foreground/80 hover:bg-sidebar-foreground/10 hover:text-white sm:w-auto" variant="ghost">
                 <Link href="/features">Как это работает</Link>
@@ -139,8 +139,8 @@ export default function MarketingIndex() {
             </h2>
           </div>
           <Button asChild variant="secondary">
-            <Link href="/app/content/new">
-              Начать в мастере
+            <Link href="/register">
+              Создать аккаунт
               <ArrowRight size={16} />
             </Link>
           </Button>
@@ -248,7 +248,7 @@ export default function MarketingIndex() {
                 <h3 className="text-lg font-semibold text-foreground">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
               </div>
-              <Button asChild className="mt-auto w-full" variant={href === "/app/content/new" ? "primary" : "secondary"}>
+              <Button asChild className="mt-auto w-full" variant={href === "/register" ? "primary" : "secondary"}>
                 <Link href={href}>
                   {label}
                   <ArrowRight size={16} />

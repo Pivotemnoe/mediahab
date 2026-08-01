@@ -13,6 +13,7 @@ import {
   GripVertical,
   ListChecks,
   MessageSquare,
+  Mic,
   PanelRight,
   Pencil,
   Plus,
@@ -32,6 +33,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ProjectCreateForm } from "@/components/phase12/project-create-form";
+import { RubricCreateForm } from "@/components/phase12/rubric-create-form";
+import { ProjectRulesForm } from "@/components/phase12/project-rules-form";
+import { RubricRulesForm } from "@/components/phase12/rubric-rules-form";
 import {
   type NewProjectViewModel,
   type ProjectBuilderViewModel,
@@ -55,17 +60,17 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge tone="success">Этап 03</Badge>
+            <Badge tone="success">Ваши каналы</Badge>
             <h1 className="mt-3 text-3xl font-semibold text-ink">
-              Конструктор проектов
+              Проекты и каналы
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Проекты хранят стабильную идентичность и неизменяемые версии
-              настроек. Пресеты импортируются как данные, без ветвлений в коде.
+              Создайте отдельный проект для каждого канала, бренда или направления.
+              У каждого проекта свои правила, примеры и необязательные рубрики.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge>{viewModel.modeLabel}</Badge>
+            {viewModel.modeLabel === "fixtures" ? <Badge>{viewModel.modeLabel}</Badge> : null}
             <Button asChild>
               <Link href="/app/projects/new">
                 <FolderPlus size={16} />
@@ -84,7 +89,7 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
             <FolderPlus size={18} className="text-primary" />
             Текущие проекты
           </div>
-          {viewModel.projects.map((project) => (
+          {viewModel.projects.length ? viewModel.projects.map((project) => (
             <div className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[1fr_auto_auto]" key={project.href}>
               <div>
                 <div className="text-sm font-semibold text-foreground">{project.name}</div>
@@ -99,9 +104,22 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
                 <Link href={project.href}>Открыть</Link>
               </Button>
             </div>
-          ))}
+          )) : (
+            <div className="grid justify-items-start gap-3 rounded-lg border border-dashed border-border bg-surface-muted p-5">
+              <div className="text-base font-semibold text-foreground">Пока нет ни одного проекта</div>
+              <p className="max-w-xl text-sm leading-6 text-muted">
+                Проект — это ваш канал или направление. Он хранит общие правила текста и идеальные примеры.
+              </p>
+              <Button asChild>
+                <Link href="/app/projects/new">
+                  <FolderPlus size={16} />
+                  Создать первый проект
+                </Link>
+              </Button>
+            </div>
+          )}
         </Card>
-        <div className="grid gap-4 lg:grid-cols-3">
+        {viewModel.modeLabel === "fixtures" ? <div className="grid gap-4 lg:grid-cols-3">
           {viewModel.entryPoints.map(({ icon, text, title }) => {
             const Icon = projectEntryPointIcons[icon];
             return (
@@ -114,13 +132,22 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
               </Card>
             );
           })}
-        </div>
+        </div> : null}
       </section>
     </div>
   );
 }
 
 export function NewProjectShell({ viewModel }: { viewModel: NewProjectViewModel }) {
+  if (viewModel.modeLabel === "api" && viewModel.workspaceId) {
+    return (
+      <div className="grid gap-5">
+        <BuilderHeader title="Новый проект" />
+        <ProjectCreateForm workspaceId={viewModel.workspaceId} />
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-5">
       <BuilderHeader title="Новый проект" />
@@ -293,16 +320,22 @@ export function ProjectDetailShell({
           <div>
             <div className="flex flex-wrap gap-2">
               <Badge>Проект</Badge>
-              <Badge>{viewModel.modeLabel}</Badge>
+              {viewModel.modeLabel === "fixtures" ? <Badge>{viewModel.modeLabel}</Badge> : null}
             </div>
             <h1 className="mt-3 break-all text-3xl font-semibold text-ink">
               {viewModel.projectLabel || projectId}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Стабильная идентичность с активной версией настроек.
+              Отдельный канал со своими общими правилами, примерами и необязательными рубриками.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href={`/app/content/new?project=${projectId}`}>
+                <Mic size={16} />
+                Создать публикацию
+              </Link>
+            </Button>
             <Button asChild variant="secondary">
               <Link href={`/app/projects/${projectId}/examples`}>
                 <BookOpenCheck size={16} />
@@ -312,16 +345,10 @@ export function ProjectDetailShell({
             <Button asChild variant="secondary">
               <Link href={`/app/projects/${projectId}/settings`}>
                 <SlidersHorizontal size={16} />
-                Настройки
+                Общие правила
               </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href={`/app/projects/${projectId}/builder`}>
-                <WandSparkles size={16} />
-                Конструктор
-              </Link>
-            </Button>
-            <Button asChild>
               <Link href={`/app/projects/${projectId}/rubrics`}>
                 <Blocks size={16} />
                 Рубрики
@@ -357,41 +384,128 @@ export function ProjectBuilderShell({
   viewModel: ProjectBuilderViewModel;
 }) {
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Конструктор проекта" />
-      <section className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <Card className="grid content-start gap-2">
-          {viewModel.steps.map((step) => (
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+        <Card className="grid min-w-0 content-start gap-3 p-3">
+          <div className="px-2 py-1 text-xs font-semibold uppercase text-muted">Разделы проекта</div>
+          {viewModel.steps.map((step, index) => (
             <button
-              className="h-10 rounded-md px-3 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              className={
+                index === 0
+                  ? "grid min-w-0 gap-1 rounded-md border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_90%)] px-3 py-3 text-left"
+                  : "grid min-w-0 gap-1 rounded-md border border-transparent px-3 py-3 text-left transition hover:border-border hover:bg-surface-muted"
+              }
               key={step}
+              type="button"
             >
-              {step}
+              <span className="break-words text-sm font-semibold text-foreground">{step}</span>
+              <span className="break-words text-xs leading-5 text-muted">
+                {index === 0 ? "открыто сейчас" : "настройка доступна в этом разделе"}
+              </span>
             </button>
           ))}
+          <Button asChild variant="secondary">
+            <Link href={`/app/projects/${projectId}`}>
+              <ArrowLeft size={16} />
+              К проекту
+            </Link>
+          </Button>
         </Card>
-        <Card className="grid gap-4">
-          <div className="flex flex-wrap gap-2">
-            <Badge>Версионируемые настройки</Badge>
-            <Badge>{viewModel.modeLabel}</Badge>
-          </div>
-          <h1 className="text-2xl font-semibold text-ink">
-            Конструктор проекта {viewModel.projectLabel || projectId}
-          </h1>
-          {viewModel.notice ? (
-            <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
-              {viewModel.notice}
-            </div>
-          ) : null}
-          <div className="grid gap-3 md:grid-cols-2">
-            {viewModel.settingCards.map(({ label, text }) => (
-              <div className="rounded-md border border-line p-3" key={label}>
-                <div className="text-sm font-medium">{label}</div>
-                <div className="mt-1 text-sm text-muted">
-                  {text}
+
+        <div className="grid min-w-0 gap-4">
+          <Card className="grid min-w-0 gap-5 border-transparent p-5 shadow-popover sm:p-6">
+            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone="warning">advanced</Badge>
+                  <Badge>версии настроек</Badge>
                 </div>
+                <h1 className="mt-3 break-words text-3xl font-semibold leading-tight text-foreground">
+                  Конструктор проекта {viewModel.projectLabel || projectId}
+                </h1>
+                <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-muted">
+                  Здесь настраиваются голос проекта, рубрики, правила ИИ, площадки и примеры.
+                  Обычное создание материала остаётся в мастере, без служебных настроек на первом экране.
+                </p>
               </div>
+              <Button asChild>
+                <Link href="/app/content/new">
+                  <Plus size={16} />
+                  Создать материал
+                </Link>
+              </Button>
+            </div>
+
+            {viewModel.notice ? (
+              <div className="rounded-md border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-3 text-sm leading-6 text-muted">
+                {viewModel.notice}
+              </div>
+            ) : null}
+
+            <div className="grid min-w-0 gap-3 md:grid-cols-2">
+              {viewModel.settingCards.map(({ label, text }) => (
+                <div className="grid min-w-0 gap-3 rounded-lg border border-border bg-background p-4" key={label}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="break-words text-base font-semibold text-foreground">{label}</div>
+                    <Badge tone="info">версия</Badge>
+                  </div>
+                  <div className="break-words text-sm leading-6 text-muted">{text}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+            {[
+              {
+                icon: WandSparkles,
+                text: "ИИ предлагает рубрики и структуру, но не включает их без подтверждения.",
+                title: "ИИ-предложения",
+              },
+              {
+                icon: ShieldCheck,
+                text: "Правила, ограничения и факты меняются через версионируемые настройки.",
+                title: "Контроль качества",
+              },
+              {
+                icon: RadioTower,
+                text: "Площадки подключаются отдельно: Telegram, MAX, Instagram и ручной экспорт.",
+                title: "Площадки",
+              },
+            ].map(({ icon: Icon, text, title }) => (
+              <Card className="grid min-w-0 gap-3" key={title}>
+                <Icon className="text-primary" size={20} />
+                <div className="break-words text-sm font-semibold text-foreground">{title}</div>
+                <p className="break-words text-sm leading-6 text-muted">{text}</p>
+              </Card>
             ))}
+          </div>
+        </div>
+
+        <Card className="grid min-w-0 content-start gap-4 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <SlidersHorizontal className="text-primary" size={18} />
+            Предпросмотр изменений
+          </div>
+          <div className="rounded-lg border border-border bg-background p-4">
+            <div className="text-lg font-semibold text-foreground">Новая версия настроек</div>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Сохранение создаёт новую версию проекта. Уже созданные материалы остаются привязаны к прежним настройкам.
+            </p>
+          </div>
+          <div className="grid gap-2">
+            <Button type="button" variant="secondary">
+              <Eye size={16} />
+              Предпросмотр формы
+            </Button>
+            <Button type="button">
+              <Save size={16} />
+              Сохранить версию
+            </Button>
+          </div>
+          <div className="rounded-md bg-surface-muted p-3 text-sm leading-6 text-muted">
+            Этот раздел не участвует в обычном создании материала. Пользовательский путь начинается в мастере материала.
           </div>
         </Card>
       </section>
@@ -406,6 +520,81 @@ export function RubricBuilderShell({
   projectId: string;
   viewModel: RubricBuilderViewModel;
 }) {
+  if (viewModel.modeLabel === "api") {
+    return (
+      <div className="grid min-w-0 gap-5">
+        <BuilderHeader title="Рубрики проекта" />
+        <section className="grid gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <Badge tone="success">Необязательная настройка</Badge>
+              <h1 className="mt-3 text-3xl font-semibold text-foreground">
+                Рубрики канала «{viewModel.projectLabel || projectId}»
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+                Добавляйте рубрику только для повторяемого формата со своими правилами. Обычные публикации работают по общим правилам проекта без рубрики.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="secondary">
+                <Link href={`/app/projects/${projectId}`}>Открыть проект</Link>
+              </Button>
+              <Button asChild>
+                <Link href={`/app/projects/${projectId}/rubrics/new`}>
+                  <Plus size={16} />
+                  Добавить рубрику
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {viewModel.notice ? (
+            <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
+              {viewModel.notice}
+            </Card>
+          ) : null}
+
+          <Card className="grid gap-3">
+            {viewModel.rubrics.length ? viewModel.rubrics.map(({ count, href, name, status, version }) => (
+              <div className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-[1fr_auto_auto] md:items-center" key={href}>
+                <div>
+                  <div className="font-semibold text-foreground">{name}</div>
+                  <div className="mt-1 text-sm text-muted">{count} · {version}</div>
+                </div>
+                <Badge tone={status === "черновик" ? "warning" : "success"}>{status}</Badge>
+                <Button asChild size="sm" variant="secondary">
+                  <Link href={href}>Открыть правила</Link>
+                </Button>
+              </div>
+            )) : (
+              <div className="grid justify-items-start gap-3 rounded-lg border border-dashed border-border bg-surface-muted p-6">
+                <BookOpenCheck className="text-primary" size={22} />
+                <div className="text-lg font-semibold text-foreground">Рубрик пока нет — и это нормально</div>
+                <p className="max-w-xl text-sm leading-6 text-muted">
+                  Можно сразу создавать обычные публикации. Добавьте рубрику позже, если появится повторяемый формат с отдельным тоном, структурой или лимитами.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link href={`/app/content/new?project=${projectId}`}>
+                      <Mic size={16} />
+                      Создать публикацию без рубрики
+                    </Link>
+                  </Button>
+                  <Button asChild variant="secondary">
+                    <Link href={`/app/projects/${projectId}/rubrics/new`}>
+                      <Plus size={16} />
+                      Всё же добавить рубрику
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Конструктор рубрик" />
@@ -665,6 +854,15 @@ export function NewRubricShell({
   projectId: string;
   viewModel: RubricBuilderViewModel;
 }) {
+  if (viewModel.modeLabel === "api") {
+    return (
+      <div className="grid min-w-0 gap-5">
+        <BuilderHeader title="Новая рубрика" />
+        <RubricCreateForm projectId={projectId} projectLabel={viewModel.projectLabel || "Проект"} />
+      </div>
+    );
+  }
+
   return (
     <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Новая рубрика" />
@@ -826,6 +1024,15 @@ export function RubricDetailShell({
   viewModel: RubricDetailViewModel;
 }) {
   const rubric = viewModel.selectedRubric;
+
+  if (viewModel.modeLabel === "api" && viewModel.rawRubric) {
+    return (
+      <div className="grid min-w-0 gap-5">
+        <BuilderHeader title="Правила рубрики" />
+        <RubricRulesForm projectId={projectId} rubric={viewModel.rawRubric} />
+      </div>
+    );
+  }
 
   return (
     <div className="grid min-w-0 gap-5">
@@ -1006,6 +1213,15 @@ export function ProjectSettingsShell({
   projectId: string;
   viewModel: ProjectSettingsViewModel;
 }) {
+  if (viewModel.modeLabel === "api" && viewModel.project) {
+    return (
+      <div className="grid min-w-0 gap-5">
+        <BuilderHeader title="Правила проекта" />
+        <ProjectRulesForm project={viewModel.project} projectId={projectId} />
+      </div>
+    );
+  }
+
   return (
     <div className="grid min-w-0 gap-5">
       <BuilderHeader title="Настройки проекта" />
@@ -1141,8 +1357,8 @@ function BuilderHeader({ title }: { title: string }) {
           </Link>
         </Button>
       }
-      description="Visual Builder для проектов, рубрик, пресетов и версионируемых настроек."
-      eyebrow="Этап 03"
+      description="Управляйте каналами, общими правилами, идеальными примерами и необязательными рубриками."
+      eyebrow="Проекты"
       title={title}
     />
   );

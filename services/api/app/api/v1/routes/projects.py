@@ -33,6 +33,7 @@ from app.modules.projects.presets import (
 )
 from app.modules.projects.schema_builder import validate_rubric_payload
 from app.modules.projects.service import (
+    PROJECT_DEFAULT_RUBRIC_SLUG,
     create_project_version,
     create_project_with_version,
     create_rubric_version,
@@ -116,6 +117,11 @@ class ProjectOut(BaseModel):
     description: str | None
     language: str
     content_domain: str | None
+    tone_config: dict[str, Any]
+    editing_strength: dict[str, Any]
+    humor_config: dict[str, Any]
+    cta_config: dict[str, Any]
+    character_count_policy: dict[str, Any]
     rubric_count: int = 0
 
 
@@ -174,6 +180,7 @@ class RubricOut(BaseModel):
     editorial_min_chars: int | None
     editorial_max_chars: int | None
     generated_fields: list[str]
+    platform_overrides: dict[str, Any]
     input_schema_id: UUID
 
 
@@ -259,6 +266,15 @@ def project_out(project: Project, version: ProjectVersion, rubric_count: int = 0
         description=version.description,
         language=version.language,
         content_domain=version.content_domain,
+        tone_config=version.tone_config if isinstance(version.tone_config, dict) else {},
+        editing_strength=(
+            version.editing_strength if isinstance(version.editing_strength, dict) else {}
+        ),
+        humor_config=version.humor_config if isinstance(version.humor_config, dict) else {},
+        cta_config=version.cta_config if isinstance(version.cta_config, dict) else {},
+        character_count_policy=(
+            version.character_count_policy if isinstance(version.character_count_policy, dict) else {}
+        ),
         rubric_count=rubric_count,
     )
 
@@ -281,6 +297,9 @@ def rubric_out(rubric: Rubric, version: RubricVersion) -> RubricOut:
         editorial_min_chars=version.editorial_min_chars,
         editorial_max_chars=version.editorial_max_chars,
         generated_fields=list(version.generated_fields or []),
+        platform_overrides=(
+            version.platform_overrides if isinstance(version.platform_overrides, dict) else {}
+        ),
         input_schema_id=version.input_schema_id,
     )
 
@@ -345,7 +364,14 @@ async def rubric_count(db: AsyncSession, project_id: UUID) -> int:
     from sqlalchemy import func
 
     return int(
-        await db.scalar(select(func.count()).select_from(Rubric).where(Rubric.project_id == project_id))
+        await db.scalar(
+            select(func.count())
+            .select_from(Rubric)
+            .where(
+                Rubric.project_id == project_id,
+                Rubric.slug != PROJECT_DEFAULT_RUBRIC_SLUG,
+            )
+        )
         or 0
     )
 
@@ -385,9 +411,12 @@ async def create_project(
     if not allowed:
         raise api_error(402, "limit_exceeded", "Project limit reached.", details, request=request)
     data = project_data_from_create(payload)
-    slug = slugify(payload.slug or payload.name)
-    if await db.scalar(select(Project.id).where(Project.workspace_id == workspace_id, Project.slug == slug)):
-        raise api_error(409, "project_slug_exists", "Project slug already exists.", request=request)
+    if payload.slug:
+        slug = slugify(payload.slug)
+        if await db.scalar(select(Project.id).where(Project.workspace_id == workspace_id, Project.slug == slug)):
+            raise api_error(409, "project_slug_exists", "Project slug already exists.", request=request)
+    else:
+        slug = await unique_project_slug(db, workspace_id, payload.name)
     ctx = await create_project_with_version(db, workspace_id, actor.user.id, data, slug=slug)
     await db.commit()
     return project_out(ctx.project, ctx.version, 0)
@@ -523,6 +552,8 @@ async def update_project(
         data["locale"] = patch.pop("language")
     if "ai_mode_default" in patch:
         data.setdefault("default_ai_policy", {})["mode"] = patch.pop("ai_mode_default")
+    if "tone_config" in patch:
+        data["voice_and_tone"] = patch.pop("tone_config")
     data.update(patch)
     data["slug"] = project.slug
     data["status"] = project.status
@@ -559,7 +590,10 @@ async def clone_project(
     rows = await db.execute(
         select(Rubric, RubricVersion)
         .join(RubricVersion, RubricVersion.id == Rubric.active_version_id)
-        .where(Rubric.project_id == project.id)
+        .where(
+            Rubric.project_id == project.id,
+            Rubric.slug != PROJECT_DEFAULT_RUBRIC_SLUG,
+        )
         .order_by(Rubric.sort_order)
     )
     for rubric, rubric_version in rows.all():
@@ -582,7 +616,10 @@ async def export_project(
     rows = await db.execute(
         select(Rubric, RubricVersion)
         .join(RubricVersion, RubricVersion.id == Rubric.active_version_id)
-        .where(Rubric.project_id == project.id)
+        .where(
+            Rubric.project_id == project.id,
+            Rubric.slug != PROJECT_DEFAULT_RUBRIC_SLUG,
+        )
         .order_by(Rubric.sort_order)
     )
     return ProjectImportRequest(
@@ -670,7 +707,10 @@ async def list_rubrics(
     rows = await db.execute(
         select(Rubric, RubricVersion)
         .join(RubricVersion, RubricVersion.id == Rubric.active_version_id)
-        .where(Rubric.project_id == project.id)
+        .where(
+            Rubric.project_id == project.id,
+            Rubric.slug != PROJECT_DEFAULT_RUBRIC_SLUG,
+        )
         .order_by(Rubric.sort_order)
     )
     return RubricListResponse(rubrics=[rubric_out(rubric, version) for rubric, version in rows.all()])
@@ -685,6 +725,8 @@ async def create_rubric(
     db: AsyncSession = Depends(get_session),
 ) -> RubricOut:
     project, _ = await mutable_project_for_actor(project_id, request, actor, db)
+    if payload.key == PROJECT_DEFAULT_RUBRIC_SLUG:
+        raise api_error(422, "rubric_key_reserved", "Rubric key is reserved.", request=request)
     if await db.scalar(select(Rubric.id).where(Rubric.project_id == project.id, Rubric.slug == payload.key)):
         raise api_error(409, "rubric_slug_exists", "Rubric slug already exists.", request=request)
     data = {"schema_version": "1.0", **payload.model_dump()}

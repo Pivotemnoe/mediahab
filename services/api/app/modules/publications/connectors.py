@@ -55,6 +55,7 @@ INSTAGRAM_HASHTAG_LIMIT = 30
 INSTAGRAM_MENTION_LIMIT = 20
 INSTAGRAM_CAROUSEL_MIN = 2
 INSTAGRAM_CAROUSEL_MAX = 10
+MANUAL_EXPORT_TEXT_LIMIT = 100000
 
 
 CAPABILITIES: dict[str, ConnectorCapability] = {
@@ -140,7 +141,7 @@ CAPABILITIES: dict[str, ConnectorCapability] = {
         platform_key="manual_export",
         connector_key="manual_export",
         name="Ручной экспорт",
-        hard_text_limit=100000,
+        hard_text_limit=MANUAL_EXPORT_TEXT_LIMIT,
         media_limit=None,
         publication_mode="manual_export",
         automated_delivery=False,
@@ -149,7 +150,39 @@ CAPABILITIES: dict[str, ConnectorCapability] = {
             "approval_required": True,
             "package_export": True,
         },
-        hard_limits={"text": 100000},
+        hard_limits={"text": MANUAL_EXPORT_TEXT_LIMIT},
+    ),
+    "vk": ConnectorCapability(
+        platform_key="vk",
+        connector_key="manual_export",
+        name="VK - ручной экспорт",
+        hard_text_limit=MANUAL_EXPORT_TEXT_LIMIT,
+        media_limit=None,
+        publication_mode="manual_export",
+        automated_delivery=False,
+        capabilities={
+            "preview": True,
+            "approval_required": True,
+            "package_export": True,
+            "output_type": "community_post",
+        },
+        hard_limits={"text": MANUAL_EXPORT_TEXT_LIMIT},
+    ),
+    "reels": ConnectorCapability(
+        platform_key="reels",
+        connector_key="manual_export",
+        name="Reels - ручной экспорт",
+        hard_text_limit=MANUAL_EXPORT_TEXT_LIMIT,
+        media_limit=None,
+        publication_mode="manual_export",
+        automated_delivery=False,
+        capabilities={
+            "preview": True,
+            "approval_required": True,
+            "package_export": True,
+            "output_type": "script_and_caption",
+        },
+        hard_limits={"text": MANUAL_EXPORT_TEXT_LIMIT},
     ),
     "generic_webhook": ConnectorCapability(
         platform_key="generic_webhook",
@@ -200,6 +233,14 @@ def _condensed_text(master_text: str, platform_key: str, limit: int) -> str:
 
 def adapt_text_for_platform(master_text: str, platform_key: str) -> str:
     capability = capability_for(platform_key)
+    if platform_key == "reels":
+        script = master_text[:6000].rstrip()
+        caption = (
+            _condensed_text(master_text, "instagram", INSTAGRAM_CAPTION_LIMIT)
+            if len(master_text) > INSTAGRAM_CAPTION_LIMIT
+            else master_text
+        )
+        return f"Сценарий Reels\n\n{script}\n\nПодпись\n\n{caption}"
     if character_count(master_text) <= capability.hard_text_limit:
         return master_text
     if platform_key in {"max", "instagram"}:
@@ -1365,6 +1406,18 @@ def simulate_connector_publish(
             },
         )
     if connector_key == "manual_export":
+        attachments = [
+            {
+                "media_id": item.get("media_id"),
+                "kind": item.get("kind"),
+                "mime_type": item.get("mime_type"),
+                "sort_order": item.get("sort_order"),
+                "role": item.get("role"),
+                "caption": item.get("caption"),
+            }
+            for item in (media_items or [])
+            if item.get("kind") in {"image", "video"}
+        ]
         return ConnectorResult(
             status="manual_required",
             external_id=f"manual-export:{publication_id}",
@@ -1374,6 +1427,9 @@ def simulate_connector_publish(
                     "destination_id": destination_id,
                     "text": text,
                     "character_count": character_count(text),
+                    "attachment_count": len(attachments),
+                    "attachments": attachments,
+                    "cover_media_id": attachments[0]["media_id"] if attachments else None,
                 },
                 "message": "Manual export package is ready.",
             },

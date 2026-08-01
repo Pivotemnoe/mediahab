@@ -237,14 +237,37 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         auth: dict[str, object],
         content_id: str,
         platforms: list[str],
+        length_overrides: dict[str, dict[str, int | None]] | None = None,
     ) -> dict[str, dict[str, object]]:
         response = self.client.post(
             f"/api/v1/content-items/{content_id}/generate-variants",
             headers=self.csrf_headers(auth),
-            json={"platform_keys": platforms},
+            json={"length_overrides": length_overrides or {}, "platform_keys": platforms},
         )
         self.assertEqual(response.status_code, 200, response.text)
         return {variant["platform_key"]: variant for variant in response.json()["variants"]}
+
+    def test_current_length_override_is_snapshotted_and_creates_platform_revision(self) -> None:
+        auth = self.register(email="length-target-owner@example.com")
+        _, _, content, _ = self.create_content_with_master(auth, text="Исходный текст для проверки цели.")
+
+        first = self.generate_variants(
+            auth,
+            content["id"],
+            ["telegram"],
+            {"telegram": {"min_chars": 900, "max_chars": 1200}},
+        )["telegram"]
+        second = self.generate_variants(
+            auth,
+            content["id"],
+            ["telegram"],
+            {"telegram": {"min_chars": 1500, "max_chars": 1800}},
+        )["telegram"]
+
+        self.assertEqual(first["payload"]["length_target"]["source"], "post")
+        self.assertEqual(first["payload"]["length_target"]["max_chars"], 1200)
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(second["revision_number"], first["revision_number"] + 1)
 
     def approve_variant(self, auth: dict[str, object], variant_id: str) -> dict[str, object]:
         validated = self.client.post(
@@ -307,6 +330,168 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         self.assertLessEqual(variants["instagram"]["character_count"], 2200)
         self.assertEqual(variants["max"]["validation"]["valid"], True)
         self.assertEqual(variants["instagram"]["validation"]["valid"], True)
+
+    def test_project_link_footer_survives_generation_and_manual_edit(self) -> None:
+        auth = self.register(email="boilerplate-owner@example.com")
+        project, _, content, _ = self.create_content_with_master(auth, "Основной текст обзора.")
+        footer = "Telegram: https://t.me/example\nMAX: https://max.ru/example"
+        updated = self.client.patch(
+            f"/api/v1/projects/{project['id']}",
+            headers=self.csrf_headers(auth),
+            json={
+                "cta_config": {
+                    "guidance": "Завершить вопросом.",
+                    "footer_template": footer,
+                }
+            },
+        )
+        self.assertEqual(updated.status_code, 200, updated.text)
+
+        variant = self.generate_variants(auth, content["id"], ["max"])["max"]
+
+        self.assertTrue(variant["text"].startswith("Основной текст обзора.\n\n"))
+        self.assertTrue(variant["text"].endswith(footer))
+        self.assertEqual(variant["payload"]["body_text"], "Основной текст обзора.")
+
+        edited = self.client.patch(
+            f"/api/v1/platform-variants/{variant['id']}",
+            headers=self.csrf_headers(auth),
+            json={"text": "Исправленный основной текст."},
+        )
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual(
+            edited.json()["text"],
+            f"Исправленный основной текст.\n\n{footer}",
+        )
+
+    def test_resume_same_content_preserves_media_revisions_platforms_and_footer(self) -> None:
+        auth = self.register(email="resume12a4@example.com", workspace_name="Resume Workspace")
+        project, rubric, content, first_master_id = self.create_content_with_master(
+            auth,
+            "Первая версия основного текста.",
+        )
+        footer = "Telegram: https://t.me/example\nMAX: https://max.ru/example"
+        updated_project = self.client.patch(
+            f"/api/v1/projects/{project['id']}",
+            headers=self.csrf_headers(auth),
+            json={"cta_config": {"footer_template": footer}},
+        )
+        self.assertEqual(updated_project.status_code, 200, updated_project.text)
+
+        current = self.client.get(f"/api/v1/content-items/{content['id']}").json()
+        source = self.client.put(
+            f"/api/v1/content-items/{content['id']}/blocks/source",
+            headers=self.csrf_headers(auth),
+            json={
+                "source_type": "transcription",
+                "transcript_text": "Первая версия исходника.",
+                "value": "Первая версия исходника.",
+                "version": current["version"],
+            },
+        )
+        self.assertEqual(source.status_code, 200, source.text)
+
+        image_ids: list[str] = []
+        for index in range(2):
+            presign = self.client.post(
+                "/api/v1/media/presign-upload",
+                headers=self.csrf_headers(auth),
+                json={
+                    "workspace_id": auth["workspace"]["id"],
+                    "content_item_id": content["id"],
+                    "filename": f"resume-{index}.jpg",
+                    "kind": "image",
+                    "mime_type": "image/jpeg",
+                    "size_bytes": 1000 + index,
+                },
+            )
+            self.assertEqual(presign.status_code, 200, presign.text)
+            media_id = presign.json()["media_id"]
+            image_ids.append(media_id)
+            completed = self.client.post(
+                f"/api/v1/media/{media_id}/complete-upload",
+                headers=self.csrf_headers(auth),
+                json={"width": 1200, "height": 900},
+            )
+            self.assertEqual(completed.status_code, 200, completed.text)
+
+        current = self.client.get(f"/api/v1/content-items/{content['id']}").json()
+        ordered = self.client.put(
+            f"/api/v1/content-items/{content['id']}/media-order",
+            headers=self.csrf_headers(auth),
+            json={
+                "version": current["version"],
+                "media": [
+                    {"media_id": media_id, "role": "gallery", "sort_order": index}
+                    for index, media_id in enumerate(image_ids)
+                ],
+            },
+        )
+        self.assertEqual(ordered.status_code, 200, ordered.text)
+
+        first_variants = self.generate_variants(auth, content["id"], ["telegram", "max"])
+        self.assertEqual(first_variants["telegram"]["text"].count(footer), 1)
+        self.assertEqual(first_variants["max"]["text"].count(footer), 1)
+
+        corrected_source = self.client.patch(
+            f"/api/v1/content-blocks/{source.json()['id']}",
+            headers=self.csrf_headers(auth),
+            json={
+                "lock": False,
+                "source_type": "transcription",
+                "transcript_text": "Исправленная версия исходника.",
+                "value": "Исправленная версия исходника.",
+            },
+        )
+        self.assertEqual(corrected_source.status_code, 200, corrected_source.text)
+        second_master_id = asyncio.run(
+            self._set_master_revision(content["id"], "Исправленная версия основного текста.")
+        )
+        second_variants = self.generate_variants(auth, content["id"], ["telegram", "max"])
+
+        content_items = self.client.get(
+            f"/api/v1/projects/{project['id']}/content-items"
+        )
+        self.assertEqual(content_items.status_code, 200, content_items.text)
+        self.assertEqual(
+            [item["id"] for item in content_items.json()["content_items"]],
+            [content["id"]],
+        )
+        current = self.client.get(f"/api/v1/content-items/{content['id']}").json()
+        self.assertEqual(current["project_id"], project["id"])
+        self.assertEqual(current["rubric_id"], rubric["id"])
+        self.assertNotEqual(first_master_id, second_master_id)
+
+        media = self.client.get(f"/api/v1/content-items/{content['id']}/media")
+        self.assertEqual(media.status_code, 200, media.text)
+        self.assertEqual(
+            [item["media_asset_id"] for item in media.json()["media"]],
+            image_ids,
+        )
+
+        variants = self.client.get(f"/api/v1/content-items/{content['id']}/variants")
+        self.assertEqual(variants.status_code, 200, variants.text)
+        self.assertEqual(len(variants.json()["variants"]), 4)
+        self.assertEqual(
+            {variant["platform_key"] for variant in variants.json()["variants"]},
+            {"telegram", "max"},
+        )
+        for variant in second_variants.values():
+            self.assertEqual(variant["text"].count(footer), 1)
+
+        revision_count = asyncio.run(self._content_revision_count(content["id"]))
+        self.assertGreaterEqual(revision_count, 5)
+
+    async def _content_revision_count(self, content_id: str) -> int:
+        async with self.SessionLocal() as session:
+            return int(
+                await session.scalar(
+                    select(func.count()).select_from(ContentRevision).where(
+                        ContentRevision.content_item_id == UUID(content_id)
+                    )
+                )
+                or 0
+            )
 
     def test_unapproved_variant_cannot_be_queued(self) -> None:
         auth = self.register(email="unapproved06@example.com", workspace_name="Unapproved Workspace")

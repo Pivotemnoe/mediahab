@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     stt_provider: str = Field(default="mock", alias="STT_PROVIDER")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_base_url: str = Field(default="https://api.openai.com/v1", alias="OPENAI_BASE_URL")
+    openai_proxy_url: str | None = Field(default=None, alias="OPENAI_PROXY_URL", repr=False)
     openai_stt_model: str = Field(default="gpt-4o-mini-transcribe", alias="OPENAI_STT_MODEL")
     openai_stt_language: str | None = Field(default="ru", alias="OPENAI_STT_LANGUAGE")
     openai_stt_timeout_seconds: float = Field(default=60.0, alias="OPENAI_STT_TIMEOUT_SECONDS")
@@ -69,6 +70,7 @@ class Settings(BaseSettings):
     ai_text_model: str = Field(default="mock-editor-v1", alias="AI_TEXT_MODEL")
     ai_text_timeout_seconds: float = Field(default=90.0, alias="AI_TEXT_TIMEOUT_SECONDS")
     openai_text_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_TEXT_MODEL")
+    openai_editor_model: str = Field(default="gpt-5.6-terra", alias="OPENAI_EDITOR_MODEL")
     embedding_provider: str = Field(default="openai", alias="EMBEDDING_PROVIDER")
     embedding_model: str = Field(default="mock-embedding-v1", alias="EMBEDDING_MODEL")
     openai_embedding_model: str = Field(

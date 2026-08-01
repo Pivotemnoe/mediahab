@@ -53,7 +53,7 @@ router = APIRouter()
 
 
 class ContentCreateRequest(BaseModel):
-    rubric_id: UUID
+    rubric_id: UUID | None = None
     title_internal: str | None = Field(default=None, max_length=200)
     assigned_to: UUID | None = None
 
@@ -455,7 +455,12 @@ async def create_content_item(
 ) -> ContentItemOut:
     ctx, membership = await project_for_actor(project_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
-    create_ctx = await resolve_content_create_context(db, ctx.project.id, payload.rubric_id)
+    create_ctx = await resolve_content_create_context(
+        db,
+        ctx.project.id,
+        payload.rubric_id,
+        actor.user.id,
+    )
     if create_ctx is None:
         raise api_error(404, "rubric_not_found", "Rubric not found.", request=request)
     now = utc_now()
@@ -466,7 +471,12 @@ async def create_content_item(
         rubric_id=create_ctx.rubric.id,
         rubric_version_id=create_ctx.rubric_version.id,
         project_version_id=create_ctx.project_version.id,
-        title_internal=payload.title_internal or f"Черновик: {create_ctx.rubric_version.name}",
+        title_internal=payload.title_internal
+        or (
+            "Голосовой материал"
+            if payload.rubric_id is None
+            else f"Черновик: {create_ctx.rubric_version.name}"
+        ),
         status="draft",
         created_by=actor.user.id,
         assigned_to=payload.assigned_to,

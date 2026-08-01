@@ -4,9 +4,9 @@ export default function RegisterPage() {
   return (
     <AuthPage
       action="register"
-      eyebrow="Новый кабинет"
-      title="Создать рабочее пространство"
-      description="Заведите аккаунт владельца и первый проект для контента, диктовки и публикаций."
+      eyebrow="Регистрация"
+      title="Создать аккаунт Media Hub"
+      description="Введите свою почту, придумайте пароль и название кабинета. После регистрации вы сразу войдёте в приложение; письмо подтверждения в текущем тесте не требуется."
       fields={[
         {
           autoComplete: "email",
@@ -30,9 +30,9 @@ export default function RegisterPage() {
           placeholder: "Константин",
         },
         {
-          label: "Название пространства",
+          label: "Название кабинета",
           name: "workspace_name",
-          placeholder: "Что поесть? Армавир",
+          placeholder: "Моя редакция",
         },
       ]}
       submitLabel="Создать аккаунт"
