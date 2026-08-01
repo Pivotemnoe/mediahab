@@ -68,6 +68,14 @@ Correction scope:
 
 No database migration or architecture change is required. Local tests cover the non-truncating interim draft, platform-specific prompt requirements, and legacy UI guard. The owner separately confirmed the production hotfix deployment after verification; release and rollback evidence are recorded after cutover.
 
+Production hotfix evidence (1 August 2026):
+
+- release `20260801-160915-instagram-hotfix` deploys application commit `5dd3491711820d1fc0cd557a98b8e2bd1430945d` to `https://temichev-posthub.ru`;
+- the verified backup and release archive are stored at `/var/backups/media-hub/20260801-160915-instagram-hotfix`; previous API, worker, and web images carry matching `rollback-20260801-160915-instagram-hotfix` tags;
+- the deployed API kept a 5,100-character Instagram source unchanged and contained no mechanical truncation marker; local lint, 83 API tests, repository tests, E2E smoke, and the Next.js production build passed before deployment;
+- public HTTP redirects to HTTPS, HTTPS returns `200`, live/ready health checks pass, Alembic remains at `202606200008 (head)`, and API/worker/web startup logs contain no application error;
+- Compose recreated the PostgreSQL container while resolving dependencies, but did not delete or replace the PostgreSQL volume. The database returned healthy with the existing 13 users, 13 workspaces, 17 content items, and 20 platform variants. Redis and its volume were not recreated. No data migration or restore was run.
+
 ## Risks and rollback
 
 - Existing Phase 09 connector tests use legacy API requests; compatibility is retained while the normal PWA adopts the stricter contract.
