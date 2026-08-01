@@ -6,6 +6,7 @@ import {
   FileText,
   FolderKanban,
   Mic,
+  NotebookPen,
   Plus,
   Settings2,
 } from "lucide-react";
@@ -35,6 +36,12 @@ export default async function DashboardView() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="secondary">
+            <Link href="/app/notebook">
+              <NotebookPen size={16} />
+              Быстрая заметка
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
             <Link href="/app/projects/new">
               <Plus size={16} />
               Новый проект
@@ -54,6 +61,34 @@ export default async function DashboardView() {
           {dashboard.notice}
         </Card>
       ) : null}
+
+      <section className="grid min-w-0 gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">Блокнот</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">Мысли без обязательного проекта, рубрики и запуска ИИ.</p>
+          </div>
+          <Button asChild size="sm" variant="secondary">
+            <Link href="/app/notebook">Открыть блокнот</Link>
+          </Button>
+        </div>
+        {dashboard.recentNotes.length ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {dashboard.recentNotes.map((note, index) => (
+              <Link className="rounded-lg border border-border bg-surface p-4 shadow-panel transition hover:bg-surface-muted" href={note.href} key={`${note.updatedAt}-${index}`}>
+                <p className="line-clamp-3 text-sm leading-6 text-foreground">{note.body || "Пустая заметка"}</p>
+                <span className="mt-2 block text-xs text-muted">Открыть и продолжить</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <Card className="grid justify-items-start gap-3 border-dashed p-5">
+            <NotebookPen className="text-muted" size={22} />
+            <p className="text-sm leading-6 text-muted">Сохраните идею сейчас — проект можно выбрать позже.</p>
+            <Button asChild><Link href="/app/notebook">Записать идею</Link></Button>
+          </Card>
+        )}
+      </section>
 
       <section className="grid min-w-0 gap-4">
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">

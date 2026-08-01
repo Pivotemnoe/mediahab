@@ -9,8 +9,10 @@ from app.api.v1.routes.billing import router as billing_router
 from app.api.v1.routes.content import router as content_router
 from app.api.v1.routes.health import router as health_router
 from app.api.v1.routes.me import router as me_router
+from app.api.v1.routes.notebook import router as notebook_router
 from app.api.v1.routes.publications import router as publications_router
 from app.api.v1.routes.projects import router as projects_router
+from app.api.v1.routes.retention import router as retention_router
 from app.api.v1.routes.workspaces import router as workspaces_router
 
 api_router = APIRouter()
@@ -18,7 +20,9 @@ api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(me_router, tags=["me"])
 api_router.include_router(workspaces_router, tags=["workspaces"])
 api_router.include_router(projects_router, tags=["projects"])
+api_router.include_router(retention_router, tags=["retention"])
 api_router.include_router(content_router, tags=["content"])
+api_router.include_router(notebook_router, tags=["notebook"])
 api_router.include_router(ai_router, tags=["ai"])
 api_router.include_router(publications_router, tags=["publications"])
 api_router.include_router(billing_router, tags=["billing"])

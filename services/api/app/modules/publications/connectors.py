@@ -9,6 +9,8 @@ from urllib.parse import quote, urlparse
 
 import httpx
 
+from app.modules.publications.rich_text import rich_text_html, rich_text_markdown
+
 
 class ConnectorValidationError(ValueError):
     def __init__(self, code: str, message: str, details: dict[str, Any] | None = None) -> None:
@@ -486,7 +488,7 @@ def _telegram_media_payload(
     return payload
 
 
-def _rich_html(text: str, media_payload: list[dict[str, Any]]) -> str:
+def _rich_html(text: str, media_payload: list[dict[str, Any]], rich_text: object | None = None) -> str:
     parts: list[str] = []
     if media_payload:
         media_tags = []
@@ -497,7 +499,11 @@ def _rich_html(text: str, media_payload: list[dict[str, Any]]) -> str:
             else:
                 media_tags.append(f'<img src="{src}"/>')
         parts.append(f"<tg-collage>{''.join(media_tags)}</tg-collage>")
-    escaped_text = html.escape(text, quote=False).replace("\n", "<br>")
+    escaped_text = (
+        rich_text_html(rich_text)
+        if rich_text is not None
+        else html.escape(text, quote=False).replace("\n", "<br>")
+    )
     parts.append(f"<p>{escaped_text}</p>")
     return "".join(parts)
 
@@ -510,6 +516,7 @@ def build_telegram_rich_message_payload(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> dict[str, Any]:
     if character_count(text) > TELEGRAM_RICH_TEXT_LIMIT:
         raise ConnectorValidationError(
@@ -519,7 +526,7 @@ def build_telegram_rich_message_payload(
         )
     target = _target_chat(configuration)
     media_payload = _telegram_media_payload(media_items or [], configuration)
-    rich_html = _rich_html(text, media_payload)
+    rich_html = _rich_html(text, media_payload, rich_text)
     provider_request: dict[str, Any] = {
         "chat_id": target,
         "rich_message": {
@@ -710,7 +717,9 @@ def _max_media_type(media: dict[str, Any]) -> str:
     return "file"
 
 
-def _max_text_for_format(text: str, text_format: str) -> str:
+def _max_text_for_format(text: str, text_format: str, rich_text: object | None = None) -> str:
+    if rich_text is not None:
+        return rich_text_html(rich_text) if text_format == "html" else rich_text_markdown(rich_text)
     if text_format == "html":
         return html.escape(text, quote=False).replace("\n", "<br>")
     return text
@@ -724,6 +733,7 @@ def build_max_message_payload(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> dict[str, Any]:
     count = character_count(text)
     if count > MAX_TEXT_LIMIT:
@@ -755,7 +765,7 @@ def build_max_message_payload(
         )
         attachments.append({"type": media_type, "payload": {"token": token}})
     body: dict[str, Any] = {
-        "text": _max_text_for_format(text, text_format),
+        "text": _max_text_for_format(text, text_format, rich_text),
         "format": text_format,
         "attachments": attachments,
         "notify": bool(configuration.get("notify", True)),
@@ -1294,6 +1304,7 @@ def simulate_connector_publish(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> ConnectorResult:
     if connector_key == TELEGRAM_CONNECTOR_KEY:
         validate_destination_configuration(connector_key, configuration, can_activate_live=True)
@@ -1327,6 +1338,7 @@ def simulate_connector_publish(
             configuration=configuration,
             idempotency_key=idempotency_key,
             media_items=media_items,
+            rich_text=rich_text,
         )
         return ConnectorResult(
             status="published",
@@ -1347,6 +1359,7 @@ def simulate_connector_publish(
             configuration=configuration,
             idempotency_key=idempotency_key,
             media_items=media_items,
+            rich_text=rich_text,
         )
         if configuration.get("simulate_attachment_not_ready") is True and payload["media_count"] > 0:
             return ConnectorResult(
@@ -1495,6 +1508,7 @@ async def publish_connector(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> ConnectorResult:
     if connector_key == TELEGRAM_CONNECTOR_KEY and _telegram_delivery_mode(configuration) == "live":
         return await _publish_telegram_live(
@@ -1504,6 +1518,7 @@ async def publish_connector(
             configuration=configuration,
             idempotency_key=idempotency_key,
             media_items=media_items,
+            rich_text=rich_text,
         )
     if connector_key == MAX_CONNECTOR_KEY and _max_delivery_mode(configuration) == "live":
         return await _publish_max_live(
@@ -1513,6 +1528,7 @@ async def publish_connector(
             configuration=configuration,
             idempotency_key=idempotency_key,
             media_items=media_items,
+            rich_text=rich_text,
         )
     return simulate_connector_publish(
         publication_id=publication_id,
@@ -1523,6 +1539,7 @@ async def publish_connector(
         configuration=configuration,
         idempotency_key=idempotency_key,
         media_items=media_items,
+        rich_text=rich_text,
     )
 
 
@@ -1534,6 +1551,7 @@ async def _publish_telegram_live(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> ConnectorResult:
     validate_destination_configuration(TELEGRAM_CONNECTOR_KEY, configuration, can_activate_live=True)
     payload_mode = _telegram_payload_mode(configuration)
@@ -1549,6 +1567,7 @@ async def _publish_telegram_live(
         configuration=configuration,
         idempotency_key=idempotency_key,
         media_items=media_items,
+        rich_text=rich_text,
     )
     token = str(configuration.get("bot_token") or "").strip()
     endpoint = f"https://api.telegram.org/bot{token}/sendRichMessage"
@@ -1620,6 +1639,7 @@ async def _publish_max_live(
     configuration: dict[str, Any],
     idempotency_key: str,
     media_items: list[dict[str, Any]] | None = None,
+    rich_text: object | None = None,
 ) -> ConnectorResult:
     validate_destination_configuration(MAX_CONNECTOR_KEY, configuration, can_activate_live=True)
     payload = build_max_message_payload(
@@ -1629,6 +1649,7 @@ async def _publish_max_live(
         configuration=configuration,
         idempotency_key=idempotency_key,
         media_items=media_items,
+        rich_text=rich_text,
     )
     token = str(configuration.get("access_token") or "").strip()
     try:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -11,8 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import (
+    ContentItem,
+    ExamplePost,
     ExternalPost,
     PlatformVariant,
+    PlatformVariantFeedback,
     ProjectDestination,
     Publication,
     PublicationAttempt,
@@ -22,7 +25,12 @@ from app.db.base import (
 )
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
-from app.modules.ai.service import AiPipelineError, refine_platform_variant_text
+from app.modules.ai.service import (
+    AiPipelineError,
+    content_hash,
+    normalize_text,
+    refine_platform_variant_text,
+)
 from app.modules.auth.dependencies import (
     Actor,
     get_current_actor,
@@ -73,10 +81,35 @@ class GenerateVariantsRequest(BaseModel):
 
 class PlatformVariantPatchRequest(BaseModel):
     text: str = Field(min_length=1, max_length=120000)
+    rich_text: dict[str, Any] | None = None
 
 
 class PlatformVariantRefineRequest(BaseModel):
     instruction: str = Field(min_length=1, max_length=1000)
+
+
+class PlatformVariantFeedbackPutRequest(BaseModel):
+    reaction: Literal["excellent", "good", "needs_work", "not_my_style"]
+    comment: str | None = Field(default=None, max_length=1000)
+    learn_style: bool = False
+    version: int | None = None
+
+
+class PlatformVariantFeedbackOut(BaseModel):
+    id: UUID
+    platform_variant_id: UUID
+    platform_key: str
+    reaction: str
+    comment: str | None
+    learns_style: bool
+    is_active: bool
+    version: int
+    created_at: str
+    updated_at: str
+
+
+class PlatformVariantFeedbackResponse(BaseModel):
+    feedback: PlatformVariantFeedbackOut | None
 
 
 class PlatformVariantOut(BaseModel):
@@ -288,6 +321,21 @@ def variant_out(variant: PlatformVariant) -> PlatformVariantOut:
     )
 
 
+def feedback_out(feedback: PlatformVariantFeedback) -> PlatformVariantFeedbackOut:
+    return PlatformVariantFeedbackOut(
+        id=feedback.id,
+        platform_variant_id=feedback.platform_variant_id,
+        platform_key=feedback.platform_key,
+        reaction=feedback.reaction,
+        comment=feedback.comment,
+        learns_style=feedback.style_example_id is not None and feedback.is_active,
+        is_active=feedback.is_active,
+        version=feedback.version,
+        created_at=feedback.created_at.isoformat(),
+        updated_at=feedback.updated_at.isoformat(),
+    )
+
+
 def destination_out(destination: ProjectDestination) -> DestinationOut:
     configuration = destination.configuration_json
     if not isinstance(configuration, dict):
@@ -427,6 +475,88 @@ async def variant_for_actor(
     return variant, membership
 
 
+async def current_variant_feedback(
+    db: AsyncSession,
+    variant_id: UUID,
+    actor_user_id: UUID,
+) -> PlatformVariantFeedback | None:
+    return await db.scalar(
+        select(PlatformVariantFeedback).where(
+            PlatformVariantFeedback.platform_variant_id == variant_id,
+            PlatformVariantFeedback.actor_user_id == actor_user_id,
+        )
+    )
+
+
+async def deactivate_feedback_style_example(
+    db: AsyncSession,
+    feedback: PlatformVariantFeedback,
+) -> None:
+    if feedback.style_example_id is None:
+        return
+    other = await db.scalar(
+        select(PlatformVariantFeedback).where(
+            PlatformVariantFeedback.id != feedback.id,
+            PlatformVariantFeedback.style_example_id == feedback.style_example_id,
+            PlatformVariantFeedback.is_active.is_(True),
+            PlatformVariantFeedback.reaction == "excellent",
+        )
+    )
+    if other is None:
+        example = await db.get(ExamplePost, feedback.style_example_id)
+        if example is not None and example.source_type == "variant_feedback":
+            example.status = "rejected"
+            example.updated_at = utc_now()
+    feedback.style_example_id = None
+
+
+async def style_example_for_feedback(
+    db: AsyncSession,
+    variant: PlatformVariant,
+    item: ContentItem,
+    actor_user_id: UUID,
+) -> ExamplePost:
+    normalized = normalize_text(variant.text)
+    dedupe = content_hash(f"{variant.platform_key}\0{normalized}")
+    example = await db.scalar(
+        select(ExamplePost).where(
+            ExamplePost.workspace_id == variant.workspace_id,
+            ExamplePost.project_id == item.project_id,
+            ExamplePost.source_type == "variant_feedback",
+            ExamplePost.dedupe_hash == dedupe,
+        )
+    )
+    if example is None:
+        now = utc_now()
+        example = ExamplePost(
+            id=uuid4(),
+            workspace_id=variant.workspace_id,
+            project_id=item.project_id,
+            rubric_id=item.rubric_id,
+            source_type="variant_feedback",
+            source_external_id=str(variant.id),
+            title=f"Финальная версия {variant.platform_key}",
+            text=variant.text,
+            normalized_text=normalized,
+            character_count=len(normalized),
+            status="pending_review",
+            labels_json={"platform_key": variant.platform_key, "feedback_owned": True},
+            manual_quality_score=9,
+            dedupe_hash=dedupe,
+            created_by=actor_user_id,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(example)
+        await db.flush()
+    example.status = "approved"
+    example.reviewed_by = actor_user_id
+    example.reviewed_at = utc_now()
+    example.updated_at = utc_now()
+    await db.flush()
+    return example
+
+
 async def destination_for_actor(
     destination_id: UUID,
     request: Request,
@@ -551,6 +681,128 @@ async def get_variant(
     return variant_out(variant)
 
 
+@router.get(
+    "/platform-variants/{variant_id}/feedback",
+    response_model=PlatformVariantFeedbackResponse,
+)
+async def get_variant_feedback(
+    variant_id: UUID,
+    request: Request,
+    actor: Actor = Depends(get_current_actor),
+    db: AsyncSession = Depends(get_session),
+) -> PlatformVariantFeedbackResponse:
+    _, membership = await variant_for_actor(variant_id, request, actor, db)
+    require_role(membership, READ_ROLES, request)
+    feedback = await current_variant_feedback(db, variant_id, actor.user.id)
+    return PlatformVariantFeedbackResponse(
+        feedback=feedback_out(feedback) if feedback is not None and feedback.is_active else None
+    )
+
+
+@router.put(
+    "/platform-variants/{variant_id}/feedback",
+    response_model=PlatformVariantFeedbackResponse,
+)
+async def put_variant_feedback(
+    variant_id: UUID,
+    payload: PlatformVariantFeedbackPutRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+) -> PlatformVariantFeedbackResponse:
+    variant, membership = await variant_for_actor(variant_id, request, actor, db)
+    require_preparation_role(membership, request)
+    item = await db.get(ContentItem, variant.content_item_id)
+    if item is None or item.deleted_at is not None:
+        raise api_error(404, "content_not_found", "Content item not found.", request=request)
+    variant_payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
+    if payload.learn_style and payload.reaction != "excellent":
+        raise api_error(
+            422,
+            "style_learning_requires_excellent",
+            "Запомнить стиль можно только для версии с оценкой «Отлично».",
+            request=request,
+        )
+    if payload.learn_style and variant_payload.get("source") != "manual_edit":
+        raise api_error(
+            422,
+            "style_learning_requires_manual_edit",
+            "Сначала вручную поправьте финальный текст этой площадки, затем сохраните его стиль.",
+            request=request,
+        )
+    now = utc_now()
+    feedback = await current_variant_feedback(db, variant.id, actor.user.id)
+    if feedback is None:
+        feedback = PlatformVariantFeedback(
+            id=uuid4(),
+            workspace_id=variant.workspace_id,
+            project_id=item.project_id,
+            rubric_id=item.rubric_id,
+            platform_variant_id=variant.id,
+            platform_key=variant.platform_key,
+            actor_user_id=actor.user.id,
+            reaction=payload.reaction,
+            comment=payload.comment,
+            is_active=True,
+            revoked_at=None,
+            created_at=now,
+            updated_at=now,
+            version=1,
+        )
+        db.add(feedback)
+        await db.flush()
+    else:
+        if payload.version is not None and payload.version != feedback.version:
+            raise api_error(
+                409,
+                "feedback_version_conflict",
+                "Platform feedback has a newer version.",
+                {"expected": payload.version, "actual": feedback.version},
+                request=request,
+            )
+        if feedback.style_example_id is not None and not payload.learn_style:
+            await deactivate_feedback_style_example(db, feedback)
+        feedback.reaction = payload.reaction
+        feedback.comment = payload.comment
+        feedback.is_active = True
+        feedback.revoked_at = None
+        feedback.updated_at = now
+        feedback.version += 1
+    if payload.learn_style:
+        example = await style_example_for_feedback(db, variant, item, actor.user.id)
+        feedback.style_example_id = example.id
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise api_error(409, "feedback_conflict", "Platform feedback changed concurrently.", request=request) from exc
+    return PlatformVariantFeedbackResponse(feedback=feedback_out(feedback))
+
+
+@router.delete(
+    "/platform-variants/{variant_id}/feedback",
+    response_model=PlatformVariantFeedbackResponse,
+)
+async def delete_variant_feedback(
+    variant_id: UUID,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+) -> PlatformVariantFeedbackResponse:
+    variant, membership = await variant_for_actor(variant_id, request, actor, db)
+    require_preparation_role(membership, request)
+    feedback = await current_variant_feedback(db, variant.id, actor.user.id)
+    if feedback is None or not feedback.is_active:
+        return PlatformVariantFeedbackResponse(feedback=None)
+    await deactivate_feedback_style_example(db, feedback)
+    feedback.is_active = False
+    feedback.revoked_at = utc_now()
+    feedback.updated_at = utc_now()
+    feedback.version += 1
+    await db.commit()
+    return PlatformVariantFeedbackResponse(feedback=None)
+
+
 @router.patch("/platform-variants/{variant_id}", response_model=PlatformVariantOut)
 async def patch_variant(
     variant_id: UUID,
@@ -562,7 +814,13 @@ async def patch_variant(
     variant, membership = await variant_for_actor(variant_id, request, actor, db)
     require_preparation_role(membership, request)
     try:
-        edited = await edit_platform_variant(db, variant, actor.user.id, payload.text)
+        edited = await edit_platform_variant(
+            db,
+            variant,
+            actor.user.id,
+            payload.text,
+            rich_text=payload.rich_text,
+        )
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
     await db.commit()
@@ -591,7 +849,13 @@ async def refine_variant_endpoint(
             actor.user.id,
             payload.instruction,
         )
-        edited = await edit_platform_variant(db, variant, actor.user.id, refined_text)
+        edited = await edit_platform_variant(
+            db,
+            variant,
+            actor.user.id,
+            refined_text,
+            edit_source="ai_refinement",
+        )
         edited_payload = edited.payload_json if isinstance(edited.payload_json, dict) else {}
         edited.payload_json = {
             **edited_payload,
@@ -956,7 +1220,13 @@ async def edit_publication_endpoint(
     if variant is None:
         raise api_error(404, "variant_not_found", "Platform variant not found.", request=request)
     try:
-        edited = await edit_platform_variant(db, variant, actor.user.id, payload.text)
+        edited = await edit_platform_variant(
+            db,
+            variant,
+            actor.user.id,
+            payload.text,
+            rich_text=payload.rich_text,
+        )
         publication.platform_variant_id = edited.id
         publication.status = "draft"
     except PublicationCoreError as exc:

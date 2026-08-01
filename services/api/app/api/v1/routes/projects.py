@@ -31,6 +31,8 @@ from app.modules.projects.presets import (
     load_preset_bundle,
     validate_bundle,
 )
+from app.modules.projects.boilerplate import normalize_cta_config
+from app.modules.publications.rich_text import RichTextValidationError
 from app.modules.projects.schema_builder import validate_rubric_payload
 from app.modules.projects.service import (
     PROJECT_DEFAULT_RUBRIC_SLUG,
@@ -245,7 +247,7 @@ def project_data_from_create(payload: ProjectCreateRequest) -> dict[str, Any]:
         "voice_and_tone": payload.tone_config,
         "editing_strength": payload.editing_strength,
         "humor_config": payload.humor_config,
-        "cta_config": payload.cta_config,
+        "cta_config": normalize_cta_config(payload.cta_config),
         "provider_preferences": payload.provider_preferences,
         "character_count_policy": payload.character_count_policy,
     }
@@ -410,7 +412,10 @@ async def create_project(
     allowed, details = await ensure_project_limit(db, workspace_id)
     if not allowed:
         raise api_error(402, "limit_exceeded", "Project limit reached.", details, request=request)
-    data = project_data_from_create(payload)
+    try:
+        data = project_data_from_create(payload)
+    except RichTextValidationError as exc:
+        raise api_error(422, "footer_rich_text_invalid", str(exc), request=request) from exc
     if payload.slug:
         slug = slugify(payload.slug)
         if await db.scalar(select(Project.id).where(Project.workspace_id == workspace_id, Project.slug == slug)):
@@ -484,11 +489,16 @@ async def import_project(
     errors = validate_bundle(payload.project, payload.rubrics)
     if errors:
         raise api_error(422, "project_import_invalid", "Project import failed validation.", {"errors": errors}, request=request)
+    imported_project = dict(payload.project)
+    try:
+        imported_project["cta_config"] = normalize_cta_config(imported_project.get("cta_config"))
+    except RichTextValidationError as exc:
+        raise api_error(422, "footer_rich_text_invalid", str(exc), request=request) from exc
     ctx, rubrics, created = await import_project_bundle(
         db,
         workspace_id,
         actor.user.id,
-        payload.project,
+        imported_project,
         payload.rubrics,
         source_kind="import",
     )
@@ -548,6 +558,11 @@ async def update_project(
     project, version = await mutable_project_for_actor(project_id, request, actor, db)
     data = dict(version.source_payload or {})
     patch = payload.model_dump(exclude_none=True)
+    if "cta_config" in patch:
+        try:
+            patch["cta_config"] = normalize_cta_config(patch["cta_config"])
+        except RichTextValidationError as exc:
+            raise api_error(422, "footer_rich_text_invalid", str(exc), request=request) from exc
     if "language" in patch:
         data["locale"] = patch.pop("language")
     if "ai_mode_default" in patch:

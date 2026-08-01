@@ -1979,6 +1979,269 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/retention": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Get Retention Summary",
+        "operationId": "get_retention_summary_api_v1_workspaces__workspace_id__retention_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Update Retention Policy",
+        "operationId": "update_retention_policy_api_v1_workspaces__workspace_id__retention_patch",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionPolicyPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/retention/scan": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Scan Retention",
+        "operationId": "scan_retention_api_v1_workspaces__workspace_id__retention_scan_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionScanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionScanOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/retention/{candidate_id}/retain": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Retain Candidate",
+        "operationId": "retain_candidate_api_v1_workspaces__workspace_id__retention__candidate_id__retain_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionCandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/retention/execute-ready": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Execute Retention",
+        "operationId": "execute_retention_api_v1_workspaces__workspace_id__retention_execute_ready_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRetentionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecuteRetentionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/content-items": {
       "get": {
         "tags": [
@@ -3107,6 +3370,433 @@
         }
       }
     },
+    "/api/v1/notebook": {
+      "get": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "List Notes",
+        "operationId": "list_notes_api_v1_notebook_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Archived"
+            }
+          },
+          {
+            "name": "deleted",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Deleted"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Create Note",
+        "operationId": "create_note_api_v1_notebook_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notebook/{note_id}": {
+      "patch": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Update Note",
+        "operationId": "update_note_api_v1_notebook__note_id__patch",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotePatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Delete Note",
+        "operationId": "delete_note_api_v1_notebook__note_id__delete",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notebook/{note_id}/restore": {
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Restore Note",
+        "operationId": "restore_note_api_v1_notebook__note_id__restore_post",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notebook/{note_id}/transcribe": {
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Transcribe Note",
+        "operationId": "transcribe_note_api_v1_notebook__note_id__transcribe_post",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteTranscribeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteTranscriptionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notebook-transcriptions/{run_id}/accept": {
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Accept Note Transcription",
+        "operationId": "accept_note_transcription_api_v1_notebook_transcriptions__run_id__accept_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteTranscriptionAcceptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notebook/{note_id}/transfer": {
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Transfer Note",
+        "operationId": "transfer_note_api_v1_notebook__note_id__transfer_post",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteTransferRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteTransferOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/examples/import": {
       "post": {
         "tags": [
@@ -3849,6 +4539,141 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlatformVariantOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform-variants/{variant_id}/feedback": {
+      "get": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Get Variant Feedback",
+        "operationId": "get_variant_feedback_api_v1_platform_variants__variant_id__feedback_get",
+        "parameters": [
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformVariantFeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Put Variant Feedback",
+        "operationId": "put_variant_feedback_api_v1_platform_variants__variant_id__feedback_put",
+        "parameters": [
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformVariantFeedbackPutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformVariantFeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "publications"
+        ],
+        "summary": "Delete Variant Feedback",
+        "operationId": "delete_variant_feedback_api_v1_platform_variants__variant_id__feedback_delete",
+        "parameters": [
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformVariantFeedbackResponse"
                 }
               }
             }
@@ -6176,6 +7001,38 @@
               }
             ],
             "title": "Caption"
+          },
+          "asset_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Kind"
+          },
+          "retention_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Until"
+          },
+          "retention_status": {
+            "type": "string",
+            "title": "Retention Status",
+            "default": "unlimited"
+          },
+          "expired": {
+            "type": "boolean",
+            "title": "Expired",
+            "default": false
           }
         },
         "type": "object",
@@ -6781,6 +7638,42 @@
           "created_at"
         ],
         "title": "ExampleOut"
+      },
+      "ExecuteRetentionOut": {
+        "properties": {
+          "completed": {
+            "type": "integer",
+            "title": "Completed"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "completed",
+          "failed",
+          "message"
+        ],
+        "title": "ExecuteRetentionOut"
+      },
+      "ExecuteRetentionRequest": {
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "title": "ExecuteRetentionRequest"
       },
       "ForgotPasswordRequest": {
         "properties": {
@@ -7653,6 +8546,25 @@
             "type": "string",
             "title": "Processing Status"
           },
+          "retention_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Until"
+          },
+          "retention_status": {
+            "type": "string",
+            "title": "Retention Status"
+          },
+          "expired": {
+            "type": "boolean",
+            "title": "Expired"
+          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -7670,6 +8582,9 @@
           "checksum",
           "upload_status",
           "processing_status",
+          "retention_until",
+          "retention_status",
+          "expired",
           "version"
         ],
         "title": "MediaOut"
@@ -7869,6 +8784,400 @@
           "members"
         ],
         "title": "MembersResponse"
+      },
+      "NoteCreateRequest": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 50000,
+            "title": "Body",
+            "default": ""
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workspace_id"
+        ],
+        "title": "NoteCreateRequest"
+      },
+      "NoteListResponse": {
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/NoteOut"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notes"
+        ],
+        "title": "NoteListResponse"
+      },
+      "NoteOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Author Id"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "pinned": {
+            "type": "boolean",
+            "title": "Pinned"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "author_id",
+          "body",
+          "kind",
+          "pinned",
+          "archived",
+          "deleted",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "NoteOut"
+      },
+      "NotePatchRequest": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "pinned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "NotePatchRequest"
+      },
+      "NoteTranscribeRequest": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Media Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key",
+            "default": "default"
+          },
+          "mock_transcript": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mock Transcript"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id"
+        ],
+        "title": "NoteTranscribeRequest"
+      },
+      "NoteTranscriptionAcceptRequest": {
+        "properties": {
+          "corrected_text": {
+            "type": "string",
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Corrected Text"
+          },
+          "append": {
+            "type": "boolean",
+            "title": "Append",
+            "default": true
+          },
+          "note_version": {
+            "type": "integer",
+            "title": "Note Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "corrected_text",
+          "note_version"
+        ],
+        "title": "NoteTranscriptionAcceptRequest"
+      },
+      "NoteTranscriptionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "note_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Note Id"
+          },
+          "media_asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Media Asset Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "transcript_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript Text"
+          },
+          "corrected_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected Text"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "note_id",
+          "media_asset_id",
+          "provider_key",
+          "status",
+          "transcript_text",
+          "corrected_text",
+          "accepted_at"
+        ],
+        "title": "NoteTranscriptionOut"
+      },
+      "NoteTransferOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "note_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Note Id"
+          },
+          "content_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Content Item Id"
+          },
+          "content_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Content Block Id"
+          },
+          "transfer_type": {
+            "type": "string",
+            "title": "Transfer Type"
+          },
+          "note_version": {
+            "type": "integer",
+            "title": "Note Version"
+          },
+          "composer_url": {
+            "type": "string",
+            "title": "Composer Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "note_id",
+          "content_item_id",
+          "content_block_id",
+          "transfer_type",
+          "note_version",
+          "composer_url"
+        ],
+        "title": "NoteTransferOut"
+      },
+      "NoteTransferRequest": {
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "content_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Item Id"
+          }
+        },
+        "type": "object",
+        "title": "NoteTransferRequest"
       },
       "PaymentOut": {
         "properties": {
@@ -8163,6 +9472,139 @@
         ],
         "title": "PlansResponse"
       },
+      "PlatformVariantFeedbackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "platform_variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Platform Variant Id"
+          },
+          "platform_key": {
+            "type": "string",
+            "title": "Platform Key"
+          },
+          "reaction": {
+            "type": "string",
+            "title": "Reaction"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "learns_style": {
+            "type": "boolean",
+            "title": "Learns Style"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_variant_id",
+          "platform_key",
+          "reaction",
+          "comment",
+          "learns_style",
+          "is_active",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PlatformVariantFeedbackOut"
+      },
+      "PlatformVariantFeedbackPutRequest": {
+        "properties": {
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "excellent",
+              "good",
+              "needs_work",
+              "not_my_style"
+            ],
+            "title": "Reaction"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "learn_style": {
+            "type": "boolean",
+            "title": "Learn Style",
+            "default": false
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reaction"
+        ],
+        "title": "PlatformVariantFeedbackPutRequest"
+      },
+      "PlatformVariantFeedbackResponse": {
+        "properties": {
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlatformVariantFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback"
+        ],
+        "title": "PlatformVariantFeedbackResponse"
+      },
       "PlatformVariantOut": {
         "properties": {
           "id": {
@@ -8292,6 +9734,18 @@
             "maxLength": 120000,
             "minLength": 1,
             "title": "Text"
+          },
+          "rich_text": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rich Text"
           }
         },
         "type": "object",
@@ -9355,6 +10809,356 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "RetainRequest": {
+        "properties": {
+          "extend_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Extend Days",
+            "default": 30
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "title": "RetainRequest"
+      },
+      "RetentionCandidateOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "object_type": {
+            "type": "string",
+            "title": "Object Type"
+          },
+          "object_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Object Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "retention_until": {
+            "type": "string",
+            "title": "Retention Until"
+          },
+          "warning_at": {
+            "type": "string",
+            "title": "Warning At"
+          },
+          "grace_until": {
+            "type": "string",
+            "title": "Grace Until"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "object_type",
+          "object_id",
+          "status",
+          "reason",
+          "retention_until",
+          "warning_at",
+          "grace_until",
+          "details"
+        ],
+        "title": "RetentionCandidateOut"
+      },
+      "RetentionPolicyOut": {
+        "properties": {
+          "original_media_days": {
+            "type": "integer",
+            "title": "Original Media Days"
+          },
+          "text_days": {
+            "type": "integer",
+            "title": "Text Days"
+          },
+          "warning_days": {
+            "type": "integer",
+            "title": "Warning Days"
+          },
+          "media_grace_days": {
+            "type": "integer",
+            "title": "Media Grace Days"
+          },
+          "inactivity_days": {
+            "type": "integer",
+            "title": "Inactivity Days"
+          },
+          "inactivity_grace_days": {
+            "type": "integer",
+            "title": "Inactivity Grace Days"
+          },
+          "raw_voice_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Voice Days"
+          },
+          "cleanup_enabled": {
+            "type": "boolean",
+            "title": "Cleanup Enabled"
+          },
+          "text_cleanup_enabled": {
+            "type": "boolean",
+            "title": "Text Cleanup Enabled"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original_media_days",
+          "text_days",
+          "warning_days",
+          "media_grace_days",
+          "inactivity_days",
+          "inactivity_grace_days",
+          "raw_voice_days",
+          "cleanup_enabled",
+          "text_cleanup_enabled",
+          "version"
+        ],
+        "title": "RetentionPolicyOut"
+      },
+      "RetentionPolicyPatch": {
+        "properties": {
+          "cleanup_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cleanup Enabled"
+          },
+          "text_cleanup_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Cleanup Enabled"
+          },
+          "raw_voice_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Voice Days"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "RetentionPolicyPatch"
+      },
+      "RetentionScanOut": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RetentionCandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "excluded_raw_voice": {
+            "type": "integer",
+            "title": "Excluded Raw Voice"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dry_run",
+          "workspace_id",
+          "candidates",
+          "excluded_raw_voice",
+          "message"
+        ],
+        "title": "RetentionScanOut"
+      },
+      "RetentionScanRequest": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "now": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now"
+          }
+        },
+        "type": "object",
+        "title": "RetentionScanRequest"
+      },
+      "RetentionSummaryOut": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/RetentionPolicyOut"
+          },
+          "media_count": {
+            "type": "integer",
+            "title": "Media Count"
+          },
+          "media_bytes": {
+            "type": "integer",
+            "title": "Media Bytes"
+          },
+          "next_media_expiry_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Media Expiry At"
+          },
+          "media_warning_count": {
+            "type": "integer",
+            "title": "Media Warning Count"
+          },
+          "candidate_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Candidate Counts"
+          },
+          "text_candidate_count": {
+            "type": "integer",
+            "title": "Text Candidate Count"
+          },
+          "last_authenticated_activity_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Authenticated Activity At"
+          },
+          "inactive_cleanup_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inactive Cleanup At"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Blockers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "policy",
+          "media_count",
+          "media_bytes",
+          "next_media_expiry_at",
+          "media_warning_count",
+          "candidate_counts",
+          "text_candidate_count",
+          "last_authenticated_activity_at",
+          "inactive_cleanup_at",
+          "blockers"
+        ],
+        "title": "RetentionSummaryOut"
       },
       "RubricCreateRequest": {
         "properties": {

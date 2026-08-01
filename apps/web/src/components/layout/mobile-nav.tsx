@@ -10,7 +10,10 @@ import { cn } from "@/lib/cn";
 export function MobileNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid box-border grid-cols-5 border-t border-border bg-surface/95 px-2 py-2 backdrop-blur lg:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 grid box-border border-t border-border bg-surface/95 px-2 py-2 backdrop-blur lg:hidden"
+      style={{ gridTemplateColumns: `repeat(${mobileNavItems.length + 1}, minmax(0, 1fr))` }}
+    >
       {mobileNavItems.map((item) => {
         const Icon = item.icon;
         const active =

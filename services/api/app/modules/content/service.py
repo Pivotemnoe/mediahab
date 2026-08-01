@@ -408,6 +408,34 @@ def fetch_s3_object_bytes(settings: Settings, media: MediaAsset) -> bytes:
             close()
 
 
+def delete_s3_object(settings: Settings, media: MediaAsset) -> None:
+    """Delete one workspace-scoped object after the retention grace gate."""
+    if not settings.s3_download_enabled:
+        if settings.app_env in {"local", "test"}:
+            return
+        raise ContentProviderError(
+            "s3_not_configured",
+            "S3 storage is not configured for retention cleanup.",
+        )
+    expected_scope = f"workspaces/{media.workspace_id}/media/{media.id}/"
+    if expected_scope not in media.storage_key:
+        raise ContentProviderError(
+            "retention_storage_scope_invalid",
+            "Media storage key is outside the expected workspace scope.",
+        )
+    client = make_s3_client(
+        settings,
+        endpoint_url=settings.s3_endpoint_url or settings.s3_public_base_url,
+    )
+    try:
+        client.delete_object(Bucket=media.bucket, Key=media.storage_key)
+    except (BotoCoreError, ClientError) as exc:
+        raise ContentProviderError(
+            "s3_delete_failed",
+            "S3 object could not be deleted by retention cleanup.",
+        ) from exc
+
+
 async def transcribe_with_openai(
     settings: Settings,
     media: MediaAsset,

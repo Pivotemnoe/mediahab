@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import (
@@ -31,6 +32,7 @@ from app.db.base import (
 from app.modules.projects.boilerplate import (
     apply_project_boilerplate,
     project_footer,
+    project_footer_rich_text,
     strip_project_boilerplate,
 )
 from app.modules.publications.connectors import (
@@ -44,6 +46,15 @@ from app.modules.publications.connectors import (
     validate_variant,
 )
 from app.modules.publications.length_targets import LengthTargetError, resolve_length_target
+from app.modules.publications.rich_text import (
+    RichTextValidationError,
+    join_rich_text,
+    normalize_rich_text,
+    plain_rich_text,
+    rich_text_plain,
+    strip_rich_text_suffix,
+    trim_rich_text,
+)
 
 
 CONTENT_PREPARATION_ROLES = {"owner", "admin", "editor"}
@@ -356,6 +367,57 @@ async def ensure_publication_catalog(session: AsyncSession) -> None:
         await session.flush()
         return
 
+    if bind is not None and bind.dialect.name == "sqlite":
+        for capability in all_capabilities():
+            now = utc_now()
+            platform_insert = sqlite_insert(Platform).values(
+                key=capability.platform_key,
+                name=capability.name,
+                status="active",
+                native_enabled=capability.automated_delivery,
+                created_at=now,
+                updated_at=now,
+            )
+            await session.execute(
+                platform_insert.on_conflict_do_update(
+                    index_elements=[Platform.key],
+                    set_={
+                        "name": platform_insert.excluded.name,
+                        "status": platform_insert.excluded.status,
+                        "native_enabled": platform_insert.excluded.native_enabled,
+                        "updated_at": platform_insert.excluded.updated_at,
+                    },
+                )
+            )
+            capability_insert = sqlite_insert(PlatformCapability).values(
+                id=uuid4(),
+                platform_key=capability.platform_key,
+                connector_key=capability.connector_key,
+                version=1,
+                capabilities_json=capability.capabilities,
+                hard_limits_json=capability.hard_limits,
+                status="active",
+                created_at=now,
+                updated_at=now,
+            )
+            await session.execute(
+                capability_insert.on_conflict_do_update(
+                    index_elements=[
+                        PlatformCapability.platform_key,
+                        PlatformCapability.connector_key,
+                        PlatformCapability.version,
+                    ],
+                    set_={
+                        "capabilities_json": capability_insert.excluded.capabilities_json,
+                        "hard_limits_json": capability_insert.excluded.hard_limits_json,
+                        "status": capability_insert.excluded.status,
+                        "updated_at": capability_insert.excluded.updated_at,
+                    },
+                )
+            )
+        await session.flush()
+        return
+
     for capability in all_capabilities():
         platform = await session.get(Platform, capability.platform_key)
         if platform is None:
@@ -501,6 +563,7 @@ async def create_platform_variant(
     platform_key: str,
     actor_user_id: UUID,
     text_override: str | None = None,
+    rich_text_override: object | None = None,
     parent_variant_id: UUID | None = None,
     length_target: dict[str, Any] | None = None,
     instagram_format: str | None = None,
@@ -515,19 +578,32 @@ async def create_platform_variant(
     uses_explicit_editorial_target = bool(
         isinstance(length_target, dict) and length_target.get("source") in {"post", "rubric", "project"}
     )
-    body_text = (
-        text_override
-        if text_override is not None
-        else master_revision.text
-        if uses_explicit_editorial_target
-        else adapt_text_for_platform(master_revision.text, platform_key)
-    )
+    if rich_text_override is not None:
+        try:
+            body_rich_text = trim_rich_text(rich_text_override)
+        except RichTextValidationError as exc:
+            raise PublicationCoreError(422, "rich_text_invalid", str(exc)) from exc
+        body_text = rich_text_plain(body_rich_text).strip()
+    else:
+        body_text = (
+            text_override
+            if text_override is not None
+            else master_revision.text
+            if uses_explicit_editorial_target
+            else adapt_text_for_platform(master_revision.text, platform_key)
+        )
+        body_rich_text = plain_rich_text(body_text)
     project = await session.get(Project, item.project_id)
     active_version_id = project.active_version_id if project is not None else item.project_version_id
     project_version = await session.get(ProjectVersion, active_version_id)
     cta_config = project_version.cta_config if project_version is not None else {}
-    text = apply_project_boilerplate(body_text, cta_config)
     fixed_footer = project_footer(cta_config)
+    try:
+        footer_rich_text = project_footer_rich_text(cta_config)
+    except RichTextValidationError as exc:
+        raise PublicationCoreError(422, "footer_rich_text_invalid", str(exc)) from exc
+    rich_text = join_rich_text(body_rich_text, footer_rich_text)
+    text = rich_text_plain(rich_text)
     validation = validate_variant(platform_key, text, media_count)
     payload = {
         "source": "master_revision",
@@ -539,7 +615,9 @@ async def create_platform_variant(
         "body_text": body_text,
         "fixed_boilerplate": {
             "footer_template": fixed_footer,
+            "footer_rich_text": footer_rich_text,
         },
+        "rich_text": rich_text,
         "length_target": length_target or {},
         **(
             {
@@ -819,6 +897,8 @@ async def edit_platform_variant(
     variant: PlatformVariant,
     actor_user_id: UUID,
     text: str,
+    rich_text: object | None = None,
+    edit_source: str = "manual_edit",
 ) -> PlatformVariant:
     item = await session.get(ContentItem, variant.content_item_id)
     master = await session.get(ContentRevision, variant.master_revision_id)
@@ -826,7 +906,26 @@ async def edit_platform_variant(
         raise PublicationCoreError(404, "variant_not_found", "Platform variant context not found.")
     variant_payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
     stored_boilerplate = variant_payload.get("fixed_boilerplate", {})
-    body_text = strip_project_boilerplate(text, stored_boilerplate)
+    if rich_text is not None:
+        try:
+            normalized_rich_text = normalize_rich_text(rich_text)
+        except RichTextValidationError as exc:
+            raise PublicationCoreError(422, "rich_text_invalid", str(exc)) from exc
+        derived_text = rich_text_plain(normalized_rich_text).strip()
+        if derived_text != text.strip():
+            raise PublicationCoreError(
+                422,
+                "rich_text_plain_mismatch",
+                "Rich-text document does not match its plain-text fallback.",
+            )
+        body_rich_text = strip_rich_text_suffix(
+            normalized_rich_text,
+            project_footer(stored_boilerplate),
+        )
+        body_text = rich_text_plain(body_rich_text).strip()
+    else:
+        body_rich_text = None
+        body_text = strip_project_boilerplate(text, stored_boilerplate)
     edited = await create_platform_variant(
         session,
         item,
@@ -834,6 +933,7 @@ async def edit_platform_variant(
         variant.platform_key,
         actor_user_id,
         text_override=body_text,
+        rich_text_override=body_rich_text,
         parent_variant_id=variant.id,
         length_target=(
             variant_payload.get("length_target")
@@ -856,6 +956,13 @@ async def edit_platform_variant(
             else None
         ),
     )
+    edited_payload = edited.payload_json if isinstance(edited.payload_json, dict) else {}
+    edited.payload_json = {
+        **edited_payload,
+        "source": edit_source,
+        "edited_by": str(actor_user_id),
+        "edited_from_variant_id": str(variant.id),
+    }
     if variant.status != "superseded":
         variant.status = "superseded"
         variant.superseded_by_variant_id = edited.id
@@ -1215,6 +1322,8 @@ async def process_publication_outbox(
         await session.flush()
         return publication
     configuration = destination.configuration_json if isinstance(destination.configuration_json, dict) else {}
+    variant_payload = variant.payload_json if isinstance(variant.payload_json, dict) else {}
+    variant_rich_text = variant_payload.get("rich_text")
     media_items = await ordered_media_for_content(session, publication.content_item_id)
     request_payload = {
         "publication_id": str(publication.id),
@@ -1223,6 +1332,7 @@ async def process_publication_outbox(
         "platform_key": variant.platform_key,
         "connector_key": destination.connector_key,
         "text": variant.text,
+        "rich_text": variant_rich_text,
         "media_items": media_items,
         "configuration": redacted_destination_configuration(configuration),
     }
@@ -1252,6 +1362,7 @@ async def process_publication_outbox(
         configuration=configuration,
         idempotency_key=publication.idempotency_key or str(publication.id),
         media_items=media_items,
+        rich_text=variant_rich_text,
     )
     completed_at = utc_now()
     attempt.status = result.status

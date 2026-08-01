@@ -118,6 +118,45 @@ export interface ContentItemOut {
   workspace_id: string;
 }
 
+export interface NotebookNoteOut {
+  archived: boolean;
+  author_id: string;
+  body: string;
+  created_at: string;
+  deleted: boolean;
+  id: string;
+  kind: "draft" | "idea" | "link" | "observation" | "other" | "task" | null;
+  pinned: boolean;
+  updated_at: string;
+  version: number;
+  workspace_id: string;
+}
+
+export interface NotebookNoteListResponse {
+  notes: NotebookNoteOut[];
+}
+
+export interface NotebookTranscriptionOut {
+  accepted_at: string | null;
+  corrected_text: string | null;
+  id: string;
+  media_asset_id: string;
+  note_id: string;
+  provider_key: string;
+  status: string;
+  transcript_text: string | null;
+}
+
+export interface NotebookTransferOut {
+  composer_url: string;
+  content_block_id: string;
+  content_item_id: string;
+  id: string;
+  note_id: string;
+  note_version: number;
+  transfer_type: "append" | "create";
+}
+
 export interface ContentListResponse {
   content_items: ContentItemOut[];
 }
@@ -177,12 +216,16 @@ export interface ExampleListResponse {
 }
 
 export interface ContentMediaOut {
+  asset_kind: string | null;
   caption: string | null;
   content_item_id: string;
   id: string;
   media_asset_id: string;
   role: string;
   sort_order: number;
+  retention_status: string;
+  retention_until: string | null;
+  expired: boolean;
 }
 
 export interface ContentMediaResponse {
@@ -206,10 +249,40 @@ export interface MediaOut {
   kind: string;
   mime_type: string;
   processing_status: string;
+  retention_status: string;
+  retention_until: string | null;
+  expired: boolean;
   size_bytes: number;
   storage_key: string;
   upload_status: string;
   version: number;
+  workspace_id: string;
+}
+
+export interface RetentionPolicyOut {
+  cleanup_enabled: boolean;
+  inactivity_days: number;
+  inactivity_grace_days: number;
+  media_grace_days: number;
+  original_media_days: number;
+  raw_voice_days: number | null;
+  text_cleanup_enabled: boolean;
+  text_days: number;
+  version: number;
+  warning_days: number;
+}
+
+export interface RetentionSummaryOut {
+  blockers: string[];
+  candidate_counts: Record<string, number>;
+  inactive_cleanup_at: string | null;
+  last_authenticated_activity_at: string | null;
+  media_bytes: number;
+  media_count: number;
+  media_warning_count: number;
+  next_media_expiry_at: string | null;
+  policy: RetentionPolicyOut;
+  text_candidate_count: number;
   workspace_id: string;
 }
 
@@ -298,6 +371,23 @@ export interface PlatformVariantOut {
 
 export interface PlatformVariantsResponse {
   variants: PlatformVariantOut[];
+}
+
+export interface PlatformVariantFeedbackOut {
+  comment: string | null;
+  created_at: string;
+  id: string;
+  is_active: boolean;
+  learns_style: boolean;
+  platform_key: string;
+  platform_variant_id: string;
+  reaction: "excellent" | "good" | "needs_work" | "not_my_style";
+  updated_at: string;
+  version: number;
+}
+
+export interface PlatformVariantFeedbackResponse {
+  feedback: PlatformVariantFeedbackOut | null;
 }
 
 export interface UsageLimitOut {

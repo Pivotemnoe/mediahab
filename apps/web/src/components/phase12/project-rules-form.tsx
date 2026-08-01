@@ -7,6 +7,8 @@ import { useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/phase12/rich-text-editor";
+import { normalizeRichText, richTextPlain } from "@/lib/rich-text";
 import { clientApiRequest } from "@/services/client-api";
 import { type JsonObject, type ProjectOut } from "@/services/openapi-types";
 
@@ -41,6 +43,10 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const rules = voiceRules(project);
+  const [footerRichText, setFooterRichText] = useState(() => normalizeRichText(
+    project.cta_config.footer_rich_text,
+    stringValue(project.cta_config, "footer_template"),
+  ));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,7 +73,8 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
           },
           cta_config: {
             ...ctaConfig,
-            footer_template: value("footer_template"),
+            footer_rich_text: footerRichText,
+            footer_template: richTextPlain(footerRichText).trim(),
             guidance: value("cta"),
           },
           description: value("description") || null,
@@ -143,15 +150,15 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
               Сохраните один раз. Подвал будет без изменений добавляться в конец каждой новой версии и попадёт в скопированный текст вместе с обычными https-ссылками.
             </p>
           </div>
-          <label className="grid gap-1.5 text-sm">
+          <div className="grid gap-1.5 text-sm">
             <span className="font-semibold text-foreground">Текст и ссылки в конце публикации <span className="font-normal text-muted">(необязательно)</span></span>
-            <textarea
-              className="min-h-28 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:border-primary"
-              defaultValue={stringValue(project.cta_config, "footer_template")}
-              name="footer_template"
-              placeholder={"Telegram: https://t.me/...\nMAX: https://max.ru/..."}
+            <RichTextEditor
+              ariaLabel="Постоянный подвал публикации"
+              minHeightClass="min-h-28"
+              value={footerRichText}
+              onChange={setFooterRichText}
             />
-          </label>
+          </div>
         </div>
       </Card>
 

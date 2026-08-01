@@ -794,6 +794,59 @@ class MediaAsset(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
 
+class RetentionPolicy(Base):
+    __tablename__ = "retention_policies"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(
+        ForeignKey("workspaces.id"), unique=True, index=True
+    )
+    original_media_days: Mapped[int] = mapped_column(Integer, default=30)
+    text_days: Mapped[int] = mapped_column(Integer, default=180)
+    warning_days: Mapped[int] = mapped_column(Integer, default=7)
+    media_grace_days: Mapped[int] = mapped_column(Integer, default=7)
+    inactivity_days: Mapped[int] = mapped_column(Integer, default=90)
+    inactivity_grace_days: Mapped[int] = mapped_column(Integer, default=30)
+    raw_voice_days: Mapped[int | None] = mapped_column(Integer)
+    cleanup_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    text_cleanup_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class RetentionCandidate(Base):
+    __tablename__ = "retention_candidates"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id", "object_type", "object_id",
+            name="uq_retention_candidates_workspace_object",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    object_type: Mapped[str] = mapped_column(String(40), index=True)
+    object_id: Mapped[UUID] = mapped_column(index=True)
+    status: Mapped[str] = mapped_column(String(40), default="scheduled", index=True)
+    reason: Mapped[str] = mapped_column(String(120))
+    retention_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    warning_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    grace_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    details_json: Mapped[object] = mapped_column(JSON)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
 class ContentMedia(Base):
     __tablename__ = "content_media"
     __table_args__ = (
@@ -855,6 +908,69 @@ class TranscriptionRun(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
+
+
+class NotebookNote(Base):
+    __tablename__ = "notebook_notes"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    body: Mapped[str] = mapped_column(Text, default="")
+    kind: Mapped[str | None] = mapped_column(String(40), index=True)
+    pinned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class NotebookTranscription(Base):
+    __tablename__ = "notebook_transcriptions"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    note_id: Mapped[UUID] = mapped_column(ForeignKey("notebook_notes.id"), index=True)
+    media_asset_id: Mapped[UUID] = mapped_column(ForeignKey("media_assets.id"), index=True)
+    provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
+    status: Mapped[str] = mapped_column(String(40), default="queued", index=True)
+    transcript_text: Mapped[str | None] = mapped_column(Text)
+    corrected_text: Mapped[str | None] = mapped_column(Text)
+    confidence_json: Mapped[object | None] = mapped_column(JSON)
+    error_code: Mapped[str | None] = mapped_column(String(120))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class NotebookTransfer(Base):
+    __tablename__ = "notebook_transfers"
+    __table_args__ = (
+        UniqueConstraint(
+            "note_id",
+            "dedupe_key",
+            name="uq_notebook_transfers_note_dedupe_key",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    note_id: Mapped[UUID] = mapped_column(ForeignKey("notebook_notes.id"), index=True)
+    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    content_block_id: Mapped[UUID] = mapped_column(ForeignKey("content_blocks.id"), index=True)
+    transfer_type: Mapped[str] = mapped_column(String(40), index=True)
+    note_version: Mapped[int] = mapped_column(Integer)
+    dedupe_key: Mapped[str] = mapped_column(String(160))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class ProviderConfig(Base):
@@ -1061,6 +1177,35 @@ class PlatformVariant(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
+
+
+class PlatformVariantFeedback(Base):
+    __tablename__ = "platform_variant_feedback"
+    __table_args__ = (
+        UniqueConstraint(
+            "platform_variant_id",
+            "actor_user_id",
+            name="uq_platform_variant_feedback_variant_actor",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    platform_variant_id: Mapped[UUID] = mapped_column(ForeignKey("platform_variants.id"), index=True)
+    platform_key: Mapped[str] = mapped_column(ForeignKey("platforms.key"), index=True)
+    actor_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    reaction: Mapped[str] = mapped_column(String(40), index=True)
+    comment: Mapped[str | None] = mapped_column(Text)
+    style_example_id: Mapped[UUID | None] = mapped_column(ForeignKey("example_posts.id"), index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class Publication(Base):

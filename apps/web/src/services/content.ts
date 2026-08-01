@@ -111,6 +111,7 @@ export interface ContentStudioViewModel {
     mode: string;
     platform: string;
     platformKey: string;
+    richText?: JsonObject;
     status: string;
     text: string;
     warning: string;
@@ -214,6 +215,7 @@ export interface NewContentViewModel {
     latestVariants: PlatformVariantOut[];
     mediaCount: number;
     mediaKinds: string[];
+    mediaRetentionDates: string[];
     platformKeys: string[];
     projectId: string;
     rubricId: string;
@@ -1137,6 +1139,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           mode: stringFromJson(variant.payload, "mode") ?? "вариант публикации",
           platform,
           platformKey: variant.platform_key,
+          richText: variant.payload.rich_text && typeof variant.payload.rich_text === "object" && !Array.isArray(variant.payload.rich_text)
+            ? variant.payload.rich_text as JsonObject
+            : undefined,
           status: variantStatus(variant.status),
           text: variant.rendered_text || variant.text || "",
           warning: warning ? userFacingValidationMessage(warning, platform) : "",
@@ -1216,6 +1221,7 @@ async function resumeContentDraft(
     latestVariants,
     mediaCount: mediaResponse?.media.length ?? 0,
     mediaKinds: mediaAssets.flatMap((media) => media?.kind ? [media.kind] : []),
+    mediaRetentionDates: mediaAssets.flatMap((media) => media?.retention_until ? [media.retention_until] : []),
     platformKeys,
     projectId: item.project_id,
     rubricId: project.rubrics.some((rubric) => rubric.id === item.rubric_id) ? item.rubric_id : "",

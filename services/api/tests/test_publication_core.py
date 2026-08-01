@@ -20,14 +20,17 @@ from app.db.base import (  # noqa: E402
     Base,
     ContentItem,
     ContentRevision,
+    ExamplePost,
     ExternalPost,
     Membership,
     OutboxEvent,
+    PlatformVariantFeedback,
     Publication,
     utc_now,
 )
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.modules.ai.service import retrieve_examples  # noqa: E402
 
 
 class Phase06PublicationCoreTest(unittest.TestCase):
@@ -364,6 +367,206 @@ class Phase06PublicationCoreTest(unittest.TestCase):
             edited.json()["text"],
             f"Исправленный основной текст.\n\n{footer}",
         )
+
+    def test_rich_footer_and_body_link_create_immutable_variant_revision(self) -> None:
+        auth = self.register(email="rich-links-owner@example.com")
+        project, _, content, _ = self.create_content_with_master(auth, "Основной текст обзора.")
+        footer_document = {
+            "version": 1,
+            "segments": [
+                {"text": "Рекомендуйте канал: ", "marks": []},
+                {
+                    "text": "ТГ",
+                    "marks": [{"type": "link", "href": "https://t.me/example"}],
+                },
+                {"text": " / ", "marks": []},
+                {
+                    "text": "другие обзоры",
+                    "marks": [{"type": "link", "href": "https://example.com/review"}],
+                },
+            ],
+        }
+        updated = self.client.patch(
+            f"/api/v1/projects/{project['id']}",
+            headers=self.csrf_headers(auth),
+            json={"cta_config": {"footer_rich_text": footer_document}},
+        )
+        self.assertEqual(updated.status_code, 200, updated.text)
+        footer = "Рекомендуйте канал: ТГ / другие обзоры"
+        self.assertEqual(updated.json()["cta_config"]["footer_template"], footer)
+
+        original = self.generate_variants(auth, content["id"], ["telegram"])["telegram"]
+        self.assertEqual(original["payload"]["fixed_boilerplate"]["footer_rich_text"], footer_document)
+        self.assertEqual(original["text"], f"Основной текст обзора.\n\n{footer}")
+
+        edited_document = {
+            "version": 1,
+            "segments": [
+                {"text": "Исправленный ", "marks": []},
+                {
+                    "text": "обзор",
+                    "marks": [{"type": "link", "href": "https://example.com/body"}],
+                },
+                {"text": f".\n\n{footer}", "marks": []},
+            ],
+        }
+        edited = self.client.patch(
+            f"/api/v1/platform-variants/{original['id']}",
+            headers=self.csrf_headers(auth),
+            json={"text": f"Исправленный обзор.\n\n{footer}", "rich_text": edited_document},
+        )
+        self.assertEqual(edited.status_code, 200, edited.text)
+        edited_payload = edited.json()
+        self.assertNotEqual(edited_payload["id"], original["id"])
+        self.assertEqual(edited_payload["parent_variant_id"], original["id"])
+        self.assertEqual(edited_payload["text"].count(footer), 1)
+        self.assertTrue(any(
+            mark.get("href") == "https://example.com/body"
+            for segment in edited_payload["payload"]["rich_text"]["segments"]
+            for mark in segment.get("marks", [])
+        ))
+
+        old_revision = self.client.get(f"/api/v1/platform-variants/{original['id']}")
+        self.assertEqual(old_revision.status_code, 200, old_revision.text)
+        self.assertEqual(old_revision.json()["payload"]["rich_text"], original["payload"]["rich_text"])
+
+    def test_variant_edit_rejects_unsafe_rich_link(self) -> None:
+        auth = self.register(email="unsafe-rich-links@example.com")
+        _, _, content, _ = self.create_content_with_master(auth, "Исходный текст.")
+        variant = self.generate_variants(auth, content["id"], ["telegram"])["telegram"]
+
+        response = self.client.patch(
+            f"/api/v1/platform-variants/{variant['id']}",
+            headers=self.csrf_headers(auth),
+            json={
+                "text": "Опасная ссылка",
+                "rich_text": {
+                    "version": 1,
+                    "segments": [
+                        {
+                            "text": "Опасная ссылка",
+                            "marks": [{"type": "link", "href": "javascript:alert(1)"}],
+                        }
+                    ],
+                },
+            },
+        )
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error"]["code"], "rich_text_invalid")
+
+    def test_platform_feedback_is_independent_reversible_and_learns_only_manual_final_text(self) -> None:
+        auth = self.register(email="platform-feedback@example.com")
+        _, _, content, _ = self.create_content_with_master(auth, "Исходник обратной связи.")
+        variants = self.generate_variants(auth, content["id"], ["telegram", "max"])
+        telegram = variants["telegram"]
+        max_variant = variants["max"]
+
+        untouched = self.client.put(
+            f"/api/v1/platform-variants/{telegram['id']}/feedback",
+            headers=self.csrf_headers(auth),
+            json={"reaction": "excellent", "learn_style": True},
+        )
+        self.assertEqual(untouched.status_code, 422, untouched.text)
+        self.assertEqual(untouched.json()["error"]["code"], "style_learning_requires_manual_edit")
+
+        manual_text = "Финальный живой текст автора для Telegram."
+        edited = self.client.patch(
+            f"/api/v1/platform-variants/{telegram['id']}",
+            headers=self.csrf_headers(auth),
+            json={"text": manual_text},
+        )
+        self.assertEqual(edited.status_code, 200, edited.text)
+        edited_variant = edited.json()
+        self.assertEqual(edited_variant["payload"]["source"], "manual_edit")
+
+        excellent = self.client.put(
+            f"/api/v1/platform-variants/{edited_variant['id']}/feedback",
+            headers=self.csrf_headers(auth),
+            json={"reaction": "excellent", "learn_style": True},
+        )
+        self.assertEqual(excellent.status_code, 200, excellent.text)
+        feedback = excellent.json()["feedback"]
+        self.assertTrue(feedback["learns_style"])
+        self.assertEqual(feedback["platform_key"], "telegram")
+
+        max_feedback = self.client.put(
+            f"/api/v1/platform-variants/{max_variant['id']}/feedback",
+            headers=self.csrf_headers(auth),
+            json={"reaction": "needs_work", "learn_style": False},
+        )
+        self.assertEqual(max_feedback.status_code, 200, max_feedback.text)
+        self.assertEqual(max_feedback.json()["feedback"]["reaction"], "needs_work")
+        current_telegram = self.client.get(
+            f"/api/v1/platform-variants/{edited_variant['id']}/feedback"
+        )
+        self.assertEqual(current_telegram.json()["feedback"]["reaction"], "excellent")
+        self.assertEqual(asyncio.run(self._feedback_retrieval_sources(content["id"], None)), [])
+        self.assertEqual(
+            asyncio.run(self._feedback_retrieval_sources(content["id"], "telegram")),
+            ["variant_feedback"],
+        )
+        self.assertEqual(asyncio.run(self._feedback_retrieval_sources(content["id"], "max")), [])
+
+        replaced = self.client.put(
+            f"/api/v1/platform-variants/{edited_variant['id']}/feedback",
+            headers=self.csrf_headers(auth),
+            json={
+                "reaction": "not_my_style",
+                "learn_style": False,
+                "version": feedback["version"],
+            },
+        )
+        self.assertEqual(replaced.status_code, 200, replaced.text)
+        self.assertFalse(replaced.json()["feedback"]["learns_style"])
+        self.assertEqual(asyncio.run(self._feedback_example_status(edited_variant["text"])), "rejected")
+
+        revoked = self.client.delete(
+            f"/api/v1/platform-variants/{edited_variant['id']}/feedback",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(revoked.status_code, 200, revoked.text)
+        self.assertIsNone(revoked.json()["feedback"])
+        self.assertEqual(asyncio.run(self._feedback_count()), 2)
+
+    async def _feedback_example_status(self, text: str) -> str | None:
+        async with self.SessionLocal() as session:
+            example = await session.scalar(
+                select(ExamplePost).where(
+                    ExamplePost.source_type == "variant_feedback",
+                    ExamplePost.text == text,
+                )
+            )
+            return example.status if example is not None else None
+
+    async def _feedback_count(self) -> int:
+        async with self.SessionLocal() as session:
+            return int(
+                await session.scalar(select(func.count()).select_from(PlatformVariantFeedback))
+                or 0
+            )
+
+    async def _feedback_retrieval_sources(
+        self,
+        content_id: str,
+        platform_key: str | None,
+    ) -> list[str]:
+        async with self.SessionLocal() as session:
+            item = await session.get(ContentItem, UUID(content_id))
+            assert item is not None
+            matches = await retrieve_examples(
+                session,
+                Settings(ai_text_provider="mock", embedding_provider="mock"),
+                item,
+                "финальный живой текст автора",
+                max_examples=8,
+                platform_key=platform_key,
+            )
+            return [
+                match.example.source_type
+                for match in matches
+                if match.example.source_type == "variant_feedback"
+            ]
 
     def test_resume_same_content_preserves_media_revisions_platforms_and_footer(self) -> None:
         auth = self.register(email="resume12a4@example.com", workspace_name="Resume Workspace")

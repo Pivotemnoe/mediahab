@@ -4,8 +4,9 @@ import { Check, Clipboard } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { type RichTextDocument, copyRichText, plainRichText } from "@/lib/rich-text";
 
-export function CopyTextButton({ label, text }: { label: string; text: string }) {
+export function CopyTextButton({ label, richText, text }: { label: string; richText?: RichTextDocument; text: string }) {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -15,7 +16,7 @@ export function CopyTextButton({ label, text }: { label: string; text: string })
 
   async function copyText() {
     if (!text) return;
-    await navigator.clipboard.writeText(text);
+    await copyRichText(richText ?? plainRichText(text));
     setCopied(true);
     if (resetTimer.current) clearTimeout(resetTimer.current);
     resetTimer.current = setTimeout(() => setCopied(false), 1800);

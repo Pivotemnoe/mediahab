@@ -1,6 +1,8 @@
 import { CabinetPage } from "@/components/phase02/cabinet-page";
+import { getRetentionSettingsViewModel } from "@/services/retention";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const retention = await getRetentionSettingsViewModel();
   return (
     <CabinetPage
       title="Настройки"
@@ -8,6 +10,7 @@ export default function SettingsPage() {
       rows={[
         ["Рабочее пространство", "Роли и граница доступа уже проверяются сервером."],
         ["ИИ и расшифровка", "Ключи провайдеров будут добавлены отдельной фазой после подтверждения."],
+        ...retention.rows,
       ]}
     />
   );

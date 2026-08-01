@@ -26,6 +26,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { RichTextEditor, RichTextPreview } from "@/components/phase12/rich-text-editor";
+import {
+  type RichTextDocument,
+  copyRichText,
+  plainRichText,
+  richTextFromPayload,
+  richTextPlain,
+} from "@/lib/rich-text";
 import {
   type BlockOut,
   type ContentItemOut,
@@ -36,6 +44,8 @@ import {
   type MediaOut,
   type MediaPresignResponse,
   type PlatformVariantOut,
+  type PlatformVariantFeedbackOut,
+  type PlatformVariantFeedbackResponse,
   type PlatformVariantsResponse,
   type TranscriptionJobOut,
 } from "@/services/openapi-types";
@@ -267,7 +277,7 @@ async function apiRequest<T>(
   path: string,
   options: {
     body?: unknown;
-    method: "GET" | "PATCH" | "POST" | "PUT";
+    method: "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
   },
 ): Promise<T> {
   const token = csrfToken();
@@ -326,6 +336,14 @@ function sourceFieldKey(guidedForm: GuidedFormResponse): string {
 
 function platformLabel(key: PlatformKey): string {
   return platformOptions.find((platform) => platform.key === key)?.label ?? key;
+}
+
+function retentionDateLabel(value: string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 function isPlatformKey(value: string): value is PlatformKey {
@@ -447,6 +465,7 @@ export function SimpleVoiceComposer({
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
   const [mediaCount, setMediaCount] = useState(resumeDraft?.mediaCount ?? 0);
   const [mediaKinds, setMediaKinds] = useState<string[]>(resumeDraft?.mediaKinds ?? []);
+  const [mediaRetentionDates, setMediaRetentionDates] = useState<string[]>(resumeDraft?.mediaRetentionDates ?? []);
   const [instagramFormat, setInstagramFormat] = useState<InstagramFormat | null>(() => {
     const resumed = resumeDraft?.latestVariants.find((variant) => variant.platform_key === "instagram")?.payload.instagram_format;
     return resumed === "image" || resumed === "carousel" || resumed === "reel" ? resumed : null;
@@ -462,13 +481,14 @@ export function SimpleVoiceComposer({
   });
   const [activePlatform, setActivePlatform] = useState<PlatformKey>(requestedPlatform);
   const [editingPlatform, setEditingPlatform] = useState<PlatformKey | null>(null);
-  const [editText, setEditText] = useState("");
+  const [editRichText, setEditRichText] = useState<RichTextDocument>(() => plainRichText(""));
   const [instruction, setInstruction] = useState("");
   const [applyToAll, setApplyToAll] = useState(false);
   const [isAssembling, setIsAssembling] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
   const [latestAiUsage, setLatestAiUsage] = useState<AiUsageSummary | null>(null);
+  const [feedbackByVariant, setFeedbackByVariant] = useState<Record<string, PlatformVariantFeedbackOut | null>>({});
   const [lengthMode, setLengthMode] = useState<LengthMode>("auto");
   const [lengthSheetOpen, setLengthSheetOpen] = useState(false);
   const [exactMinChars, setExactMinChars] = useState("1800");
@@ -504,6 +524,21 @@ export function SimpleVoiceComposer({
   const canUseApi = viewModel.modeLabel === "api" && Boolean(viewModel.workspaceId && project);
   const activeResult = results[activePlatform];
   const activePreflight = activeResult.variant ? variantPreflight(activeResult.variant) : null;
+  const activeFeedback = activeResult.variant ? feedbackByVariant[activeResult.variant.id] : null;
+
+  useEffect(() => {
+    const variantId = activeResult.variant?.id;
+    if (!variantId || Object.prototype.hasOwnProperty.call(feedbackByVariant, variantId)) return;
+    let cancelled = false;
+    void apiRequest<PlatformVariantFeedbackResponse>(`/api/v1/platform-variants/${variantId}/feedback`, { method: "GET" })
+      .then((response) => {
+        if (!cancelled) setFeedbackByVariant((current) => ({ ...current, [variantId]: response.feedback }));
+      })
+      .catch(() => {
+        if (!cancelled) setFeedbackByVariant((current) => ({ ...current, [variantId]: null }));
+      });
+    return () => { cancelled = true; };
+  }, [activeResult.variant?.id, feedbackByVariant]);
 
   function updateTranscript(value: string) {
     transcriptRef.current = value;
@@ -761,6 +796,7 @@ export function SimpleVoiceComposer({
       setMessage(`Загружаю медиа: 0 из ${media.length}.`);
       const uploadedIds: string[] = [];
       const uploadedKinds: string[] = [];
+      const uploadedRetentionDates: string[] = [];
       for (const [index, file] of media.entries()) {
         const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
           body: {
@@ -785,6 +821,7 @@ export function SimpleVoiceComposer({
         });
         uploadedIds.push(presign.media_id);
         uploadedKinds.push(completed.kind);
+        if (completed.retention_until) uploadedRetentionDates.push(completed.retention_until);
         setMessage(`Загружаю медиа: ${index + 1} из ${media.length}.`);
       }
       const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${context.contentId}`, {
@@ -814,6 +851,7 @@ export function SimpleVoiceComposer({
       );
       setMediaCount(attached.media.length);
       setMediaKinds((current) => [...current, ...uploadedKinds]);
+      setMediaRetentionDates((current) => [...current, ...uploadedRetentionDates]);
       setMessage(
         `Медиа прикреплены: ${attached.media.length}. Первые ${Math.min(attached.media.length, 3)} ИИ использует при сборке.`,
       );
@@ -964,13 +1002,14 @@ export function SimpleVoiceComposer({
     }
   }
 
-  async function saveVariantText(key: PlatformKey, text: string) {
+  async function saveVariantText(key: PlatformKey, richText: RichTextDocument) {
     const variant = results[key].variant;
+    const text = richTextPlain(richText).trim();
     if (!variant || !text.trim()) return;
     setIsSavingVariant(true);
     try {
       const updated = await apiRequest<PlatformVariantOut>(`/api/v1/platform-variants/${variant.id}`, {
-        body: { text: text.trim() },
+        body: { rich_text: richText, text },
         method: "PATCH",
       });
       updatePlatformResult(key, { status: "ready", variant: updated });
@@ -980,6 +1019,50 @@ export function SimpleVoiceComposer({
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить вариант.");
     } finally {
       setIsSavingVariant(false);
+    }
+  }
+
+  async function setVariantFeedback(
+    reaction: PlatformVariantFeedbackOut["reaction"],
+    learnStyle = false,
+  ) {
+    const variant = activeResult.variant;
+    if (!variant) return;
+    try {
+      const response = await apiRequest<PlatformVariantFeedbackResponse>(
+        `/api/v1/platform-variants/${variant.id}/feedback`,
+        {
+          body: {
+            learn_style: learnStyle,
+            reaction,
+            version: activeFeedback?.version ?? null,
+          },
+          method: "PUT",
+        },
+      );
+      setFeedbackByVariant((current) => ({ ...current, [variant.id]: response.feedback }));
+      setMessage(
+        learnStyle
+          ? `${platformLabel(activePlatform)}: финальная ручная версия сохранена как внутренний пример стиля. OpenAI не обучается.`
+          : `${platformLabel(activePlatform)}: отдельная реакция сохранена.`,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось сохранить реакцию.");
+    }
+  }
+
+  async function clearVariantFeedback() {
+    const variant = activeResult.variant;
+    if (!variant) return;
+    try {
+      await apiRequest<PlatformVariantFeedbackResponse>(
+        `/api/v1/platform-variants/${variant.id}/feedback`,
+        { method: "DELETE" },
+      );
+      setFeedbackByVariant((current) => ({ ...current, [variant.id]: null }));
+      setMessage(`${platformLabel(activePlatform)}: реакция снята, связанный внутренний пример отключён.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось снять реакцию.");
     }
   }
 
@@ -1029,10 +1112,15 @@ export function SimpleVoiceComposer({
   }
 
   async function copyActive() {
-    const text = variantText(activeResult.variant);
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    setMessage(`${platformLabel(activePlatform)}: текст скопирован.`);
+    const variant = activeResult.variant;
+    const text = variantText(variant);
+    if (!variant || !text) return;
+    const mode = await copyRichText(richTextFromPayload(variant.payload, text));
+    setMessage(
+      mode === "rich"
+        ? `${platformLabel(activePlatform)}: текст и зашитые ссылки скопированы.`
+        : `${platformLabel(activePlatform)}: браузер скопировал обычный текст без скрытого форматирования.`,
+    );
   }
 
   const targetMin = rubric?.editorialMinChars ?? null;
@@ -1401,7 +1489,12 @@ export function SimpleVoiceComposer({
               }}
             />
           </label>
-          <div className="text-xs leading-5 text-muted">Фото JPEG, PNG, WebP до 8 МБ; видео MP4 или MOV до 100 МБ.</div>
+          <div className="text-xs leading-5 text-muted">
+            Фото JPEG, PNG, WebP до 8 МБ; видео MP4 или MOV до 100 МБ. Оригиналы хранятся 30 дней.
+            {mediaRetentionDates.length ? (
+              <> Ближайшая дата окончания хранения: {retentionDateLabel([...mediaRetentionDates].sort()[0])}.</>
+            ) : null}
+          </div>
         </div>
         <Button
           className="h-12 w-full text-base"
@@ -1550,14 +1643,14 @@ export function SimpleVoiceComposer({
                 </div>
               ) : null}
               {editingPlatform === activePlatform ? (
-                <textarea
-                  className="min-h-64 w-full resize-y rounded-lg border border-primary bg-background p-4 text-sm leading-6 outline-none"
-                  value={editText}
-                  onChange={(event) => setEditText(event.currentTarget.value)}
+                <RichTextEditor
+                  ariaLabel={`Редактор версии для ${platformLabel(activePlatform)}`}
+                  value={editRichText}
+                  onChange={setEditRichText}
                 />
               ) : (
-                <article className="max-h-[540px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-4 text-sm leading-6 text-foreground">
-                  {variantText(activeResult.variant)}
+                <article className="max-h-[540px] overflow-y-auto rounded-lg border border-border bg-background p-4">
+                  <RichTextPreview value={richTextFromPayload(activeResult.variant?.payload, variantText(activeResult.variant))} />
                 </article>
               )}
               <div className="flex min-w-0 flex-wrap gap-2">
@@ -1571,7 +1664,7 @@ export function SimpleVoiceComposer({
                 </Button>
                 {editingPlatform === activePlatform ? (
                   <>
-                    <Button disabled={isSavingVariant} type="button" variant="secondary" onClick={() => void saveVariantText(activePlatform, editText)}>
+                    <Button disabled={isSavingVariant} type="button" variant="secondary" onClick={() => void saveVariantText(activePlatform, editRichText)}>
                       {isSavingVariant ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                       Сохранить
                     </Button>
@@ -1583,7 +1676,7 @@ export function SimpleVoiceComposer({
                     variant="secondary"
                     onClick={() => {
                       setEditingPlatform(activePlatform);
-                      setEditText(variantText(activeResult.variant));
+                      setEditRichText(richTextFromPayload(activeResult.variant?.payload, variantText(activeResult.variant)));
                     }}
                   >
                     <Pencil size={16} />
@@ -1647,6 +1740,33 @@ export function SimpleVoiceComposer({
                   Пересобрать
                 </Button>
               </div>
+              <section className="grid min-w-0 gap-3 rounded-lg border border-border bg-surface-muted p-3" data-testid="platform-feedback">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Как получилась версия для {platformLabel(activePlatform)}?</h3>
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      Оценка относится только к этой площадке. «Отлично» запомнит стиль лишь после вашей ручной правки; OpenAI не обучается.
+                    </p>
+                  </div>
+                  {activeFeedback ? <Badge tone={activeFeedback.reaction === "excellent" ? "success" : activeFeedback.reaction === "good" ? "info" : "warning"}>
+                    {activeFeedback.learns_style ? "стиль запомнен" : "реакция сохранена"}
+                  </Badge> : null}
+                </div>
+                <div className="flex min-w-0 flex-wrap gap-2">
+                  <Button
+                    onClick={() => void setVariantFeedback("excellent", true)}
+                    size="sm"
+                    type="button"
+                    variant={activeFeedback?.reaction === "excellent" ? "primary" : "secondary"}
+                  >
+                    Отлично · запомнить стиль
+                  </Button>
+                  <Button onClick={() => void setVariantFeedback("good")} size="sm" type="button" variant={activeFeedback?.reaction === "good" ? "primary" : "secondary"}>Хорошо</Button>
+                  <Button onClick={() => void setVariantFeedback("needs_work")} size="sm" type="button" variant={activeFeedback?.reaction === "needs_work" ? "primary" : "secondary"}>Нужна правка</Button>
+                  <Button onClick={() => void setVariantFeedback("not_my_style")} size="sm" type="button" variant={activeFeedback?.reaction === "not_my_style" ? "primary" : "secondary"}>Не мой стиль</Button>
+                  {activeFeedback ? <Button onClick={() => void clearVariantFeedback()} size="sm" type="button" variant="ghost">Снять оценку</Button> : null}
+                </div>
+              </section>
               <div className="grid min-w-0 gap-2 rounded-lg border border-border bg-surface-muted p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <label className="grid gap-1 text-xs font-semibold text-muted">
                   Дополнительная команда для {platformLabel(activePlatform)}

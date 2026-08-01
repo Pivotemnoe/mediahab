@@ -42,6 +42,18 @@ PATCH /workspaces/{workspace_id}/members/{user_id}
 DELETE /workspaces/{workspace_id}/members/{user_id}
 ```
 
+## Retention and storage lifecycle
+
+```text
+GET   /workspaces/{workspace_id}/retention
+PATCH /workspaces/{workspace_id}/retention
+POST  /workspaces/{workspace_id}/retention/scan
+POST  /workspaces/{workspace_id}/retention/{candidate_id}/retain
+POST  /workspaces/{workspace_id}/retention/execute-ready
+```
+
+The default pilot policy exposes 30-day image/video availability and a 180-day text planning horizon. Scans are workspace-scoped and idempotent. Permanent media cleanup is disabled by default and requires an explicit owner policy change plus a separate execute request after grace. Raw voice is excluded while `raw_voice_days` is unset. External posts and publication evidence are outside this cleanup contract.
+
 ## Projects and versions
 
 ```text

@@ -8,6 +8,7 @@ const appLinks = [
   { href: "/app", label: "Кабинет" },
   { href: "/app/content/new", label: "Создать" },
   { href: "/app/content", label: "История" },
+  { href: "/app/notebook", label: "Блокнот" },
   { href: "/app/projects", label: "Проекты" },
 ];
 

@@ -8,6 +8,7 @@ import {
 import {
   type ContentListResponse,
   type MeResponse,
+  type NotebookNoteListResponse,
   type ProjectListResponse,
   type PublicationsResponse,
   type SubscriptionResponse,
@@ -31,6 +32,11 @@ export interface DashboardViewModel {
     name: string;
     note: string;
     rubricCount: number;
+  }>;
+  recentNotes: Array<{
+    body: string;
+    href: string;
+    updatedAt: string;
   }>;
   recentDrafts: Array<{
     href: string;
@@ -67,6 +73,7 @@ function fixtureDashboard(): DashboardViewModel {
     modeLabel: "fixtures",
     planLabel: "Старт",
     projects: [],
+    recentNotes: [],
     recentDrafts: recentDrafts.map(([title, rubric, status], index) => ({
       href: `/app/content/demo-${index}`,
       project: "Что поесть? Армавир",
@@ -139,6 +146,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
       notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
       planLabel: "",
       projects: [],
+      recentNotes: [],
       recentDrafts: [],
       scheduledPublications: [],
       stats: [],
@@ -146,12 +154,13 @@ async function apiDashboard(): Promise<DashboardViewModel> {
     };
   }
 
-  const [projectsResponse, usageResponse, subscriptionResponse, publicationsResponse] =
+  const [projectsResponse, usageResponse, subscriptionResponse, publicationsResponse, notesResponse] =
     await Promise.all([
       safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`),
       safeApiGet<UsageResponse>(`/api/v1/workspaces/${workspace.id}/usage`),
       safeApiGet<SubscriptionResponse>(`/api/v1/workspaces/${workspace.id}/subscription`),
       safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`),
+      safeApiGet<NotebookNoteListResponse>(`/api/v1/notebook?workspace_id=${workspace.id}&limit=4`),
     ]);
 
   const projects = projectsResponse?.projects ?? [];
@@ -180,6 +189,11 @@ async function apiDashboard(): Promise<DashboardViewModel> {
       name: project.name,
       note: project.description ?? project.content_domain ?? "Общие правила можно дополнить в проекте.",
       rubricCount: project.rubric_count ?? 0,
+    })),
+    recentNotes: (notesResponse?.notes ?? []).map((note) => ({
+      body: note.body,
+      href: "/app/notebook",
+      updatedAt: note.updated_at,
     })),
     recentDrafts: contentItems.slice(0, 6).map(({ item, project }) => ({
       href: `/app/content/${item.id}`,
@@ -235,6 +249,7 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
       notice: "Данные кабинета сейчас не загрузились. Попробуйте обновить страницу.",
       planLabel: "",
       projects: [],
+      recentNotes: [],
       recentDrafts: [],
       scheduledPublications: [],
       stats: [],

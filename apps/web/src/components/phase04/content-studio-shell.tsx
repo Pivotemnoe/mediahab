@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { PlatformFeedbackControls } from "@/components/phase12/platform-feedback-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +42,8 @@ import {
 import { PilotVoiceTelegramPanel } from "@/components/phase04/pilot-voice-telegram-panel";
 import { SimpleVoiceComposer } from "@/components/phase12/simple-voice-composer";
 import { CopyTextButton } from "@/components/phase12/copy-text-button";
+import { RichTextPreview } from "@/components/phase12/rich-text-editor";
+import { normalizeRichText } from "@/lib/rich-text";
 import {
   type ContentIndexViewModel,
   type ContentStudioViewModel,
@@ -783,9 +786,7 @@ export function ContentStudioShell({
                       </Badge>
                     </div>
                     {preview.text ? (
-                      <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground">
-                        {preview.text}
-                      </p>
+                      <RichTextPreview value={normalizeRichText(preview.richText, preview.text)} />
                     ) : (
                       <p className="text-sm leading-6 text-muted">Текст версии пока не сформирован.</p>
                     )}
@@ -796,18 +797,25 @@ export function ContentStudioShell({
                       </div>
                     ) : null}
                     {preview.text ? (
-                      <div className="flex flex-wrap gap-2">
-                        <CopyTextButton label={preview.platform} text={preview.text} />
-                        <Button asChild variant="secondary">
-                          <Link
-                            data-testid="refine-saved-platform-version"
-                            href={`/app/content/new?edit=${encodeURIComponent(contentId)}&platform=${encodeURIComponent(preview.platformKey)}#platform-results`}
-                          >
-                            <WandSparkles size={16} />
-                            Доработать
-                          </Link>
-                        </Button>
-                      </div>
+                      <>
+                        <div className="flex flex-wrap gap-2">
+                          <CopyTextButton
+                            label={preview.platform}
+                            richText={normalizeRichText(preview.richText, preview.text)}
+                            text={preview.text}
+                          />
+                          <Button asChild variant="secondary">
+                            <Link
+                              data-testid="refine-saved-platform-version"
+                              href={`/app/content/new?edit=${encodeURIComponent(contentId)}&platform=${encodeURIComponent(preview.platformKey)}#platform-results`}
+                            >
+                              <WandSparkles size={16} />
+                              Доработать
+                            </Link>
+                          </Button>
+                        </div>
+                        <PlatformFeedbackControls platformLabel={preview.platform} variantId={preview.id} />
+                      </>
                     ) : null}
                   </article>
                 ))}

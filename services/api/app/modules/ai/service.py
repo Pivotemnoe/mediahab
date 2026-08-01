@@ -608,6 +608,7 @@ async def retrieve_examples(
     item: ContentItem,
     query_text: str,
     max_examples: int,
+    platform_key: str | None = None,
 ) -> list[ExampleMatch]:
     max_examples = min(max(max_examples, 0), 8)
     if max_examples == 0:
@@ -624,6 +625,16 @@ async def retrieve_examples(
             .limit(24)
         )
     ).all()
+    candidates = [
+        example
+        for example in candidates
+        if example.source_type != "variant_feedback"
+        or (
+            platform_key is not None
+            and isinstance(example.labels_json, dict)
+            and example.labels_json.get("platform_key") == platform_key
+        )
+    ]
     if not candidates:
         return []
     provider = embedding_provider_for(settings)
@@ -1431,6 +1442,7 @@ async def refine_platform_variant_text(
         item,
         source_text,
         max_examples=3,
+        platform_key=variant.platform_key,
     )
     provider = text_provider_for(settings, "refine_variant")
     manifest = context_manifest(item, project_version, rubric_version, examples, locked_facts)

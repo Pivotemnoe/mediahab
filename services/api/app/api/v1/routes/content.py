@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -15,6 +16,7 @@ from app.db.base import (
     ContentMedia,
     InputSchema,
     MediaAsset,
+    RetentionPolicy,
     TranscriptionRun,
     VoiceAsset,
     utc_now,
@@ -174,6 +176,9 @@ class MediaOut(BaseModel):
     checksum: str | None
     upload_status: str
     processing_status: str
+    retention_until: str | None
+    retention_status: str
+    expired: bool
     version: int
 
 
@@ -198,6 +203,10 @@ class ContentMediaOut(BaseModel):
     role: str
     sort_order: int
     caption: str | None
+    asset_kind: str | None = None
+    retention_until: str | None = None
+    retention_status: str = "unlimited"
+    expired: bool = False
 
 
 class ContentMediaResponse(BaseModel):
@@ -267,6 +276,25 @@ def block_out(block: ContentBlock) -> BlockOut:
 
 
 def media_out(media: MediaAsset) -> MediaOut:
+    now = utc_now()
+    retention_until = media.retention_until
+    comparable_retention = (
+        retention_until.replace(tzinfo=timezone.utc)
+        if retention_until is not None and retention_until.tzinfo is None
+        else retention_until
+    )
+    if media.deleted_at is not None and media.processing_status == "expired":
+        retention_status = "expired"
+    elif retention_until is None:
+        retention_status = "policy_pending" if media.kind in {"audio", "voice"} else "unlimited"
+    elif comparable_retention is not None and comparable_retention + timedelta(days=7) <= now:
+        retention_status = "ready"
+    elif comparable_retention is not None and comparable_retention <= now:
+        retention_status = "grace"
+    elif comparable_retention is not None and comparable_retention <= now + timedelta(days=7):
+        retention_status = "warning"
+    else:
+        retention_status = "active"
     return MediaOut(
         id=media.id,
         workspace_id=media.workspace_id,
@@ -278,11 +306,15 @@ def media_out(media: MediaAsset) -> MediaOut:
         checksum=media.checksum,
         upload_status=media.upload_status,
         processing_status=media.processing_status,
+        retention_until=retention_until.isoformat() if retention_until else None,
+        retention_status=retention_status,
+        expired=retention_status == "expired",
         version=media.version,
     )
 
 
-def content_media_out(row: ContentMedia) -> ContentMediaOut:
+def content_media_out(row: ContentMedia, asset: MediaAsset | None = None) -> ContentMediaOut:
+    media = media_out(asset) if asset is not None else None
     return ContentMediaOut(
         id=row.id,
         content_item_id=row.content_item_id,
@@ -290,6 +322,10 @@ def content_media_out(row: ContentMedia) -> ContentMediaOut:
         role=row.role,
         sort_order=row.sort_order,
         caption=row.caption,
+        asset_kind=asset.kind if asset else None,
+        retention_until=media.retention_until if media else None,
+        retention_status=media.retention_status if media else "unavailable",
+        expired=media.expired if media else True,
     )
 
 
@@ -801,6 +837,15 @@ async def presign_upload(
         payload.filename,
         settings.media_storage_prefix,
     )
+    policy = await db.scalar(
+        select(RetentionPolicy).where(RetentionPolicy.workspace_id == payload.workspace_id)
+    )
+    retention_days = None
+    if payload.kind in {"image", "video"}:
+        retention_days = policy.original_media_days if policy else 30
+    elif payload.kind in {"audio", "voice"} and policy and policy.raw_voice_days:
+        retention_days = policy.raw_voice_days
+    created_at = utc_now()
     media = MediaAsset(
         id=media_id,
         workspace_id=payload.workspace_id,
@@ -813,8 +858,9 @@ async def presign_upload(
         upload_status="pending",
         processing_status="pending",
         created_by=actor.user.id,
-        created_at=utc_now(),
-        updated_at=utc_now(),
+        retention_until=created_at + timedelta(days=retention_days) if retention_days else None,
+        created_at=created_at,
+        updated_at=created_at,
         version=1,
     )
     db.add(media)
@@ -893,13 +939,14 @@ async def list_content_media(
 ) -> ContentMediaResponse:
     item, _ = await item_for_actor(content_id, request, actor, db)
     rows = (
-        await db.scalars(
-            select(ContentMedia)
+        await db.execute(
+            select(ContentMedia, MediaAsset)
+            .join(MediaAsset, MediaAsset.id == ContentMedia.media_asset_id)
             .where(ContentMedia.content_item_id == item.id)
             .order_by(ContentMedia.sort_order)
         )
     ).all()
-    return ContentMediaResponse(media=[content_media_out(row) for row in rows])
+    return ContentMediaResponse(media=[content_media_out(row, asset) for row, asset in rows])
 
 
 @router.put("/content-items/{content_id}/media-order", response_model=ContentMediaResponse)
@@ -924,7 +971,12 @@ async def put_content_media_order(
         })
     rows = await attach_media_order(db, item, media_payloads)
     await db.commit()
-    return ContentMediaResponse(media=[content_media_out(row) for row in rows])
+    assets = {
+        asset.id: asset for asset in list(await db.scalars(
+            select(MediaAsset).where(MediaAsset.id.in_([row.media_asset_id for row in rows]))
+        ))
+    } if rows else {}
+    return ContentMediaResponse(media=[content_media_out(row, assets.get(row.media_asset_id)) for row in rows])
 
 
 @router.post(
