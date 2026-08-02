@@ -105,6 +105,7 @@ async function runCheck(browser, check) {
     expression: `(() => {
       const text = document.body.innerText;
       const hero = document.querySelector('[data-testid="public-home-hero"]');
+      const example = document.querySelector('[data-testid="public-home-example"]');
       const workflow = document.querySelector('[data-testid="public-home-workflow"]');
       const entry = document.querySelector('[data-testid="public-home-entry"]');
       const links = Array.from(document.querySelectorAll('a')).map((link) => ({
@@ -116,16 +117,21 @@ async function runCheck(browser, check) {
       const hasLink = (href, label) => visibleLinks.some((link) => link.href === href && link.text.includes(label));
       return {
         clientWidth: document.documentElement.clientWidth,
-        firstWorkflowTop: workflow ? workflow.getBoundingClientRect().top : null,
-        hasCreateMaterialLink: hasLink('/app/content/new', 'Создать материал') || hasLink('/app/content/new', 'Открыть мастер'),
-        hasEntrySection: Boolean(entry?.textContent?.includes('Вход в работу')),
-        hasHero: Boolean(hero?.textContent?.includes('Temichev Media Hub')),
-        hasManualConfirmation: text.includes('Публикация остаётся решением человека') &&
-          text.includes('ручного подтверждения'),
+        firstExampleTop: example ? example.getBoundingClientRect().top : null,
+        hasCreateMaterialLink: hasLink('/register', 'Начать с диктовки') || hasLink('/register', 'Создать кабинет'),
+        hasDeepForestPalette: getComputedStyle(document.documentElement).getPropertyValue('--background').trim() === '#081814' &&
+          getComputedStyle(document.documentElement).getPropertyValue('--success').trim() === '#52b69a',
+        hasEntrySection: Boolean(entry?.textContent?.includes('Готовы попробовать')),
+        hasExampleSection: Boolean(example?.textContent?.includes('Пример проекта')) &&
+          Boolean(example?.textContent?.includes('Правила живут в проекте')),
+        hasHero: Boolean(hero?.textContent?.includes('Ваш голос.')) &&
+          Boolean(hero?.textContent?.includes('Готовые посты.')),
+        hasManualConfirmation: text.includes('100% контроль') && text.includes('ручное подтверждение'),
+        hasPlatformPreview: ['Telegram', 'MAX', 'VK', 'Instagram'].every((value) => hero?.textContent?.includes(value)),
         hasRegisterLink: hasLink('/register', 'Создать кабинет'),
-        hasWorkflow: Boolean(workflow?.textContent?.includes('Мастер материала')) &&
-          Boolean(workflow?.textContent?.includes('ИИ-сборка и версии')) &&
-          Boolean(workflow?.textContent?.includes('Проверка и публикация')),
+        hasWorkflow: Boolean(workflow?.textContent?.includes('Диктуете или вставляете')) &&
+          Boolean(workflow?.textContent?.includes('Выбираете площадки')) &&
+          Boolean(workflow?.textContent?.includes('Проверяете версии')),
         oldHomeCopyPresent: [
           'MediaHub для обзоров и публикаций',
           'Контент-студия для локального медиа',
@@ -139,18 +145,22 @@ async function runCheck(browser, check) {
 
   const value = inspected.result.value;
   assert.equal(value.hasHero, true, `${check.width}px hero missing`);
+  assert.equal(value.hasDeepForestPalette, true, `${check.width}px Deep Forest palette missing`);
   assert.equal(value.hasCreateMaterialLink, true, `${check.width}px create material entry missing`);
   assert.equal(value.hasRegisterLink, true, `${check.width}px register entry missing`);
   assert.equal(value.hasWorkflow, true, `${check.width}px workflow missing`);
+  assert.equal(value.hasExampleSection, true, `${check.width}px example section missing`);
   assert.equal(value.hasEntrySection, true, `${check.width}px entry section missing`);
   assert.equal(value.hasManualConfirmation, true, `${check.width}px manual confirmation copy missing`);
+  assert.equal(value.hasPlatformPreview, true, `${check.width}px four-platform preview missing`);
   assert.equal(value.oldHomeCopyPresent, false, `${check.width}px old homepage copy still present`);
   assert.equal(value.presetCopyPresent, false, `${check.width}px preset-specific copy leaked to public home`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${check.width}px horizontal overflow`);
-  assert.equal(value.firstWorkflowTop < 1100, true, `${check.width}px next section hint is not visible`);
+  const maximumExampleTop = check.width < 600 ? 2100 : check.width < 1024 ? 1700 : 1050;
+  assert.equal(value.firstExampleTop < maximumExampleTop, true, `${check.width}px example section is too far below the fold`);
 
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-  const screenshotPath = `/private/tmp/mediahub-ui11m-home-${check.width}.png`;
+  const screenshotPath = `/private/tmp/mediahub-ui12d-home-${check.width}.png`;
   await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
   await browser.send("Target.closeTarget", { targetId });
 

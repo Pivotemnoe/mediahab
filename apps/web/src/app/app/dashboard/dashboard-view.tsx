@@ -26,12 +26,12 @@ export default async function DashboardView() {
     <div className="grid min-w-0 gap-5">
       <section className="grid min-w-0 gap-5 rounded-2xl bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
-          <Badge tone="success">Личный кабинет</Badge>
-          <h1 className="mt-4 max-w-3xl text-3xl font-semibold leading-tight text-white sm:text-4xl">
-            Ваши каналы, правила и публикации — в одном месте
+          <Badge tone="success">Главная</Badge>
+          <h1 className="font-editorial mt-4 max-w-3xl text-4xl leading-tight text-white sm:text-5xl">
+            Что будем публиковать сегодня?
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-sidebar-foreground/78 sm:text-base">
-            Для каждого канала создайте отдельный проект. Общие правила работают всегда, а рубрики можно добавлять только там, где они действительно нужны.
+            Надиктуйте материал целиком или частями. Проект применит ваш стиль и примеры, а рубрику можно выбрать только при необходимости.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -50,7 +50,7 @@ export default async function DashboardView() {
           <Button asChild>
             <Link href={hasProjects ? "/app/content/new" : "/app/projects/new"}>
               <Mic size={16} />
-              Создать публикацию
+              Начать с диктовки
             </Link>
           </Button>
         </div>

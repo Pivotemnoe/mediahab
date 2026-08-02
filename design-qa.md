@@ -1,76 +1,85 @@
-# Design QA - UI Phase 12A
+# Design QA — UI Phase 12E.1 Deep Forest and notebook dictation
 
-## Evidence
+## Current verification
 
-- Source visual truth: `output/pdf/MediaHub_Simple_Voice_First_MVP_RU.pdf`, page 3.
-- Source render: `tmp/pdfs/mediahub-voice-first-review/page-3.png`.
-- Normalized source crop: `tmp/design-qa/source-phone.png`.
-- Final implementation capture: `tmp/design-qa/implementation-390-final.jpg`.
-- Side-by-side comparison: `tmp/design-qa/source-vs-implementation-390.png`.
-- Responsive captures:
-  - `tmp/design-qa/implementation-768.jpg`
-  - `tmp/design-qa/implementation-1440.jpg`
-  - `tmp/design-qa/implementation-1920.jpg`
-- Route: `http://127.0.0.1:3001/app`.
-- State: new material, configured demo project and rubric, Telegram and MAX selected, no recording in progress.
+- Verified locally on 2026-08-02 against the API-backed release candidate.
+- Production was not changed.
+- Approved design source: `/Users/konstantin/.codex/generated_images/019fac1d-ab43-7252-8044-3bd77adb2d16/exec-c5e862c4-2790-41d0-ba36-2b08289454f3.png` (1487 x 1058 px).
+- Current same-input comparison: `tmp/design-audit-phase12e1/10-reference-vs-create-1440.png`.
+- Browser: Codex in-app Browser.
+- Required viewports: 390 x 844 and 1440 x 1000 CSS px.
+- Data mode: real local API, PostgreSQL, Redis, MinIO, and worker. No fixture history was used for the authenticated checks.
 
-## Normalization
+## Flow checked
 
-- Source slide render: 1404 x 993 px.
-- Source phone crop: 460 x 770 px, normalized to a 390 x 844 comparison canvas.
-- Implementation: 390 x 844 CSS px, captured as 390 x 844 px by the in-app browser.
-- Device pixel ratio reported by the browser: 2; the browser capture API normalized the output to CSS-pixel dimensions.
-- The source includes a presentation-owned phone bezel. The implementation is an unframed responsive PWA, so bezel and slide canvas are excluded from fidelity findings.
+1. Public landing at 390 and 1440 px.
+2. Registration at 390 px.
+3. First authenticated dashboard at 390 and 1440 px.
+4. Notebook at 390 and 1440 px.
+5. Text quick note saved through the local API and visible once in the notebook and dashboard.
+6. First project created through the existing onboarding form.
+7. Existing simple voice composer opened with that project selected, no rubric selected, at 390 and 1440 px.
+8. Browser console and horizontal-overflow checks on the inspected states.
 
-## Full-view comparison
+## Notebook dictation acceptance
 
-The final mobile implementation preserves the source hierarchy: project, rubric, platform multi-select, primary microphone, ordered capture controls, transcript, and one assembly action. The large desktop explanation panel is intentionally hidden below 640 px so the microphone remains visible without scrolling.
+- The quick voice action is named `Надиктовать заметку`.
+- Text remains a separate action named `Сохранить идею`.
+- Recording, stopping, and processing labels are `Надиктовать заметку`, `Закончить запись`, and `Расшифровываю…`.
+- The quick API creates the note only after successful STT and returns exactly one `NoteOut`.
+- The typed quick draft and voice transcript are stored in the same note.
+- Provider failure creates no empty note, no transcription row, and no usage event.
+- Foreign-workspace media is rejected.
+- Accepted raw audio keeps the existing seven-day retention marker and one usage event.
+- The saved-note `Надиктовать` action remains available for adding voice to an existing note.
 
-The implementation has slightly more operational copy and controls than the simplified PDF mock because Pause, Continue, Finish segment, transcript review, and upload are required by the execution plan. This is an intentional product constraint rather than design drift.
+## Visual evidence
 
-## Focused comparison
+- `tmp/design-audit-phase12e1/01-public-home-390-viewport.png`
+- `tmp/design-audit-phase12e1/02-register-390.png`
+- `tmp/design-audit-phase12e1/03-app-390.png`
+- `tmp/design-audit-phase12e1/04-notebook-390.png`
+- `tmp/design-audit-phase12e1/05-public-home-1440.png`
+- `tmp/design-audit-phase12e1/06-app-1440.png`
+- `tmp/design-audit-phase12e1/07-notebook-1440.png`
+- `tmp/design-audit-phase12e1/08-create-1440.png`
+- `tmp/design-audit-phase12e1/09-create-390.png`
+- `tmp/design-audit-phase12e1/10-reference-vs-create-1440.png`
 
-The focused mobile comparison is `tmp/design-qa/source-vs-implementation-390.png`. It shows the selector density, platform control grouping, microphone prominence, orange accent, white surfaces, and Russian copy at readable scale. No additional image-focused comparison is needed because the target contains no photographic, illustrative, or branded raster assets.
+## Fidelity review
 
-## Required fidelity surfaces
+The implementation keeps the approved Deep Forest language: deep pine surfaces, warm ivory editorial headings, brass primary actions, mint selection states, restrained borders, a slim desktop rail, and a spacious primary work area. The existing Lucide icon set is used consistently.
 
-- Fonts and typography: the implementation uses the existing product sans-serif stack, with source-equivalent bold headings and compact secondary labels. No clipped text or unreadable weight was observed at 390, 768, 1440, or 1920 px.
-- Spacing and layout rhythm: the mobile-first ordering matches the source. Cards retain consistent 16 px outer spacing and the microphone is visible in the first 844 px viewport after the second pass.
-- Colors and tokens: the existing Media Hub orange accent, warm background, white surfaces, green success state, and neutral borders match the PDF direction and preserve accessible contrast.
-- Image and asset fidelity: the source has no app-owned raster imagery. Existing icon-library microphone, check, pause, play, upload, and edit icons are used consistently; no custom SVG, CSS illustration, emoji substitute, or placeholder asset was introduced.
-- Copy and content: visible product copy is Russian, avoids UUIDs, queues, outbox, schemas, raw prompts, and phase names, and keeps manual human review explicit.
-- Responsiveness: document `scrollWidth` equaled viewport width at 390, 768, 1440, and 1920 px. No horizontal overflow was observed.
-- Interaction and accessibility: project/rubric selects, platform multi-select, `Выбрать все`, microphone error feedback in demo mode, transcript editing, and disabled assembly state were exercised. Visible interactive elements have natural DOM order and `tabIndex=0`; the browser's synthetic Tab command did not move focus, so keyboard traversal is additionally covered by DOM-order inspection rather than a complete keypress replay.
-- Console: no browser console errors were present.
+The composer preserves the reference hierarchy while representing the safe idle state rather than inventing an active recording. The selected project, optional rubric, independent platform selection, current-post length control, transcript, microphone, manual text entry, and media entry remain visible and functional. At 390 px the content stacks without horizontal overflow and the primary microphone appears before the transcript field.
 
-## Comparison history
+## Findings
 
-### Pass 1
+- P0: none.
+- P1: none.
+- P2: none in the verified registration, dashboard, notebook, project, and composer path.
+- P3: the concept includes an active-recording waveform and ready platform previews; the verified implementation screenshot intentionally shows the safe pre-recording state.
+- P3: the real microphone permission and external OpenAI response were not triggered from the automated in-app Browser session. The provider path is covered by the existing OpenAI proxy tests, and the new atomic behavior is covered with deterministic API tests. A short owner-spoken production smoke remains appropriate after an approved deployment.
 
-- Finding: [P1] the desktop explanation panel remained visible at 390 px and pushed the microphone below the first viewport.
-- Evidence: `tmp/design-qa/implementation-390-viewport.jpg`.
-- Fix: hide the explanatory hero below the `sm` breakpoint, reduce selector height, compact mobile platform cards, and hide secondary platform notes on mobile.
+## Accessibility and browser observations
 
-### Pass 2
+- Required controls have visible accessible names in the inspected DOM.
+- Mobile and desktop inspected states had `scrollWidth == clientWidth`.
+- No console errors were observed.
+- The manual audit does not claim full WCAG conformance; color contrast and full keyboard traversal should remain part of a later formal accessibility pass.
 
-- Finding: [P2] the microphone remained visually disabled in demo mode, which weakened the primary action compared with the source.
-- Evidence: `tmp/design-qa/implementation-390-pass2.jpg`.
-- Fix: keep the microphone visually active; in demo mode a click now returns an honest API-unavailable message without requesting microphone permission or creating fake content.
+## Verification commands
 
-### Pass 3
+- `make openapi`
+- `make lint`
+- `make typecheck`
+- `.venv/bin/python -m unittest services.api.tests.test_quick_notebook`
+- `make test`
+- `make test-e2e`
+- `pnpm --filter @temichev/web build`
+- `make migrate` against the isolated local PostgreSQL database
+- `make seed` against the isolated local PostgreSQL database
+- `git diff --check`
 
-- Post-fix evidence: `tmp/design-qa/implementation-390-final.jpg` and `tmp/design-qa/source-vs-implementation-390.png`.
-- Result: project, rubric, platforms, and active microphone are visible without scrolling; no actionable P0, P1, or P2 visual issue remains.
+## Result
 
-## Residual test gaps
-
-- The local preview ran in demo mode because no live API session was started. Real recording, S3 upload, provider transcription, and AI generation were not executed in the browser.
-- Backend transcription/publication contracts, publication isolation, AI examples, manual VK/Reels profiles, and the full Python test suite passed. A real signed-in API browser smoke remains appropriate before release.
-- The free-form per-platform instruction field is intentionally not represented as provider-backed success. Phase 12A supports editing, copy, deterministic quick edits, and regeneration; arbitrary AI refinement needs a separate API contract.
-
-## Follow-up polish
-
-- [P3] Consider a more compact mobile top bar if the account and quick-create controls compete with longer workspace branding.
-- [P3] Capture the ready-results state against PDF page 4 when a live API session is available.
-
-final result: passed
+Passed locally for an application-only pilot deployment, subject to the separate production preflight and owner confirmation required by repository policy.

@@ -11,8 +11,9 @@ export default async function LoginPage({
   return (
     <AuthPage
       action="login"
-      title="Вход в MediaHub"
-      description="Откройте рабочее пространство, черновики, публикации и настройки проекта."
+      eyebrow="С возвращением"
+      title="Войти в MediaHub"
+      description="Продолжите с сохранённого материала или начните новую диктовку."
       fields={[
         {
           autoComplete: "email",
@@ -30,7 +31,7 @@ export default async function LoginPage({
         },
       ]}
       redirectTo={redirectTo}
-      submitLabel="Войти"
+      submitLabel="Войти и продолжить"
       secondaryHref="/register"
       secondaryLabel="Нет аккаунта — зарегистрироваться"
       tertiaryHref="/forgot-password"

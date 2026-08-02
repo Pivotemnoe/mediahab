@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { mobileNavItems } from "@/config/navigation";
@@ -11,15 +10,14 @@ export function MobileNav() {
   const pathname = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 grid box-border border-t border-border bg-surface/95 px-2 py-2 backdrop-blur lg:hidden"
-      style={{ gridTemplateColumns: `repeat(${mobileNavItems.length + 1}, minmax(0, 1fr))` }}
+      className="fixed inset-x-0 bottom-0 z-30 grid box-border border-t border-border bg-surface px-2 py-2 lg:hidden"
+      style={{ gridTemplateColumns: `repeat(${mobileNavItems.length}, minmax(0, 1fr))` }}
     >
       {mobileNavItems.map((item) => {
         const Icon = item.icon;
-        const active =
-          pathname === item.href ||
-          pathname.startsWith(`${item.href}/`) ||
-          (item.href === "/app/dashboard" && pathname === "/app");
+        const active = item.href === "/app"
+          ? pathname === "/app" || pathname === "/app/dashboard"
+          : pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
             className={cn(
@@ -34,13 +32,6 @@ export function MobileNav() {
           </Link>
         );
       })}
-      <Link
-        className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-[11px] text-muted"
-        href="/app/settings"
-      >
-        <MoreHorizontal size={18} />
-        <span>Ещё</span>
-      </Link>
     </nav>
   );
 }

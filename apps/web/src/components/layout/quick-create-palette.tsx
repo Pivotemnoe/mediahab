@@ -81,7 +81,7 @@ export function QuickCreatePalette() {
       {open ? (
         <div
           aria-modal="true"
-          className="fixed inset-0 z-50 grid place-items-start bg-black/35 px-3 py-14 backdrop-blur-sm sm:px-6 md:py-24"
+          className="fixed inset-0 z-50 grid place-items-start bg-black/65 px-3 py-14 sm:px-6 md:py-24"
           data-testid="quick-create-palette"
           role="dialog"
         >

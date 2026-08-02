@@ -15,7 +15,7 @@ const routeChecks = [
   {
     name: "app-home",
     path: "/app",
-    required: ["Что создаём?", "Надиктовать материал", "Вставить текст", "Проверка перед отправкой"],
+    required: ["Что будем публиковать сегодня?", "Начать с диктовки", "Блокнот", "Проекты и каналы"],
     absent: ["API-режим", "backend", "Техническая сборка", "Дашборд", "UI"],
     testId: "quick-create-open",
     palette: true,
@@ -23,14 +23,14 @@ const routeChecks = [
   {
     name: "app-dashboard",
     path: "/app/dashboard",
-    required: ["Что создаём?", "Надиктовать материал", "Продолжить работу"],
+    required: ["Что будем публиковать сегодня?", "Начать с диктовки", "Последние материалы"],
     absent: ["API-режим", "backend", "Техническая сборка", "Дашборд", "UI"],
     testId: "quick-create-open",
   },
   {
     name: "new-content",
     path: "/app/content/new",
-    required: ["Создать материал", "Собрать текст", "Блоки", "Атмосфера", "Live preview", "Telegram", "MAX", "Instagram"],
+    required: ["Голосовая студия", "Ваш голосовой черновик", "Проект", "Рубрика", "Куда собрать", "Telegram", "MAX", "Instagram"],
     absent: [
       "Создать материал без технического шума",
       "Первый рабочий шаг после создания",
@@ -41,6 +41,20 @@ const routeChecks = [
       "Дашборд",
     ],
     testId: "new-content-composer",
+  },
+  {
+    name: "notebook",
+    path: "/app/notebook",
+    required: ["Мысль не должна потеряться", "Быстрая заметка", "Надиктовать заметку", "Заметки", "Архив"],
+    absent: ["API-режим", "backend", "Техническая сборка", "Этап UI"],
+    testId: "app-sidebar",
+  },
+  {
+    name: "style",
+    path: "/app/style",
+    required: ["Посты должны звучать как вы", "Общий голос", "Ваши примеры", "Рубрики", "Стиль по проектам"],
+    absent: ["API-режим", "backend", "Техническая сборка", "prompt", "schema"],
+    testId: "app-sidebar",
   },
   {
     name: "content-composer",
@@ -172,7 +186,9 @@ async function runRouteCheck(browser, route, width) {
       const visibleText = document.body.innerText;
       return {
         clientWidth: document.documentElement.clientWidth,
-        hasOldSidebar: Boolean(document.querySelector('aside')),
+        hasExpectedSidebar: Boolean(document.querySelector('[data-testid="app-sidebar"]')) &&
+          ['Создать', 'Черновики', 'Блокнот', 'Мой стиль'].every((label) =>
+            document.querySelector('[data-testid="app-sidebar"]')?.textContent?.includes(label)),
         hasVoiceBottomSheet: ${JSON.stringify(route.name)} === 'content-composer'
           ? Boolean(document.querySelector('[data-testid="voice-bottom-sheet"]'))
           : true,
@@ -187,7 +203,7 @@ async function runRouteCheck(browser, route, width) {
   const value = inspected.result.value;
   assert.deepEqual(value.missing, [], `${route.name} ${width}px missing required text`);
   assert.deepEqual(value.forbidden, [], `${route.name} ${width}px contains old technical text`);
-  assert.equal(value.hasOldSidebar, false, `${route.name} ${width}px still renders old sidebar`);
+  assert.equal(value.hasExpectedSidebar, true, `${route.name} ${width}px creator sidebar missing`);
   assert.equal(value.hasVoiceBottomSheet, true, `${route.name} ${width}px voice bottom sheet missing`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${route.name} ${width}px horizontal overflow`);
   if (route.palette) {
@@ -195,7 +211,7 @@ async function runRouteCheck(browser, route, width) {
   }
 
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-  const screenshotPath = `/private/tmp/mediahub-ui11p-${route.name}-${width}.png`;
+  const screenshotPath = `/private/tmp/mediahub-ui12d-${route.name}-${width}.png`;
   await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
   await browser.send("Target.closeTarget", { targetId });
 

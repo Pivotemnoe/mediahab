@@ -1,357 +1,248 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Bot,
+  BookOpenCheck,
   CheckCircle2,
-  FileEdit,
-  ImageUp,
-  Layers3,
+  Clock3,
+  GraduationCap,
+  HeartPulse,
+  FileText,
+  Instagram,
+  LockKeyhole,
+  MessageCircle,
   Mic,
-  PlayCircle,
-  RadioTower,
+  Play,
   Send,
   ShieldCheck,
-  Sparkles,
+  Store,
+  UserRound,
+  UsersRound,
+  type LucideIcon,
 } from "lucide-react";
 
 import { MarketingShell } from "@/components/layout/shells";
+import { VoiceProductDemo } from "@/components/marketing/voice-product-demo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const workflow = [
-  {
-    title: "Мастер материала",
-    text: "Выберите проект, при необходимости рубрику и понятные блоки: факты, голос, медиа, итог.",
-    icon: FileEdit,
-  },
-  {
-    title: "Сбор без хаоса",
-    text: "Надиктуйте заметки, добавьте текст и медиа, а важные факты оставьте зафиксированными.",
-    icon: Mic,
-  },
-  {
-    title: "ИИ-сборка и версии",
-    text: "Получите мастер-текст и отдельные варианты для Telegram, MAX и Instagram.",
-    icon: Bot,
-  },
-  {
-    title: "Проверка и публикация",
-    text: "Сравните превью площадок и отправляйте только после ручного подтверждения.",
-    icon: Send,
-  },
+  ["1", "Диктуете или вставляете", "Расскажите всё одним сообщением или добавляйте голосовые фрагменты по очереди.", Mic],
+  ["2", "Выбираете площадки", "Telegram, MAX, VK и Instagram можно включить вместе или подготовить отдельно.", CheckCircle2],
+  ["3", "Проверяете версии", "MediaHub учитывает правила проекта, рубрику, примеры и длину каждого результата.", BookOpenCheck],
 ] as const;
 
-const productSignals = [
-  ["Не Telegram-only", "Один материал готовит несколько платформенных версий."],
-  ["Настройки в проекте", "Рубрики, правила, примеры и лимиты живут в конфигурации, а не в коде."],
-  ["Человек решает", "ИИ помогает собрать текст, но публикация не уходит без подтверждения."],
+const trustPoints = [
+  ["Факты остаются вашими", "ИИ редактирует подачу, но не должен придумывать цены, адреса и выводы.", ShieldCheck],
+  ["Правила запоминаются", "Общий стиль, рубрики, примеры и ограничения применяются при каждой новой сборке.", FileText],
+  ["Каждая версия проверяется", "Никаких публикаций без вашего явного подтверждения.", CheckCircle2],
 ] as const;
 
-const entryActions = [
-  {
-    title: "Зарегистрироваться и начать",
-    text: "Создайте личный кабинет, войдите и откройте голосовой сценарий без отдельной настройки устройства.",
-    href: "/register",
-    label: "Создать аккаунт",
-    icon: Sparkles,
-  },
-  {
-    title: "Вернуться в свой кабинет",
-    text: "Если аккаунт уже есть, войдите и продолжите работу с сохранёнными материалами.",
-    href: "/login",
-    label: "Войти",
-    icon: Layers3,
-  },
-  {
-    title: "Понять возможности",
-    text: "Посмотрите, как устроены проекты, рубрики, ИИ-редактура, медиа и публикации.",
-    href: "/features",
-    label: "Смотреть возможности",
-    icon: PlayCircle,
-  },
+const platformGuide = [
+  ["Telegram", "Полный пост", "Удобная длинная версия с сохранённой структурой и ссылками.", Send],
+  ["MAX", "До 4 000 знаков", "Самостоятельная компактная версия, а не обрезанный Telegram-текст.", MessageCircle],
+  ["VK", "Запись сообщества", "Понятная подача для стены или сообщества с отдельной длиной.", UsersRound],
+  ["Instagram", "Пост, карусель или Reel", "Другая композиция, подпись и подсказки по медиа в рамках формата.", Instagram],
 ] as const;
 
-const platformPreview = [
-  ["Telegram", "готов к длинному посту", "success"],
-  ["MAX", "лимит проверен", "info"],
-  ["Instagram", "нужна короткая версия", "warning"],
+const audiences = [
+  ["Эксперт и личный бренд", "Надиктуйте наблюдение после встречи, консультации или события — и сохраните собственный тон.", UserRound],
+  ["Локальный бизнес", "Быстро превращайте новости, предложения и изменения в понятные публикации для нескольких каналов.", Store],
+  ["Клиника и специалист", "Объясняйте сложное человеческим языком, не теряя важные факты и предупреждения.", HeartPulse],
+  ["Автор и преподаватель", "Собирайте идеи, заметки и фрагменты лекций в регулярный контент без пустого листа.", GraduationCap],
+] as const;
+
+const faq = [
+  ["Нужно каждый раз заполнять настройки?", "Нет. Стиль, примеры и обычная длина сохраняются в проекте. Для конкретного поста можно изменить только нужное."],
+  ["Можно подготовить несколько площадок сразу?", "Да. Вы отмечаете Telegram, MAX, VK и Instagram вместе или выбираете только одну площадку. Каждая версия создаётся отдельно."],
+  ["Что делать с идеей, которую ещё рано превращать в пост?", "Сохранить в голосовой блокнот. Позже заметку можно перенести в новый или уже существующий материал."],
+  ["Сервис публикует всё автоматически?", "Нет. Сначала вы видите и правите результат. Отправка остаётся отдельным действием с вашим подтверждением."],
 ] as const;
 
 export default function MarketingIndex() {
   return (
     <MarketingShell>
-      <section
-        className="relative isolate overflow-hidden border-b border-border bg-sidebar text-sidebar-foreground"
-        data-testid="public-home-hero"
-      >
-        <HeroComposerScene />
-
-        <div className="relative mx-auto grid min-h-[620px] max-w-7xl content-center px-4 py-14 sm:min-h-[660px] lg:min-h-[680px]">
-          <div className="max-w-[760px]">
-            <Badge tone="success" className="border-sidebar-foreground/20 bg-sidebar-foreground/10 text-sidebar-foreground">
-              Медиа-хаб для материала, голоса, ИИ и публикаций
-            </Badge>
-            <h1 className="mt-5 max-w-4xl text-[38px] font-semibold leading-[1.02] text-white sm:text-6xl lg:text-7xl">
-              Temichev Media Hub
+      <section className="border-b border-border" data-testid="public-home-hero">
+        <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-9 sm:px-6 sm:py-11 lg:grid-cols-[minmax(0,0.9fr)_minmax(620px,1.1fr)] lg:gap-12 lg:px-12 lg:py-10">
+          <div className="flex min-w-0 flex-col justify-center">
+            <h1 className="font-editorial max-w-3xl text-[52px] leading-[0.96] text-foreground sm:text-7xl lg:text-[82px]">
+              Ваш голос.<br />Ваш стиль.<br />Готовые посты.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-sidebar-foreground/80 sm:text-lg sm:leading-8">
-              Рабочий кабинет, где редактор собирает факты, диктует заметки, прикрепляет медиа, получает ИИ-редактуру и выпускает отдельные версии для Telegram, MAX и Instagram.
+            <p className="mt-7 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
+              Продиктуйте факты — MediaHub соберёт цельный текст и подготовит отдельную версию для каждой выбранной площадки. Без потери смысла и без публикации за вас.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button asChild className="w-full sm:w-auto">
-                <Link href="/register">
-                  Зарегистрироваться
-                  <ArrowRight size={16} />
-                </Link>
+              <Button asChild className="h-12 px-5">
+                <Link href="/register"><Mic size={18} />Начать с диктовки</Link>
               </Button>
-              <Button asChild className="w-full border-sidebar-foreground/20 bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20 sm:w-auto" variant="secondary">
-                <Link href="/login">Войти</Link>
-              </Button>
-              <Button asChild className="w-full text-sidebar-foreground/80 hover:bg-sidebar-foreground/10 hover:text-white sm:w-auto" variant="ghost">
-                <Link href="/features">Как это работает</Link>
+              <Button asChild className="h-12 px-5" variant="secondary">
+                <Link href="#example"><Play size={17} />Посмотреть пример</Link>
               </Button>
             </div>
+            <div className="mt-7 flex items-center gap-2 text-sm text-muted">
+              <CheckCircle2 className="text-success" size={16} />
+              Первые версии — обычно за несколько минут
+            </div>
 
-            <MobileComposerPreview />
+          </div>
 
-            <div className="mt-8 hidden max-w-2xl gap-3 sm:grid sm:grid-cols-3" data-testid="public-home-proof">
-              {productSignals.map(([title, text]) => (
-                <div className="rounded-md border border-sidebar-foreground/20 bg-sidebar-foreground/10 p-3" key={title}>
-                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                    <CheckCircle2 size={15} className="text-[color-mix(in_srgb,var(--success),white_18%)]" />
-                    {title}
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-sidebar-foreground/70">{text}</p>
-                </div>
-              ))}
+          <VoiceProductDemo />
+
+          <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-3 lg:col-start-1" id="audience" data-testid="public-home-proof">
+            {trustPoints.map(([title, text, Icon]) => (
+              <div className="min-w-0" key={title}>
+                <Icon className="text-primary" size={20} />
+                <div className="mt-3 text-sm font-semibold text-foreground">{title}</div>
+                <p className="mt-1 text-xs leading-5 text-muted">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-border bg-sidebar" id="example" data-testid="public-home-example">
+        <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:px-12 lg:py-14">
+          <div className="relative min-h-[300px] overflow-hidden rounded-xl border border-border">
+            <Image
+              alt="Нейтральный пример проекта для локального бизнеса"
+              className="object-cover"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 42vw"
+              src="/assets/editorial-cafe-deep-forest.png"
+            />
+          </div>
+          <div className="flex flex-col justify-center py-2">
+            <Badge className="w-fit" tone="success">Пример проекта</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Правила живут в проекте, а не в вашей памяти.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
+              Для проекта задаются голос, ограничения, постоянные блоки и примеры. Рубрика необязательна: её выбирают только там, где нужен особый формат поста.
+            </p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              <Metric icon={Mic} title="1 диктовка" text="можно дополнять фрагментами" />
+              <Metric icon={Clock3} title="до 10 минут" text="на первые версии" />
+              <Metric icon={LockKeyhole} title="100% контроль" text="ручное подтверждение" />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-8 sm:py-10" data-testid="public-home-workflow">
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:px-12" id="workflow" data-testid="public-home-workflow">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div>
-            <Badge tone="info">Основной путь</Badge>
-            <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
-              От сырого материала до публикации без ручной пересборки под каждую площадку
+            <Badge tone="success">Как это работает</Badge>
+            <h2 className="font-editorial mt-4 max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">
+              Один исходник. Несколько самостоятельных версий.
             </h2>
           </div>
-          <Button asChild variant="secondary">
-            <Link href="/register">
-              Создать аккаунт
-              <ArrowRight size={16} />
-            </Link>
-          </Button>
+          <Button asChild variant="secondary"><Link href="/features">Все возможности<ArrowRight size={16} /></Link></Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {workflow.map(({ icon: Icon, text, title }, index) => (
-            <Card className="grid content-start gap-3" key={title}>
+        <div className="grid gap-4 md:grid-cols-3">
+          {workflow.map(([number, title, text, Icon]) => (
+            <Card className="grid content-start gap-4 p-5" key={number}>
               <div className="flex items-center justify-between gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--primary),transparent_88%)] text-primary">
-                  <Icon size={19} />
-                </span>
-                <span className="text-xs font-semibold uppercase text-muted">0{index + 1}</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Шаг {number}</span>
+                <Icon className="text-success" size={20} />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+              <h3 className="text-xl font-semibold text-foreground">{title}</h3>
               <p className="text-sm leading-6 text-muted">{text}</p>
             </Card>
           ))}
         </div>
       </section>
 
-      <section className="border-y border-border bg-surface">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 py-8 lg:grid-cols-[1fr_420px] lg:py-10">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-background p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ShieldCheck size={18} className="text-success" />
-                Контроль фактов
-              </div>
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Сервис отделяет исходные наблюдения от редакторской сборки, чтобы ИИ не превращал догадки в факты.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-background p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <RadioTower size={18} className="text-primary" />
-                Площадки отдельно
-              </div>
-              <p className="mt-3 text-sm leading-6 text-muted">
-                У Telegram, MAX и Instagram разные редакторские цели и технические лимиты. Media Hub показывает это до отправки.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-background p-5 sm:col-span-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ImageUp size={18} className="text-[color-mix(in_srgb,var(--builder-accent),black_8%)]" />
-                Медиа, голос и текст в одном материале
-              </div>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
-                Фотографии, видео, аудиозаметки, расшифровка, мастер-текст и платформенные версии не расползаются по чатам, файлам и заметкам.
-              </p>
-            </div>
+      <section className="border-y border-border bg-sidebar" data-testid="public-home-platforms">
+        <div className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:px-12">
+          <div className="max-w-3xl">
+            <Badge tone="success">Площадки отличаются</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Не один текст, растянутый на четыре окна.</h2>
+            <p className="mt-4 text-base leading-7 text-muted">MediaHub учитывает ограничения и привычный формат каждой площадки. Длину можно оставить по вашим правилам или поменять только для текущего поста.</p>
           </div>
-
-          <div className="rounded-lg border border-border bg-sidebar p-5 text-sidebar-foreground shadow-popover">
-            <Badge tone="success" className="border-sidebar-foreground/20 bg-sidebar-foreground/10 text-sidebar-foreground">
-              Ручное подтверждение
-            </Badge>
-            <h2 className="mt-4 text-2xl font-semibold leading-tight text-white">
-              Публикация остаётся решением человека
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-sidebar-foreground/75">
-              ИИ может предложить структуру, крючок, CTA и версии площадок, но финальная отправка проходит через явную проверку редактора.
-            </p>
-            <div className="mt-5 grid gap-2">
-              {platformPreview.map(([name, note, tone]) => (
-                <div className="flex items-center justify-between gap-3 rounded-md border border-sidebar-foreground/20 bg-sidebar-foreground/10 p-3" key={name}>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{name}</div>
-                    <div className="mt-1 text-xs text-sidebar-foreground/60">{note}</div>
-                  </div>
-                  <span
-                    className={
-                      tone === "success"
-                        ? "h-2.5 w-2.5 rounded-full bg-success"
-                        : tone === "warning"
-                          ? "h-2.5 w-2.5 rounded-full bg-warning"
-                          : "h-2.5 w-2.5 rounded-full bg-[color-mix(in_srgb,var(--builder-accent),white_18%)]"
-                    }
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {platformGuide.map(([name, format, text, Icon]) => (
+              <article className="group rounded-xl border border-border bg-surface p-5 transition duration-200 hover:-translate-y-1 hover:border-success hover:shadow-popover" key={name}>
+                <div className="flex items-center justify-between gap-3"><Icon className="text-success" size={22} /><CheckCircle2 className="opacity-0 text-success transition group-hover:opacity-100" size={17} /></div>
+                <h3 className="mt-5 text-xl font-semibold text-foreground">{name}</h3>
+                <div className="mt-1 text-xs font-medium text-primary">{format}</div>
+                <p className="mt-3 text-sm leading-6 text-muted">{text}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-8 sm:py-10" data-testid="public-home-entry">
-        <div className="max-w-3xl">
-          <Badge tone="success">Вход в работу</Badge>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
-            Начинайте с материала, а не с настройки сложной системы
-          </h2>
-          <p className="mt-3 text-base leading-7 text-muted">
-            Основной сценарий ведёт пользователя по делу: что собрать, что проверить, какие версии подготовить и где подтвердить публикацию.
-          </p>
+      <section className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:px-12" id="audience-types" data-testid="public-home-audiences">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-end">
+          <div>
+            <Badge tone="success">Для тех, кто говорит по делу</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Подходит не одной теме и не одному блогу.</h2>
+          </div>
+          <p className="max-w-2xl text-base leading-7 text-muted lg:justify-self-end">Проект хранит ваши правила, примеры и привычную подачу. Рубрики добавляются только для повторяющихся форматов — пользоваться ими необязательно.</p>
         </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          {entryActions.map(({ href, icon: Icon, label, text, title }) => (
-            <Card className="grid content-start gap-4" key={title}>
-              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-surface-muted text-primary">
-                <Icon size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
-              </div>
-              <Button asChild className="mt-auto w-full" variant={href === "/register" ? "primary" : "secondary"}>
-                <Link href={href}>
-                  {label}
-                  <ArrowRight size={16} />
-                </Link>
-              </Button>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {audiences.map(([title, text, Icon]) => (
+            <Card className="group p-5 transition hover:bg-surface-muted" key={title}>
+              <span className="grid size-10 place-items-center rounded-lg bg-surface-muted text-primary transition group-hover:bg-background"><Icon size={20} /></span>
+              <h3 className="mt-5 text-lg font-semibold text-foreground">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
             </Card>
           ))}
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-surface" data-testid="public-home-safety">
+        <div className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:px-12">
+          <div>
+            <Badge tone="success">Вы управляете результатом</Badge>
+            <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">ИИ помогает редактурой. Решение остаётся вашим.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Исходник, готовые версии и изменения разделены. Можно поправить одну площадку, не затрагивая остальные, и ничего не отправлять до финальной проверки.</p>
+          </div>
+          <div className="grid gap-3">
+            {["Проверяете каждую версию", "Меняете длину без механической обрезки", "Сохраняете собственную лексику и тон", "Подтверждаете публикацию вручную"].map((item) => (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground" key={item}><ShieldCheck className="shrink-0 text-success" size={18} />{item}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-[1120px] gap-7 px-4 py-10 sm:px-6 sm:py-14" data-testid="public-home-faq">
+        <div className="text-center">
+          <Badge tone="success">Коротко о главном</Badge>
+          <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Частые вопросы</h2>
+        </div>
+        <div className="grid gap-3">
+          {faq.map(([question, answer], index) => (
+            <details className="group rounded-xl border border-border bg-surface p-4 open:border-success sm:p-5" key={question} open={index === 0}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-foreground">{question}<span className="text-xl font-normal text-primary transition group-open:rotate-45">+</span></summary>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-12" data-testid="public-home-entry">
+        <div>
+          <Badge tone="success">Готовы попробовать</Badge>
+          <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Начните с материала, а настройки докрутите по ходу работы.</h2>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Создайте кабинет, назовите свой проект и сразу откройте диктовку. Стиль и дополнительные правила можно добавить постепенно.</p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+          <Button asChild className="h-12 px-5"><Link href="/register">Создать кабинет<ArrowRight size={16} /></Link></Button>
+          <Button asChild className="h-12 px-5" variant="secondary"><Link href="/login">Уже есть кабинет</Link></Button>
         </div>
       </section>
     </MarketingShell>
   );
 }
 
-function HeroComposerScene() {
+function Metric({ icon: Icon, text, title }: { icon: LucideIcon; text: string; title: string }) {
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-sidebar" />
-      <div className="absolute right-[-180px] top-6 hidden h-[640px] w-[760px] rotate-1 rounded-lg border border-sidebar-foreground/20 bg-surface p-4 text-foreground shadow-popover lg:block">
-        <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-background p-3">
-          <div>
-            <div className="text-xs font-semibold uppercase text-muted">Материал</div>
-            <div className="mt-1 text-lg font-semibold">Новый выпуск</div>
-          </div>
-          <div className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
-            Собрать
-          </div>
-        </div>
-
-        <div className="mt-4 grid h-[520px] gap-4 lg:grid-cols-[220px_1fr]">
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <div className="text-sm font-semibold">Шаги</div>
-            <div className="mt-4 grid gap-3">
-              {["Факты", "Голос", "Медиа", "ИИ-сборка", "Площадки"].map((item, index) => (
-                <div className="flex items-center gap-3" key={item}>
-                  <span className={index === 1 ? "flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-semibold text-white" : "flex h-7 w-7 items-center justify-center rounded-md bg-surface-muted text-xs font-semibold text-muted"}>
-                    {index + 1}
-                  </span>
-                  <span className={index === 1 ? "text-sm font-semibold text-foreground" : "text-sm text-muted"}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            <div className="rounded-lg border border-border bg-[color-mix(in_srgb,var(--primary),transparent_93%)] p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                <Mic size={18} />
-                Диктовка блока
-              </div>
-              <div className="mt-5 flex h-24 items-center justify-center rounded-md bg-surface">
-                <div className="flex items-end gap-1">
-                  {[18, 30, 46, 34, 58, 40, 24, 44, 28, 52, 32, 20].map((height, index) => (
-                    <span
-                      className="w-2 rounded-full bg-primary"
-                      key={`${height}-${index}`}
-                      style={{ height }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {platformPreview.map(([name, note]) => (
-                <div className="rounded-lg border border-border bg-surface p-4" key={name}>
-                  <div className="text-sm font-semibold">{name}</div>
-                  <div className="mt-2 text-xs leading-5 text-muted">{note}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-lg border border-border bg-sidebar p-4 text-sidebar-foreground">
-              <div className="text-sm font-semibold text-white">Проверка перед отправкой</div>
-              <div className="mt-2 text-xs leading-5 text-sidebar-foreground/70">
-                Превью, лимиты и кнопка ручного подтверждения видны до публикации.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-function MobileComposerPreview() {
-  return (
-    <div className="mt-7 rounded-lg border border-sidebar-foreground/20 bg-sidebar-foreground/10 p-3 shadow-popover sm:max-w-[430px] lg:hidden">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold uppercase text-sidebar-foreground/60">Сегодня</div>
-          <div className="mt-1 text-lg font-semibold text-white">Материал в сборке</div>
-        </div>
-        <div className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">ИИ-сборка</div>
-      </div>
-      <div className="mt-3 grid gap-2">
-        {["Факты собраны", "Голос принят", "Превью площадок"].map((item) => (
-          <div className="flex items-center justify-between gap-3 rounded-md bg-sidebar-foreground/10 px-3 py-2 text-xs text-sidebar-foreground/75" key={item}>
-            <span>{item}</span>
-            <CheckCircle2 size={14} className="text-[color-mix(in_srgb,var(--success),white_22%)]" />
-          </div>
-        ))}
-      </div>
+    <div className="border-l border-border pl-4 first:border-l-0 first:pl-0">
+      <Icon className="text-primary" size={20} />
+      <div className="mt-3 text-lg font-semibold text-foreground">{title}</div>
+      <div className="mt-1 text-xs leading-5 text-muted">{text}</div>
     </div>
   );
 }

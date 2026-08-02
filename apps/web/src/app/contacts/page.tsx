@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/card";
 
 const contacts = [
   ["Почта", "pivo.temnoe@gmail.com", Mail],
-  ["Telegram/MAX", "каналы проекта подключаются после продакшен-настройки", MessageCircle],
-  ["Безопасность", "секреты, платежи и вебхуки включаются только после проверок", ShieldCheck],
+  ["Вопрос по работе", "Опишите, на каком шаге нужна помощь: вход, диктовка, версии или настройки.", MessageCircle],
+  ["Данные и безопасность", "Отдельно сообщайте о вопросах доступа и обработки материалов.", ShieldCheck],
 ] as const;
 
 export default function ContactsPage() {
@@ -18,9 +18,9 @@ export default function ContactsPage() {
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10 lg:grid-cols-[1fr_360px]">
         <div>
           <Badge tone="info">Контакты</Badge>
-          <h1 className="mt-4 text-4xl font-semibold text-foreground sm:text-5xl">Связь по проекту</h1>
+          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Поможем разобраться.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Страница оставлена спокойной и технической: для запуска нужны реальные каналы поддержки, политика обработки данных и платежные документы.
+            Напишите, что вы хотели сделать и что увидели на экране. Чем понятнее ситуация, тем быстрее получится помочь.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild>

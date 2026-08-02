@@ -31,6 +31,7 @@ import type { NotebookViewModel } from "@/services/notebook";
 
 type SaveState = "idle" | "offline" | "saved" | "saving" | "error";
 type ListMode = "active" | "archived" | "deleted";
+type QuickVoiceState = "idle" | "recording" | "transcribing";
 
 function csrfToken(): string | null {
   const row = document.cookie.split("; ").find((cookie) => cookie.startsWith("tmh_csrf="));
@@ -84,6 +85,48 @@ function savedLabel(state: SaveState): string {
     saved: "сохранено",
     saving: "сохраняю…",
   }[state];
+}
+
+async function uploadVoiceMedia({ blob, workspaceId }: { blob: Blob; workspaceId: string }): Promise<string> {
+  const mimeType = blob.type || "audio/webm";
+  const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
+    body: {
+      content_item_id: null,
+      filename: `notebook-${Date.now()}.${extensionForMimeType(mimeType)}`,
+      kind: "voice",
+      mime_type: mimeType,
+      size_bytes: blob.size,
+      workspace_id: workspaceId,
+    },
+    method: "POST",
+  });
+  const upload = await fetch(presign.upload_url, {
+    body: blob,
+    headers: { "Content-Type": mimeType },
+    method: "PUT",
+  });
+  if (!upload.ok) throw new Error("Не удалось загрузить голосовую заметку.");
+  await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
+    body: { codec_metadata: { source: "notebook" }, size_bytes: blob.size },
+    method: "POST",
+  });
+  return presign.media_id;
+}
+
+async function transcribeVoiceIntoNote({ blob, note, workspaceId }: { blob: Blob; note: NotebookNoteOut; workspaceId: string }): Promise<NotebookNoteOut> {
+  const mediaId = await uploadVoiceMedia({ blob, workspaceId });
+  const run = await apiRequest<NotebookTranscriptionOut>(`/api/v1/notebook/${note.id}/transcribe`, {
+    body: { media_id: mediaId, provider_key: "default" },
+    method: "POST",
+  });
+  return apiRequest<NotebookNoteOut>(`/api/v1/notebook-transcriptions/${run.id}/accept`, {
+    body: {
+      append: true,
+      corrected_text: run.transcript_text || "",
+      note_version: note.version,
+    },
+    method: "POST",
+  });
 }
 
 interface NoteCardProps {
@@ -192,40 +235,7 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
   async function uploadVoice(blob: Blob) {
     try {
       setMessage("Загружаю и расшифровываю голос…");
-      const mimeType = blob.type || "audio/webm";
-      const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
-        body: {
-          content_item_id: null,
-          filename: `notebook-${Date.now()}.${extensionForMimeType(mimeType)}`,
-          kind: "voice",
-          mime_type: mimeType,
-          size_bytes: blob.size,
-          workspace_id: workspaceId,
-        },
-        method: "POST",
-      });
-      const upload = await fetch(presign.upload_url, {
-        body: blob,
-        headers: { "Content-Type": mimeType },
-        method: "PUT",
-      });
-      if (!upload.ok) throw new Error("Не удалось загрузить голосовую заметку.");
-      await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
-        body: { codec_metadata: { source: "notebook" }, size_bytes: blob.size },
-        method: "POST",
-      });
-      const run = await apiRequest<NotebookTranscriptionOut>(`/api/v1/notebook/${note.id}/transcribe`, {
-        body: { media_id: presign.media_id, provider_key: "default" },
-        method: "POST",
-      });
-      const updated = await apiRequest<NotebookNoteOut>(`/api/v1/notebook-transcriptions/${run.id}/accept`, {
-        body: {
-          append: true,
-          corrected_text: run.transcript_text || "",
-          note_version: currentRef.current.version,
-        },
-        method: "POST",
-      });
+      const updated = await transcribeVoiceIntoNote({ blob, note: currentRef.current, workspaceId });
       currentRef.current = updated;
       setBody(updated.body);
       onChanged(updated);
@@ -342,6 +352,10 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<ListMode>("active");
   const [message, setMessage] = useState(viewModel.notice ?? "");
+  const [quickVoiceState, setQuickVoiceState] = useState<QuickVoiceState>("idle");
+  const draftRef = useRef("");
+  const quickRecorderRef = useRef<MediaRecorder | null>(null);
+  const quickChunksRef = useRef<Blob[]>([]);
   const draftKey = viewModel.workspaceId ? `tmh:notebook:${viewModel.workspaceId}:new` : "";
 
   useEffect(() => {
@@ -353,7 +367,17 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     if (!draftKey) return;
     if (draft) window.localStorage.setItem(draftKey, draft);
     else window.localStorage.removeItem(draftKey);
+    draftRef.current = draft;
   }, [draft, draftKey]);
+
+  useEffect(() => () => {
+    const recorder = quickRecorderRef.current;
+    if (!recorder) return;
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+    recorder.stream.getTracks().forEach((track) => track.stop());
+    quickRecorderRef.current = null;
+  }, []);
 
   const visible = useMemo(
     () => notes.filter((note) => note.body.toLocaleLowerCase("ru").includes(query.toLocaleLowerCase("ru"))),
@@ -375,6 +399,68 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     }
   }
 
+  async function saveQuickVoice(blob: Blob) {
+    if (!viewModel.workspaceId) return;
+    if (!blob.size) {
+      setQuickVoiceState("idle");
+      setMessage("Не получилось записать звук. Попробуйте ещё раз.");
+      return;
+    }
+    try {
+      setQuickVoiceState("transcribing");
+      setMessage("Расшифровываю голосовую заметку…");
+      const mediaId = await uploadVoiceMedia({ blob, workspaceId: viewModel.workspaceId });
+      const note = await apiRequest<NotebookNoteOut>("/api/v1/notebook/transcribe-new", {
+        body: {
+          body: draftRef.current.trim(),
+          kind: "idea",
+          media_id: mediaId,
+          provider_key: "default",
+          workspace_id: viewModel.workspaceId,
+        },
+        method: "POST",
+      });
+      setNotes((current) => [note, ...current]);
+      setDraft("");
+      setMessage("Голос расшифрован и сохранён в блокноте.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось сохранить голосовую заметку.");
+    } finally {
+      setQuickVoiceState("idle");
+    }
+  }
+
+  async function toggleQuickRecording() {
+    if (quickVoiceState === "transcribing") return;
+    if (quickRecorderRef.current) {
+      setQuickVoiceState("transcribing");
+      quickRecorderRef.current.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setMessage("Этот браузер не поддерживает запись с микрофона.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      quickChunksRef.current = [];
+      recorder.ondataavailable = (event) => event.data.size && quickChunksRef.current.push(event.data);
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        quickRecorderRef.current = null;
+        void saveQuickVoice(new Blob(quickChunksRef.current, { type: recorder.mimeType || "audio/webm" }));
+      };
+      recorder.start();
+      quickRecorderRef.current = recorder;
+      setQuickVoiceState("recording");
+      setMessage("Говорите свободно. Нажмите ещё раз, когда закончите.");
+    } catch {
+      setQuickVoiceState("idle");
+      setMessage("Браузер не дал доступ к микрофону.");
+    }
+  }
+
   async function loadMode(nextMode: ListMode) {
     if (!viewModel.workspaceId) return;
     setMode(nextMode);
@@ -389,31 +475,50 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
   return (
     <div className="grid min-w-0 gap-5">
-      <section className="grid gap-4 rounded-2xl bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <section className="grid gap-4 rounded-2xl border border-border bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div>
           <Badge tone="success">Быстрый вход</Badge>
-          <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">Блокнот</h1>
+          <h1 className="font-editorial mt-3 text-4xl leading-tight text-white sm:text-5xl">Мысль не должна потеряться.</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-sidebar-foreground/80 sm:text-base">
-            Сохраните мысль сразу. Проект, рубрика, площадка и ИИ понадобятся только позже.
+            Запишите или надиктуйте идею сразу. Проект, рубрика и площадка понадобятся только тогда, когда вы решите сделать из неё публикацию.
           </p>
         </div>
         <Lightbulb className="hidden text-primary lg:block" size={52} />
       </section>
 
       <Card className="grid gap-3 p-4 sm:p-5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Новая заметка</label>
+        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
         <textarea
           className="min-h-28 w-full resize-y rounded-lg border border-border bg-background p-3 text-base leading-6 outline-none focus:border-primary"
           id="quick-note"
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Напишите идею — она останется на этом устройстве даже до отправки…"
+          placeholder="Напишите короткую мысль. После сохранения её можно дополнить голосом…"
           value={draft}
         />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-muted">Черновик восстанавливается на этом устройстве.</span>
-          <Button disabled={!draft.trim() || !viewModel.workspaceId} onClick={() => void createNote()} type="button">
-            <Lightbulb size={16} /> Сохранить идею
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              aria-pressed={quickVoiceState === "recording"}
+              disabled={!viewModel.workspaceId || quickVoiceState === "transcribing"}
+              onClick={() => void toggleQuickRecording()}
+              type="button"
+              variant="secondary"
+            >
+              <Mic size={16} /> {quickVoiceState === "recording"
+                ? "Закончить запись"
+                : quickVoiceState === "transcribing"
+                  ? "Расшифровываю…"
+                  : "Надиктовать заметку"}
+            </Button>
+            <Button
+              disabled={!draft.trim() || !viewModel.workspaceId || quickVoiceState !== "idle"}
+              onClick={() => void createNote()}
+              type="button"
+            >
+              <Lightbulb size={16} /> Сохранить идею
+            </Button>
+          </div>
         </div>
       </Card>
 

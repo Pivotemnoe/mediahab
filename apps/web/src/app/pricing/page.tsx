@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const plans = [
-  ["Бесплатный", "для личного теста", "1 проект, ограниченные ИИ-лимиты, ручные публикации"],
-  ["Старт", "для пилота", "несколько проектов, базовая расшифровка и расписание"],
-  ["Pro", "для регулярной работы", "больше проектов, автопубликации и Instagram-флаг"],
-  ["Business", "для команды", "расширенные лимиты, ручное согласование условий"],
+  ["Знакомство", "попробовать на своём материале", "1 проект, диктовка и ручная подготовка версий"],
+  ["Автор", "для регулярных публикаций", "несколько проектов, сохранённый стиль и больше обработок"],
+  ["Редакция", "для совместной работы", "команда, согласование материалов и расширенные лимиты"],
 ] as const;
 
 export default function PricingPage() {
@@ -18,15 +17,14 @@ export default function PricingPage() {
     <MarketingShell>
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10">
         <div className="max-w-3xl">
-          <Badge tone="warning">Оплата пока не подключена</Badge>
-          <h1 className="mt-4 text-4xl font-semibold text-foreground sm:text-5xl">Тарифы MediaHub</h1>
+          <Badge tone="warning">Тарифы готовятся</Badge>
+          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Начните с идеи, а не с выбора тарифа.</h1>
           <p className="mt-4 text-base leading-7 text-muted">
-            Планы уже существуют как редактируемые записи и серверные лимиты. Реальная подписка появится только после выбора провайдера,
-            юридических условий и продакшен-проверок.
+            Сейчас можно познакомиться с продуктом без сложного выбора. Перед запуском оплаты здесь появятся точные цены, лимиты и понятные условия отмены.
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-3">
           {plans.map(([name, subtitle, description]) => (
             <Card className="grid gap-4" key={name}>
               <div className="flex items-center justify-between gap-3">
@@ -37,7 +35,7 @@ export default function PricingPage() {
                 <BadgeRussianRuble size={20} className="text-primary" />
               </div>
               <p className="text-sm leading-6 text-muted">{description}</p>
-              <div className="text-sm font-medium text-foreground">Цена редактируется в базе</div>
+              <div className="text-sm font-medium text-primary">Стоимость появится до запуска оплаты</div>
             </Card>
           ))}
         </div>
@@ -46,17 +44,16 @@ export default function PricingPage() {
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ShieldAlert size={18} className="text-warning" />
-              Реальный запуск заблокирован
+              Оплата не включена
             </div>
             <p className="text-sm leading-6 text-muted">
-              До боевого биллинга нужно подтвердить провайдера оплаты, юридическое лицо, чеки, возвраты, отмену подписки,
-              документы приватности и оферты, RLS и проверку восстановления из бэкапа.
+              MediaHub не будет показывать фиктивную покупку. Подписка появится после готовности оплаты, чеков, возвратов и прозрачных условий отмены.
             </p>
           </Card>
           <div className="flex items-center">
             <Button asChild>
               <Link href="/app/billing">
-                Открыть биллинг
+                Мой текущий тариф
                 <ArrowRight size={16} />
               </Link>
             </Button>

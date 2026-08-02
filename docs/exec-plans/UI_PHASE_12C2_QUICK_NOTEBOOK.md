@@ -2,7 +2,9 @@
 
 ## Status
 
-Implemented and accepted locally on 2026-08-01. Production remains unchanged until the owner separately confirms deployment.
+Implemented, accepted locally, and deployed to production on 2026-08-01 in release `20260801-190837-phase12c`. The follow-up below is roadmap scope only and is not implemented in production.
+
+Follow-up status on 2026-08-02: UI Phase 12E.1 implements the top-level `Надиктовать заметку` action locally with atomic note creation after successful STT. Production still exposes voice only inside an already saved note card until a separately approved deployment.
 
 ## Goal
 
@@ -49,6 +51,15 @@ Add a workspace-scoped idea inbox that is always reachable from the authenticate
 - Browser offline recovery can conflict with a newer server version; never overwrite silently after a 409.
 - STT or object storage may be temporarily unavailable; typed notes remain fully usable and audio stays visibly pending/error.
 - Appending to a generated material must not mutate platform variants silently; it only updates the source block and requires an explicit rebuild by the user.
+
+## Voice follow-up status
+
+- Implemented locally in UI Phase 12E.1: put `Надиктовать заметку` directly in the quick-capture card and create one accepted note only after successful transcription.
+- Implemented locally in UI Phase 12E.1: do not leave an empty note after empty audio or provider failure and do not duplicate a note when its transcript arrives.
+- Replace the notebook route's provider-specific synchronous call with the shared `SpeechToTextProvider` contract and an asynchronous worker job.
+- Benchmark Faster Whisper `small/int8` with VAD and one concurrent CPU job in an isolated, resource-limited container; keep OpenAI transcription as fallback.
+- Preserve raw and corrected text separately, make semantic cleanup explicit, and account for duration, latency, provider usage, fallback, and cost.
+- Treat `193.188.23.65` only as a candidate shared host. No install, port, tunnel, Docker, Nginx, database, or volume change is authorized by this roadmap entry.
 
 ## Rollback
 

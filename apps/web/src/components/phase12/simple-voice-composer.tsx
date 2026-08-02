@@ -455,7 +455,7 @@ export function SimpleVoiceComposer({
       ? "Материал открыт из истории. Поправьте исходный текст и нажмите «Пересобрать версии»."
       : viewModel.modeLabel === "api"
       ? "Выберите проект, при необходимости рубрику, и нажмите микрофон."
-      : "Сейчас открыт пример интерфейса. Для записи нужен доступный API.",
+      : "В демонстрации запись отключена. В рабочем кабинете микрофон будет доступен.",
   );
   const [segments, setSegments] = useState<Segment[]>([]);
   const [transcript, setTranscript] = useState(resumeDraft?.transcript ?? "");
@@ -1147,20 +1147,21 @@ export function SimpleVoiceComposer({
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl min-w-0 gap-5" data-testid="simple-voice-composer">
-      <section className="hidden min-w-0 gap-4 rounded-2xl bg-primary p-4 text-primary-foreground shadow-panel sm:grid sm:p-6">
+    <div className="mx-auto grid w-full max-w-[1450px] min-w-0 gap-5" data-testid="simple-voice-composer">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-start">
+      <section className="grid min-w-0 gap-4 rounded-2xl border border-border bg-sidebar p-4 text-sidebar-foreground shadow-panel sm:p-6 lg:col-start-1 lg:row-start-1">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <Badge className="bg-white/15 text-white">Создать материал</Badge>
-            <h1 className="mt-3 break-words text-2xl font-semibold leading-tight sm:text-3xl">
-              Надиктуйте один раз — получите версии для площадок
+            <Badge tone="success">Голосовая студия</Badge>
+            <h1 className="font-editorial mt-3 break-words text-4xl leading-tight text-foreground sm:text-5xl">
+              Расскажите идею — остальное мы соберём.
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/80">
-              Общие правила проекта работают всегда. Рубрика добавляет отдельную структуру и примеры, если она выбрана.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+              Говорите свободно. Получите готовую версию для каждой выбранной площадки.
             </p>
           </div>
           {contentId ? (
-            <Button asChild className="bg-white text-primary hover:bg-white/90" size="sm" variant="secondary">
+            <Button asChild size="sm" variant="secondary">
               <Link href={`/app/content/${contentId}`}>Расширенный режим</Link>
             </Button>
           ) : null}
@@ -1168,18 +1169,18 @@ export function SimpleVoiceComposer({
       </section>
 
       {viewModel.notice ? (
-        <div className="rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3 text-sm leading-6 text-muted">
+        <div className="rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3 text-sm leading-6 text-muted lg:col-start-1">
           {viewModel.notice}
         </div>
       ) : null}
 
       {resumeDraft ? (
-        <div className="rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-3 text-sm leading-6 text-foreground" data-testid="resume-history-notice">
+        <div className="rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-3 text-sm leading-6 text-foreground lg:col-start-1" data-testid="resume-history-notice">
           Вы продолжаете сохранённый материал. Исходник, фотографии и готовые версии уже на месте; новая доработка сохранится как следующая ревизия того же материала.
         </div>
       ) : null}
 
-      <Card className="grid min-w-0 gap-4 p-4 sm:p-5">
+      <Card className="order-3 grid min-w-0 gap-4 p-4 sm:p-5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-7">
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-foreground">
             Проект
@@ -1252,7 +1253,7 @@ export function SimpleVoiceComposer({
               {selectedPlatforms.length === platformOptions.length ? "Снять все" : "Выбрать все"}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2">
             {platformOptions.map((platform) => {
               const selected = selectedPlatforms.includes(platform.key);
               return (
@@ -1260,7 +1261,7 @@ export function SimpleVoiceComposer({
                   aria-pressed={selected}
                   className={
                     selected
-                      ? "flex min-w-0 items-center gap-2 rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_92%)] p-2.5 text-left sm:p-3"
+                      ? "flex min-w-0 items-center gap-2 rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-2.5 text-left sm:p-3"
                       : "flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background p-2.5 text-left sm:p-3"
                   }
                   key={platform.key}
@@ -1273,7 +1274,7 @@ export function SimpleVoiceComposer({
                     )
                   }
                 >
-                  <span className={selected ? "grid size-5 shrink-0 place-items-center rounded bg-primary text-white" : "size-5 shrink-0 rounded border border-border"}>
+                  <span className={selected ? "grid size-5 shrink-0 place-items-center rounded bg-success text-background" : "size-5 shrink-0 rounded border border-border"}>
                     {selected ? <Check size={13} /> : null}
                   </span>
                   <span className="min-w-0">
@@ -1300,7 +1301,7 @@ export function SimpleVoiceComposer({
                 <button
                   aria-pressed={instagramFormat === format}
                   className={instagramFormat === format
-                    ? "rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_92%)] p-2 text-left"
+                    ? "rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-2 text-left"
                     : "rounded-lg border border-border bg-background p-2 text-left"}
                   key={format}
                   type="button"
@@ -1327,6 +1328,16 @@ export function SimpleVoiceComposer({
           <span><span className="font-semibold text-foreground">Длина этого поста</span><span className="ml-2 text-muted">{({ auto: "Авто по правилам", short: "Короткий", normal: "Обычный", detailed: "Подробный", exact: "Точно" } as Record<LengthMode, string>)[lengthMode]}</span></span>
           <span className="text-primary">Изменить</span>
         </button>
+        <Button
+          className="h-12 w-full text-base"
+          disabled={isAssembling || !transcript.trim() || !selectedPlatforms.length || !canUseApi || Boolean(instagramFormatIssue())}
+          type="button"
+          onClick={() => void assembleVersions()}
+        >
+          {isAssembling ? <Loader2 className="animate-spin" size={18} /> : <WandSparkles size={18} />}
+          Подготовить {selectedPlatforms.length || 0} {selectedPlatforms.length === 1 ? "версию" : selectedPlatforms.length < 5 ? "версии" : "версий"}
+        </Button>
+        <p className="text-center text-xs leading-5 text-muted">Сначала вы увидите результат. Ничего не публикуется автоматически.</p>
       </Card>
 
       {lengthSheetOpen ? (
@@ -1335,7 +1346,7 @@ export function SimpleVoiceComposer({
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold text-foreground" id="length-sheet-title">Длина этого поста</h2><p className="mt-1 text-sm leading-6 text-muted">Меняет только текущую сборку. Правила проекта и рубрики сохраняются.</p></div><button aria-label="Закрыть" className="p-2 text-muted" type="button" onClick={() => setLengthSheetOpen(false)}><X size={20} /></button></div>
             <div className="grid grid-cols-2 gap-2">
               {([['auto', 'Авто по правилам'], ['short', 'Короткий'], ['normal', 'Обычный'], ['detailed', 'Подробный'], ['exact', 'Точно']] as Array<[LengthMode, string]>).map(([mode, label]) => (
-                <button aria-pressed={lengthMode === mode} className={lengthMode === mode ? "rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_92%)] p-3 text-left text-sm font-semibold" : "rounded-lg border border-border p-3 text-left text-sm"} key={mode} type="button" onClick={() => setLengthMode(mode)}>{label}</button>
+                <button aria-pressed={lengthMode === mode} className={lengthMode === mode ? "rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-3 text-left text-sm font-semibold" : "rounded-lg border border-border p-3 text-left text-sm"} key={mode} type="button" onClick={() => setLengthMode(mode)}>{label}</button>
               ))}
             </div>
             {lengthMode === "exact" ? (
@@ -1351,12 +1362,15 @@ export function SimpleVoiceComposer({
         </div>
       ) : null}
 
-      <Card className="grid min-w-0 gap-4 overflow-hidden p-4 sm:p-6">
-        <div className="text-center">
-          <div className="text-lg font-semibold text-foreground">Диктовка — главный вход</div>
-          <p className="mt-1 text-sm text-muted">Можно записать один фрагмент или несколько по очереди.</p>
+      <Card className="order-2 grid min-w-0 gap-4 overflow-hidden p-4 sm:p-6 lg:order-none lg:col-start-1 lg:row-start-2">
+        <div className="order-1 text-left">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-lg font-semibold text-foreground">Ваш голосовой черновик</div>
+            <span className="flex items-center gap-2 text-xs text-muted"><span className="size-2 rounded-full bg-success" />{captureState === "recording" ? "Идёт запись" : "Можно продолжить в любой момент"}</span>
+          </div>
+          <p className="mt-1 text-sm text-muted">Надиктуйте всё сразу или добавляйте фрагменты по очереди.</p>
         </div>
-        <div className="flex justify-center">
+        <div className="order-2 flex justify-center border-t border-border pt-5 lg:order-3">
           <button
             aria-label="Начать диктовку"
             className="grid size-28 place-items-center rounded-full bg-accent text-accent-foreground shadow-popover transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 sm:size-32"
@@ -1371,7 +1385,7 @@ export function SimpleVoiceComposer({
             )}
           </button>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="order-4 flex flex-wrap justify-center gap-2">
           <Button disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={pauseRecording}>
             <Pause size={15} />
             Пауза
@@ -1389,15 +1403,15 @@ export function SimpleVoiceComposer({
           aria-live="polite"
           className={
             captureState === "error"
-              ? "rounded-lg border border-danger bg-[color-mix(in_srgb,var(--danger),transparent_94%)] p-3 text-sm leading-6 text-danger"
-              : "rounded-lg border border-border bg-surface-muted p-3 text-sm leading-6 text-muted"
+              ? "order-5 rounded-lg border border-danger bg-[color-mix(in_srgb,var(--danger),transparent_94%)] p-3 text-sm leading-6 text-danger"
+              : "order-5 rounded-lg border border-border bg-surface-muted p-3 text-sm leading-6 text-muted"
           }
         >
           {message}
         </div>
 
         {segments.length ? (
-          <div className="grid gap-2">
+          <div className="order-6 grid gap-2">
             <div className="text-sm font-semibold text-foreground">Фрагменты</div>
             {segments.map((segment) => (
               <div className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border bg-background p-3" key={segment.id}>
@@ -1413,12 +1427,10 @@ export function SimpleVoiceComposer({
           </div>
         ) : null}
 
-        <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+        <label className="order-3 grid min-w-0 gap-2 text-sm font-semibold text-foreground lg:order-2">
           Общая расшифровка
           <span className="text-xs font-normal leading-5 text-muted">
-            Для точной первой сборки назовите: заведение и адрес, блюдо, цену и вес,
-            атмосферу, упаковку, вкус и захотите ли заказать снова. Четыре оценки ИИ предложит
-            сам по вашей диктовке; вы сможете их поправить.
+            Говорите естественно: назовите важные факты, личный вывод и то, что нельзя потерять. Текст можно поправить вручную до сборки.
           </span>
           <textarea
             id="voice-transcript"
@@ -1428,7 +1440,7 @@ export function SimpleVoiceComposer({
             onChange={(event) => updateTranscript(event.currentTarget.value)}
           />
         </label>
-        <div className="flex min-w-0 flex-wrap gap-2">
+        <div className="order-7 flex min-w-0 flex-wrap gap-2">
           {currentJobId ? (
             <Button type="button" onClick={() => void acceptTranscript(false)}>
               <Check size={16} />
@@ -1459,7 +1471,7 @@ export function SimpleVoiceComposer({
             />
           </label>
         </div>
-        <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-surface-muted p-4" data-testid="photo-upload-section">
+        <div className="order-8 grid min-w-0 gap-3 rounded-xl border border-border bg-surface-muted p-4" data-testid="photo-upload-section">
           <div className="flex min-w-0 items-start gap-3">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-background text-primary">
               <Images size={20} />
@@ -1470,8 +1482,7 @@ export function SimpleVoiceComposer({
                 {mediaCount ? <Badge tone="success">добавлено: {mediaCount}</Badge> : null}
               </div>
               <p className="mt-1 text-xs leading-5 text-muted">
-                Добавьте фото блюда, чек, меню, интерьер или видео для Reel. До 10 файлов; первые 3 ИИ
-                использует как подсказку при сборке. Цены и надписи обязательно проверьте.
+                Добавьте фотографии или видео, если они нужны выбранному формату. До 10 файлов; первые 3 помогают ИИ понять контекст. Надписи и факты обязательно проверьте.
               </p>
             </div>
           </div>
@@ -1497,7 +1508,7 @@ export function SimpleVoiceComposer({
           </div>
         </div>
         <Button
-          className="h-12 w-full text-base"
+          className="order-9 h-12 w-full text-base"
           disabled={isAssembling || !transcript.trim() || !selectedPlatforms.length || !canUseApi || Boolean(instagramFormatIssue())}
           type="button"
           onClick={() => void assembleVersions()}
@@ -1506,6 +1517,7 @@ export function SimpleVoiceComposer({
           {resumeDraft ? "Пересобрать версии" : "Собрать версии"}
         </Button>
       </Card>
+      </div>
 
       {selectedPlatforms.some((key) => results[key].status !== "idle") ? (
         <Card className="scroll-mt-20 grid min-w-0 gap-4 p-4 sm:p-5" data-testid="platform-results" id="platform-results">

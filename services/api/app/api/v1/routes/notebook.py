@@ -85,6 +85,12 @@ class NoteTranscribeRequest(BaseModel):
     mock_transcript: str | None = None
 
 
+class NoteTranscribeNewRequest(NoteTranscribeRequest):
+    workspace_id: UUID
+    body: str = Field(default="", max_length=50_000)
+    kind: str | None = None
+
+
 class NoteTranscriptionOut(BaseModel):
     id: UUID
     note_id: UUID
@@ -153,6 +159,33 @@ def transcription_out(run: NotebookTranscription) -> NoteTranscriptionOut:
         corrected_text=run.corrected_text,
         accepted_at=run.accepted_at.isoformat() if run.accepted_at else None,
     )
+
+
+async def resolve_note_transcript(
+    payload: NoteTranscribeRequest,
+    media: MediaAsset,
+    request: Request,
+    settings: Settings,
+) -> tuple[str, dict[str, Any], str]:
+    provider = settings.stt_provider if payload.provider_key == "default" else payload.provider_key
+    provider = provider.strip().lower()
+    if provider == "mock":
+        transcript = (payload.mock_transcript or "Новая голосовая заметка").strip()
+        confidence: dict[str, Any] = {"provider": "mock", "mock": True}
+    elif provider == "openai":
+        if payload.mock_transcript:
+            raise api_error(422, "mock_transcript_not_allowed", "Mock text is only allowed for mock STT.", request=request)
+        try:
+            transcript, confidence = await transcribe_with_openai(
+                settings, media, fetch_s3_object_bytes(settings, media)
+            )
+        except ContentProviderError as exc:
+            raise api_error(503, exc.code, exc.message, request=request) from exc
+    else:
+        raise api_error(503, "stt_provider_unavailable", "Requested STT provider is unavailable.", request=request)
+    if not transcript:
+        raise api_error(422, "notebook_transcript_empty", "Voice transcript is empty.", request=request)
+    return transcript, confidence, provider
 
 
 async def note_for_actor(
@@ -310,6 +343,57 @@ async def create_note(
     return note_out(note)
 
 
+@router.post("/notebook/transcribe-new", response_model=NoteOut, status_code=status.HTTP_201_CREATED)
+async def transcribe_new_note(
+    payload: NoteTranscribeNewRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> NoteOut:
+    _, membership = await require_workspace_membership(payload.workspace_id, request, actor, db)
+    require_role(membership, CONTENT_MUTATION_ROLES, request)
+    validate_kind(payload.kind, request)
+    media = await db.get(MediaAsset, payload.media_id)
+    if media is None or media.deleted_at is not None or media.workspace_id != payload.workspace_id:
+        raise api_error(404, "media_not_found", "Media asset not found.", request=request)
+    if media.kind not in {"audio", "voice"} or media.upload_status != "uploaded":
+        raise api_error(422, "media_not_voice", "An uploaded voice or audio asset is required.", request=request)
+
+    transcript, confidence, provider = await resolve_note_transcript(payload, media, request, settings)
+    body = "\n\n".join(part for part in (payload.body.strip(), transcript.strip()) if part)
+    if len(body) > 50_000:
+        raise api_error(422, "notebook_note_too_long", "Notebook note is too long.", request=request)
+
+    now = utc_now()
+    note = NotebookNote(
+        id=uuid4(), workspace_id=payload.workspace_id, author_id=actor.user.id,
+        body=body, kind=payload.kind, created_at=now, updated_at=now, version=1,
+    )
+    run = NotebookTranscription(
+        id=uuid4(), workspace_id=payload.workspace_id, note_id=note.id,
+        media_asset_id=media.id, provider_key=provider, status="accepted",
+        transcript_text=transcript, corrected_text=transcript,
+        confidence_json=confidence, accepted_at=now, accepted_by=actor.user.id,
+        created_by=actor.user.id, created_at=now, updated_at=now,
+    )
+    media.retention_until = now + timedelta(days=7)
+    media.processing_status = "completed"
+    media.updated_at = now
+    db.add(note)
+    db.add(run)
+    db.add(
+        UsageEvent(
+            id=uuid4(), workspace_id=payload.workspace_id, key="notebook_stt_request",
+            quantity=1, source=provider,
+            metadata_json={"note_id": str(note.id), "media_id": str(media.id)},
+            created_at=now,
+        )
+    )
+    await db.commit()
+    return note_out(note)
+
+
 @router.patch("/notebook/{note_id}", response_model=NoteOut)
 async def update_note(
     note_id: UUID,
@@ -384,22 +468,7 @@ async def transcribe_note(
         raise api_error(404, "media_not_found", "Media asset not found.", request=request)
     if media.kind not in {"audio", "voice"} or media.upload_status != "uploaded":
         raise api_error(422, "media_not_voice", "An uploaded voice or audio asset is required.", request=request)
-    provider = settings.stt_provider if payload.provider_key == "default" else payload.provider_key
-    provider = provider.strip().lower()
-    if provider == "mock":
-        transcript = payload.mock_transcript or "Новая голосовая заметка"
-        confidence: dict[str, Any] = {"provider": "mock", "mock": True}
-    elif provider == "openai":
-        if payload.mock_transcript:
-            raise api_error(422, "mock_transcript_not_allowed", "Mock text is only allowed for mock STT.", request=request)
-        try:
-            transcript, confidence = await transcribe_with_openai(
-                settings, media, fetch_s3_object_bytes(settings, media)
-            )
-        except ContentProviderError as exc:
-            raise api_error(503, exc.code, exc.message, request=request) from exc
-    else:
-        raise api_error(503, "stt_provider_unavailable", "Requested STT provider is unavailable.", request=request)
+    transcript, confidence, provider = await resolve_note_transcript(payload, media, request, settings)
     now = utc_now()
     run = NotebookTranscription(
         id=uuid4(), workspace_id=note.workspace_id, note_id=note.id,

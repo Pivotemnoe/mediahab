@@ -3501,6 +3501,47 @@
         }
       }
     },
+    "/api/v1/notebook/transcribe-new": {
+      "post": {
+        "tags": [
+          "notebook"
+        ],
+        "summary": "Transcribe New Note",
+        "operationId": "transcribe_new_note_api_v1_notebook_transcribe_new_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteTranscribeNewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notebook/{note_id}": {
       "patch": {
         "tags": [
@@ -8962,6 +9003,59 @@
           "version"
         ],
         "title": "NotePatchRequest"
+      },
+      "NoteTranscribeNewRequest": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Media Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key",
+            "default": "default"
+          },
+          "mock_transcript": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mock Transcript"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 50000,
+            "title": "Body",
+            "default": ""
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "workspace_id"
+        ],
+        "title": "NoteTranscribeNewRequest"
       },
       "NoteTranscribeRequest": {
         "properties": {

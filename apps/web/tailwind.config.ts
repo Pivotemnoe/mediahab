@@ -24,6 +24,7 @@ const config: Config = {
         ink: "var(--foreground)",
         line: "var(--border)",
         accent: "var(--primary)",
+        "accent-foreground": "var(--accent-foreground)",
       },
       borderRadius: {
         xs: "var(--radius-xs)",

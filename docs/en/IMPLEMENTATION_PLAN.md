@@ -25,6 +25,21 @@ Acceptance:
 
 Sequence this slice before advanced autopublication. Per-platform feedback and learned style may later use the final material produced from a note, but a raw private note is never treated as an approved style example automatically.
 
+### Notebook follow-up — one-tap dictation and self-hosted speech recognition
+
+Local status on 2026-08-02: UI Phase 12E.1 adds `Надиктовать заметку` to the quick capture card. The browser uploads audio first and the API creates exactly one accepted note only after successful transcription; a failed provider call leaves no empty or duplicate note. Production still runs the earlier text-first quick card until a separately approved deployment.
+
+Remaining notebook slice:
+
+- Extend the current recording/transcribing/saved states with explicit upload progress, fallback-provider disclosure, and a retry action.
+- Keep literal transcription as the default. Optional deterministic cleanup may normalize punctuation, obvious repetitions, and filler words while preserving both the raw transcript and the corrected note text. Semantic rewriting remains an explicit later action.
+- Move notebook transcription behind the canonical `SpeechToTextProvider` interface and an asynchronous worker job instead of calling an OpenAI-specific helper from the notebook route.
+- Add a self-hosted Faster Whisper adapter, initially benchmarked with multilingual `small`, CPU `int8`, VAD, one concurrent job, and a project/workspace glossary. Keep `gpt-4o-mini-transcribe` as a controlled fallback.
+- Record audio duration, provider/model, latency, fallback reason, provider usage, and estimated cost so the product can compare local compute with paid transcription honestly.
+- Before enabling the local adapter, benchmark Russian notes on an isolated container with hard CPU/RAM limits and no access to existing application databases or volumes. The shared VPS at `193.188.23.65` is only a candidate host; installation or routing requires a separate production preflight and owner approval.
+
+Acceptance for the remaining local-provider slice includes successful fallback, unchanged project/rubric rules, and zero OpenAI transcription usage when the local provider succeeds. The 390 px quick-capture flow and duplicate protection are already covered by UI Phase 12E.1.
+
 ## Near-term roadmap — rich-text links and bounded content storage
 
 This is roadmap scope only. Do not implement it inside Phase 12A.4 or change production until the owner approves a separate execution slice.

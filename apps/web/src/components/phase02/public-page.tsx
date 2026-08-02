@@ -25,13 +25,13 @@ export function PublicPage({
 }: PublicPageProps) {
   return (
     <MarketingShell>
-      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10 lg:grid-cols-[1fr_360px]">
+      <section className="mx-auto grid max-w-[1200px] gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_400px] lg:px-10">
         <div className="flex flex-col justify-center gap-5">
           <Badge tone="success" className="w-fit">
             {eyebrow}
           </Badge>
           <div>
-            <h1 className="max-w-3xl text-4xl font-semibold text-ink sm:text-5xl">
+            <h1 className="font-editorial max-w-3xl text-4xl leading-tight text-ink sm:text-6xl">
               {title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">

@@ -19,7 +19,7 @@ export async function getNotebookViewModel(): Promise<NotebookViewModel> {
   if (getDataMode() !== "api") {
     return {
       contentItems: [],
-      notice: "Блокнот работает только с реальными данными API.",
+      notice: "В демонстрации заметки не сохраняются. После входа блокнот будет доступен полностью.",
       notes: [],
       projects: [],
       workspaceId: null,
