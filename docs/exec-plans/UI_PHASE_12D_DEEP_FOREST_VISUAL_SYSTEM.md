@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and verified on 2026-08-01 after the product owner selected the third visual direction: a dark pine base, mineral-green states, warm ivory copy, and restrained brass actions.
+Implemented locally on 2026-08-01 and deployed to production on 2026-08-02 in release `20260802-062724-phase12e1-deep-forest` after the product owner selected the third visual direction: a dark pine base, mineral-green states, warm ivory copy, and restrained brass actions.
 
 ## Goal
 
@@ -87,4 +87,5 @@ Revert this plan, the shared visual tokens, the public-home composition, auth/ap
 - Verified the public home at 390, 768, 1440, and 1920 px and six authenticated routes at the same four widths. All checked pages had no horizontal overflow.
 - Verified the landing CTA, quick-create palette, platform selection, and Instagram format picker. Microphone permission was not accepted during automated inspection because it requires an explicit user decision.
 - `make lint`, `make typecheck`, `make test` (97 API tests plus UI hardening checks), and `pnpm --filter @temichev/web build` passed. The initial concurrent typecheck/build attempt exposed a transient `.next/types` race; the sequential typecheck after the build passed.
-- No migration, OpenAPI regeneration, production deployment, external publication, or production-data change was required.
+- No migration, external publication, or production-data change was required.
+- The owner separately approved an application-only production deployment. Public home and health returned HTTP 200; PostgreSQL and Redis container IDs and all recorded row counts remained unchanged.

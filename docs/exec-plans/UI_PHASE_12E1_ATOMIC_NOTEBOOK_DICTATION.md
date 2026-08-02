@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and verified locally on 2026-08-02. Production remains unchanged.
+Implemented, verified, and deployed to production on 2026-08-02 in release `20260802-062724-phase12e1-deep-forest` after separate owner approval.
 
 ## Goal
 
@@ -66,7 +66,7 @@ Revert this plan and translation, the new static notebook API operation, the foc
 
 ## Production boundary
 
-No production action is authorized by this plan. After local verification, provide the owner with the exact application-only deploy scope, backup, health checks, and rollback target and wait for separate confirmation.
+No production action was authorized by the implementation plan itself. After local verification, the owner received the exact application-only scope, backup, health checks, and rollback target and separately confirmed deployment.
 
 ## Completion notes
 
@@ -74,4 +74,6 @@ No production action is authorized by this plan. After local verification, provi
 - The quick card now shows `Надиктовать заметку`, `Закончить запись`, and `Расшифровываю…` and blocks duplicate actions while processing.
 - Successful mock STT creates one note, one accepted transcription, one usage event, and seven-day raw-audio retention. Provider failure and foreign-workspace media create no note.
 - OpenAPI, lint, typecheck, focused and full tests, E2E contract smoke, production web build, local migrations/seeds, API-backed in-app Browser checks at 390 and 1440 px, console/overflow checks, and `git diff --check` passed.
-- The actual in-app microphone permission and external OpenAI response were not invoked during the browser audit. The existing OpenAI proxy suite passed; an owner-spoken smoke is reserved for the separately approved production deployment.
+- The actual in-app microphone permission and external OpenAI response were not invoked during the automated browser audit. An owner-spoken production smoke remains the final manual acceptance check.
+- Release `20260802-062724-phase12e1-deep-forest` deployed commit `b425483` directly to RU host `89.169.46.92`, without the NL SSH tunnel. The backup and rollback evidence are under `/var/backups/media-hub/20260802-062724-phase12e1-deep-forest`.
+- Public home and health returned HTTP 200, the new OpenAPI route was present in the running API, logs contained no application errors, and PostgreSQL/Redis container IDs plus recorded row counts remained unchanged.

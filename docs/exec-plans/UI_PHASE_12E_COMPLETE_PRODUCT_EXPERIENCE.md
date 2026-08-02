@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented locally on 2026-08-02. No production deployment, backend mutation, database migration, or publication action was performed.
+Implemented locally and deployed to production on 2026-08-02 in release `20260802-062724-phase12e1-deep-forest`. No database migration, publication action, connector change, or production-data mutation was performed.
 
 ## Goal
 
@@ -94,3 +94,4 @@ Revert this plan and its Russian translation, the sidebar/navigation additions, 
 - The create screen follows the approved voice-studio composition and keeps per-platform selection and length controls explicit.
 - `make lint`, `make typecheck`, `make test`, the production web build, in-app Browser responsive/interaction inspection, the final visual comparison, and `git diff --check` passed. The visual evidence is recorded in `design-qa.md`.
 - No migration was required. Existing API, publication, authentication, and human-approval behavior remains unchanged.
+- The owner separately approved the application-only release. Public home and health returned HTTP 200 and the stateful PostgreSQL/Redis containers remained unchanged.

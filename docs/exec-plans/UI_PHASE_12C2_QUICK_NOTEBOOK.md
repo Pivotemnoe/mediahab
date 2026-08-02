@@ -4,7 +4,7 @@
 
 Implemented, accepted locally, and deployed to production on 2026-08-01 in release `20260801-190837-phase12c`. The follow-up below is roadmap scope only and is not implemented in production.
 
-Follow-up status on 2026-08-02: UI Phase 12E.1 implements the top-level `Надиктовать заметку` action locally with atomic note creation after successful STT. Production still exposes voice only inside an already saved note card until a separately approved deployment.
+Follow-up status on 2026-08-02: UI Phase 12E.1 deployed the top-level `Надиктовать заметку` action with atomic note creation after successful STT in release `20260802-062724-phase12e1-deep-forest`.
 
 ## Goal
 
