@@ -92,3 +92,4 @@ Browser storage uses an IndexedDB object store dedicated to notebook capture. En
 - The managed offline browser smoke physically stopped the local Next.js server. The cached neutral shell opened at both widths; at 390 px, one typed note and one fake microphone recording remained in IndexedDB, including the audio Blob.
 - A freshly rebuilt local API passed `/api/v1/health/ready`. PostgreSQL control counts were unchanged after the API-only restart: 4 users, 4 workspaces, and 1 notebook note.
 - No database migration is present or required.
+- Production authenticated acceptance exposed a server/client timezone mismatch in note timestamps. The timestamp now renders a stable placeholder during hydration and formats in the device timezone only after mount, removing the React hydration error without fixing the product to one tenant timezone.

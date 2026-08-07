@@ -100,6 +100,21 @@ function savedLabel(state: SaveState): string {
   }[state];
 }
 
+function LocalNotebookTimestamp({ value }: { value: string }) {
+  const [label, setLabel] = useState("—");
+
+  useEffect(() => {
+    setLabel(new Intl.DateTimeFormat("ru-RU", {
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "short",
+    }).format(new Date(value)));
+  }, [value]);
+
+  return <span className="text-xs text-muted">{label}</span>;
+}
+
 async function uploadVoiceMedia({ blob, workspaceId }: { blob: Blob; workspaceId: string }): Promise<string> {
   const mimeType = blob.type || "audio/webm";
   const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
@@ -327,9 +342,7 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={note.pinned ? "success" : "neutral"}>{kindLabel(kind)}</Badge>
-          <span className="text-xs text-muted">
-            {new Intl.DateTimeFormat("ru-RU", { day: "numeric", hour: "2-digit", minute: "2-digit", month: "short" }).format(new Date(note.updated_at))}
-          </span>
+          <LocalNotebookTimestamp value={note.updated_at} />
         </div>
         <span aria-live="polite" className="text-xs text-muted">{savedLabel(saveState)}</span>
       </div>
