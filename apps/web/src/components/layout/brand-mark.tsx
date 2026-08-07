@@ -7,29 +7,28 @@ type BrandMarkProps = {
   compact?: boolean;
   href?: string;
   inverted?: boolean;
+  showTagline?: boolean;
 };
 
-export function BrandMark({ compact, href = "/", inverted }: BrandMarkProps) {
-  const hasHubSuffix = brand.productName.toLowerCase().endsWith("hub");
-  const namePrefix = hasHubSuffix ? brand.productName.slice(0, -3) : brand.productName;
-  const nameAccent = hasHubSuffix ? brand.productName.slice(-3) : "";
-
+export function BrandMark({ compact, href = "/", inverted, showTagline = true }: BrandMarkProps) {
   return (
     <Link className="inline-flex min-h-10 items-center gap-3" href={href}>
+      <img
+        alt=""
+        aria-hidden="true"
+        className={cn(compact ? "h-10 w-10" : "h-10 w-14", "shrink-0 object-contain")}
+        src={brand.logoUrl}
+      />
       {!compact ? (
-        <span className="grid gap-1">
-          <span className={cn("text-xl font-semibold leading-none tracking-[-0.04em] text-foreground", inverted && "text-sidebar-foreground")}>
-            {namePrefix}<span className="text-success">{nameAccent}</span>
+        <span className="grid min-w-0 gap-1">
+          <span className={cn("whitespace-nowrap text-lg font-semibold leading-none tracking-[-0.04em] text-foreground", inverted && "text-sidebar-foreground")}>
+            {brand.productName}
           </span>
-          <span className={cn("hidden text-[10px] uppercase tracking-[0.18em] text-muted sm:block", inverted && "text-sidebar-foreground/55")}>
-            голос · стиль · площадки
-          </span>
+          {showTagline ? <span className={cn("hidden max-w-56 text-[9px] font-medium leading-tight text-muted sm:block", inverted && "text-sidebar-foreground/55")}>
+            {brand.tagline}
+          </span> : null}
         </span>
-      ) : (
-        <span className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-surface text-xs font-bold text-success">
-          {brand.logoMark}
-        </span>
-      )}
+      ) : null}
     </Link>
   );
 }

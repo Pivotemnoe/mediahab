@@ -140,9 +140,12 @@ try {
   const version = await fetchJson(`http://127.0.0.1:${cdpPort}/json/version`);
   const browser = await CdpClient.connect(version.webSocketDebuggerUrl);
   const checks = [];
+  const selectedNames = new Set((process.env.PREMIUM_APP_FLOW_ROUTES ?? routeChecks.map((route) => route.name).join(",")).split(",").map((value) => value.trim()));
+  const selectedRoutes = routeChecks.filter((route) => selectedNames.has(route.name));
+  const widths = (process.env.PREMIUM_APP_FLOW_WIDTHS ?? "390,768,1440,1920").split(",").map((value) => Number(value.trim()));
 
-  for (const width of [390, 768, 1440, 1920]) {
-    for (const route of routeChecks) {
+  for (const width of widths) {
+    for (const route of selectedRoutes) {
       checks.push(await runRouteCheck(browser, route, width));
     }
   }

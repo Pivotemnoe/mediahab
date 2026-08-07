@@ -51,6 +51,7 @@ class NoteCreateRequest(BaseModel):
     workspace_id: UUID
     body: str = Field(default="", max_length=50_000)
     kind: str | None = None
+    client_note_id: UUID | None = None
 
 
 class NotePatchRequest(BaseModel):
@@ -89,6 +90,7 @@ class NoteTranscribeNewRequest(NoteTranscribeRequest):
     workspace_id: UUID
     body: str = Field(default="", max_length=50_000)
     kind: str | None = None
+    client_note_id: UUID | None = None
 
 
 class NoteTranscriptionOut(BaseModel):
@@ -235,6 +237,22 @@ def validate_kind(kind: str | None, request: Request) -> None:
         raise api_error(422, "notebook_kind_invalid", "Notebook note kind is invalid.", request=request)
 
 
+async def existing_client_note(
+    client_note_id: UUID | None,
+    workspace_id: UUID,
+    request: Request,
+    db: AsyncSession,
+) -> NotebookNote | None:
+    if client_note_id is None:
+        return None
+    note = await db.get(NotebookNote, client_note_id)
+    if note is None:
+        return None
+    if note.workspace_id != workspace_id:
+        raise api_error(404, "notebook_note_not_found", "Notebook note not found.", request=request)
+    return note
+
+
 def flatten_ui_fields(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for field in fields:
@@ -333,13 +351,23 @@ async def create_note(
     _, membership = await require_workspace_membership(payload.workspace_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
     validate_kind(payload.kind, request)
+    existing = await existing_client_note(payload.client_note_id, payload.workspace_id, request, db)
+    if existing is not None:
+        return note_out(existing)
     now = utc_now()
     note = NotebookNote(
-        id=uuid4(), workspace_id=payload.workspace_id, author_id=actor.user.id,
+        id=payload.client_note_id or uuid4(), workspace_id=payload.workspace_id, author_id=actor.user.id,
         body=payload.body, kind=payload.kind, created_at=now, updated_at=now, version=1,
     )
     db.add(note)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = await existing_client_note(payload.client_note_id, payload.workspace_id, request, db)
+        if existing is None:
+            raise
+        return note_out(existing)
     return note_out(note)
 
 
@@ -354,6 +382,9 @@ async def transcribe_new_note(
     _, membership = await require_workspace_membership(payload.workspace_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
     validate_kind(payload.kind, request)
+    existing = await existing_client_note(payload.client_note_id, payload.workspace_id, request, db)
+    if existing is not None:
+        return note_out(existing)
     media = await db.get(MediaAsset, payload.media_id)
     if media is None or media.deleted_at is not None or media.workspace_id != payload.workspace_id:
         raise api_error(404, "media_not_found", "Media asset not found.", request=request)
@@ -367,7 +398,7 @@ async def transcribe_new_note(
 
     now = utc_now()
     note = NotebookNote(
-        id=uuid4(), workspace_id=payload.workspace_id, author_id=actor.user.id,
+        id=payload.client_note_id or uuid4(), workspace_id=payload.workspace_id, author_id=actor.user.id,
         body=body, kind=payload.kind, created_at=now, updated_at=now, version=1,
     )
     run = NotebookTranscription(
@@ -390,7 +421,14 @@ async def transcribe_new_note(
             created_at=now,
         )
     )
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = await existing_client_note(payload.client_note_id, payload.workspace_id, request, db)
+        if existing is None:
+            raise
+        return note_out(existing)
     return note_out(note)
 
 

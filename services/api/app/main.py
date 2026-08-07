@@ -15,7 +15,7 @@ def create_app() -> FastAPI:
     configure_logging(settings.app_env)
 
     app = FastAPI(
-        title="Медиа-хаб API",
+        title="Наговори API",
         version="0.1.0",
         openapi_url="/api/v1/openapi.json",
         docs_url="/docs",

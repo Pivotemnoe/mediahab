@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Archive,
   ArchiveRestore,
   Clipboard,
+  CloudUpload,
   FilePlus2,
+  HardDrive,
   Lightbulb,
   Mic,
   Pin,
@@ -14,6 +16,7 @@ import {
   RotateCcw,
   Search,
   Trash2,
+  WifiOff,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +31,20 @@ import type {
   NotebookTransferOut,
 } from "@/services/openapi-types";
 import type { NotebookViewModel } from "@/services/notebook";
+import {
+  createOfflineNotebookEntry,
+  deleteOfflineNotebookEntry,
+  listOfflineNotebookEntries,
+  OFFLINE_NOTEBOOK_CHANGED_EVENT,
+  rememberOfflineNotebookWorkspace,
+  requestPersistentNotebookStorage,
+  updateOfflineNotebookEntry,
+  type OfflineNotebookEntry,
+} from "@/services/offline-notebook";
 
 type SaveState = "idle" | "offline" | "saved" | "saving" | "error";
 type ListMode = "active" | "archived" | "deleted";
-type QuickVoiceState = "idle" | "recording" | "transcribing";
+type QuickVoiceState = "idle" | "recording" | "saving";
 
 function csrfToken(): string | null {
   const row = document.cookie.split("; ").find((cookie) => cookie.startsWith("tmh_csrf="));
@@ -111,6 +124,42 @@ async function uploadVoiceMedia({ blob, workspaceId }: { blob: Blob; workspaceId
     method: "POST",
   });
   return presign.media_id;
+}
+
+async function synchronizeOfflineEntry(entry: OfflineNotebookEntry): Promise<NotebookNoteOut> {
+  let mediaId = entry.mediaId;
+  await updateOfflineNotebookEntry(entry.id, {
+    attempts: entry.attempts + 1,
+    error: undefined,
+    status: "syncing",
+  });
+  if (entry.audioBlob?.size && !mediaId) {
+    mediaId = await uploadVoiceMedia({ blob: entry.audioBlob, workspaceId: entry.workspaceId });
+    await updateOfflineNotebookEntry(entry.id, { mediaId });
+  }
+  if (entry.audioBlob?.size) {
+    if (!mediaId) throw new Error("Голосовая заметка не загружена.");
+    return apiRequest<NotebookNoteOut>("/api/v1/notebook/transcribe-new", {
+      body: {
+        body: entry.body,
+        client_note_id: entry.id,
+        kind: entry.kind,
+        media_id: mediaId,
+        provider_key: "default",
+        workspace_id: entry.workspaceId,
+      },
+      method: "POST",
+    });
+  }
+  return apiRequest<NotebookNoteOut>("/api/v1/notebook", {
+    body: {
+      body: entry.body,
+      client_note_id: entry.id,
+      kind: entry.kind,
+      workspace_id: entry.workspaceId,
+    },
+    method: "POST",
+  });
 }
 
 async function transcribeVoiceIntoNote({ blob, note, workspaceId }: { blob: Blob; note: NotebookNoteOut; workspaceId: string }): Promise<NotebookNoteOut> {
@@ -241,7 +290,12 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
       onChanged(updated);
       setMessage("Голос расшифрован и добавлен в заметку.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось расшифровать голос.");
+      try {
+        await createOfflineNotebookEntry({ audioBlob: blob, audioMimeType: blob.type, body: "", workspaceId });
+        setMessage("Связи нет. Запись сохранена на устройстве и появится как отдельная заметка после синхронизации.");
+      } catch {
+        setMessage(error instanceof Error ? error.message : "Не удалось сохранить голос.");
+      }
     }
   }
 
@@ -348,20 +402,100 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
 
 export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   const [notes, setNotes] = useState(viewModel.notes);
+  const [offlineEntries, setOfflineEntries] = useState<OfflineNotebookEntry[]>([]);
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<ListMode>("active");
   const [message, setMessage] = useState(viewModel.notice ?? "");
+  const [isOnline, setIsOnline] = useState(true);
+  const [serverUnavailable, setServerUnavailable] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [quickVoiceState, setQuickVoiceState] = useState<QuickVoiceState>("idle");
   const draftRef = useRef("");
   const quickRecorderRef = useRef<MediaRecorder | null>(null);
   const quickChunksRef = useRef<Blob[]>([]);
+  const syncInFlightRef = useRef(false);
   const draftKey = viewModel.workspaceId ? `tmh:notebook:${viewModel.workspaceId}:new` : "";
+
+  const refreshOfflineEntries = useCallback(async () => {
+    if (!viewModel.workspaceId) {
+      setOfflineEntries([]);
+      return;
+    }
+    try {
+      setOfflineEntries(await listOfflineNotebookEntries(viewModel.workspaceId));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось прочитать заметки на устройстве.");
+    }
+  }, [viewModel.workspaceId]);
+
+  const synchronizeOfflineEntries = useCallback(async () => {
+    if (!viewModel.workspaceId || typeof navigator === "undefined" || !navigator.onLine || syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
+    setIsSyncing(true);
+    let synchronized = 0;
+    let failed = 0;
+    try {
+      const entries = await listOfflineNotebookEntries(viewModel.workspaceId);
+      for (const entry of entries) {
+        try {
+          const note = await synchronizeOfflineEntry(entry);
+          setNotes((current) => current.some((row) => row.id === note.id)
+            ? current.map((row) => row.id === note.id ? note : row)
+            : [note, ...current]);
+          await deleteOfflineNotebookEntry(entry.id);
+          synchronized += 1;
+        } catch (error) {
+          failed += 1;
+          await updateOfflineNotebookEntry(entry.id, {
+            error: error instanceof Error ? error.message : "Не удалось синхронизировать.",
+            status: "error",
+          });
+        }
+      }
+      await refreshOfflineEntries();
+      if (synchronized && !failed) {
+        setServerUnavailable(false);
+        setMessage(`Отправлено в блокнот: ${synchronized}.`);
+      } else if (failed) {
+        setServerUnavailable(true);
+        setMessage("Сохранённые заметки остались на устройстве. Повторим, когда API станет доступен.");
+      }
+    } finally {
+      syncInFlightRef.current = false;
+      setIsSyncing(false);
+    }
+  }, [refreshOfflineEntries, viewModel.workspaceId]);
 
   useEffect(() => {
     if (!draftKey) return;
     setDraft(window.localStorage.getItem(draftKey) ?? "");
   }, [draftKey]);
+
+  useEffect(() => {
+    if (!viewModel.workspaceId) return;
+    rememberOfflineNotebookWorkspace(viewModel.workspaceId);
+    void requestPersistentNotebookStorage();
+    void refreshOfflineEntries();
+    setIsOnline(navigator.onLine);
+    if (navigator.onLine) void synchronizeOfflineEntries();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      setServerUnavailable(false);
+      void synchronizeOfflineEntries();
+    };
+    const handleOffline = () => setIsOnline(false);
+    const handleQueueChange = () => void refreshOfflineEntries();
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener(OFFLINE_NOTEBOOK_CHANGED_EVENT, handleQueueChange);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener(OFFLINE_NOTEBOOK_CHANGED_EVENT, handleQueueChange);
+    };
+  }, [refreshOfflineEntries, synchronizeOfflineEntries, viewModel.workspaceId]);
 
   useEffect(() => {
     if (!draftKey) return;
@@ -387,13 +521,11 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   async function createNote() {
     if (!viewModel.workspaceId || !draft.trim()) return;
     try {
-      const note = await apiRequest<NotebookNoteOut>("/api/v1/notebook", {
-        body: { body: draft.trim(), kind: "idea", workspace_id: viewModel.workspaceId },
-        method: "POST",
-      });
-      setNotes((current) => [note, ...current]);
+      await createOfflineNotebookEntry({ body: draft, workspaceId: viewModel.workspaceId });
       setDraft("");
-      setMessage("Заметка сохранена. Проект и рубрика не требовались.");
+      await refreshOfflineEntries();
+      setMessage("Заметка сначала сохранена на этом устройстве.");
+      if (navigator.onLine) void synchronizeOfflineEntries();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить заметку.");
     }
@@ -407,22 +539,17 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       return;
     }
     try {
-      setQuickVoiceState("transcribing");
-      setMessage("Расшифровываю голосовую заметку…");
-      const mediaId = await uploadVoiceMedia({ blob, workspaceId: viewModel.workspaceId });
-      const note = await apiRequest<NotebookNoteOut>("/api/v1/notebook/transcribe-new", {
-        body: {
-          body: draftRef.current.trim(),
-          kind: "idea",
-          media_id: mediaId,
-          provider_key: "default",
-          workspace_id: viewModel.workspaceId,
-        },
-        method: "POST",
+      setQuickVoiceState("saving");
+      await createOfflineNotebookEntry({
+        audioBlob: blob,
+        audioMimeType: blob.type,
+        body: draftRef.current,
+        workspaceId: viewModel.workspaceId,
       });
-      setNotes((current) => [note, ...current]);
       setDraft("");
-      setMessage("Голос расшифрован и сохранён в блокноте.");
+      await refreshOfflineEntries();
+      setMessage("Голос сохранён на этом устройстве. При связи он загрузится и расшифруется.");
+      if (navigator.onLine) void synchronizeOfflineEntries();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить голосовую заметку.");
     } finally {
@@ -431,9 +558,9 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   }
 
   async function toggleQuickRecording() {
-    if (quickVoiceState === "transcribing") return;
+    if (quickVoiceState === "saving") return;
     if (quickRecorderRef.current) {
-      setQuickVoiceState("transcribing");
+      setQuickVoiceState("saving");
       quickRecorderRef.current.stop();
       return;
     }
@@ -487,7 +614,12 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       </section>
 
       <Card className="grid gap-3 p-4 sm:p-5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
+          <Badge tone={isOnline && !serverUnavailable ? "success" : "warning"}>
+            {isOnline && !serverUnavailable ? "связь есть" : "сохраняем на устройстве"}
+          </Badge>
+        </div>
         <textarea
           className="min-h-28 w-full resize-y rounded-lg border border-border bg-background p-3 text-base leading-6 outline-none focus:border-primary"
           id="quick-note"
@@ -500,15 +632,15 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
           <div className="flex flex-wrap gap-2">
             <Button
               aria-pressed={quickVoiceState === "recording"}
-              disabled={!viewModel.workspaceId || quickVoiceState === "transcribing"}
+              disabled={!viewModel.workspaceId || quickVoiceState === "saving"}
               onClick={() => void toggleQuickRecording()}
               type="button"
               variant="secondary"
             >
               <Mic size={16} /> {quickVoiceState === "recording"
                 ? "Закончить запись"
-                : quickVoiceState === "transcribing"
-                  ? "Расшифровываю…"
+                : quickVoiceState === "saving"
+                  ? "Сохраняю…"
                   : "Надиктовать заметку"}
             </Button>
             <Button
@@ -521,6 +653,58 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
           </div>
         </div>
       </Card>
+
+      {offlineEntries.length ? (
+        <Card className="grid gap-4 border-primary/40 bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-4 sm:p-5" data-testid="offline-notebook-queue">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="grid gap-1">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                {isOnline && !serverUnavailable ? <CloudUpload className="text-primary" size={19} /> : <HardDrive className="text-primary" size={19} />}
+                Сохранено на этом устройстве: {offlineEntries.length}
+              </div>
+              <p className="text-sm leading-5 text-muted">
+                Ни текст, ни голос не потеряются. Они останутся здесь до успешной отправки.
+              </p>
+            </div>
+            <Button
+              disabled={!isOnline || isSyncing}
+              onClick={() => void synchronizeOfflineEntries()}
+              type="button"
+              variant="secondary"
+            >
+              <CloudUpload size={16} /> {isSyncing ? "Отправляю…" : "Синхронизировать"}
+            </Button>
+          </div>
+          <div className="grid gap-2">
+            {offlineEntries.map((entry) => (
+              <div className="grid min-w-0 gap-2 rounded-lg border border-border bg-surface p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" key={entry.id}>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
+                    {entry.audioBlob?.size ? <Mic size={15} /> : <Lightbulb size={15} />}
+                    {entry.audioBlob?.size ? "Голосовая заметка" : "Текстовая заметка"}
+                    {entry.status === "error" ? <Badge tone="warning">ждёт связи</Badge> : null}
+                  </div>
+                  <p className="mt-1 truncate text-sm text-muted">
+                    {entry.body || "Аудио расшифруется после появления связи."}
+                  </p>
+                  {entry.error ? <p className="mt-1 text-xs text-warning">{entry.error}</p> : null}
+                </div>
+                <Button
+                  onClick={async () => {
+                    if (!window.confirm("Удалить эту ещё не отправленную заметку с устройства?")) return;
+                    await deleteOfflineNotebookEntry(entry.id);
+                    await refreshOfflineEntries();
+                  }}
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 size={15} /> Удалить
+                </Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -535,6 +719,9 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       </div>
 
       {message ? <p aria-live="polite" className="text-sm text-muted">{message}</p> : null}
+      {!isOnline || serverUnavailable ? (
+        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> Серверная история не обновляется, но новые заметки сохраняются на устройстве.</p>
+      ) : null}
       <section className="grid gap-4">
         {visible.length && viewModel.workspaceId ? visible.map((note) => (
           <NoteCard

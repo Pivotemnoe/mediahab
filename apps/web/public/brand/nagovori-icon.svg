@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Наговори</title>
+  <desc id="desc">Иконка приложения: речь превращается в публикацию</desc>
+  <rect width="512" height="512" rx="112" fill="#10261f"/>
+  <g transform="translate(58 103) scale(1.22)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 40h112c21 0 38 17 38 38v22h-22V78c0-9-7-16-16-16H42c-9 0-16 7-16 16v62c0 9 7 16 16 16h32l-28 24v-24h46" stroke="#79cdb3" stroke-width="16"/>
+    <path d="M94 124h18l10-28 15 50 16-70 14 48h17" stroke="#c5a35a" stroke-width="13"/>
+    <path d="M210 84h78M210 112h66M210 140h82" stroke="#79cdb3" stroke-width="15"/>
+  </g>
+</svg>

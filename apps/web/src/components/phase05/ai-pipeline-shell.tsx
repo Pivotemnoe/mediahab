@@ -47,7 +47,7 @@ function AiHeader({ title, label = "ИИ и примеры" }: { title: string; 
           </Link>
         </Button>
       }
-      description="Сохраняйте удачные публикации, чтобы MediaHub точнее передавал голос вашего канала."
+      description="Сохраняйте удачные публикации, чтобы «Наговори» точнее передавал стиль вашего канала."
       eyebrow={label}
       title={title}
     />

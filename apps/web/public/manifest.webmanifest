@@ -1,9 +1,31 @@
 {
-  "name": "Медиа-хаб",
-  "short_name": "Медиа-хаб",
-  "start_url": "/app",
+  "name": "Наговори",
+  "short_name": "Наговори",
+  "description": "Твои мысли. Твой стиль. Твои публикации.",
+  "start_url": "/app/notebook",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f7f8fa",
-  "theme_color": "#f7f8fa",
-  "lang": "ru"
+  "background_color": "#081814",
+  "theme_color": "#081814",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

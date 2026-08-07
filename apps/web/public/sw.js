@@ -1,5 +1,16 @@
-const CACHE_NAME = "media-hub-shell-v1";
-const SHELL_URLS = ["/app", "/manifest.webmanifest"];
+const CACHE_NAME = "nagovori-shell-v2";
+const OFFLINE_NOTEBOOK_URL = "/offline-notebook.html";
+const SHELL_URLS = [
+  OFFLINE_NOTEBOOK_URL,
+  "/manifest.webmanifest",
+  "/brand/nagovori-mark.svg",
+  "/brand/nagovori-icon.svg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png",
+  "/icons/favicon-32.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -28,7 +39,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/app")));
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.status < 500) return response;
+          return caches.match(OFFLINE_NOTEBOOK_URL).then((fallback) => fallback || response);
+        })
+        .catch(() => caches.match(OFFLINE_NOTEBOOK_URL)),
+    );
     return;
   }
 

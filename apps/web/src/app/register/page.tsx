@@ -5,7 +5,7 @@ export default function RegisterPage() {
     <AuthPage
       action="register"
       eyebrow="Начало работы"
-      title="Создать свой MediaHub"
+      title="Создать свой кабинет в «Наговори»"
       description="Укажите почту и название кабинета. Сразу после входа вы сможете создать проект и надиктовать первую идею."
       fields={[
         {

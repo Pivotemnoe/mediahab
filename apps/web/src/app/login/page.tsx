@@ -12,7 +12,7 @@ export default async function LoginPage({
     <AuthPage
       action="login"
       eyebrow="С возвращением"
-      title="Войти в MediaHub"
+      title="Войти в «Наговори»"
       description="Продолжите с сохранённого материала или начните новую диктовку."
       fields={[
         {

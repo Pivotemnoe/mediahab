@@ -30,7 +30,7 @@ import { Card } from "@/components/ui/card";
 const workflow = [
   ["1", "Диктуете или вставляете", "Расскажите всё одним сообщением или добавляйте голосовые фрагменты по очереди.", Mic],
   ["2", "Выбираете площадки", "Telegram, MAX, VK и Instagram можно включить вместе или подготовить отдельно.", CheckCircle2],
-  ["3", "Проверяете версии", "MediaHub учитывает правила проекта, рубрику, примеры и длину каждого результата.", BookOpenCheck],
+  ["3", "Проверяете версии", "«Наговори» учитывает правила проекта, рубрику, примеры и длину каждого результата.", BookOpenCheck],
 ] as const;
 
 const trustPoints = [
@@ -67,10 +67,10 @@ export default function MarketingIndex() {
         <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-9 sm:px-6 sm:py-11 lg:grid-cols-[minmax(0,0.9fr)_minmax(620px,1.1fr)] lg:gap-12 lg:px-12 lg:py-10">
           <div className="flex min-w-0 flex-col justify-center">
             <h1 className="font-editorial max-w-3xl text-[52px] leading-[0.96] text-foreground sm:text-7xl lg:text-[82px]">
-              Ваш голос.<br />Ваш стиль.<br />Готовые посты.
+              Твои мысли.<br />Твой стиль.<br />Твои публикации.
             </h1>
             <p className="mt-7 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
-              Продиктуйте факты — MediaHub соберёт цельный текст и подготовит отдельную версию для каждой выбранной площадки. Без потери смысла и без публикации за вас.
+              Надиктуй или напиши мысль — «Наговори» соберёт цельный текст и подготовит отдельную версию для каждой выбранной площадки. Без потери смысла и без публикации за тебя.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-12 px-5">
@@ -158,7 +158,7 @@ export default function MarketingIndex() {
           <div className="max-w-3xl">
             <Badge tone="success">Площадки отличаются</Badge>
             <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Не один текст, растянутый на четыре окна.</h2>
-            <p className="mt-4 text-base leading-7 text-muted">MediaHub учитывает ограничения и привычный формат каждой площадки. Длину можно оставить по вашим правилам или поменять только для текущего поста.</p>
+            <p className="mt-4 text-base leading-7 text-muted">«Наговори» учитывает ограничения и привычный формат каждой площадки. Длину можно оставить по твоим правилам или поменять только для текущего поста.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {platformGuide.map(([name, format, text, Icon]) => (

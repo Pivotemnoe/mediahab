@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport" />
+    <meta content="#081814" name="theme-color" />
+    <title>Наговори · блокнот без интернета</title>
+    <style>
+      :root { color-scheme: dark; --bg:#06120f; --panel:#0c201a; --line:#244238; --mint:#9de7c3; --gold:#efbd59; --text:#f6f4ed; --muted:#a8b9b0; }
+      * { box-sizing:border-box; }
+      body { margin:0; min-height:100vh; background:radial-gradient(circle at 20% 0,#12372c 0,transparent 42%),var(--bg); color:var(--text); font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+      button,textarea { font:inherit; }
+      button { min-height:48px; border:1px solid var(--line); border-radius:12px; background:#15372d; color:var(--text); padding:0 18px; font-weight:700; cursor:pointer; }
+      button.primary { border-color:#d29d3d; background:var(--gold); color:#1c251f; }
+      button:disabled { cursor:not-allowed; opacity:.45; }
+      main { width:min(760px,100%); margin:0 auto; padding:max(22px,env(safe-area-inset-top)) 18px max(34px,env(safe-area-inset-bottom)); }
+      header { display:flex; align-items:center; gap:13px; padding:8px 2px 24px; }
+      header img { width:68px; height:44px; object-fit:contain; }
+      h1 { margin:0; font-size:25px; letter-spacing:-.04em; }
+      .tagline { margin:2px 0 0; color:var(--muted); font-size:12px; }
+      .hero,.card { border:1px solid var(--line); border-radius:20px; background:rgba(12,32,26,.94); box-shadow:0 24px 60px rgba(0,0,0,.22); }
+      .hero { padding:24px; }
+      .hero h2 { margin:0; font-size:clamp(28px,8vw,44px); line-height:1.04; letter-spacing:-.045em; }
+      .hero p { margin:14px 0 0; color:var(--muted); }
+      .status { display:inline-flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--mint); font-size:13px; font-weight:700; }
+      .dot { width:9px; height:9px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 5px rgba(239,189,89,.12); }
+      .card { display:grid; gap:15px; margin-top:16px; padding:20px; }
+      label { font-weight:750; }
+      textarea { width:100%; min-height:150px; resize:vertical; border:1px solid var(--line); border-radius:14px; outline:none; background:#071712; color:var(--text); padding:14px; }
+      textarea:focus { border-color:var(--mint); }
+      textarea::placeholder { color:#71877c; }
+      .buttons { display:flex; flex-wrap:wrap; gap:10px; }
+      .buttons button { flex:1 1 210px; }
+      .hint,.message,.empty { color:var(--muted); font-size:14px; }
+      .message { min-height:21px; margin:0; }
+      .queue { display:grid; gap:9px; }
+      .entry { border:1px solid var(--line); border-radius:13px; background:#081a15; padding:12px 14px; }
+      .entry strong { display:block; color:var(--mint); font-size:14px; }
+      .entry span { display:block; margin-top:4px; overflow:hidden; color:var(--muted); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+      .online-link { display:none; align-items:center; justify-content:center; min-height:48px; border:1px solid var(--mint); border-radius:12px; color:var(--mint); font-weight:750; text-decoration:none; }
+      .online .online-link { display:flex; }
+      @media (max-width:480px) { main{padding-left:14px;padding-right:14px}.hero,.card{border-radius:16px;padding:17px}header img{width:55px}h1{font-size:22px}.tagline{font-size:10px}.buttons{display:grid}.buttons button{width:100%} }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <img alt="" src="/brand/nagovori-mark.svg" />
+        <div><h1>Наговори</h1><p class="tagline">Твои мысли. Твой стиль. Твои публикации.</p></div>
+      </header>
+      <section class="hero">
+        <div class="status"><span class="dot"></span><span id="network-label">Нет связи с сервером</span></div>
+        <h2>Мысль не потеряется.</h2>
+        <p>Текст и голос сохранятся на этом устройстве. Когда связь вернётся, обычный блокнот отправит их на сервер.</p>
+      </section>
+      <section class="card">
+        <label for="note">Быстрая заметка</label>
+        <textarea id="note" placeholder="Напиши мысь или оставь текст к голосовой заметке…"></textarea>
+        <div class="buttons">
+          <button id="record" type="button">🎙️ Надиктовать заметку</button>
+          <button class="primary" id="save" type="button">Сохранить идею</button>
+        </div>
+        <p class="message" id="message" aria-live="polite"></p>
+        <a class="online-link" href="/app/notebook" id="online-link">Открыть блокнот и отправить</a>
+      </section>
+      <section class="card">
+        <div><strong>На этом устройстве: <span id="count">0</span></strong><div class="hint">Хранится до успешной синхронизации.</div></div>
+        <div class="queue" id="queue"><div class="empty">Пока нет сохранённых заметок.</div></div>
+      </section>
+    </main>
+    <script>
+      (() => {
+        const DB_NAME = "nagovori-offline-v1";
+        const DB_VERSION = 1;
+        const STORE = "notebookQueue";
+        const WORKSPACE_KEY = "nagovori:offline-workspace-id";
+        const workspaceId = localStorage.getItem(WORKSPACE_KEY);
+        const fallbackMode = location.pathname !== "/offline-notebook.html";
+        const draftKey = workspaceId ? `tmh:notebook:${workspaceId}:new` : "";
+        const note = document.getElementById("note");
+        const save = document.getElementById("save");
+        const record = document.getElementById("record");
+        const message = document.getElementById("message");
+        const queue = document.getElementById("queue");
+        const count = document.getElementById("count");
+        const app = document.getElementById("app");
+        let recorder = null;
+        let chunks = [];
+
+        const uuid = () => crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+        const openDb = () => new Promise((resolve, reject) => {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+          request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE)) {
+              const store = db.createObjectStore(STORE, { keyPath: "id" });
+              store.createIndex("workspaceId", "workspaceId", { unique: false });
+              store.createIndex("createdAt", "createdAt", { unique: false });
+            }
+          };
+        });
+        const getAll = async () => {
+          const db = await openDb();
+          return new Promise((resolve, reject) => {
+            const request = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
+            request.onerror = () => { db.close(); reject(request.error); };
+            request.onsuccess = () => { db.close(); resolve(request.result.filter(row => row.workspaceId === workspaceId)); };
+          });
+        };
+        const put = async (entry) => {
+          const db = await openDb();
+          await new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE, "readwrite");
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(transaction.error);
+            transaction.oncomplete = () => resolve();
+            transaction.objectStore(STORE).put(entry);
+          });
+          db.close();
+        };
+        const escapeHtml = value => value.replace(/[&<>"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[char]);
+        const render = async () => {
+          const rows = (await getAll()).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+          count.textContent = String(rows.length);
+          queue.innerHTML = rows.length ? rows.map(row => `<div class="entry"><strong>${row.audioBlob && row.audioBlob.size ? "🎙️ Голосовая заметка" : "✨ Текстовая заметка"}</strong><span>${escapeHtml(row.body || "Аудио ждёт расшифровки")}</span></div>`).join("") : '<div class="empty">Пока нет сохранённых заметок.</div>';
+        };
+        const storeEntry = async ({ body, audioBlob }) => {
+          if (!workspaceId) throw new Error("Сначала откройте блокнот один раз с интернетом.");
+          if (!body.trim() && !(audioBlob && audioBlob.size)) throw new Error("Сначала напишите или надиктуйте мысль.");
+          const now = new Date().toISOString();
+          await put({ attempts:0, ...(audioBlob ? { audioBlob, audioMimeType:audioBlob.type } : {}), body:body.trim(), createdAt:now, id:uuid(), kind:"idea", status:"queued", updatedAt:now, workspaceId });
+          note.value = "";
+          if (draftKey) localStorage.removeItem(draftKey);
+          message.textContent = audioBlob ? "Голос сохранён на этом устройстве." : "Заметка сохранена на этом устройстве.";
+          await render();
+        };
+        const updateNetwork = () => {
+          app.classList.toggle("online", navigator.onLine);
+          document.getElementById("network-label").textContent = fallbackMode
+            ? "Сервер недоступен — сохраняем на устройстве"
+            : navigator.onLine ? "Интернет появился" : "Нет связи с сервером";
+          document.getElementById("online-link").textContent = fallbackMode
+            ? "Проверить связь и открыть блокнот"
+            : "Открыть блокнот и отправить";
+        };
+
+        note.value = draftKey ? localStorage.getItem(draftKey) || "" : "";
+        note.addEventListener("input", () => draftKey && localStorage.setItem(draftKey, note.value));
+        save.addEventListener("click", () => storeEntry({ body:note.value }).catch(error => message.textContent = error.message));
+        record.addEventListener("click", async () => {
+          if (recorder) { recorder.stop(); record.disabled = true; record.textContent = "Сохраняю…"; return; }
+          if (!navigator.mediaDevices || typeof MediaRecorder === "undefined") { message.textContent = "Этот браузер не поддерживает запись."; return; }
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+            recorder = new MediaRecorder(stream); chunks = [];
+            recorder.ondataavailable = event => event.data.size && chunks.push(event.data);
+            recorder.onstop = async () => {
+              stream.getTracks().forEach(track => track.stop());
+              const blob = new Blob(chunks, { type:recorder.mimeType || "audio/webm" });
+              recorder = null;
+              try { await storeEntry({ body:note.value, audioBlob:blob }); } catch (error) { message.textContent = error.message; }
+              record.disabled = false; record.textContent = "🎙️ Надиктовать заметку";
+            };
+            recorder.start(); record.textContent = "⏹ Закончить запись"; message.textContent = "Идёт запись…";
+          } catch { message.textContent = "Браузер не дал доступ к микрофону."; }
+        });
+        if (!workspaceId) { save.disabled = true; record.disabled = true; message.textContent = "Откройте блокнот один раз при доступном интернете."; }
+        window.addEventListener("online", updateNetwork); window.addEventListener("offline", updateNetwork); updateNetwork();
+        navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => false);
+        navigator.serviceWorker && navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+        render().catch(error => message.textContent = error.message || "Офлайн-хранилище недоступно.");
+      })();
+    </script>
+  </body>
+</html>

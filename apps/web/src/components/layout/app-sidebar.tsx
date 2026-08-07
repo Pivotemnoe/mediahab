@@ -35,7 +35,7 @@ export function AppSidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-[176px] shrink-0 flex-col border-r border-border bg-sidebar px-3 py-5 lg:flex" data-testid="app-sidebar">
       <div className="px-2">
-        <BrandMark href="/app" />
+        <BrandMark href="/app" showTagline={false} />
       </div>
 
       <nav className="mt-10 grid gap-2" aria-label="Главное меню">

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Медиа-хаб API",
+    "title": "Наговори API",
     "version": "0.1.0"
   },
   "paths": {
@@ -8849,6 +8849,18 @@
               }
             ],
             "title": "Kind"
+          },
+          "client_note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Note Id"
           }
         },
         "type": "object",
@@ -9048,6 +9060,18 @@
               }
             ],
             "title": "Kind"
+          },
+          "client_note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Note Id"
           }
         },
         "type": "object",

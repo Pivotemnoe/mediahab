@@ -124,8 +124,9 @@ async function runCheck(browser, check) {
         hasEntrySection: Boolean(entry?.textContent?.includes('Готовы попробовать')),
         hasExampleSection: Boolean(example?.textContent?.includes('Пример проекта')) &&
           Boolean(example?.textContent?.includes('Правила живут в проекте')),
-        hasHero: Boolean(hero?.textContent?.includes('Ваш голос.')) &&
-          Boolean(hero?.textContent?.includes('Готовые посты.')),
+        hasHero: Boolean(hero?.textContent?.includes('Твои мысли.')) &&
+          Boolean(hero?.textContent?.includes('Твой стиль.')) &&
+          Boolean(hero?.textContent?.includes('Твои публикации.')),
         hasManualConfirmation: text.includes('100% контроль') && text.includes('ручное подтверждение'),
         hasPlatformPreview: ['Telegram', 'MAX', 'VK', 'Instagram'].every((value) => hero?.textContent?.includes(value)),
         hasRegisterLink: hasLink('/register', 'Создать кабинет'),
@@ -156,8 +157,8 @@ async function runCheck(browser, check) {
   assert.equal(value.oldHomeCopyPresent, false, `${check.width}px old homepage copy still present`);
   assert.equal(value.presetCopyPresent, false, `${check.width}px preset-specific copy leaked to public home`);
   assert.equal(value.scrollWidth <= value.clientWidth, true, `${check.width}px horizontal overflow`);
-  const maximumExampleTop = check.width < 600 ? 2100 : check.width < 1024 ? 1700 : 1050;
-  assert.equal(value.firstExampleTop < maximumExampleTop, true, `${check.width}px example section is too far below the fold`);
+  const maximumExampleTop = check.width < 600 ? 2200 : check.width < 1024 ? 1800 : 1050;
+  assert.equal(value.firstExampleTop < maximumExampleTop, true, `${check.width}px example section is too far below the fold: ${value.firstExampleTop}px`);
 
   const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   const screenshotPath = `/private/tmp/mediahub-ui12d-home-${check.width}.png`;

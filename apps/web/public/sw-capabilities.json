@@ -1,10 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
   "serviceWorker": {
     "script": "/sw.js",
-    "cacheName": "media-hub-shell-v1",
+    "cacheName": "nagovori-shell-v2",
     "strategy": "shell-get-cache",
-    "shellUrls": ["/app", "/manifest.webmanifest"]
+    "offlineNavigationFallback": "/offline-notebook.html",
+    "shellUrls": [
+      "/offline-notebook.html",
+      "/manifest.webmanifest",
+      "/brand/nagovori-mark.svg",
+      "/brand/nagovori-icon.svg",
+      "/icons/icon-192.png",
+      "/icons/icon-512.png",
+      "/icons/icon-maskable-512.png",
+      "/icons/apple-touch-icon.png",
+      "/icons/favicon-32.png"
+    ]
   },
   "capabilities": {
     "backgroundSync": false,
@@ -13,6 +24,7 @@
   },
   "replayPolicy": {
     "guidedFormQueue": "manual_retry_required",
+    "offlineNotebookQueue": "foreground_idempotent_retry",
     "reason": "http_only_cookie_csrf_required"
   }
 }

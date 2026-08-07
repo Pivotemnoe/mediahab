@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -283,6 +283,90 @@ class QuickNotebookTest(unittest.TestCase):
         media = asyncio.run(self._media(media_id))
         self.assertIsNotNone(media.retention_until)
         self.assertEqual(media.processing_status, "completed")
+
+    def test_offline_text_retry_with_client_note_id_does_not_duplicate_note(self) -> None:
+        auth = self.register()
+        client_note_id = str(uuid4())
+        payload = {
+            "workspace_id": auth["workspace"]["id"],
+            "client_note_id": client_note_id,
+            "body": "Заметка, сохранённая без интернета",
+            "kind": "idea",
+        }
+
+        first = self.client.post("/api/v1/notebook", headers=self.headers(auth), json=payload)
+        second = self.client.post("/api/v1/notebook", headers=self.headers(auth), json=payload)
+
+        self.assertEqual(first.status_code, 201, first.text)
+        self.assertEqual(second.status_code, 201, second.text)
+        self.assertEqual(first.json()["id"], client_note_id)
+        self.assertEqual(second.json()["id"], client_note_id)
+        self.assertEqual(asyncio.run(self._count(NotebookNote)), 1)
+
+    def test_offline_voice_retry_with_client_note_id_does_not_repeat_stt(self) -> None:
+        auth = self.register()
+        media_id = self.create_uploaded_voice(auth, filename="offline-voice.webm")
+        client_note_id = str(uuid4())
+        payload = {
+            "workspace_id": auth["workspace"]["id"],
+            "client_note_id": client_note_id,
+            "media_id": media_id,
+            "body": "Начало офлайн-заметки",
+            "kind": "idea",
+            "provider_key": "mock",
+            "mock_transcript": "Голосовое продолжение",
+        }
+
+        first = self.client.post("/api/v1/notebook/transcribe-new", headers=self.headers(auth), json=payload)
+        second = self.client.post("/api/v1/notebook/transcribe-new", headers=self.headers(auth), json=payload)
+
+        self.assertEqual(first.status_code, 201, first.text)
+        self.assertEqual(second.status_code, 201, second.text)
+        self.assertEqual(first.json()["id"], client_note_id)
+        self.assertEqual(second.json()["id"], client_note_id)
+        self.assertEqual(asyncio.run(self._count(NotebookNote)), 1)
+        self.assertEqual(asyncio.run(self._count(NotebookTranscription)), 1)
+        self.assertEqual(asyncio.run(self._count(UsageEvent)), 1)
+
+    def test_client_note_id_is_not_revealed_across_workspaces(self) -> None:
+        owner = self.register()
+        client_note_id = str(uuid4())
+        created = self.client.post(
+            "/api/v1/notebook",
+            headers=self.headers(owner),
+            json={
+                "workspace_id": owner["workspace"]["id"],
+                "client_note_id": client_note_id,
+                "body": "Заметка владельца",
+                "kind": "idea",
+            },
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        other = TestClient(self.app, base_url="https://testserver")
+        try:
+            other_auth = other.post(
+                "/api/v1/auth/register",
+                json={
+                    "email": "offline-other@example.com",
+                    "password": "strong-password-123",
+                    "display_name": "Offline Other",
+                    "workspace_name": "Offline Other Notes",
+                },
+            ).json()
+            duplicate = other.post(
+                "/api/v1/notebook",
+                headers=self.headers(other_auth),
+                json={
+                    "workspace_id": other_auth["workspace"]["id"],
+                    "client_note_id": client_note_id,
+                    "body": "Чужая попытка",
+                    "kind": "idea",
+                },
+            )
+            self.assertEqual(duplicate.status_code, 404, duplicate.text)
+            self.assertEqual(asyncio.run(self._count(NotebookNote)), 1)
+        finally:
+            other.close()
 
     def test_quick_voice_provider_failure_does_not_create_note(self) -> None:
         auth = self.register()
