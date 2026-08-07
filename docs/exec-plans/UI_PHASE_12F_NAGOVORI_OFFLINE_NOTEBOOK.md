@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and locally verified on 2026-08-07. Application-only production deployment was approved by the product owner and is pending release execution.
+Implemented, locally verified, deployed, and production-checked on 2026-08-07. Runtime release `20260807-143954-phase12f-hydration-hotfix` uses commit `3075af0`.
 
 ## Goal
 
@@ -93,3 +93,12 @@ Browser storage uses an IndexedDB object store dedicated to notebook capture. En
 - A freshly rebuilt local API passed `/api/v1/health/ready`. PostgreSQL control counts were unchanged after the API-only restart: 4 users, 4 workspaces, and 1 notebook note.
 - No database migration is present or required.
 - Production authenticated acceptance exposed a server/client timezone mismatch in note timestamps. The timestamp now renders a stable placeholder during hydration and formats in the device timezone only after mount, removing the React hydration error without fixing the product to one tenant timezone.
+
+## Production result — 2026-08-07
+
+- The initial application release `20260807-142355-phase12f-nagovori-offline` recreated only API/Web/Worker. The timestamp follow-up `20260807-143954-phase12f-hydration-hotfix` rebuilt and recreated only Web.
+- Public home, login, registration, offline shell, live health, and ready health return HTTP 200. The manifest starts at `/app/notebook`; logo, PNG icons, `nagovori-shell-v2`, and the `client_note_id` OpenAPI contract are publicly available.
+- Authenticated acceptance used the owner's existing production session without creating or changing a note. The real notebook showed «Наговори», existing server notes, `Надиктовать заметку`, and a clean browser console after the hydration hotfix. At 390 px the page had a 390 px scroll width and no horizontal overflow.
+- PostgreSQL and Redis container identities stayed unchanged. Alembic stayed at `202606200011 (head)`. Recorded row counts stayed exactly unchanged: 13 users, 13 workspaces, 11 projects, 17 content items, 58 revisions, 26 media assets, 5 notebook notes, and 7 publications.
+- The physically-stopped-server offline test passed locally. Production serves byte-identical offline shell and service-worker files, but final iPhone/Safari acceptance during a real outage remains an owner-device check because DevTools offline emulation is not equivalent to the regional allow-list outage.
+- Full pre-release backup: `/var/backups/media-hub/20260807-142355-phase12f-nagovori-offline`. Web hotfix rollback evidence: `/var/backups/media-hub/20260807-143954-phase12f-hydration-hotfix`.
