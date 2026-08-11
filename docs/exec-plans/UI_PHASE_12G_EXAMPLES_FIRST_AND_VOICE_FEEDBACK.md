@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and locally verified on 2026-08-11. The product owner then approved a web-only production release to the existing `temichev-posthub.ru` Docker contour; release evidence is recorded below after cutover.
+Implemented, locally verified, and released to production on 2026-08-11. The product owner approved a web-only cutover in the existing `temichev-posthub.ru` Docker contour.
 
 ## Goal
 
@@ -107,3 +107,15 @@ Revert this plan and its Russian translation, the style page hierarchy, compact 
 - The new examples-first contract, offline notebook contract, service-worker capability contract, and `git diff --check` passed.
 - In-app Browser inspection covered style, project creation, examples, and notebook at `1280 x 720` and `390 x 844`. Progressive settings opened correctly; one-by-one and bulk example insertion, count updates, and removal worked; no horizontal overflow or console warnings/errors were observed.
 - Real microphone permission was not accepted during automated visual QA. Timer, live microphone-level measurement, local-first persistence order, and recording/synchronization copy are covered by typed code and contract checks; a real-device voice acceptance remains the owner-facing post-release check.
+
+## Production release evidence
+
+- Release: `20260811-092631-phase12g-examples-first` from commit `e90079b1e7a12e4ee5848e3805d71a4c3b830469`; deployed at `2026-08-11T06:31:36Z`.
+- Delivery used a Git archive with SHA-256 `0980888b04478247acbec313c1ef9277819f16820fee8bb37b244ecd1bddaec1` and a server-side local Docker build.
+- Backup `/var/backups/media-hub/20260811-092631-phase12g-examples-first` contains the previous source, configuration snapshots, a validated PostgreSQL custom dump, protected-container metadata, control counts, and the rollback Web image.
+- Only `media-hub-web-1` was recreated. Its container changed from `566d16ae...` to `5d6c7f84...` and now runs image `sha256:da5c9ee4...`.
+- API `f48f2af0...`, Worker `8390b62e...`, PostgreSQL `3ac07753...`, and Redis `038bcb78...` retained the same container IDs and start times. PostgreSQL and Redis named volumes were preserved.
+- Control counts stayed `13|13|11|17|58|26|5|7` for users, workspaces, projects, content items, content revisions, media assets, notebook notes, and publications.
+- Local Web, public home, features, offline notebook, and public live/ready health checks returned `200`. Caddy stayed active; `www` kept its redirect and the neighboring `berisegodnya.ru` contour kept its expected `401`.
+- Production Browser acceptance verified `/app/style`, the real project's examples route, and `/app/notebook` at desktop plus `/app/style` at 390 px. Counts loaded from production data, the microphone action was enabled, no horizontal overflow appeared, and console warnings/errors were empty.
+- No migration, API, Worker, PostgreSQL, Redis, Caddy, registry, CI workflow, or new `LATEST` marker was created or changed.
