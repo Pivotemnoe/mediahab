@@ -36,6 +36,18 @@ export interface ProjectExamplesViewModel {
   rubrics: Array<{ id: string; name: string }>;
 }
 
+export interface StyleOverviewViewModel {
+  modeLabel: string;
+  notice?: string;
+  projects: Array<{
+    approvedCount: number | null;
+    href: string;
+    id: string;
+    name: string;
+    note: string;
+  }>;
+}
+
 export interface AiStepViewModel {
   status: string;
   text: string;
@@ -50,6 +62,7 @@ export interface AiRunViewModel {
 
 export interface ExamplePreviewViewModel {
   fragments: string;
+  id: string;
   rubric: string;
   score: string;
   status: string;
@@ -90,6 +103,7 @@ const fallbackRuns: AiRunViewModel[] = [
 const fallbackExamples: ExamplePreviewViewModel[] = [
   {
     fragments: "сильный интерьер, слабая кухня",
+    id: "fixture-puripuri",
     rubric: "Обзор недели",
     score: "8/9",
     status: "одобрено",
@@ -97,6 +111,7 @@ const fallbackExamples: ExamplePreviewViewModel[] = [
   },
   {
     fragments: "бизнес-ланч, цена, порции",
+    id: "fixture-old-town",
     rubric: "Поесть до 500 рублей",
     score: "9/9",
     status: "одобрено",
@@ -104,6 +119,7 @@ const fallbackExamples: ExamplePreviewViewModel[] = [
   },
   {
     fragments: "вес, запах гари, сухая курица",
+    id: "fixture-fast-review",
     rubric: "Фаст-обзор",
     score: "6/9",
     status: "проверка",
@@ -155,6 +171,7 @@ function examplePreview(
 ): ExamplePreviewViewModel {
   return {
     fragments: exampleFragments(example),
+    id: example.id,
     rubric: example.rubric_id ? rubricNames.get(example.rubric_id) ?? "Рубрика" : "Без рубрики",
     score: scoreLabel(example.manual_quality_score),
     status: statusLabel(example.status),
@@ -168,12 +185,12 @@ function fixtureProjectExamples(projectId: string): ProjectExamplesViewModel {
     metrics: [
       {
         label: "Одобрено",
-        note: "Готовы к retrieval и style matching.",
+        note: "Участвуют в подборе стиля для новых публикаций.",
         value: "2",
       },
       {
         label: "На проверке",
-        note: "Нужны ручное решение и векторизация после approval.",
+        note: "Нужно решить, подходят ли они вашему каналу.",
         value: "1",
       },
       {
@@ -184,7 +201,7 @@ function fixtureProjectExamples(projectId: string): ProjectExamplesViewModel {
     ],
     modeLabel: "fixtures",
     projectId,
-    projectLabel: projectId,
+    projectLabel: "Демо-канал",
     rubrics: [],
   };
 }
@@ -267,12 +284,12 @@ function exampleMetrics(examples: ExamplePreviewViewModel[]): ProjectExamplesVie
   return [
     {
       label: "Одобрено",
-      note: "Готовы к retrieval и style matching.",
+      note: "Участвуют в подборе стиля для новых публикаций.",
       value: String(approved),
     },
     {
       label: "На проверке",
-      note: "Нужны ручное решение и векторизация после approval.",
+      note: "Нужно решить, подходят ли они вашему каналу.",
       value: String(pending),
     },
     {
@@ -371,4 +388,48 @@ export async function getProjectExamplesViewModel(projectId: string): Promise<Pr
       rubrics: [],
     };
   }
+}
+
+export async function getStyleOverviewViewModel(): Promise<StyleOverviewViewModel> {
+  if (getDataMode() !== "api") {
+    return { modeLabel: "fixtures", projects: [] };
+  }
+
+  const me = await safeApiGet<MeResponse>("/api/v1/me");
+  const workspace = me?.workspaces[0];
+  if (!workspace) {
+    return {
+      modeLabel: "api",
+      notice: "Каналы сейчас не загрузились. Попробуйте обновить страницу.",
+      projects: [],
+    };
+  }
+
+  const projectsResponse = await safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
+  if (!projectsResponse) {
+    return {
+      modeLabel: "api",
+      notice: "Каналы сейчас не загрузились. Попробуйте обновить страницу.",
+      projects: [],
+    };
+  }
+
+  const projects = await Promise.all(projectsResponse.projects.map(async (project) => {
+    const examples = await safeApiGet<ExampleListResponse>(`/api/v1/projects/${project.id}/examples`);
+    return {
+      approvedCount: examples ? examples.examples.filter((example) => example.status === "approved").length : null,
+      href: `/app/projects/${project.id}`,
+      id: project.id,
+      name: project.name,
+      note: project.description ?? project.content_domain ?? "Общие правила можно дополнить позже.",
+    };
+  }));
+
+  return {
+    modeLabel: "api",
+    notice: projects.some((project) => project.approvedCount === null)
+      ? "Количество примеров для части каналов сейчас не загрузилось."
+      : undefined,
+    projects,
+  };
 }

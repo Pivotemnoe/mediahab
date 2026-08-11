@@ -45,16 +45,30 @@ const routeChecks = [
   {
     name: "notebook",
     path: "/app/notebook",
-    required: ["Мысль не должна потеряться", "Быстрая заметка", "Надиктовать заметку", "Заметки", "Архив"],
+    required: ["Мысль не должна потеряться", "Быстрая заметка", "Надиктовать заметку", "Текст сохраняется на этом устройстве автоматически", "Заметки", "Архив"],
     absent: ["API-режим", "backend", "Техническая сборка", "Этап UI"],
     testId: "app-sidebar",
   },
   {
     name: "style",
     path: "/app/style",
-    required: ["Посты должны звучать как вы", "Общий голос", "Ваши примеры", "Рубрики", "Стиль по проектам"],
+    required: ["Покажите удачные посты", "Главное обучение — на примерах", "10", "Каналы и проекты", "Дополнительные настройки"],
     absent: ["API-режим", "backend", "Техническая сборка", "prompt", "schema"],
     testId: "app-sidebar",
+  },
+  {
+    name: "project-create",
+    path: "/app/projects/new",
+    required: ["Сначала — название и удачные посты", "Название проекта или канала", "Дополнительные настройки", "Создать и добавить примеры"],
+    absent: ["Visual Builder", "Мастер проекта", "Этап UI 03", "ИИ-предложения рубрик", "API-режим", "backend"],
+    testId: "project-create-form",
+  },
+  {
+    name: "project-examples",
+    path: "/app/projects/chto-poest-armavir/examples",
+    required: ["Удачные посты", "Добавьте удачные посты", "Рекомендуем", "Вставить сразу несколько постов", "Разделить по рубрике"],
+    absent: ["retrieval", "style matching", "approval", "API-режим", "backend", "Техническая сборка"],
+    testId: "examples-first-import",
   },
   {
     name: "content-composer",

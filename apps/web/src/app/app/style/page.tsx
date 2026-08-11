@@ -1,93 +1,171 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Blocks, Mic, Palette, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  Blocks,
+  ChevronDown,
+  Mic,
+  Plus,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getDashboardViewModel } from "@/services/dashboard";
+import { getStyleOverviewViewModel } from "@/services/ai";
+
+const RECOMMENDED_EXAMPLES = 10;
 
 export default async function StylePage() {
-  const dashboard = await getDashboardViewModel();
-  const hasProjects = dashboard.projects.length > 0;
+  const overview = await getStyleOverviewViewModel();
+  const projectsUnavailable = overview.modeLabel === "api" && Boolean(overview.notice) && overview.projects.length === 0;
+  const projectExamples = overview.projects;
+  const primary = projectExamples[0];
+  const primaryExamplesHref = primary ? `${primary.href}/examples` : "/app/projects/new";
+  const primaryCount = primary ? primary.approvedCount : 0;
+  const primaryActionLabel = projectsUnavailable
+    ? "Обновить данные"
+    : primary
+      ? "Добавить удачные посты"
+      : "Создать канал и добавить посты";
 
   return (
     <div className="grid min-w-0 gap-5">
-      <section className="grid gap-5 rounded-2xl border border-border bg-sidebar p-5 shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div>
+      <section className="grid min-w-0 gap-5 rounded-2xl border border-border bg-sidebar p-5 shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0">
           <Badge tone="success">Мой стиль</Badge>
-          <h1 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Посты должны звучать как вы.</h1>
+          <h1 className="font-editorial mt-4 max-w-3xl break-words text-4xl leading-tight text-foreground sm:text-5xl">
+            Покажите удачные посты — остальное подстроим.
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-base">
-            Сохраните привычную лексику, примеры удачных публикаций и правила проекта. Рубрики нужны только для форматов, которые повторяются.
+            Добавьте публикации, чья подача вам нравится. Можно свои или чужие: они служат ориентиром по ритму и голосу, а факты нового материала вы задаёте новой диктовкой.
           </p>
         </div>
         <Button asChild>
-          <Link href={hasProjects ? "/app/content/new" : "/app/projects/new"}><Mic size={16} />Проверить на новом посте</Link>
+          {projectsUnavailable
+            ? <a href="/app/style"><ArrowRight size={17} />{primaryActionLabel}</a>
+            : <Link href={primaryExamplesHref}><BookOpenCheck size={17} />{primaryActionLabel}</Link>}
         </Button>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <Card className="group p-5 transition hover:-translate-y-0.5 hover:bg-surface-muted">
-          <Palette className="text-primary" size={23} />
-          <h2 className="mt-4 text-lg font-semibold text-foreground">Общий голос</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Тон, юмор, обязательные фразы и то, чего в ваших текстах быть не должно.</p>
+      {overview.modeLabel === "api" && overview.notice ? (
+        <Card className="border-warning/55 bg-[color-mix(in_srgb,var(--warning),transparent_94%)] p-4 text-sm leading-6 text-muted" role="status">
+          {overview.notice} Сохранённые каналы и примеры не удалены.
         </Card>
-        <Card className="group p-5 transition hover:-translate-y-0.5 hover:bg-surface-muted">
-          <BookOpenCheck className="text-primary" size={23} />
-          <h2 className="mt-4 text-lg font-semibold text-foreground">Ваши примеры</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">По 3–5 хороших публикаций помогают сохранять вашу лексику и ритм.</p>
-        </Card>
-        <Card className="group p-5 transition hover:-translate-y-0.5 hover:bg-surface-muted">
-          <Blocks className="text-primary" size={23} />
-          <h2 className="mt-4 text-lg font-semibold text-foreground">Рубрики</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Отдельные правила и длина только для тех форматов, которые действительно отличаются.</p>
-        </Card>
-      </section>
+      ) : null}
 
-      <section className="grid gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">Стиль по проектам</h2>
-            <p className="mt-1 text-sm leading-6 text-muted">У каждого канала или блога может быть собственная подача.</p>
+      <Card className="grid min-w-0 gap-5 border-primary/45 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Sparkles className="text-primary" size={22} />
+            <h2 className="text-2xl font-semibold text-foreground">Главное обучение — на примерах</h2>
           </div>
-          <Button asChild size="sm" variant="secondary"><Link href="/app/projects/new"><Plus size={15} />Новый проект</Link></Button>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+            Начать можно с нескольких публикаций, но 10 и больше дают устойчивее лексику, длину фраз и настроение. Для каждой новой генерации редактор сам выберет только самые подходящие примеры.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted">
+            <Badge tone="success">общий стиль канала</Badge>
+            <Badge>рубрика — по желанию</Badge>
+            <Badge>факты всегда берём из новой диктовки</Badge>
+          </div>
+        </div>
+        <div className="grid gap-2 rounded-xl border border-border bg-background p-4">
+          <div className="flex items-end justify-between gap-3">
+            <span className="text-sm font-semibold text-foreground">Готовность стиля</span>
+            <span className="text-lg font-semibold text-primary">{primaryCount === null ? "не загрузилось" : `${primaryCount} из ${RECOMMENDED_EXAMPLES}`}</span>
+          </div>
+          <progress aria-label={primaryCount === null ? "Количество примеров временно не загрузилось" : `Добавлено ${primaryCount} из ${RECOMMENDED_EXAMPLES} рекомендуемых примеров`} className="h-2 w-full accent-primary" max={RECOMMENDED_EXAMPLES} value={primaryCount === null ? undefined : Math.min(primaryCount, RECOMMENDED_EXAMPLES)} />
+          <p className="text-xs leading-5 text-muted">{primaryCount === null ? "Подборка сохранена; повторите загрузку страницы позже." : "Не блокирует работу: подборку всегда можно дополнить позже."}</p>
+        </div>
+      </Card>
+
+      <section className="grid min-w-0 gap-4">
+        <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">Каналы и проекты</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">У каждого канала своя подборка удачных публикаций.</p>
+          </div>
+          <Button asChild size="sm" variant="secondary"><Link href="/app/projects/new"><Plus size={15} />Новый канал</Link></Button>
         </div>
 
-        {hasProjects ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {dashboard.projects.map((project) => {
-              const projectId = project.href.split("/").pop();
+        {projectExamples.length ? (
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            {projectExamples.map(({ approvedCount: count, href, id: projectId, name, note }) => {
               return (
-                <Card className="grid gap-4 p-5" key={project.href}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">{project.name}</h3>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{project.note}</p>
+                <Card className="grid min-w-0 gap-4 p-5" key={href}>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-xl font-semibold text-foreground">{name}</h3>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{note}</p>
                     </div>
-                    <Badge tone={project.rubricCount ? "success" : "neutral"}>{project.rubricCount ? `${project.rubricCount} руб.` : "общий стиль"}</Badge>
+                    <Badge tone={count !== null && count >= RECOMMENDED_EXAMPLES ? "success" : "neutral"}>{count === null ? "не загрузилось" : `${count} прим.`}</Badge>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <Button asChild size="sm" variant="secondary"><Link href={`${project.href}/settings`}><SlidersHorizontal size={15} />Правила</Link></Button>
-                    <Button asChild size="sm" variant="secondary"><Link href={`${project.href}/examples`}><BookOpenCheck size={15} />Примеры</Link></Button>
-                    <Button asChild size="sm" variant="secondary"><Link href={`${project.href}/rubrics`}><Blocks size={15} />Рубрики</Link></Button>
+                  <div className="grid gap-2">
+                    <div className="flex justify-between gap-3 text-xs text-muted"><span>Удачные посты</span><span>{count === null ? "повторите позже" : `${count} / ${RECOMMENDED_EXAMPLES}`}</span></div>
+                    <progress aria-label={count === null ? "Количество примеров временно не загрузилось" : `Добавлено ${count} из ${RECOMMENDED_EXAMPLES} рекомендуемых примеров`} className="h-1.5 w-full accent-primary" max={RECOMMENDED_EXAMPLES} value={count === null ? undefined : Math.min(count, RECOMMENDED_EXAMPLES)} />
                   </div>
-                  <Link className="inline-flex items-center gap-2 border-t border-border pt-3 text-sm font-medium text-primary hover:text-foreground" href={`/app/content/new?project=${projectId}`}>
-                    Создать пост в этом стиле <ArrowRight size={15} />
-                  </Link>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Button asChild><Link href={`${href}/examples`}><BookOpenCheck size={16} />Добавить примеры</Link></Button>
+                    <Button asChild variant="secondary"><Link href={`/app/content/new?project=${projectId}`}><Mic size={16} />Надиктовать пост</Link></Button>
+                  </div>
+                  <details className="group border-t border-border pt-3">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-muted hover:text-foreground">
+                      <ChevronDown className="transition group-open:rotate-180" size={15} />Дополнительные настройки
+                    </summary>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <Link className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground" href={`${href}/settings`}><SlidersHorizontal size={14} />Правила</Link>
+                      <Link className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground" href={`${href}/rubrics`}><Blocks size={14} />Рубрики</Link>
+                    </div>
+                  </details>
                 </Card>
               );
             })}
           </div>
+        ) : projectsUnavailable ? (
+          <Card className="grid justify-items-start gap-3 border-warning/55 p-6">
+            <ShieldCheck className="text-warning" size={28} />
+            <h3 className="text-xl font-semibold text-foreground">Каналы сейчас не загрузились</h3>
+            <p className="max-w-2xl text-sm leading-6 text-muted">Это ошибка чтения, а не пустой аккаунт. Обновите страницу; создавать канал заново не нужно.</p>
+            <Button asChild><a href="/app/style"><ArrowRight size={16} />Повторить загрузку</a></Button>
+          </Card>
         ) : (
           <Card className="grid justify-items-start gap-4 border-dashed p-6 sm:p-8">
-            <Sparkles className="text-primary" size={28} />
+            <BookOpenCheck className="text-primary" size={30} />
             <div>
-              <h3 className="text-xl font-semibold text-foreground">Начните с одного проекта</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Назовите блог или канал, расскажите об аудитории и покажите несколько удачных публикаций. Остальное можно добавить позже.</p>
+              <h3 className="text-xl font-semibold text-foreground">Начните с названия и примеров</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Анкету заполнять не нужно. Назовите канал и сразу добавьте публикации, которые лучше всего показывают желаемую подачу.</p>
             </div>
-            <Button asChild><Link href="/app/projects/new"><Plus size={16} />Настроить мой стиль</Link></Button>
+            <Button asChild><Link href="/app/projects/new"><Plus size={16} />Создать канал</Link></Button>
           </Card>
         )}
       </section>
+
+      <details className="group rounded-2xl border border-border bg-surface">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+          <span className="flex items-center gap-2"><SlidersHorizontal size={17} />Если примеров недостаточно: дополнительные настройки</span>
+          <ChevronDown className="transition group-open:rotate-180" size={17} />
+        </summary>
+        <div className="grid gap-4 border-t border-border p-5 md:grid-cols-2">
+          <div className="grid gap-2 rounded-xl border border-border bg-background p-4">
+            <ShieldCheck className="text-primary" size={21} />
+            <h3 className="font-semibold text-foreground">Явные правила</h3>
+            <p className="text-sm leading-6 text-muted">Обязательные фразы, запреты, структура, юмор и завершение публикаций.</p>
+          </div>
+          <div className="grid gap-2 rounded-xl border border-border bg-background p-4">
+            <Blocks className="text-primary" size={21} />
+            <h3 className="font-semibold text-foreground">Рубрики</h3>
+            <p className="text-sm leading-6 text-muted">Нужны только когда отдельный повторяемый формат действительно отличается по подаче или длине.</p>
+          </div>
+        </div>
+      </details>
+
+      {!projectsUnavailable ? (
+        <Link className="inline-flex items-center gap-2 justify-self-start text-sm font-medium text-primary hover:text-foreground" href={primary ? `/app/content/new?project=${primary.id}` : "/app/projects/new"}>
+          Перейти к первой диктовке <ArrowRight size={15} />
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -135,7 +135,7 @@ async function runCheck(browser, width, managedServer) {
     });
   }
   await send("Page.navigate", { url: `${baseUrl}/app/notebook?offline-smoke=${width}` });
-  await waitForExpression(send, `document.body?.innerText.includes("Мысль не потеряется.")`, 20_000);
+  await waitForExpression(send, `document.body?.innerText.includes("Сохраните мысль на устройстве.")`, 20_000);
   await waitForExpression(send, `document.querySelector("#count")?.textContent === ${JSON.stringify(width === 390 ? "2" : "1")}`, 10_000);
   const fallback = await evaluate(send, `({
     count: document.querySelector("#count")?.textContent,

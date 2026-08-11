@@ -33,6 +33,10 @@
       .buttons button { flex:1 1 210px; }
       .hint,.message,.empty { color:var(--muted); font-size:14px; }
       .message { min-height:21px; margin:0; }
+      .recording { display:grid; gap:9px; border:1px solid #75403b; border-radius:14px; background:#241713; padding:13px; }
+      .recording[hidden] { display:none; }
+      .recording strong { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      progress { width:100%; accent-color:var(--gold); }
       .queue { display:grid; gap:9px; }
       .entry { border:1px solid var(--line); border-radius:13px; background:#081a15; padding:12px 14px; }
       .entry strong { display:block; color:var(--mint); font-size:14px; }
@@ -50,21 +54,26 @@
       </header>
       <section class="hero">
         <div class="status"><span class="dot"></span><span id="network-label">Нет связи с сервером</span></div>
-        <h2>Мысль не потеряется.</h2>
-        <p>Текст и голос сохранятся на этом устройстве. Когда связь вернётся, обычный блокнот отправит их на сервер.</p>
+        <h2>Сохраните мысль на устройстве.</h2>
+        <p>После остановки записи текст и голос останутся здесь. Когда появится интернет, откройте обычный блокнот — он отправит сохранённые заметки.</p>
       </section>
       <section class="card">
         <label for="note">Быстрая заметка</label>
-        <textarea id="note" placeholder="Напиши мысь или оставь текст к голосовой заметке…"></textarea>
+        <textarea id="note" placeholder="Напишите мысль или оставьте текст к голосовой заметке…"></textarea>
+        <div class="recording" hidden id="recording-state" role="status">
+          <strong><span id="recording-label">Запись идёт</span><span aria-hidden="true" id="recording-time">00:00</span></strong>
+          <span class="hint" id="recording-hint">Голос принимается. До остановки текущая фраза ещё не сохранена.</span>
+          <progress aria-hidden="true" id="recording-progress"></progress>
+        </div>
         <div class="buttons">
-          <button id="record" type="button">🎙️ Надиктовать заметку</button>
+          <button id="record" type="button">Надиктовать заметку</button>
           <button class="primary" id="save" type="button">Сохранить идею</button>
         </div>
         <p class="message" id="message" aria-live="polite"></p>
         <a class="online-link" href="/app/notebook" id="online-link">Открыть блокнот и отправить</a>
       </section>
       <section class="card">
-        <div><strong>На этом устройстве: <span id="count">0</span></strong><div class="hint">Хранится до успешной синхронизации.</div></div>
+        <div><strong>На этом устройстве: <span id="count">0</span></strong><div class="hint">Хранится до успешной отправки из открытого блокнота.</div></div>
         <div class="queue" id="queue"><div class="empty">Пока нет сохранённых заметок.</div></div>
       </section>
     </main>
@@ -84,8 +93,34 @@
         const queue = document.getElementById("queue");
         const count = document.getElementById("count");
         const app = document.getElementById("app");
+        const recordingState = document.getElementById("recording-state");
+        const recordingLabel = document.getElementById("recording-label");
+        const recordingTime = document.getElementById("recording-time");
+        const recordingHint = document.getElementById("recording-hint");
+        const recordingProgress = document.getElementById("recording-progress");
         let recorder = null;
+        let requestingMicrophone = false;
+        let pageActive = true;
+        let microphoneRequestGeneration = 0;
         let chunks = [];
+        let recordingSeconds = 0;
+        let recordingTimer = null;
+
+        const formatTime = total => `${String(Math.floor(total / 60)).padStart(2,"0")}:${String(total % 60).padStart(2,"0")}`;
+        const showRecordingState = (label, hint, running) => {
+          recordingState.hidden = false;
+          recordingLabel.textContent = label;
+          recordingHint.textContent = hint;
+          recordingProgress.removeAttribute("value");
+          if (running) {
+            recordingSeconds = 0;
+            recordingTime.textContent = "00:00";
+            recordingTimer = setInterval(() => { recordingSeconds += 1; recordingTime.textContent = formatTime(recordingSeconds); }, 1000);
+          } else {
+            recordingTime.textContent = "";
+          }
+        };
+        const stopRecordingTimer = () => { if (recordingTimer) clearInterval(recordingTimer); recordingTimer = null; };
 
         const uuid = () => crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
         const openDb = () => new Promise((resolve, reject) => {
@@ -124,7 +159,7 @@
         const render = async () => {
           const rows = (await getAll()).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
           count.textContent = String(rows.length);
-          queue.innerHTML = rows.length ? rows.map(row => `<div class="entry"><strong>${row.audioBlob && row.audioBlob.size ? "🎙️ Голосовая заметка" : "✨ Текстовая заметка"}</strong><span>${escapeHtml(row.body || "Аудио ждёт расшифровки")}</span></div>`).join("") : '<div class="empty">Пока нет сохранённых заметок.</div>';
+          queue.innerHTML = rows.length ? rows.map(row => `<div class="entry"><strong>${row.audioBlob && row.audioBlob.size ? "Голосовая заметка" : "Текстовая заметка"}</strong><span>${escapeHtml(row.body || "Аудио ждёт расшифровки")}</span></div>`).join("") : '<div class="empty">Пока нет сохранённых заметок.</div>';
         };
         const storeEntry = async ({ body, audioBlob }) => {
           if (!workspaceId) throw new Error("Сначала откройте блокнот один раз с интернетом.");
@@ -133,7 +168,8 @@
           await put({ attempts:0, ...(audioBlob ? { audioBlob, audioMimeType:audioBlob.type } : {}), body:body.trim(), createdAt:now, id:uuid(), kind:"idea", status:"queued", updatedAt:now, workspaceId });
           note.value = "";
           if (draftKey) localStorage.removeItem(draftKey);
-          message.textContent = audioBlob ? "Голос сохранён на этом устройстве." : "Заметка сохранена на этом устройстве.";
+          message.textContent = audioBlob ? "Голос сохранён на этом устройстве. Откройте блокнот при интернете для отправки." : "Заметка сохранена на этом устройстве.";
+          recordingState.hidden = true;
           await render();
         };
         const updateNetwork = () => {
@@ -147,27 +183,64 @@
         };
 
         note.value = draftKey ? localStorage.getItem(draftKey) || "" : "";
-        note.addEventListener("input", () => draftKey && localStorage.setItem(draftKey, note.value));
+        note.addEventListener("input", () => {
+          if (draftKey) localStorage.setItem(draftKey, note.value);
+          message.textContent = note.value ? "Черновик сохранён на этом устройстве." : "";
+        });
         save.addEventListener("click", () => storeEntry({ body:note.value }).catch(error => message.textContent = error.message));
         record.addEventListener("click", async () => {
-          if (recorder) { recorder.stop(); record.disabled = true; record.textContent = "Сохраняю…"; return; }
+          if (requestingMicrophone) return;
+          if (recorder) {
+            stopRecordingTimer();
+            showRecordingState("Сохраняем на устройстве", "Не закрывайте страницу, пока локальное сохранение не завершится.", false);
+            recorder.stop(); record.disabled = true; record.textContent = "Сохраняю на устройстве…"; return;
+          }
           if (!navigator.mediaDevices || typeof MediaRecorder === "undefined") { message.textContent = "Этот браузер не поддерживает запись."; return; }
+          let requestedStream = null;
+          const requestGeneration = ++microphoneRequestGeneration;
           try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-            recorder = new MediaRecorder(stream); chunks = [];
-            recorder.ondataavailable = event => event.data.size && chunks.push(event.data);
-            recorder.onstop = async () => {
-              stream.getTracks().forEach(track => track.stop());
-              const blob = new Blob(chunks, { type:recorder.mimeType || "audio/webm" });
+            requestingMicrophone = true;
+            record.disabled = true;
+            record.textContent = "Подключаем микрофон…";
+            showRecordingState("Подключаем микрофон", "Разрешите доступ, чтобы начать запись.", false);
+            requestedStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+            if (!pageActive || requestGeneration !== microphoneRequestGeneration) {
+              requestedStream.getTracks().forEach(track => track.stop());
+              return;
+            }
+            const activeRecorder = new MediaRecorder(requestedStream);
+            recorder = activeRecorder; chunks = [];
+            activeRecorder.ondataavailable = event => event.data.size && chunks.push(event.data);
+            activeRecorder.onstop = async () => {
+              requestedStream.getTracks().forEach(track => track.stop());
+              const blob = new Blob(chunks, { type:activeRecorder.mimeType || "audio/webm" });
               recorder = null;
               try { await storeEntry({ body:note.value, audioBlob:blob }); } catch (error) { message.textContent = error.message; }
-              record.disabled = false; record.textContent = "🎙️ Надиктовать заметку";
+              record.disabled = false; record.textContent = "Надиктовать заметку";
             };
-            recorder.start(); record.textContent = "⏹ Закончить запись"; message.textContent = "Идёт запись…";
-          } catch { message.textContent = "Браузер не дал доступ к микрофону."; }
+            activeRecorder.start();
+            showRecordingState("Запись идёт", "Голос принимается. До остановки текущая фраза ещё не сохранена.", true);
+            record.disabled = false;
+            record.textContent = "Остановить и сохранить"; message.textContent = "Запись идёт.";
+          } catch {
+            if (requestedStream) requestedStream.getTracks().forEach(track => track.stop());
+            recorder = null;
+            recordingState.hidden = true;
+            record.disabled = false;
+            record.textContent = "Надиктовать заметку";
+            message.textContent = "Браузер не дал доступ к микрофону.";
+          } finally {
+            requestingMicrophone = false;
+          }
         });
         if (!workspaceId) { save.disabled = true; record.disabled = true; message.textContent = "Откройте блокнот один раз при доступном интернете."; }
         window.addEventListener("online", updateNetwork); window.addEventListener("offline", updateNetwork); updateNetwork();
+        window.addEventListener("pagehide", () => {
+          pageActive = false;
+          microphoneRequestGeneration += 1;
+          if (recorder) recorder.stream.getTracks().forEach(track => track.stop());
+        });
+        window.addEventListener("pageshow", () => { pageActive = true; });
         navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => false);
         navigator.serviceWorker && navigator.serviceWorker.register("/sw.js").catch(() => undefined);
         render().catch(error => message.textContent = error.message || "Офлайн-хранилище недоступно.");

@@ -36,7 +36,7 @@ function toneForStatus(status: string): BadgeTone {
   return "neutral";
 }
 
-function AiHeader({ title, label = "ИИ и примеры" }: { title: string; label?: string }) {
+function AiHeader({ title, label = "Мой стиль" }: { title: string; label?: string }) {
   return (
     <PageHeader
       actions={
@@ -47,7 +47,7 @@ function AiHeader({ title, label = "ИИ и примеры" }: { title: string; 
           </Link>
         </Button>
       }
-      description="Сохраняйте удачные публикации, чтобы «Наговори» точнее передавал стиль вашего канала."
+      description="Добавляйте удачные публикации, чтобы «Наговори» точнее передавал голос и ритм вашего канала."
       eyebrow={label}
       title={title}
     />
@@ -57,7 +57,7 @@ function AiHeader({ title, label = "ИИ и примеры" }: { title: string; 
 export function AiPipelineShell({ viewModel }: { viewModel: AiPipelineViewModel }) {
   return (
     <div className="grid gap-4">
-      <AiHeader title="ИИ-пайплайн" />
+      <AiHeader label="Расширенный режим" title="Как редактор собирает текст" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -167,7 +167,7 @@ export function AiPipelineShell({ viewModel }: { viewModel: AiPipelineViewModel 
             </div>
             <div className="grid gap-2">
               {viewModel.examples.map((example) => (
-                <div className="rounded-md border border-line p-3" key={example.title}>
+                <div className="rounded-md border border-line p-3" key={example.id}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-medium text-ink">{example.title}</div>
                     <Badge tone={toneForStatus(example.status)}>{example.status}</Badge>
@@ -192,16 +192,16 @@ export function ExamplesLibraryShell({
 }) {
   return (
     <div className="grid gap-4">
-      <AiHeader title="Библиотека примеров" />
+      <AiHeader title="Удачные посты" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap gap-2">
-              <Badge>Идеальные примеры</Badge>
+              <Badge>Стиль по примерам</Badge>
             </div>
-            <h1 className="mt-3 break-all text-3xl font-semibold text-ink">{viewModel.projectLabel}</h1>
+            <h2 className="mt-3 break-words text-3xl font-semibold text-ink">{viewModel.projectLabel}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Общие примеры помогают держать единый голос канала, а примеры рубрики уточняют только её формат.
+              Общие примеры задают голос всего канала. Рубрику выбирайте только тогда, когда отдельный повторяемый формат действительно звучит иначе.
             </p>
           </div>
           <Button asChild>
@@ -218,9 +218,13 @@ export function ExamplesLibraryShell({
           </Card>
         ) : null}
 
-        {viewModel.modeLabel === "api" ? (
-          <ExamplesImportForm initialRubricId={initialRubricId} projectId={viewModel.projectId} rubrics={viewModel.rubrics} />
-        ) : null}
+        <ExamplesImportForm
+          disabledReason={viewModel.modeLabel === "api" ? undefined : "После входа здесь можно сохранить собственную подборку. Сейчас доступен просмотр сценария."}
+          existingApprovedCount={viewModel.examples.filter((example) => example.status === "одобрено").length}
+          initialRubricId={initialRubricId}
+          projectId={viewModel.projectId}
+          rubrics={viewModel.rubrics}
+        />
 
         <div className="grid gap-4 md:grid-cols-3">
           {viewModel.metrics.map((metric) => (
@@ -238,7 +242,7 @@ export function ExamplesLibraryShell({
 
         <Card className="grid gap-3">
           {viewModel.examples.length ? viewModel.examples.map((example) => (
-            <div className="grid gap-2 rounded-md border border-line p-3" key={example.title}>
+            <div className="grid gap-2 rounded-md border border-line p-3" key={example.id}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-medium text-ink">{example.title}</div>
@@ -254,7 +258,7 @@ export function ExamplesLibraryShell({
             </div>
           )) : (
             <div className="rounded-lg border border-dashed border-border p-5 text-sm leading-6 text-muted">
-              Пока нет сохранённых примеров. Добавьте 2–5 публикаций, которые лучше всего передают голос канала.
+              Пока нет сохранённых примеров. Добавьте первые публикации сейчас и постепенно соберите подборку из 10 или больше сильных постов.
             </div>
           )}
         </Card>

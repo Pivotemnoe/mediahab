@@ -222,6 +222,43 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertIsNotNone(content_row.current_master_revision_id)
         self.assertEqual(run_row.provider_key, "mock")
 
+    def test_project_wide_examples_apply_without_rubric_assignment(self) -> None:
+        auth = self.register(self.client, email="project-wide05@example.com")
+        project, rubric, content = self.create_content(auth)
+        examples = [
+            {
+                "title": f"Общий пример {index}",
+                "source_type": "manual",
+                "manual_quality_score": 9,
+                "text": (
+                    f"Общий удачный пост {index}. Живой ритм, конкретные наблюдения, "
+                    "честный вывод и спокойный вопрос читателю без выдуманных фактов."
+                ),
+            }
+            for index in range(10)
+        ]
+        imported = self.client.post(
+            f"/api/v1/projects/{project['id']}/examples/import",
+            headers=self.csrf_headers(auth),
+            json={"approve_immediately": True, "examples": examples},
+        )
+        self.assertEqual(imported.status_code, 200, imported.text)
+        imported_rows = imported.json()["imported"]
+        self.assertEqual(len(imported_rows), 10)
+        self.assertTrue(all(row["rubric_id"] is None for row in imported_rows))
+        self.seed_content_blocks(auth, content)
+
+        generated = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        retrieved = set(generated.json()["retrieved_example_ids"])
+        imported_ids = {row["id"] for row in imported_rows}
+        self.assertGreaterEqual(len(retrieved), 3)
+        self.assertTrue(retrieved.issubset(imported_ids))
+        self.assertEqual(rubric["id"], content["rubric_id"])
+
     def test_variant_refinement_creates_revision_and_failure_preserves_it(self) -> None:
         auth = self.register(self.client, email="refine05@example.com")
         _, _, content = self.create_content(auth)

@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import {
   Archive,
   ArchiveRestore,
+  CheckCircle2,
+  Circle,
   Clipboard,
+  Clock3,
   CloudUpload,
   FilePlus2,
   HardDrive,
   Lightbulb,
+  Loader2,
   Mic,
   Pin,
   PinOff,
@@ -44,7 +48,9 @@ import {
 
 type SaveState = "idle" | "offline" | "saved" | "saving" | "error";
 type ListMode = "active" | "archived" | "deleted";
-type QuickVoiceState = "idle" | "recording" | "saving";
+type QuickVoiceState = "idle" | "requesting" | "recording" | "saving";
+type VoiceReceiptState = "none" | "saved" | "waiting" | "synced" | "error";
+type DraftLocalState = "empty" | "saving" | "saved";
 
 function csrfToken(): string | null {
   const row = document.cookie.split("; ").find((cookie) => cookie.startsWith("tmh_csrf="));
@@ -98,6 +104,12 @@ function savedLabel(state: SaveState): string {
     saved: "сохранено",
     saving: "сохраняю…",
   }[state];
+}
+
+function formatRecordingTime(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
 }
 
 function LocalNotebookTimestamp({ value }: { value: string }) {
@@ -424,10 +436,20 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   const [serverUnavailable, setServerUnavailable] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [quickVoiceState, setQuickVoiceState] = useState<QuickVoiceState>("idle");
+  const [voiceReceiptState, setVoiceReceiptState] = useState<VoiceReceiptState>("none");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceLevel, setVoiceLevel] = useState(0);
+  const [draftLocalState, setDraftLocalState] = useState<DraftLocalState>("empty");
   const draftRef = useRef("");
   const quickRecorderRef = useRef<MediaRecorder | null>(null);
   const quickChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const isMountedRef = useRef(true);
+  const voiceMeterFrameRef = useRef<number | null>(null);
+  const voiceMeterLastUpdateRef = useRef(0);
+  const quickVoiceEntryIdRef = useRef<string | null>(null);
   const syncInFlightRef = useRef(false);
+  const syncRequestedRef = useRef(false);
   const draftKey = viewModel.workspaceId ? `tmh:notebook:${viewModel.workspaceId}:new` : "";
 
   const refreshOfflineEntries = useCallback(async () => {
@@ -443,11 +465,17 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
   }, [viewModel.workspaceId]);
 
   const synchronizeOfflineEntries = useCallback(async () => {
-    if (!viewModel.workspaceId || typeof navigator === "undefined" || !navigator.onLine || syncInFlightRef.current) return;
+    if (!viewModel.workspaceId || typeof navigator === "undefined" || !navigator.onLine) return;
+    if (syncInFlightRef.current) {
+      syncRequestedRef.current = true;
+      return;
+    }
     syncInFlightRef.current = true;
     setIsSyncing(true);
     let synchronized = 0;
     let failed = 0;
+    let failedVoiceEntryId: string | null = null;
+    let synchronizedVoiceEntryId: string | null = null;
     try {
       const entries = await listOfflineNotebookEntries(viewModel.workspaceId);
       for (const entry of entries) {
@@ -457,8 +485,10 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
             ? current.map((row) => row.id === note.id ? note : row)
             : [note, ...current]);
           await deleteOfflineNotebookEntry(entry.id);
+          if (entry.id === quickVoiceEntryIdRef.current) synchronizedVoiceEntryId = entry.id;
           synchronized += 1;
         } catch (error) {
+          if (entry.id === quickVoiceEntryIdRef.current) failedVoiceEntryId = entry.id;
           failed += 1;
           await updateOfflineNotebookEntry(entry.id, {
             error: error instanceof Error ? error.message : "Не удалось синхронизировать.",
@@ -474,15 +504,27 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
         setServerUnavailable(true);
         setMessage("Сохранённые заметки остались на устройстве. Повторим, когда API станет доступен.");
       }
+      if (synchronizedVoiceEntryId && quickVoiceEntryIdRef.current === synchronizedVoiceEntryId) {
+        quickVoiceEntryIdRef.current = null;
+        setVoiceReceiptState("synced");
+      } else if (failedVoiceEntryId && quickVoiceEntryIdRef.current === failedVoiceEntryId) {
+        setVoiceReceiptState("waiting");
+      }
     } finally {
+      const shouldRunAgain = syncRequestedRef.current && navigator.onLine;
+      syncRequestedRef.current = false;
       syncInFlightRef.current = false;
       setIsSyncing(false);
+      if (shouldRunAgain) void synchronizeOfflineEntries();
     }
   }, [refreshOfflineEntries, viewModel.workspaceId]);
 
   useEffect(() => {
     if (!draftKey) return;
-    setDraft(window.localStorage.getItem(draftKey) ?? "");
+    const recovered = window.localStorage.getItem(draftKey) ?? "";
+    setDraft(recovered);
+    draftRef.current = recovered;
+    setDraftLocalState(recovered ? "saved" : "empty");
   }, [draftKey]);
 
   useEffect(() => {
@@ -512,18 +554,80 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
   useEffect(() => {
     if (!draftKey) return;
-    if (draft) window.localStorage.setItem(draftKey, draft);
-    else window.localStorage.removeItem(draftKey);
     draftRef.current = draft;
+    const timeout = window.setTimeout(() => {
+      if (draft) {
+        window.localStorage.setItem(draftKey, draft);
+        setDraftLocalState("saved");
+      } else {
+        window.localStorage.removeItem(draftKey);
+        setDraftLocalState("empty");
+      }
+    }, 120);
+    return () => window.clearTimeout(timeout);
   }, [draft, draftKey]);
 
-  useEffect(() => () => {
-    const recorder = quickRecorderRef.current;
-    if (!recorder) return;
-    recorder.ondataavailable = null;
-    recorder.onstop = null;
-    recorder.stream.getTracks().forEach((track) => track.stop());
-    quickRecorderRef.current = null;
+  useEffect(() => {
+    if (quickVoiceState !== "recording") return;
+    const interval = window.setInterval(() => setRecordingSeconds((current) => current + 1), 1000);
+    return () => window.clearInterval(interval);
+  }, [quickVoiceState]);
+
+  function stopVoiceMeter() {
+    if (voiceMeterFrameRef.current !== null) {
+      window.cancelAnimationFrame(voiceMeterFrameRef.current);
+      voiceMeterFrameRef.current = null;
+    }
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== "closed") void context.close();
+    setVoiceLevel(0);
+  }
+
+  function startVoiceMeter(stream: MediaStream) {
+    try {
+      const context = new AudioContext();
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      context.createMediaStreamSource(stream).connect(analyser);
+      const values = new Uint8Array(analyser.frequencyBinCount);
+      audioContextRef.current = context;
+      voiceMeterLastUpdateRef.current = 0;
+
+      const measure = (timestamp: number) => {
+        analyser.getByteTimeDomainData(values);
+        if (timestamp - voiceMeterLastUpdateRef.current > 80) {
+          let sum = 0;
+          for (const value of values) {
+            const normalized = (value - 128) / 128;
+            sum += normalized * normalized;
+          }
+          setVoiceLevel(Math.min(1, Math.sqrt(sum / values.length) * 4));
+          voiceMeterLastUpdateRef.current = timestamp;
+        }
+        voiceMeterFrameRef.current = window.requestAnimationFrame(measure);
+      };
+      voiceMeterFrameRef.current = window.requestAnimationFrame(measure);
+    } catch {
+      setVoiceLevel(0.12);
+    }
+  }
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      const recorder = quickRecorderRef.current;
+      if (recorder) {
+        recorder.ondataavailable = null;
+        recorder.onstop = null;
+        recorder.stream.getTracks().forEach((track) => track.stop());
+        quickRecorderRef.current = null;
+      }
+      if (voiceMeterFrameRef.current !== null) window.cancelAnimationFrame(voiceMeterFrameRef.current);
+      const context = audioContextRef.current;
+      if (context && context.state !== "closed") void context.close();
+    };
   }, []);
 
   const visible = useMemo(
@@ -536,6 +640,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     try {
       await createOfflineNotebookEntry({ body: draft, workspaceId: viewModel.workspaceId });
       setDraft("");
+      setDraftLocalState("empty");
       await refreshOfflineEntries();
       setMessage("Заметка сначала сохранена на этом устройстве.");
       if (navigator.onLine) void synchronizeOfflineEntries();
@@ -553,17 +658,26 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     }
     try {
       setQuickVoiceState("saving");
-      await createOfflineNotebookEntry({
+      setVoiceReceiptState("none");
+      const entry = await createOfflineNotebookEntry({
         audioBlob: blob,
         audioMimeType: blob.type,
         body: draftRef.current,
         workspaceId: viewModel.workspaceId,
       });
+      quickVoiceEntryIdRef.current = entry.id;
       setDraft("");
+      setDraftLocalState("empty");
       await refreshOfflineEntries();
-      setMessage("Голос сохранён на этом устройстве. При связи он загрузится и расшифруется.");
-      if (navigator.onLine) void synchronizeOfflineEntries();
+      setVoiceReceiptState(navigator.onLine ? "saved" : "waiting");
+      setMessage(navigator.onLine
+        ? "Голос сохранён на устройстве. Теперь отправляем его на расшифровку."
+        : "Голос сохранён на устройстве. Откройте блокнот снова, когда появится интернет.");
+      setQuickVoiceState("idle");
+      if (navigator.onLine) await synchronizeOfflineEntries();
     } catch (error) {
+      quickVoiceEntryIdRef.current = null;
+      setVoiceReceiptState("error");
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить голосовую заметку.");
     } finally {
       setQuickVoiceState("idle");
@@ -574,6 +688,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     if (quickVoiceState === "saving") return;
     if (quickRecorderRef.current) {
       setQuickVoiceState("saving");
+      setMessage("Останавливаю запись и сохраняю её на этом устройстве…");
       quickRecorderRef.current.stop();
       return;
     }
@@ -581,22 +696,37 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       setMessage("Этот браузер не поддерживает запись с микрофона.");
       return;
     }
+    let requestedStream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      setQuickVoiceState("requesting");
+      setVoiceReceiptState("none");
+      setRecordingSeconds(0);
+      setMessage("Подключаем микрофон…");
+      requestedStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!isMountedRef.current) {
+        requestedStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      const recorder = new MediaRecorder(requestedStream);
       quickChunksRef.current = [];
       recorder.ondataavailable = (event) => event.data.size && quickChunksRef.current.push(event.data);
       recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
+        requestedStream?.getTracks().forEach((track) => track.stop());
         quickRecorderRef.current = null;
+        stopVoiceMeter();
         void saveQuickVoice(new Blob(quickChunksRef.current, { type: recorder.mimeType || "audio/webm" }));
       };
       recorder.start();
       quickRecorderRef.current = recorder;
+      startVoiceMeter(requestedStream);
       setQuickVoiceState("recording");
-      setMessage("Говорите свободно. Нажмите ещё раз, когда закончите.");
+      setMessage("Запись идёт. Мы принимаем голос; нажмите кнопку, когда закончите.");
     } catch {
+      requestedStream?.getTracks().forEach((track) => track.stop());
+      if (!isMountedRef.current) return;
+      stopVoiceMeter();
       setQuickVoiceState("idle");
+      setVoiceReceiptState("error");
       setMessage("Браузер не дал доступ к микрофону.");
     }
   }
@@ -612,6 +742,27 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       setMessage(error instanceof Error ? error.message : "Не удалось загрузить заметки.");
     }
   }
+
+  const isCurrentVoiceSyncing = isSyncing && (voiceReceiptState === "saved" || quickVoiceEntryIdRef.current !== null);
+  const voiceStage = quickVoiceState === "requesting"
+    ? { description: "Разрешите доступ, чтобы начать запись.", title: "Подключаем микрофон" }
+    : quickVoiceState === "recording"
+      ? { description: "Голос принимается. До остановки текущая фраза ещё не сохранена.", title: "Запись идёт" }
+      : quickVoiceState === "saving"
+        ? { description: "Сначала надёжно сохраняем аудио в памяти этого устройства.", title: "Сохраняем на устройстве" }
+        : isSyncing
+          ? isCurrentVoiceSyncing
+            ? { description: "Приложение открыто и в сети: отправляем голос и ждём расшифровку.", title: "Отправляем и расшифровываем" }
+            : { description: "Приложение открыто и в сети: отправляем сохранённые заметки.", title: "Отправляем сохранённые заметки" }
+          : voiceReceiptState === "waiting"
+            ? { description: "Откройте приложение снова при интернете — тогда запись отправится.", title: "Сохранено на устройстве" }
+            : voiceReceiptState === "synced"
+              ? { description: "Запись отправлена, расшифрована и добавлена в блокнот.", title: "Готово" }
+              : voiceReceiptState === "saved"
+                ? { description: "Локальная копия уже есть; начинаем отправку.", title: "Сохранено на устройстве" }
+                : voiceReceiptState === "error"
+                  ? { description: "Проверьте разрешение микрофона или повторите запись.", title: "Запись не завершена" }
+                  : null;
 
   return (
     <div className="grid min-w-0 gap-5">
@@ -636,24 +787,60 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
         <textarea
           className="min-h-28 w-full resize-y rounded-lg border border-border bg-background p-3 text-base leading-6 outline-none focus:border-primary"
           id="quick-note"
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setDraftLocalState(event.target.value ? "saving" : "empty");
+          }}
           placeholder="Напишите короткую мысль. После сохранения её можно дополнить голосом…"
           value={draft}
         />
+        {voiceStage ? (
+          <div className="grid gap-3 rounded-xl border border-primary/45 bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-4" data-testid="quick-voice-status" role="status">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                {quickVoiceState === "recording" ? <Circle className="fill-danger text-danger motion-safe:animate-pulse" size={13} />
+                  : voiceReceiptState === "synced" ? <CheckCircle2 className="text-success" size={20} />
+                    : quickVoiceState === "requesting" || quickVoiceState === "saving" || isSyncing ? <Loader2 className="animate-spin text-primary" size={20} />
+                      : voiceReceiptState === "error" ? <WifiOff className="text-danger" size={20} />
+                        : <HardDrive className="text-primary" size={20} />}
+                {voiceStage.title}
+              </div>
+              {quickVoiceState === "recording" ? (
+                <span aria-hidden="true" className="inline-flex items-center gap-1.5 font-mono text-lg font-semibold text-foreground"><Clock3 size={17} />{formatRecordingTime(recordingSeconds)}</span>
+              ) : null}
+            </div>
+            <p className="text-sm leading-6 text-muted">{voiceStage.description}</p>
+            {quickVoiceState === "recording" ? (
+              <progress aria-hidden="true" className="h-2 w-full accent-danger" max={1} value={Math.max(voiceLevel, 0.04)} />
+            ) : quickVoiceState === "requesting" || quickVoiceState === "saving" || isSyncing ? (
+              <progress aria-hidden="true" className="h-2 w-full accent-primary" />
+            ) : (
+              <progress aria-hidden="true" className="h-2 w-full accent-primary" max={1} value={voiceReceiptState === "error" ? 0 : 1} />
+            )}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs text-muted">Черновик восстанавливается на этом устройстве.</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+            {draftLocalState === "saving" ? <><Loader2 className="animate-spin" size={13} />Сохраняю черновик на устройстве…</>
+              : draftLocalState === "saved" ? <><CheckCircle2 className="text-success" size={14} />Черновик сохранён на этом устройстве</>
+                : "Текст сохраняется на этом устройстве автоматически."}
+          </span>
           <div className="flex flex-wrap gap-2">
             <Button
               aria-pressed={quickVoiceState === "recording"}
-              disabled={!viewModel.workspaceId || quickVoiceState === "saving"}
+              className={quickVoiceState === "recording" ? "border-danger bg-danger text-white hover:bg-danger/90" : undefined}
+              disabled={!viewModel.workspaceId || quickVoiceState === "saving" || quickVoiceState === "requesting"}
               onClick={() => void toggleQuickRecording()}
               type="button"
               variant="secondary"
             >
-              <Mic size={16} /> {quickVoiceState === "recording"
-                ? "Закончить запись"
+              {quickVoiceState === "recording" ? <Circle className="fill-current" size={12} /> : <Mic size={16} />} {quickVoiceState === "recording"
+                ? "Остановить и сохранить"
+                : quickVoiceState === "requesting"
+                  ? "Подключаем микрофон…"
                 : quickVoiceState === "saving"
-                  ? "Сохраняю…"
+                  ? "Сохраняю на устройстве…"
                   : "Надиктовать заметку"}
             </Button>
             <Button
@@ -676,7 +863,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                 Сохранено на этом устройстве: {offlineEntries.length}
               </div>
               <p className="text-sm leading-5 text-muted">
-                Ни текст, ни голос не потеряются. Они останутся здесь до успешной отправки.
+                После остановки записи текст и голос хранятся здесь до успешной отправки. На iPhone откройте приложение снова, когда появится интернет.
               </p>
             </div>
             <Button
@@ -695,23 +882,32 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                   <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                     {entry.audioBlob?.size ? <Mic size={15} /> : <Lightbulb size={15} />}
                     {entry.audioBlob?.size ? "Голосовая заметка" : "Текстовая заметка"}
-                    {entry.status === "error" ? <Badge tone="warning">ждёт связи</Badge> : null}
+                    {entry.status === "syncing" ? <Badge tone="info">отправляется</Badge>
+                      : entry.status === "error" ? <Badge tone="warning">не отправлено</Badge>
+                        : <Badge tone={isOnline ? "neutral" : "success"}>{isOnline ? "готово к отправке" : "на устройстве"}</Badge>}
                   </div>
                   <p className="mt-1 truncate text-sm text-muted">
                     {entry.body || "Аудио расшифруется после появления связи."}
                   </p>
+                  {entry.status === "syncing" ? <progress aria-label="Отправка и расшифровка заметки" className="mt-2 h-1.5 w-full accent-primary" /> : null}
                   {entry.error ? <p className="mt-1 text-xs text-warning">{entry.error}</p> : null}
                 </div>
                 <Button
+                  disabled={isSyncing || entry.status === "syncing"}
                   onClick={async () => {
                     if (!window.confirm("Удалить эту ещё не отправленную заметку с устройства?")) return;
                     await deleteOfflineNotebookEntry(entry.id);
+                    if (entry.id === quickVoiceEntryIdRef.current) {
+                      quickVoiceEntryIdRef.current = null;
+                      setVoiceReceiptState("none");
+                    }
                     await refreshOfflineEntries();
                   }}
                   type="button"
                   variant="ghost"
                 >
-                  <Trash2 size={15} /> Удалить
+                  {entry.status === "syncing" ? <Loader2 className="animate-spin" size={15} /> : <Trash2 size={15} />}
+                  {entry.status === "syncing" ? "Отправляется…" : "Удалить"}
                 </Button>
               </div>
             ))}
@@ -733,7 +929,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
       {message ? <p aria-live="polite" className="text-sm text-muted">{message}</p> : null}
       {!isOnline || serverUnavailable ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> Серверная история не обновляется, но новые заметки сохраняются на устройстве.</p>
+        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> История с сервера пока не обновляется. Новые заметки остаются на устройстве; откройте блокнот снова при интернете для отправки.</p>
       ) : null}
       <section className="grid gap-4">
         {visible.length && viewModel.workspaceId ? visible.map((note) => (

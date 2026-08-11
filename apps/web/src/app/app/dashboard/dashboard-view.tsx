@@ -155,13 +155,13 @@ export default async function DashboardView() {
             <div>
               <h3 className="text-xl font-semibold text-foreground">Создайте первый проект</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                Назовите канал, опишите аудиторию и задайте общие правила. После этого можно сразу надиктовать обычный пост — рубрика не обязательна.
+                Назовите канал и добавьте несколько удачных публикаций, чья подача вам нравится. После этого можно сразу диктовать — анкета и рубрика не обязательны.
               </p>
             </div>
             <Button asChild>
               <Link href="/app/projects/new">
                 <Plus size={16} />
-                Создать проект или канал
+                Создать канал и добавить примеры
               </Link>
             </Button>
           </Card>

@@ -197,20 +197,13 @@ Display:
 
 ### 5.1 Create-project wizard
 
-The wizard collects:
+The default first-use path collects only:
 
-1. Project name and slug.
-2. Description and content domain.
-3. Primary language.
-4. Target audience.
-5. Content goals.
-6. Voice and tone.
-7. Humor preference.
-8. Default AI mode.
-9. Desired platforms.
-10. Existing examples.
-11. Desired publishing frequency.
-12. Whether AI should propose rubrics.
+1. Project or channel name.
+2. Optional content domain.
+3. A recommended library of at least 10 successful posts whose style the user wants to approach.
+
+Examples are project-wide by default and may optionally be assigned to a rubric. The longer structured questionnaire remains available under advanced settings and may collect slug, description, language, audience, content goals, voice and tone, humor, AI mode, platforms, publishing frequency, and rubric suggestions. None of those advanced fields may block the user from adding examples or dictating a first post.
 
 The user may:
 
@@ -435,6 +428,8 @@ Approved examples are embedded and stored in PostgreSQL with pgvector. For one g
 - 3–5 strong examples from the same rubric.
 - Up to 2 semantically similar examples.
 - Optional rejected-pattern examples.
+
+The project library should normally contain at least 10 approved examples. This library-size recommendation is separate from the 3–5 examples retrieved for one generation.
 
 Ranking considers:
 

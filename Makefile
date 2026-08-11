@@ -44,6 +44,7 @@ test-e2e: deps
 test-ui-hardening: deps
 	node tools/check_sw_capabilities.mjs
 	node tools/check_offline_notebook_contract.mjs
+	node tools/check_examples_first_contract.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs
