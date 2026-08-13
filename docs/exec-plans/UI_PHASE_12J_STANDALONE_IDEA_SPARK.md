@@ -36,6 +36,7 @@ The generator is not tied to a project or rubric and is not a general chat. It n
 - Use a strict five-item schema and deterministic validation for exact count, field lengths, uniqueness, one-line output, no URLs/quotes/instructions, and no unsupported names, numbers, dates, prices, or first-person claims.
 - On provider/schema/validation failure, allow one bounded full-batch retry in the same run and quota reservation. A second failure returns a stable error and no directions.
 - Transcribe a short uploaded workspace-owned voice asset without creating a notebook note. Record STT usage and apply the existing short raw-audio retention window.
+- Treat browser-reported `duration_ms` as an untrusted recording hint. Before provider I/O, reserve the full 120-second topic-recording ceiling; never derive billable seconds from browser metadata. A future server-side media-duration verifier may safely reconcile this conservative reservation.
 - Retry a failed standalone run without requiring a project. Legacy project-run retry behavior stays unchanged.
 
 ## Frontend scope
@@ -44,7 +45,8 @@ The generator is not tied to a project or rubric and is not a general chat. It n
 - Keep the Deep Forest visual system, existing cards/buttons/badges, current radius and typography, and clear recording/upload/transcription progress.
 - Disable generation while the topic is empty or a request is active. Abort stale requests on navigation/unmount.
 - Preserve a typed topic if voice transcription fails and never replace it until a successful transcript is confirmed.
-- `Надиктовать по этой идее` opens `/app/content/new?idea=standalone`, shows the selected direction as a planning reference, focuses author capture, and leaves author text empty.
+- `Надиктовать по этой идее` opens `/app/content/new?idea=<handoff-token>`, shows the selected direction as a planning reference, focuses author capture, and leaves author text empty.
+- If the workspace has no project yet, the composer keeps the exact handoff, shows the chosen direction, and offers one primary `Create project and continue` action. Project creation returns to `/app/content/new?project=<project-id>&idea=<handoff-token>` without creating a content item or changing the handoff's stable client content id.
 - Expire and ignore stale/malformed local idea handoffs. Remove a handoff only after the composer persists the planning reference or the user explicitly dismisses it.
 - Add `Идеи` to quick actions and the public feature description without claiming project-style learning for this standalone flow.
 
@@ -92,9 +94,11 @@ Generation response remains the existing durable `GenerationRunOut`, with `proje
 - Sensitive prompts produce editorial directions/questions, not medical, legal, financial, psychological, veterinary, or fitness advice.
 - Output contains no unsupported proper names, dates, prices, quotations, URLs, first-person events, or ready-to-publish paragraphs.
 - Choosing one direction opens the composer with the idea visible and the transcript empty. Assembly remains disabled until the author provides source text.
+- In a zero-project workspace, the selected idea survives first-project creation and returns to the composer ready for author capture; neither the redirect nor project creation creates a content item.
 - Selecting a project alone creates nothing. Starting dictation or saving author text creates exactly one content item and stores the idea as an unlocked `ai_suggested` planning block.
 - Refresh/resume never treats the selected direction as author transcript.
 - Workspace authorization, role, subscription, monthly quota, daily limit, CSRF, and idempotent billing reservation are enforced before provider invocation.
+- Reporting `duration_ms=1` for an unverified or long voice asset never reserves or bills one second; the endpoint reserves its conservative 120-second ceiling.
 - Legacy project generator stays disabled in production while the standalone flag is enabled.
 
 ## Verification

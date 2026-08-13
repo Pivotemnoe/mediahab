@@ -1356,19 +1356,35 @@ export function SimpleVoiceComposer({
   const targetMax = rubric?.editorialMaxChars ?? null;
 
   if (!viewModel.projects.length) {
+    const continueIdeaToken = pendingStandaloneIdea?.handoffToken ?? initialStandaloneIdeaToken;
+    const hasIdeaToContinue = Boolean(continueIdeaToken);
+    const continueWithIdeaHref = continueIdeaToken
+      ? `/app/projects/new?idea=${encodeURIComponent(continueIdeaToken)}`
+      : "/app/projects/new";
     return (
       <Card className="mx-auto grid w-full max-w-3xl justify-items-start gap-4 border-dashed p-6 sm:p-8">
-        <Badge tone="info">Перед первой публикацией</Badge>
+        <Badge tone="info">{hasIdeaToContinue ? "Идея сохранена" : "Перед первой публикацией"}</Badge>
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Сначала создайте проект или канал</h1>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {hasIdeaToContinue ? "Создайте первый проект — и продолжим диктовку" : "Сначала создайте проект или канал"}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Проект хранит общие правила и примеры. После этого можно создавать обычные публикации без рубрики или добавлять рубрики для повторяемых форматов.
+            {hasIdeaToContinue
+              ? "Проект хранит правила вашего канала. Достаточно указать название: выбранная идея останется с вами, а материал пока не создаётся."
+              : "Проект хранит общие правила и примеры. После этого можно создавать обычные публикации без рубрики или добавлять рубрики для повторяемых форматов."}
           </p>
         </div>
+        {pendingStandaloneIdea ? (
+          <div className="grid w-full gap-2 rounded-xl border border-primary/30 bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-4">
+            <strong className="text-sm text-foreground">{pendingStandaloneIdea.idea.title}</strong>
+            <p className="text-sm leading-6 text-muted">{pendingStandaloneIdea.idea.direction}</p>
+            <p className="text-xs leading-5 text-muted"><strong className="text-foreground">С чего начать:</strong> {pendingStandaloneIdea.idea.speakingPrompt}</p>
+          </div>
+        ) : null}
         <Button asChild>
-          <Link href="/app/projects/new">
+          <Link href={continueWithIdeaHref}>
             <Plus size={16} />
-            Создать проект
+            {hasIdeaToContinue ? "Создать проект и продолжить" : "Создать проект"}
           </Link>
         </Button>
       </Card>

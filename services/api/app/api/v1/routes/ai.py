@@ -75,6 +75,7 @@ from app.modules.shared.errors import api_error
 router = APIRouter()
 
 STANDALONE_IDEA_TOPIC_AUDIO_MAX_BYTES = 25 * 1024 * 1024
+STANDALONE_IDEA_TOPIC_AUDIO_MAX_SECONDS = 120
 STANDALONE_IDEA_RETRY_NAMESPACE = UUID("b91f6f59-1953-4d2d-bfab-78688c227a91")
 
 
@@ -786,7 +787,12 @@ async def transcribe_standalone_idea_topic(
             "An uploaded voice or audio asset is required.",
             request=request,
         )
-    if media.duration_ms is None or not 1 <= media.duration_ms <= 120_000:
+    if (
+        media.duration_ms is None
+        or not 1
+        <= media.duration_ms
+        <= STANDALONE_IDEA_TOPIC_AUDIO_MAX_SECONDS * 1000
+    ):
         raise api_error(
             422,
             "idea_topic_audio_duration_invalid",
@@ -824,18 +830,23 @@ async def transcribe_standalone_idea_topic(
             request=request,
         )
 
-    duration_seconds = (media.duration_ms + 999) // 1000
+    # MediaCompleteRequest is browser-authored, so duration_ms is only a UX/audit
+    # hint. Reserve the endpoint's entire accepted duration ceiling until a trusted
+    # server-side media probe can provide a duration suitable for reconciliation.
+    reservation_seconds = STANDALONE_IDEA_TOPIC_AUDIO_MAX_SECONDS
     try:
         await reserve_ai_transcription_usage(
             db,
             workspace_id=workspace_id,
             reservation_id=media.id,
-            seconds=duration_seconds,
+            seconds=reservation_seconds,
             source=provider_key,
             metadata={
                 "scope": "standalone_idea_topic",
                 "media_id": str(media.id),
-                "duration_ms": media.duration_ms,
+                "client_reported_duration_ms": media.duration_ms,
+                "reserved_seconds": reservation_seconds,
+                "duration_basis": "standalone_topic_endpoint_ceiling",
             },
             workspace_lock_held=True,
         )

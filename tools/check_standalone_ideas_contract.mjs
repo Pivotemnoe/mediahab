@@ -9,6 +9,9 @@ const [
   handoffSource,
   composerSource,
   contentPageSource,
+  projectCreatePageSource,
+  projectBuilderSource,
+  projectCreateFormSource,
   navigationSource,
   mobileNavigationSource,
   quickCreateSource,
@@ -20,6 +23,9 @@ const [
   readFile(new URL("apps/web/src/features/standalone-ideas/idea-handoff.ts", root), "utf8"),
   readFile(new URL("apps/web/src/components/phase12/simple-voice-composer.tsx", root), "utf8"),
   readFile(new URL("apps/web/src/app/app/content/new/page.tsx", root), "utf8"),
+  readFile(new URL("apps/web/src/app/app/projects/new/page.tsx", root), "utf8"),
+  readFile(new URL("apps/web/src/components/phase03/project-builder-shell.tsx", root), "utf8"),
+  readFile(new URL("apps/web/src/components/phase12/project-create-form.tsx", root), "utf8"),
   readFile(new URL("apps/web/src/config/navigation.ts", root), "utf8"),
   readFile(new URL("apps/web/src/components/layout/mobile-nav.tsx", root), "utf8"),
   readFile(new URL("apps/web/src/components/layout/quick-create-palette.tsx", root), "utf8"),
@@ -105,6 +111,9 @@ assert.match(composerSource, /ensureContentPromiseRef/);
 assert.match(composerSource, /handoff\.expiresAt <= Date\.now\(\)/);
 assert.match(composerSource, /clearStandaloneIdeaHandoff\(handoff\.handoffToken\)/);
 assert.match(composerSource, /rememberCreatedContentItem\(item\.id\)/);
+assert.match(composerSource, /pendingStandaloneIdea\?\.handoffToken \?\? initialStandaloneIdeaToken/);
+assert.match(composerSource, /\/app\/projects\/new\?idea=\$\{encodeURIComponent\(continueIdeaToken\)\}/);
+assert.match(composerSource, /Идея сохранена/);
 assert.ok(
   composerSource.indexOf("rememberCreatedContentItem(item.id)") < composerSource.indexOf("await persistStandaloneIdea(item.id)"),
   "The recoverable edit URL must be stored before idea planning persistence",
@@ -112,6 +121,16 @@ assert.ok(
 const updateProjectBlock = composerSource.match(/function updateProject[\s\S]*?\n  }/)?.[0] ?? "";
 assert.doesNotMatch(updateProjectBlock, /updateTranscript\(""\)/);
 assert.doesNotMatch(composerSource, /<IdeaGeneratorSheet/);
+
+assert.match(projectCreatePageSource, /searchParams\?: Promise<\{ idea\?: string \}>/);
+assert.match(projectCreatePageSource, /UUID_PATTERN\.test\(params\.idea\)/);
+assert.match(projectCreatePageSource, /initialStandaloneIdeaToken=\{standaloneIdeaToken\}/);
+assert.match(projectBuilderSource, /initialStandaloneIdeaToken=\{initialStandaloneIdeaToken\}/);
+assert.match(projectCreateFormSource, /dictationParams\.set\("idea", initialStandaloneIdeaToken\)/);
+assert.match(projectCreateFormSource, /\/app\/content\/new\?\$\{dictationParams\.toString\(\)\}/);
+assert.match(projectCreateFormSource, /Создать проект и продолжить диктовку/);
+assert.match(projectCreateFormSource, /Материал появится, когда вы начнёте диктовать/);
+assert.doesNotMatch(projectCreateFormSource, /\/content-items/);
 
 const mobileBlock = navigationSource.match(/export const mobileNavItems[\s\S]*?\n\];/)?.[0] ?? "";
 assert.match(navigationSource, /href: "\/app\/ideas"[\s\S]*label: "Идеи"/);

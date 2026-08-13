@@ -713,7 +713,15 @@ class StandaloneIdeasTest(unittest.TestCase):
         )
         self.assertEqual(len(events), 1)
         self.assertEqual(str(events[0].id), media_id)
-        self.assertEqual(int(events[0].quantity), 42)
+        self.assertEqual(int(events[0].quantity), 120)
+        self.assertEqual(
+            events[0].metadata_json["client_reported_duration_ms"], 42_000
+        )
+        self.assertEqual(events[0].metadata_json["reserved_seconds"], 120)
+        self.assertEqual(
+            events[0].metadata_json["duration_basis"],
+            "standalone_topic_endpoint_ceiling",
+        )
         media = asyncio.run(self._media(media_id))
         self.assertIsNotNone(media.retention_until)
         self.assertEqual(media.processing_status, "completed")
@@ -766,6 +774,84 @@ class StandaloneIdeasTest(unittest.TestCase):
             self._usage_events(workspace_id, "ai.transcription_seconds.monthly")
         )
         self.assertEqual(len(events), 1)
+
+    def test_transcribe_topic_never_bills_untrusted_one_ms_as_one_second(self) -> None:
+        auth = self.register(email="voice-untrusted-duration@example.com")
+        workspace_id = str(auth["workspace"]["id"])
+        self.enable_openai_stt(auth)
+        asyncio.run(
+            self._set_entitlement(
+                workspace_id,
+                "ai.transcription_seconds.monthly",
+                119,
+            )
+        )
+        underreported_media = asyncio.run(
+            self._create_voice_media(
+                workspace_id,
+                str(auth["user"]["id"]),
+                duration_ms=1,
+                size_bytes=10 * 1024 * 1024,
+            )
+        )
+        with (
+            patch("app.api.v1.routes.ai.fetch_s3_object_bytes") as fetch,
+            patch(
+                "app.api.v1.routes.ai.transcribe_with_openai",
+                new_callable=AsyncMock,
+            ) as transcribe,
+        ):
+            blocked = self.client.post(
+                f"/api/v1/workspaces/{workspace_id}/ideas/transcribe-topic",
+                headers=self.csrf(auth),
+                json={"media_id": underreported_media},
+            )
+        self.assertEqual(blocked.status_code, 402, blocked.text)
+        self.assertEqual(blocked.json()["error"]["code"], "limit_exceeded")
+        self.assertEqual(blocked.json()["error"]["details"]["requested"], 120)
+        self.assertEqual(fetch.call_count, 0)
+        self.assertEqual(transcribe.await_count, 0)
+        self.assertEqual(
+            asyncio.run(
+                self._usage_events(
+                    workspace_id,
+                    "ai.transcription_seconds.monthly",
+                )
+            ),
+            [],
+        )
+
+        asyncio.run(
+            self._set_entitlement(
+                workspace_id,
+                "ai.transcription_seconds.monthly",
+                120,
+            )
+        )
+        with (
+            patch(
+                "app.api.v1.routes.ai.fetch_s3_object_bytes",
+                return_value=b"unverified-audio",
+            ),
+            patch(
+                "app.api.v1.routes.ai.transcribe_with_openai",
+                new_callable=AsyncMock,
+                return_value=("Тема из непроверенной записи", {}),
+            ) as transcribe,
+        ):
+            accepted = self.client.post(
+                f"/api/v1/workspaces/{workspace_id}/ideas/transcribe-topic",
+                headers=self.csrf(auth),
+                json={"media_id": underreported_media},
+            )
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        self.assertEqual(transcribe.await_count, 1)
+        events = asyncio.run(
+            self._usage_events(workspace_id, "ai.transcription_seconds.monthly")
+        )
+        self.assertEqual(len(events), 1)
+        self.assertEqual(int(events[0].quantity), 120)
+        self.assertEqual(events[0].metadata_json["client_reported_duration_ms"], 1)
 
     def test_transcribe_topic_validates_media_and_quota_before_provider(self) -> None:
         auth = self.register(email="voice-guards@example.com")

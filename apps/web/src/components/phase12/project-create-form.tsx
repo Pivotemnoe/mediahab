@@ -9,7 +9,13 @@ import { Card } from "@/components/ui/card";
 import { type ProjectOut } from "@/services/openapi-types";
 import { clientApiRequest } from "@/services/client-api";
 
-export function ProjectCreateForm({ workspaceId }: { workspaceId: string | null }) {
+export function ProjectCreateForm({
+  initialStandaloneIdeaToken,
+  workspaceId,
+}: {
+  initialStandaloneIdeaToken?: string;
+  workspaceId: string | null;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,8 +55,10 @@ export function ProjectCreateForm({ workspaceId }: { workspaceId: string | null 
         },
         method: "POST",
       });
+      const dictationParams = new URLSearchParams({ project: project.id });
+      if (initialStandaloneIdeaToken) dictationParams.set("idea", initialStandaloneIdeaToken);
       const destinations: Record<string, string> = {
-        dictation: `/app/content/new?project=${project.id}`,
+        dictation: `/app/content/new?${dictationParams.toString()}`,
         examples: `/app/projects/${project.id}/examples?onboarding=1`,
         project: `/app/projects/${project.id}`,
       };
@@ -65,9 +73,13 @@ export function ProjectCreateForm({ workspaceId }: { workspaceId: string | null 
     <form className="mx-auto grid w-full max-w-3xl gap-5" data-testid="project-create-form" onSubmit={submit}>
       <div className="grid gap-2">
         <Badge className="w-fit" tone="info">Первый шаг</Badge>
-        <h2 className="font-editorial text-4xl font-semibold leading-tight text-foreground sm:text-5xl">Сначала — название и удачные посты.</h2>
+        <h2 className="font-editorial text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
+          {initialStandaloneIdeaToken ? "Создайте канал — идея уже сохранена." : "Сначала — название и удачные посты."}
+        </h2>
         <p className="max-w-2xl text-sm leading-6 text-muted">
-          Назовите канал, а затем покажите публикации, чья подача вам нравится. Этого достаточно, чтобы начать; правила и рубрики можно добавить позже.
+          {initialStandaloneIdeaToken
+            ? "Нужно только название. После создания канала вы вернётесь к выбранной идее и сможете сразу начать диктовку."
+            : "Назовите канал, а затем покажите публикации, чья подача вам нравится. Этого достаточно, чтобы начать; правила и рубрики можно добавить позже."}
         </p>
       </div>
 
@@ -182,17 +194,31 @@ export function ProjectCreateForm({ workspaceId }: { workspaceId: string | null 
         </p>
       ) : null}
 
-      <Card className="grid gap-3 p-4 sm:grid-cols-2">
-        <Button disabled={isSubmitting || !workspaceId} name="next" type="submit" value="examples">
-          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <BookOpenCheck size={18} />}
-          Создать и добавить примеры
-        </Button>
-        <Button disabled={isSubmitting || !workspaceId} name="next" type="submit" value="dictation" variant="secondary">
-          <Mic size={18} />Пока без примеров — диктовать
-        </Button>
-        <button className="inline-flex items-center gap-2 justify-self-start text-sm font-medium text-muted hover:text-foreground sm:col-span-2" disabled={isSubmitting || !workspaceId} name="next" type="submit" value="project">
-          Создать и открыть настройки <ArrowRight size={15} />
-        </button>
+      <Card className={`grid gap-3 p-4 ${initialStandaloneIdeaToken ? "" : "sm:grid-cols-2"}`}>
+        {initialStandaloneIdeaToken ? (
+          <>
+            <Button className="min-h-12 w-full text-base" disabled={isSubmitting || !workspaceId} name="next" type="submit" value="dictation">
+              {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Mic size={18} />}
+              Создать проект и продолжить диктовку
+            </Button>
+            <p className="text-xs leading-5 text-muted">
+              Сейчас сохранится только проект. Материал появится, когда вы начнёте диктовать или сохраните свой текст.
+            </p>
+          </>
+        ) : (
+          <>
+            <Button disabled={isSubmitting || !workspaceId} name="next" type="submit" value="examples">
+              {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <BookOpenCheck size={18} />}
+              Создать и добавить примеры
+            </Button>
+            <Button disabled={isSubmitting || !workspaceId} name="next" type="submit" value="dictation" variant="secondary">
+              <Mic size={18} />Пока без примеров — диктовать
+            </Button>
+            <button className="inline-flex items-center gap-2 justify-self-start text-sm font-medium text-muted hover:text-foreground sm:col-span-2" disabled={isSubmitting || !workspaceId} name="next" type="submit" value="project">
+              Создать и открыть настройки <ArrowRight size={15} />
+            </button>
+          </>
+        )}
         <p className="text-xs leading-5 text-muted sm:col-span-2">
           Рубрика не обязательна. Она понадобится только для повторяемого формата, который действительно отличается от обычных публикаций.
         </p>

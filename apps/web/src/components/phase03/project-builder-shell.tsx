@@ -138,7 +138,13 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
   );
 }
 
-export function NewProjectShell({ viewModel }: { viewModel: NewProjectViewModel }) {
+export function NewProjectShell({
+  initialStandaloneIdeaToken,
+  viewModel,
+}: {
+  initialStandaloneIdeaToken?: string;
+  viewModel: NewProjectViewModel;
+}) {
   return (
     <div className="grid gap-5">
       <BuilderHeader title="Новый проект" />
@@ -147,7 +153,10 @@ export function NewProjectShell({ viewModel }: { viewModel: NewProjectViewModel 
           {viewModel.notice}
         </Card>
       ) : null}
-      <ProjectCreateForm workspaceId={viewModel.workspaceId} />
+      <ProjectCreateForm
+        initialStandaloneIdeaToken={initialStandaloneIdeaToken}
+        workspaceId={viewModel.workspaceId}
+      />
     </div>
   );
 }
