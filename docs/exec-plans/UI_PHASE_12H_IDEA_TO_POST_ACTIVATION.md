@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and locally verified on 2026-08-13. The production-safe release path keeps the feature disabled: the live 100-idea automatic run passed, but independent semantic review found zero-tolerance safety and originality violations, so owner-pilot enablement is blocked until a new prompt/model candidate passes the complete human gate.
+Implemented, verified, and deployed on 2026-08-13 with the production feature disabled. The live 100-idea automatic run passed, but independent semantic review found zero-tolerance safety and originality violations, so owner-pilot enablement is blocked until a new prompt/model candidate passes the complete human gate.
 
 ## Goal
 
@@ -155,6 +155,14 @@ The live runner exits with code 3 while any human score is blank, even if every 
 - Live model evaluation v10 returned valid structured batches for all 20 contexts and 100 ideas with the exact production prompt contract. Independent human review nevertheless blocked enablement because several ideas repeated recent topics, converted style-example motifs into topics, invented personal events or internal states, or left fewer than four materially distinct ideas in a batch.
 - The global flag therefore remains off and the workspace allowlist remains empty. The code and backward-compatible migration may be released in this state; no production user can call the provider through the idea endpoint until a later candidate passes the human gate.
 - Visual audit of the creation, style, examples, and notebook paths passed at desktop and 390 px. Automated browser checks did not grant a real device microphone permission; owner-device dictation remains a manual acceptance boundary.
+
+## Production result — 2026-08-13
+
+- Release `20260813-105705-phase12h-guarded-ideas` deployed commit `2e9ce49004630b2c6fa8c4eb7f428b30880560bb`. A web-only copy follow-up `20260813-112426-phase12h-copy-hotfix` corrected the pilot feature description found during live browser acceptance.
+- The protected backup is `/var/backups/media-hub/20260813-105705-phase12h-guarded-ideas`; it contains the PostgreSQL custom dump, prior source/config snapshots, stateful identities, and rollback image tags. The release archive SHA-256 was verified before server-side builds.
+- Alembic is at `202606200012 (head)`. `IDEA_GENERATOR_ENABLED=false`, the workspace allowlist is empty, and the daily limit/model defaults are explicit in production. The new endpoint therefore cannot call the provider for any production workspace.
+- API, worker, and web run the release images. The compose cutover unexpectedly recreated the PostgreSQL container because `--force-recreate` propagated to its dependency; this was not required or intended. It reattached the same named volume, Redis and Caddy were not restarted, and no database restore was needed. Exact control counts remained `13/13/11/17/58/26/5/7` for users, workspaces, projects, content items, revisions, media assets, notebook notes, and publications.
+- Public home, login, features, live health, and ready health returned HTTP 200. Caddy is active, API/worker/web started cleanly, the live landing rendered without console errors, and the corrected features copy was verified in the browser.
 
 ## Risks
 
