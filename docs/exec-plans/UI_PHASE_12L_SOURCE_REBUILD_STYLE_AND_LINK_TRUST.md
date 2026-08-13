@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and locally verified on 2026-08-13. Production deployment and the owner-project rich-footer update are pending.
+Implemented, locally verified, and deployed to production on 2026-08-13. The owner-project rich footer is configured with four verified links and a live owner-workspace rebuild passed.
 
 ## Goal
 
@@ -76,6 +76,16 @@ The product must also distinguish a plain-text footer from a footer that actuall
 - Final local results: backend `168/168`; editorial surface `16/16`; AI examples pipeline `15/15`; TypeScript and Web lint pass; UI hardening passes; the previously verified production Web build renders `35/35` pages; compileall and `git diff --check` pass.
 - Regenerate OpenAPI only if an API DTO changes; this phase is designed not to require one.
 - Run one live owner-workspace rebuild only after local tests, while preserving the existing manual variant and checking exact source facts against the result.
+
+### Production acceptance
+
+- Release marker: `20260813-183025-phase12l-hygiene`, code commit `aa1cef7d15dfa7ba6ffff741d42e948bd6b29f38`, no migration beyond existing `202606200013`.
+- The final cutover replaced only API and worker with `--no-deps --no-build`; PostgreSQL `89eddc8cf071…`, Redis `038bcb78e4d7…`, Web `aacd6d7ca675…`, and Caddy PID `7331` remained unchanged.
+- Protected backup `/var/backups/media-hub/20260813-183025-phase12l-hygiene` contains a validated PostgreSQL dump, source archive, environment/compose/release copies, container inspections, and rollback image tags.
+- Public live/ready health returned `status: ok`; Alembic stayed at `202606200013 (head)`; control counts after the live rebuild were `13|13|11|19|72|37|5|7`.
+- Live run `ab1d2594-4f36-42b6-8ff4-05293b618570` completed with `gpt-5.6-terra`, retrieved six approved examples, preserved author-source facts, and produced Telegram/MAX versions with four linked footer labels and no internal editorial commentary.
+- The previous manual Telegram revision remained byte-exact at length `2152`, MD5 `df2e775e6d5aca7c09e74431a43d0d82`.
+- The new master is `2505` characters, five characters over the selected editorial target. It remains below both connector hard limits but is correctly shown as `Check`, not silently claimed as fully within target.
 
 ## Risks and rollback
 
