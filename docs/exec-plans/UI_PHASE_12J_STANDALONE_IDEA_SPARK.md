@@ -2,7 +2,7 @@
 
 ## Status
 
-In progress.
+Completed and deployed to the production owner allowlist on 2026-08-13.
 
 ## Goal
 
@@ -109,6 +109,18 @@ Generation response remains the existing durable `GenerationRunOut`, with `proje
 - Add a compact frozen fixture covering ordinary, unrelated-question, prompt-injection, and regulated-domain topics. Automated checks are release blocking; generated directions remain suggestions and are never source content.
 - Run `make lint`, `make typecheck`, `make test`, `make test-e2e`, `make openapi`, the targeted idea check, the production Web build, and `git diff --check`.
 - Verify locally at 390 px and desktop, then deploy stateless API/worker/Web plus migration with a fresh backup and stateful-container identity checks.
+
+### Production evidence — 2026-08-13
+
+- Release `20260813-151037-phase12j-standalone-ideas` deployed from commit `ce1f35145155a4728052f978b8c6577f097078c8`; the verified source archive SHA-256 is `daca8ebc3833bbe4e5029fdd781bc351b5bb51137afb1ce5261d89f34ba28f44`.
+- Protected backup `/var/backups/media-hub/20260813-151037-phase12j-standalone-ideas` contains the PostgreSQL custom dump, validated restore list, previous source, environment, Compose file, release marker, stateful-container inspection, logs, and rollback image tags.
+- `make lint`, `make typecheck`, `make test`, `make test-e2e`, OpenAPI regeneration, the standalone contract checks, the 390 px local scenario, and the production Web build passed. The final backend suite passed `157/157` tests.
+- The live production model gate passed `8/8` batches and `40/40` directions on ordinary, missing-detail, supplied-specific, unrelated-question, prompt-injection, veterinary, and legal topics. A second independent human review found no release blocker.
+- Migration `202606200013` reached Alembic head. Only the stateless API, worker, and Web containers were replaced with `--no-deps`; PostgreSQL ID `89eddc8cf071...`, Redis ID `038bcb78e4d7...`, and Caddy PID `7331` remained unchanged.
+- Both local and public `/api/v1/health/ready` returned HTTP 200 after cutover. API, worker, and Web startup logs were clean.
+- The old project generator remains disabled. The standalone generator is enabled only for owner workspace `736eee0e-44c7-4500-9d49-1c19c9854333` with the shared daily limit of 20.
+- Production acceptance at `390 x 844` generated exactly five directions, moved the daily counter from `20/20` to `19/20`, and opened the composer with the selected idea visible, `transcriptValue == ""`, and assembly disabled. The owner workspace kept exactly three content items across idea selection, proving that generation and selection created no post.
+- The production database was actively receiving separate user-authored material and media during the release window. Those concurrent rows were preserved; therefore global content/revision/media counts legitimately advanced after the backup baseline and were not treated as a deployment regression.
 
 ## Risks
 

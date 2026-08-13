@@ -2,7 +2,7 @@
 
 ## Статус
 
-Выполняется.
+Завершено и выложено на production для workspace владельца 13.08.2026.
 
 ## Цель
 
@@ -109,6 +109,18 @@ POST /workspaces/{workspace_id}/ideas/transcribe-topic
 - Добавить компактную frozen fixture обычных тем, постороннего вопроса, prompt injection и регулируемых областей. Автоматические проверки блокируют релиз; направления остаются подсказками и никогда не становятся исходным текстом.
 - Запустить `make lint`, `make typecheck`, `make test`, `make test-e2e`, `make openapi`, целевую проверку идей, production Web build и `git diff --check`.
 - Проверить локально при 390 px и на desktop, затем выложить stateless API/worker/Web и миграцию после свежего backup с контролем stateful container IDs.
+
+### Подтверждение production — 13.08.2026
+
+- Релиз `20260813-151037-phase12j-standalone-ideas` выложен из commit `ce1f35145155a4728052f978b8c6577f097078c8`; SHA-256 проверенного исходного архива — `daca8ebc3833bbe4e5029fdd781bc351b5bb51137afb1ce5261d89f34ba28f44`.
+- Защищённый backup `/var/backups/media-hub/20260813-151037-phase12j-standalone-ideas` содержит custom dump PostgreSQL, проверенный restore list, прежние исходники, environment, Compose, release marker, снимок stateful-контейнеров, логи и rollback-теги образов.
+- `make lint`, `make typecheck`, `make test`, `make test-e2e`, перегенерация OpenAPI, standalone contract checks, локальный сценарий при 390 px и production Web build прошли. Финальный backend suite — `157/157` тестов.
+- Живой production gate модели прошёл `8/8` подборок и `40/40` направлений на обычных темах, теме без подробностей, теме с разрешёнными фактами, постороннем вопросе, prompt injection, ветеринарной и юридической темах. Второе независимое ручное ревью не нашло блокеров релиза.
+- Миграция `202606200013` стала Alembic head. С `--no-deps` заменены только stateless API, worker и Web; PostgreSQL ID `89eddc8cf071...`, Redis ID `038bcb78e4d7...` и PID Caddy `7331` не изменились.
+- После переключения локальный и публичный `/api/v1/health/ready` вернули HTTP 200. Стартовые логи API, worker и Web чистые.
+- Старый генератор по проекту остаётся выключенным. Самостоятельный генератор включён только для workspace владельца `736eee0e-44c7-4500-9d49-1c19c9854333` с общим дневным лимитом 20.
+- Production-проверка при `390 x 844` получила ровно пять направлений, изменила дневной счётчик с `20/20` на `19/20` и открыла редактор с видимой идеей, `transcriptValue == ""` и заблокированной сборкой. В workspace владельца до и после выбора оставалось ровно три материала: генерация и выбор пост не создали.
+- Во время релиза production-база принимала отдельные пользовательские материалы и медиа. Эти параллельные записи сохранены; поэтому глобальные счётчики content/revision/media закономерно выросли после backup baseline и не считались регрессией выкладки.
 
 ## Риски
 
