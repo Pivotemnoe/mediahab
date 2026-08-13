@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and verified locally on 2026-08-13. Production rollout remains pending; the idea generator stays disabled until its separate human quality gate passes.
+Implemented, verified, and deployed to production on 2026-08-13. The idea generator stays disabled until its separate human quality gate passes.
 
 ## Goal
 
@@ -100,6 +100,17 @@ An idea helps the user decide what to say. It is not source copy. The user's cur
 - `pnpm --filter @temichev/web build`: passed after the test run completed.
 - `git diff --check`: passed.
 - `make openapi` was not run because this slice changes neither the API response schema nor the migration head.
+
+## Production release evidence
+
+- Release `20260813-131201-phase12i-author-voice` deployed application commit `1ca4f0ba2b52f3a4bef9454e8d3551470e5d0bad` to `https://temichev-posthub.ru`.
+- The Git archive was verified locally and on the server with SHA-256 `aef28ef28ce4746a1b3a7bdc92a5d283b92b7592bde27dab61ff0b83f21d51ea`; key source files inside the built API and Web images matched the local hashes.
+- Fresh protected backup `/var/backups/media-hub/20260813-131201-phase12i-author-voice` contains a validated PostgreSQL custom dump, prior source/config/release snapshots, stateful identities, logs, health evidence, rollback image tags, the release archive, and checksums.
+- Only API, worker, and Web were recreated with `--no-deps --no-build`. Their new container IDs begin `8c332afc`, `9d44bfc4`, and `9e90c0af`.
+- PostgreSQL retained container `89eddc8c...` and named volume `media-hub_mediahub-postgres`; Redis retained container `038bcb78...` and named volume `media-hub_mediahub-redis`. Caddy was not reloaded and retained PID `7331`.
+- Alembic remained `202606200012 (head)`. Control counts remained `13|13|11|17|58|26|5|7` for users, workspaces, projects, content items, revisions, media assets, notebook notes, and publications.
+- `IDEA_GENERATOR_ENABLED=false` and the workspace allowlist remained empty in API and worker. The release therefore does not expose the failed-gate idea generator or permit a production provider call through it.
+- Local and public live/ready checks passed; public home, login, and features returned successfully. API and Web started cleanly, and Celery connected to Redis and reported ready. The existing Celery root-user warning remains an infrastructure hardening item and did not block startup.
 
 ## Risks
 
