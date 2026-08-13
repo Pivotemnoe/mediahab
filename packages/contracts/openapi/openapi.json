@@ -3934,6 +3934,102 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/ideas/capability": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Idea Capability",
+        "operationId": "idea_capability_api_v1_projects__project_id__ideas_capability_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaCapabilityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/ideas/generate": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Generate Content Ideas",
+        "operationId": "generate_content_ideas_api_v1_projects__project_id__ideas_generate_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdeaGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/examples/{example_id}": {
       "get": {
         "tags": [
@@ -4304,6 +4400,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GenerationRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai-runs/{run_id}/ideas/{idea_id}/accept": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Accept Content Idea",
+        "operationId": "accept_content_idea_api_v1_ai_runs__run_id__ideas__idea_id__accept_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "idea_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idea Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdeaAcceptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaAcceptOut"
                 }
               }
             }
@@ -6922,6 +7080,47 @@
         "type": "object",
         "title": "ContentCreateRequest"
       },
+      "ContentIdeaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "angle": {
+            "type": "string",
+            "title": "Angle"
+          },
+          "idea_brief": {
+            "type": "string",
+            "title": "Idea Brief"
+          },
+          "starter_outline": {
+            "type": "string",
+            "title": "Starter Outline"
+          },
+          "detail_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detail Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "angle",
+          "idea_brief",
+          "starter_outline",
+          "detail_questions"
+        ],
+        "title": "ContentIdeaOut"
+      },
       "ContentItemOut": {
         "properties": {
           "id": {
@@ -7803,13 +8002,27 @@
             "title": "Project Id"
           },
           "rubric_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Rubric Id"
           },
           "content_item_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Content Item Id"
           },
           "task_type": {
@@ -8049,6 +8262,282 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IdeaAcceptOut": {
+        "properties": {
+          "content_item": {
+            "$ref": "#/components/schemas/IdeaContentItemOut"
+          },
+          "idea": {
+            "$ref": "#/components/schemas/ContentIdeaOut"
+          },
+          "idea_brief": {
+            "$ref": "#/components/schemas/IdeaBriefBlockOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_item",
+          "idea",
+          "idea_brief"
+        ],
+        "title": "IdeaAcceptOut"
+      },
+      "IdeaAcceptRequest": {
+        "properties": {
+          "client_content_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Content Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_content_id"
+        ],
+        "title": "IdeaAcceptRequest"
+      },
+      "IdeaBriefBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "content_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Content Item Id"
+          },
+          "field_key": {
+            "type": "string",
+            "title": "Field Key"
+          },
+          "group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Key"
+          },
+          "group_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Index"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type"
+          },
+          "value_json": {
+            "title": "Value Json"
+          },
+          "transcript_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript Text"
+          },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked"
+          },
+          "source_media_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Media Id"
+          },
+          "revision_number": {
+            "type": "integer",
+            "title": "Revision Number"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content_item_id",
+          "field_key",
+          "group_key",
+          "group_index",
+          "source_type",
+          "value_json",
+          "transcript_text",
+          "is_locked",
+          "source_media_id",
+          "revision_number",
+          "updated_at"
+        ],
+        "title": "IdeaBriefBlockOut"
+      },
+      "IdeaCapabilityOut": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "can_generate": {
+            "type": "boolean",
+            "title": "Can Generate"
+          },
+          "daily_limit": {
+            "type": "integer",
+            "title": "Daily Limit"
+          },
+          "used_today": {
+            "type": "integer",
+            "title": "Used Today"
+          },
+          "remaining_today": {
+            "type": "integer",
+            "title": "Remaining Today"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "can_generate",
+          "daily_limit",
+          "used_today",
+          "remaining_today"
+        ],
+        "title": "IdeaCapabilityOut"
+      },
+      "IdeaContentItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "rubric_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Id"
+          },
+          "rubric_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Version Id"
+          },
+          "project_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Version Id"
+          },
+          "title_internal": {
+            "type": "string",
+            "title": "Title Internal"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "project_id",
+          "rubric_id",
+          "rubric_version_id",
+          "project_version_id",
+          "title_internal",
+          "status",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "IdeaContentItemOut"
+      },
+      "IdeaGenerateRequest": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "goal": {
+            "type": "string",
+            "enum": [
+              "engage",
+              "explain",
+              "share_experience",
+              "soft_sell",
+              "open"
+            ],
+            "title": "Goal",
+            "default": "open"
+          }
+        },
+        "type": "object",
+        "title": "IdeaGenerateRequest"
       },
       "InvitationRequest": {
         "properties": {

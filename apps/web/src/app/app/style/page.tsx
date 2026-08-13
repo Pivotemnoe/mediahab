@@ -16,7 +16,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getStyleOverviewViewModel } from "@/services/ai";
 
-const RECOMMENDED_EXAMPLES = 10;
+const QUICK_START_EXAMPLES = 3;
+const STEADY_STYLE_EXAMPLES = 10;
+
+function styleProgressCopy(count: number): string {
+  if (count <= 0) return "Можно начать без примеров. Добавьте 3 поста, чтобы приблизить подачу.";
+  if (count < QUICK_START_EXAMPLES) return `Для быстрого старта осталось: ${QUICK_START_EXAMPLES - count}.`;
+  if (count < STEADY_STYLE_EXAMPLES) return "Быстрый старт готов. Чем ближе к 10, тем устойчивее стиль.";
+  return "Стиль настроен. Обновляйте примеры, когда меняется подача канала.";
+}
 
 export default async function StylePage() {
   const overview = await getStyleOverviewViewModel();
@@ -60,10 +68,10 @@ export default async function StylePage() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Sparkles className="text-primary" size={22} />
-            <h2 className="text-2xl font-semibold text-foreground">Главное обучение — на примерах</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Стиль настраивается по удачным постам</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            Начать можно с нескольких публикаций, но 10 и больше дают устойчивее лексику, длину фраз и настроение. Для каждой новой генерации редактор сам выберет только самые подходящие примеры.
+            Трёх публикаций достаточно для быстрого старта. Десять и больше помогают устойчивее передавать лексику, длину фраз и настроение. Для каждой новой генерации редактор сам выберет подходящие примеры.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted">
             <Badge tone="success">общий стиль канала</Badge>
@@ -71,13 +79,22 @@ export default async function StylePage() {
             <Badge>факты всегда берём из новой диктовки</Badge>
           </div>
         </div>
-        <div className="grid gap-2 rounded-xl border border-border bg-background p-4">
-          <div className="flex items-end justify-between gap-3">
-            <span className="text-sm font-semibold text-foreground">Готовность стиля</span>
-            <span className="text-lg font-semibold text-primary">{primaryCount === null ? "не загрузилось" : `${primaryCount} из ${RECOMMENDED_EXAMPLES}`}</span>
+        <div className="grid gap-3 rounded-xl border border-border bg-background p-4">
+          <div className="grid gap-1.5">
+            <div className="flex items-end justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">Быстрый старт</span>
+              <span className="text-base font-semibold text-primary">{primaryCount === null ? "не загрузилось" : `${Math.min(primaryCount, QUICK_START_EXAMPLES)} из ${QUICK_START_EXAMPLES}`}</span>
+            </div>
+            <progress aria-label={primaryCount === null ? "Количество примеров временно не загрузилось" : `Для быстрого старта добавлено ${Math.min(primaryCount, QUICK_START_EXAMPLES)} из ${QUICK_START_EXAMPLES} постов`} className="h-2 w-full accent-primary" max={QUICK_START_EXAMPLES} value={primaryCount === null ? undefined : Math.min(primaryCount, QUICK_START_EXAMPLES)} />
           </div>
-          <progress aria-label={primaryCount === null ? "Количество примеров временно не загрузилось" : `Добавлено ${primaryCount} из ${RECOMMENDED_EXAMPLES} рекомендуемых примеров`} className="h-2 w-full accent-primary" max={RECOMMENDED_EXAMPLES} value={primaryCount === null ? undefined : Math.min(primaryCount, RECOMMENDED_EXAMPLES)} />
-          <p className="text-xs leading-5 text-muted">{primaryCount === null ? "Подборка сохранена; повторите загрузку страницы позже." : "Не блокирует работу: подборку всегда можно дополнить позже."}</p>
+          <div className="grid gap-1.5 border-t border-border pt-3">
+            <div className="flex items-end justify-between gap-3">
+              <span className="text-xs font-semibold text-muted">Устойчивый стиль</span>
+              <span className="text-sm font-semibold text-foreground">{primaryCount === null ? "—" : `${Math.min(primaryCount, STEADY_STYLE_EXAMPLES)} из ${STEADY_STYLE_EXAMPLES}`}</span>
+            </div>
+            <progress aria-label={primaryCount === null ? "Количество примеров временно не загрузилось" : `Для устойчивого стиля добавлено ${Math.min(primaryCount, STEADY_STYLE_EXAMPLES)} из ${STEADY_STYLE_EXAMPLES} постов`} className="h-1.5 w-full accent-success" max={STEADY_STYLE_EXAMPLES} value={primaryCount === null ? undefined : Math.min(primaryCount, STEADY_STYLE_EXAMPLES)} />
+          </div>
+          <p className="text-xs leading-5 text-muted">{primaryCount === null ? "Подборка сохранена; повторите загрузку страницы позже." : styleProgressCopy(primaryCount)}</p>
         </div>
       </Card>
 
@@ -100,11 +117,11 @@ export default async function StylePage() {
                       <h3 className="truncate text-xl font-semibold text-foreground">{name}</h3>
                       <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{note}</p>
                     </div>
-                    <Badge tone={count !== null && count >= RECOMMENDED_EXAMPLES ? "success" : "neutral"}>{count === null ? "не загрузилось" : `${count} прим.`}</Badge>
+                    <Badge tone={count !== null && count >= QUICK_START_EXAMPLES ? "success" : "neutral"}>{count === null ? "не загрузилось" : `${count} прим.`}</Badge>
                   </div>
                   <div className="grid gap-2">
-                    <div className="flex justify-between gap-3 text-xs text-muted"><span>Удачные посты</span><span>{count === null ? "повторите позже" : `${count} / ${RECOMMENDED_EXAMPLES}`}</span></div>
-                    <progress aria-label={count === null ? "Количество примеров временно не загрузилось" : `Добавлено ${count} из ${RECOMMENDED_EXAMPLES} рекомендуемых примеров`} className="h-1.5 w-full accent-primary" max={RECOMMENDED_EXAMPLES} value={count === null ? undefined : Math.min(count, RECOMMENDED_EXAMPLES)} />
+                    <div className="flex justify-between gap-3 text-xs text-muted"><span>Быстрый старт / устойчивый стиль</span><span>{count === null ? "повторите позже" : `${Math.min(count, QUICK_START_EXAMPLES)}/${QUICK_START_EXAMPLES} · ${Math.min(count, STEADY_STYLE_EXAMPLES)}/${STEADY_STYLE_EXAMPLES}`}</span></div>
+                    <progress aria-label={count === null ? "Количество примеров временно не загрузилось" : `Добавлено ${count} постов: быстрый старт от ${QUICK_START_EXAMPLES}, устойчивый стиль от ${STEADY_STYLE_EXAMPLES}`} className="h-1.5 w-full accent-primary" max={STEADY_STYLE_EXAMPLES} value={count === null ? undefined : Math.min(count, STEADY_STYLE_EXAMPLES)} />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Button asChild><Link href={`${href}/examples`}><BookOpenCheck size={16} />Добавить примеры</Link></Button>

@@ -201,7 +201,7 @@ The default first-use path collects only:
 
 1. Project or channel name.
 2. Optional content domain.
-3. A recommended library of at least 10 successful posts whose style the user wants to approach.
+3. Successful posts whose style the user wants to approach: 3 are enough for a quick start, while 10 or more normally produce a steadier style.
 
 Examples are project-wide by default and may optionally be assigned to a rubric. The longer structured questionnaire remains available under advanced settings and may collect slug, description, language, audience, content goals, voice and tone, humor, AI mode, platforms, publishing frequency, and rubric suggestions. None of those advanced fields may block the user from adding examples or dictating a first post.
 
@@ -327,7 +327,18 @@ The user is not required to invent or dictate:
 
 These are generated after all factual material is available.
 
-### 7.2 Voice capture
+### 7.2 Idea-to-post assistance
+
+- `Create` offers a secondary `Help me think of a post` entry without adding another primary navigation area.
+- The service returns exactly five distinct ideas from the active project, optional rubric, optional user direction, recent topics, and a bounded set of approved style examples.
+- Each result contains a short title, a concrete angle, a neutral starter outline, and three questions for the user's own facts or experience.
+- Example text is untrusted style context. It must not provide facts, execute embedded instructions, or be copied into a new idea.
+- Opening or generating ideas does not create empty content. Explicitly choosing an idea creates one idempotent draft and records idea-run, idea, and content provenance.
+- The outline is stored as `ai_suggested`; it is not a confirmed fact. The user adds or dictates factual material before the existing editorial pipeline assembles platform variants.
+- Model routing stays internal. The primary interface never exposes provider names, model names, token prices, or raw prompts.
+- Idea generation requires connectivity and remains independently disableable without affecting dictation or normal post assembly.
+
+### 7.3 Voice capture
 
 - Record in the PWA using browser media APIs.
 - Pause, resume, cancel, and re-record each block.
@@ -339,14 +350,14 @@ These are generated after all factual material is available.
 
 The architecture must also allow a later Telegram intake bot that creates or appends blocks to a content item.
 
-### 7.3 Autosave and offline behavior
+### 7.4 Autosave and offline behavior
 
 - Autosave text changes locally and to the API.
 - Drafts must survive page reload and temporary network loss.
 - Offline mode may queue local text changes and audio upload metadata; publication and AI generation require connectivity.
 - Resolve conflicts explicitly rather than silently overwriting a newer server revision.
 
-### 7.4 Fact locking
+### 7.5 Fact locking
 
 Confirmed factual fields are stored as normalized facts and marked locked. AI may quote or paraphrase them but may not change values. A fact-lock validator compares generated structured output against locked facts and blocks approval when a contradiction is detected.
 

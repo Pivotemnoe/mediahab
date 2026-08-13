@@ -23,11 +23,16 @@ class AiEditorRoutingAndCostTest(unittest.TestCase):
             openai_api_key="test-only",
             openai_text_model="gpt-4.1-mini",
             openai_editor_model="gpt-5.6-terra",
+            openai_idea_model="gpt-5.6-luna",
         )
 
         self.assertEqual(text_provider_for(settings, "extract_facts").model_id, "gpt-4.1-mini")
         self.assertEqual(text_provider_for(settings, "assemble_master").model_id, "gpt-5.6-terra")
         self.assertEqual(text_provider_for(settings, "refine_variant").model_id, "gpt-5.6-terra")
+        self.assertEqual(
+            text_provider_for(settings, "suggest_content_ideas").model_id,
+            "gpt-5.6-luna",
+        )
 
     def test_known_model_cost_is_stored_in_micro_usd(self) -> None:
         self.assertEqual(
@@ -36,7 +41,11 @@ class AiEditorRoutingAndCostTest(unittest.TestCase):
         )
         self.assertEqual(
             estimate_text_cost_micro_usd("gpt-5.6-terra", 11_257, 1_951),
-            57_408,
+            45_926,
+        )
+        self.assertEqual(
+            estimate_text_cost_micro_usd("gpt-5.6-luna", 11_257, 1_951),
+            4_593,
         )
 
     def test_unknown_or_incomplete_usage_has_no_estimate(self) -> None:

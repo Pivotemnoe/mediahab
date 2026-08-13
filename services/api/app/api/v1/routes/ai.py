@@ -1,22 +1,39 @@
 from __future__ import annotations
 
-from typing import Any
-from uuid import UUID
+from typing import Any, Literal
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.db.base import ContentItem, ExamplePost, GenerationRun, Rubric, utc_now
+from app.db.base import (
+    ContentBlock,
+    ContentItem,
+    ExamplePost,
+    GenerationRun,
+    Project,
+    Rubric,
+    RubricVersion,
+    UsageEvent,
+    Workspace,
+    utc_now,
+)
 from app.db.session import get_session
 from app.modules.ai.providers import ProviderError
 from app.modules.ai.service import (
     AiPipelineError,
+    IDEA_TASK_TYPE,
     approve_example,
     assemble_master,
+    create_project_idea_run,
+    execute_project_idea_run,
     extract_facts,
+    idea_generation_usage,
+    idea_generator_enabled,
     import_example_post,
     quality_check,
     reject_example,
@@ -30,7 +47,17 @@ from app.modules.auth.dependencies import (
     require_role,
     require_workspace_membership,
 )
-from app.modules.content.service import CONTENT_MUTATION_ROLES, READ_ROLES
+from app.modules.billing.service import (
+    UsageEntitlementError,
+    reserve_ai_text_generation_usage,
+)
+from app.modules.content.service import (
+    CONTENT_MUTATION_ROLES,
+    READ_ROLES,
+    resolve_content_create_context,
+    upsert_block,
+    write_content_revision,
+)
 from app.modules.projects.service import get_active_project
 from app.modules.shared.errors import api_error
 
@@ -90,8 +117,8 @@ class GenerationRunOut(BaseModel):
     id: UUID
     workspace_id: UUID
     project_id: UUID
-    rubric_id: UUID
-    content_item_id: UUID
+    rubric_id: UUID | None
+    content_item_id: UUID | None
     task_type: str
     provider_key: str
     model_id: str
@@ -114,6 +141,68 @@ class GenerationRunOut(BaseModel):
 class MessageResponse(BaseModel):
     status: str
     message: str
+
+
+class IdeaCapabilityOut(BaseModel):
+    enabled: bool
+    can_generate: bool
+    daily_limit: int
+    used_today: int
+    remaining_today: int
+
+
+class IdeaGenerateRequest(BaseModel):
+    rubric_id: UUID | None = None
+    topic: str | None = Field(default=None, max_length=1000)
+    goal: Literal["engage", "explain", "share_experience", "soft_sell", "open"] = "open"
+
+
+class ContentIdeaOut(BaseModel):
+    id: str
+    title: str
+    angle: str
+    idea_brief: str
+    starter_outline: str
+    detail_questions: list[str]
+
+
+class IdeaAcceptRequest(BaseModel):
+    client_content_id: UUID
+
+
+class IdeaContentItemOut(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    project_id: UUID
+    rubric_id: UUID
+    rubric_version_id: UUID
+    project_version_id: UUID
+    title_internal: str
+    status: str
+    version: int
+    created_at: str
+    updated_at: str
+
+
+class IdeaBriefBlockOut(BaseModel):
+    id: UUID
+    content_item_id: UUID
+    field_key: str
+    group_key: str | None
+    group_index: int | None
+    source_type: str
+    value_json: Any
+    transcript_text: str | None
+    is_locked: bool
+    source_media_id: UUID | None
+    revision_number: int
+    updated_at: str
+
+
+class IdeaAcceptOut(BaseModel):
+    content_item: IdeaContentItemOut
+    idea: ContentIdeaOut
+    idea_brief: IdeaBriefBlockOut
 
 
 def example_out(example: ExamplePost) -> ExampleOut:
@@ -161,6 +250,87 @@ def generation_run_out(run: GenerationRun) -> GenerationRunOut:
         retry_count=run.retry_count,
         created_at=run.created_at.isoformat(),
         completed_at=run.completed_at.isoformat() if run.completed_at else None,
+    )
+
+
+def idea_content_item_out(item: ContentItem) -> IdeaContentItemOut:
+    return IdeaContentItemOut(
+        id=item.id,
+        workspace_id=item.workspace_id,
+        project_id=item.project_id,
+        rubric_id=item.rubric_id,
+        rubric_version_id=item.rubric_version_id,
+        project_version_id=item.project_version_id,
+        title_internal=item.title_internal,
+        status=item.status,
+        version=item.version,
+        created_at=item.created_at.isoformat(),
+        updated_at=item.updated_at.isoformat(),
+    )
+
+
+def idea_brief_block_out(block: ContentBlock) -> IdeaBriefBlockOut:
+    return IdeaBriefBlockOut(
+        id=block.id,
+        content_item_id=block.content_item_id,
+        field_key=block.field_key,
+        group_key=block.group_key,
+        group_index=block.group_index,
+        source_type=block.source_type,
+        value_json=block.value_json,
+        transcript_text=block.transcript_text,
+        is_locked=block.is_locked,
+        source_media_id=block.source_media_id,
+        revision_number=block.revision_number,
+        updated_at=block.updated_at.isoformat(),
+    )
+
+
+def content_idea_from_run(run: GenerationRun, idea_id: str) -> dict[str, Any] | None:
+    response = run.response_json if isinstance(run.response_json, dict) else {}
+    for raw_idea in response.get("ideas") or []:
+        if isinstance(raw_idea, dict) and raw_idea.get("id") == idea_id:
+            return raw_idea
+    return None
+
+
+async def accepted_idea_response(
+    db: AsyncSession,
+    run: GenerationRun,
+    idea: dict[str, Any],
+    client_content_id: UUID,
+) -> IdeaAcceptOut | None:
+    item = await db.get(ContentItem, client_content_id)
+    if item is None:
+        return None
+    block = await db.scalar(
+        select(ContentBlock).where(
+            ContentBlock.content_item_id == item.id,
+            ContentBlock.field_key == "idea_brief",
+            ContentBlock.group_key.is_(None),
+            ContentBlock.group_index.is_(None),
+        )
+    )
+    value = block.value_json if block is not None and isinstance(block.value_json, dict) else {}
+    provenance = value.get("provenance") if isinstance(value.get("provenance"), dict) else {}
+    expected = {
+        "run_id": str(run.id),
+        "idea_id": str(idea["id"]),
+        "client_content_id": str(client_content_id),
+        "content_item_id": str(item.id),
+    }
+    if (
+        item.workspace_id != run.workspace_id
+        or item.project_id != run.project_id
+        or block is None
+        or block.source_type != "ai_suggested"
+        or any(str(provenance.get(key)) != value for key, value in expected.items())
+    ):
+        return None
+    return IdeaAcceptOut(
+        content_item=idea_content_item_out(item),
+        idea=ContentIdeaOut.model_validate(idea),
+        idea_brief=idea_brief_block_out(block),
     )
 
 
@@ -239,6 +409,94 @@ async def run_for_actor(
     return run, membership
 
 
+async def active_rubric_version_for_idea(
+    db: AsyncSession,
+    project_id: UUID,
+    rubric_id: UUID | None,
+) -> RubricVersion | None:
+    if rubric_id is None:
+        return None
+    row = (
+        await db.execute(
+            select(RubricVersion)
+            .join(Rubric, Rubric.active_version_id == RubricVersion.id)
+            .where(
+                Rubric.id == rubric_id,
+                Rubric.project_id == project_id,
+                Rubric.status == "active",
+            )
+        )
+    ).scalar_one_or_none()
+    return row
+
+
+async def reserve_idea_run(
+    db: AsyncSession,
+    settings: Settings,
+    project: Project,
+    project_version: Any,
+    rubric_version: RubricVersion | None,
+    actor_user_id: UUID,
+    topic: str | None,
+    goal: str,
+    request: Request,
+    retry_count: int = 0,
+    source_run_id: UUID | None = None,
+) -> GenerationRun:
+    # The row lock serializes quota reservations per workspace. Commit releases it before AI I/O.
+    await db.scalar(select(Workspace).where(Workspace.id == project.workspace_id).with_for_update())
+    usage = await idea_generation_usage(db, project.workspace_id, settings)
+    if usage["remaining_today"] <= 0:
+        raise api_error(
+            429,
+            "idea_daily_limit_reached",
+            "Daily idea generation limit reached.",
+            {
+                "daily_limit": usage["daily_limit"],
+                "used_today": usage["used_today"],
+                "reset_at": usage["reset_at"].isoformat(),
+            },
+            request=request,
+        )
+    run_id = uuid4()
+    try:
+        await reserve_ai_text_generation_usage(
+            db,
+            workspace_id=project.workspace_id,
+            generation_run_id=run_id,
+            source="idea_generator",
+            metadata={
+                "project_id": str(project.id),
+                "task_type": IDEA_TASK_TYPE,
+                "source_run_id": str(source_run_id) if source_run_id is not None else None,
+            },
+            workspace_lock_held=True,
+        )
+    except UsageEntitlementError as exc:
+        raise api_error(
+            402,
+            exc.code,
+            exc.message,
+            exc.details,
+            request=request,
+        ) from exc
+    run = await create_project_idea_run(
+        db,
+        settings,
+        project,
+        project_version,
+        rubric_version,
+        actor_user_id,
+        topic,
+        goal,
+        retry_count=retry_count,
+        source_run_id=source_run_id,
+        run_id=run_id,
+    )
+    await db.commit()
+    return run
+
+
 @router.post("/projects/{project_id}/examples/import", response_model=ExampleImportResponse)
 async def import_examples(
     project_id: UUID,
@@ -297,6 +555,79 @@ async def list_examples(
         )
     ).all()
     return ExampleListResponse(examples=[example_out(row) for row in rows])
+
+
+@router.get(
+    "/projects/{project_id}/ideas/capability",
+    response_model=IdeaCapabilityOut,
+)
+async def idea_capability(
+    project_id: UUID,
+    request: Request,
+    actor: Actor = Depends(get_current_actor),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> IdeaCapabilityOut:
+    ctx, membership = await project_for_actor(project_id, request, actor, db)
+    require_role(membership, READ_ROLES, request)
+    usage = await idea_generation_usage(db, ctx.project.workspace_id, settings)
+    enabled = idea_generator_enabled(settings, ctx.project.workspace_id)
+    can_generate = enabled and membership.role_key in CONTENT_MUTATION_ROLES
+    return IdeaCapabilityOut(
+        enabled=enabled,
+        can_generate=can_generate,
+        daily_limit=usage["daily_limit"],
+        used_today=usage["used_today"],
+        remaining_today=usage["remaining_today"] if can_generate else 0,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/ideas/generate",
+    response_model=GenerationRunOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def generate_content_ideas(
+    project_id: UUID,
+    payload: IdeaGenerateRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> GenerationRunOut:
+    ctx, membership = await project_for_actor(project_id, request, actor, db)
+    require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if not idea_generator_enabled(settings, ctx.project.workspace_id):
+        raise api_error(
+            403,
+            "idea_generator_unavailable",
+            "Idea generation is not enabled for this workspace.",
+            request=request,
+        )
+    rubric_version = await active_rubric_version_for_idea(db, project_id, payload.rubric_id)
+    if payload.rubric_id is not None and rubric_version is None:
+        raise api_error(404, "rubric_not_found", "Rubric not found.", request=request)
+    run = await reserve_idea_run(
+        db,
+        settings,
+        ctx.project,
+        ctx.version,
+        rubric_version,
+        actor.user.id,
+        payload.topic,
+        payload.goal,
+        request,
+    )
+    run = await execute_project_idea_run(
+        db,
+        settings,
+        run,
+        ctx.project,
+        ctx.version,
+        rubric_version,
+    )
+    await db.commit()
+    return generation_run_out(run)
 
 
 @router.get("/examples/{example_id}", response_model=ExampleOut)
@@ -464,6 +795,159 @@ async def get_ai_run(
     return generation_run_out(run)
 
 
+@router.post(
+    "/ai-runs/{run_id}/ideas/{idea_id}/accept",
+    response_model=IdeaAcceptOut,
+)
+async def accept_content_idea(
+    run_id: UUID,
+    idea_id: str,
+    payload: IdeaAcceptRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+) -> IdeaAcceptOut:
+    run, membership = await run_for_actor(run_id, request, actor, db)
+    require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if run.task_type != IDEA_TASK_TYPE or run.status != "completed":
+        raise api_error(
+            409,
+            "idea_run_not_acceptable",
+            "Only a completed idea generation run can be accepted.",
+            request=request,
+        )
+    locked_run = await db.scalar(
+        select(GenerationRun)
+        .where(GenerationRun.id == run.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    assert locked_run is not None
+    run = locked_run
+    idea = content_idea_from_run(run, idea_id)
+    if idea is None:
+        raise api_error(404, "idea_not_found", "Idea not found in this run.", request=request)
+
+    existing = await accepted_idea_response(db, run, idea, payload.client_content_id)
+    if existing is not None:
+        return existing
+    occupied = await db.get(ContentItem, payload.client_content_id)
+    if occupied is not None:
+        raise api_error(
+            409,
+            "client_content_id_conflict",
+            "This client content id is already used for another draft.",
+            request=request,
+        )
+    if run.content_item_id is not None:
+        raise api_error(
+            409,
+            "idea_already_accepted",
+            "An idea from this run has already been accepted.",
+            {"content_item_id": str(run.content_item_id)},
+            request=request,
+        )
+
+    create_context = await resolve_content_create_context(
+        db,
+        run.project_id,
+        run.rubric_id,
+        actor.user.id,
+    )
+    if create_context is None:
+        raise api_error(404, "rubric_not_found", "Rubric not found.", request=request)
+    now = utc_now()
+    item = ContentItem(
+        id=payload.client_content_id,
+        workspace_id=run.workspace_id,
+        project_id=run.project_id,
+        rubric_id=create_context.rubric.id,
+        rubric_version_id=create_context.rubric_version.id,
+        project_version_id=create_context.project_version.id,
+        title_internal=str(idea["title"])[:200],
+        status="draft",
+        created_by=actor.user.id,
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+    db.add(item)
+    await db.flush()
+    provenance = {
+        "run_id": str(run.id),
+        "idea_id": str(idea["id"]),
+        "client_content_id": str(payload.client_content_id),
+        "content_item_id": str(item.id),
+    }
+    block = await upsert_block(
+        db,
+        item,
+        actor.user.id,
+        "idea_brief",
+        {
+            "text": str(idea["starter_outline"]),
+            "idea": idea,
+            "provenance": provenance,
+        },
+        source_type="ai_suggested",
+        lock=False,
+    )
+    revision = await write_content_revision(
+        db,
+        item,
+        actor.user.id,
+        "ai_idea_acceptance",
+        {
+            "event": "idea_accepted",
+            "provenance": provenance,
+            "idea": idea,
+            "idea_brief_block_id": str(block.id),
+        },
+        text=str(idea["starter_outline"]),
+    )
+    revision.generation_run_id = run.id
+    run.content_item_id = item.id
+    run.updated_at = utc_now()
+    db.add(
+        UsageEvent(
+            id=uuid4(),
+            workspace_id=run.workspace_id,
+            key="content_idea_accepted",
+            quantity=1,
+            source="idea_generator",
+            metadata_json={"project_id": str(run.project_id), **provenance},
+            created_at=utc_now(),
+        )
+    )
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        persisted_run = await db.get(GenerationRun, run_id)
+        if persisted_run is not None:
+            persisted_idea = content_idea_from_run(persisted_run, idea_id)
+            if persisted_idea is not None:
+                persisted = await accepted_idea_response(
+                    db,
+                    persisted_run,
+                    persisted_idea,
+                    payload.client_content_id,
+                )
+                if persisted is not None:
+                    return persisted
+        raise api_error(
+            409,
+            "client_content_id_conflict",
+            "This client content id is already used for another draft.",
+            request=request,
+        )
+    return IdeaAcceptOut(
+        content_item=idea_content_item_out(item),
+        idea=ContentIdeaOut.model_validate(idea),
+        idea_brief=idea_brief_block_out(block),
+    )
+
+
 @router.post("/ai-runs/{run_id}/cancel", response_model=GenerationRunOut)
 async def cancel_ai_run(
     run_id: UUID,
@@ -497,5 +981,57 @@ async def retry_ai_run(
 ) -> GenerationRunOut:
     run, membership = await run_for_actor(run_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if run.task_type == IDEA_TASK_TYPE:
+        if run.status != "failed":
+            raise api_error(
+                409,
+                "idea_run_not_retryable",
+                "Only a failed idea generation run can be retried.",
+                request=request,
+            )
+        if not idea_generator_enabled(settings, run.workspace_id):
+            raise api_error(
+                403,
+                "idea_generator_unavailable",
+                "Idea generation is not enabled for this workspace.",
+                request=request,
+            )
+        project_ctx = await get_active_project(db, run.project_id)
+        if project_ctx is None or project_ctx.project.workspace_id != run.workspace_id:
+            raise api_error(404, "project_not_found", "Project not found.", request=request)
+        rubric_version = await active_rubric_version_for_idea(db, run.project_id, run.rubric_id)
+        if run.rubric_id is not None and rubric_version is None:
+            raise api_error(404, "rubric_not_found", "Rubric not found.", request=request)
+        metadata = run.request_metadata_json if isinstance(run.request_metadata_json, dict) else {}
+        new_run = await reserve_idea_run(
+            db,
+            settings,
+            project_ctx.project,
+            project_ctx.version,
+            rubric_version,
+            actor.user.id,
+            metadata.get("topic") if isinstance(metadata.get("topic"), str) else None,
+            str(metadata.get("goal") or "Найти полезную тему для следующей публикации"),
+            request,
+            retry_count=run.retry_count + 1,
+            source_run_id=run.id,
+        )
+        new_run = await execute_project_idea_run(
+            db,
+            settings,
+            new_run,
+            project_ctx.project,
+            project_ctx.version,
+            rubric_version,
+        )
+        await db.commit()
+        return generation_run_out(new_run)
+    if run.content_item_id is None:
+        raise api_error(
+            409,
+            "ai_run_not_retryable",
+            "This AI run has no content draft to retry.",
+            request=request,
+        )
     item = await mutable_item_for_actor(run.content_item_id, request, actor, db)
     return await run_ai_task(run.task_type, item, actor, db, settings, request)

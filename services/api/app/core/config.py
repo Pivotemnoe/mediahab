@@ -71,6 +71,14 @@ class Settings(BaseSettings):
     ai_text_timeout_seconds: float = Field(default=90.0, alias="AI_TEXT_TIMEOUT_SECONDS")
     openai_text_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_TEXT_MODEL")
     openai_editor_model: str = Field(default="gpt-5.6-terra", alias="OPENAI_EDITOR_MODEL")
+    openai_idea_model: str = Field(default="gpt-5.6-luna", alias="OPENAI_IDEA_MODEL")
+    idea_generator_enabled: bool = Field(default=False, alias="IDEA_GENERATOR_ENABLED")
+    idea_generator_workspace_allowlist_raw: str = Field(
+        default="", alias="IDEA_GENERATOR_WORKSPACE_ALLOWLIST"
+    )
+    idea_generator_daily_limit: int = Field(
+        default=20, ge=1, alias="IDEA_GENERATOR_DAILY_LIMIT"
+    )
     embedding_provider: str = Field(default="openai", alias="EMBEDDING_PROVIDER")
     embedding_model: str = Field(default="mock-embedding-v1", alias="EMBEDDING_MODEL")
     openai_embedding_model: str = Field(
@@ -92,6 +100,14 @@ class Settings(BaseSettings):
             for origin in self.cors_origins_raw.split(",")
             if origin.strip()
         ]
+
+    @property
+    def idea_generator_workspace_allowlist(self) -> set[str]:
+        return {
+            value.strip().lower()
+            for value in self.idea_generator_workspace_allowlist_raw.split(",")
+            if value.strip()
+        }
 
     @property
     def resolved_media_bucket(self) -> str:

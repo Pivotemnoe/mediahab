@@ -17,6 +17,7 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
+  Square,
   Upload,
   WandSparkles,
   X,
@@ -26,6 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IdeaGeneratorSheet, type IdeaAcceptedResult } from "@/components/phase12/idea-generator-sheet";
 import { RichTextEditor, RichTextPreview } from "@/components/phase12/rich-text-editor";
 import {
   type RichTextDocument,
@@ -49,10 +51,11 @@ import {
   type PlatformVariantsResponse,
   type TranscriptionJobOut,
 } from "@/services/openapi-types";
-import { type NewContentViewModel } from "@/services/content";
+import { type IdeaBriefViewModel, type NewContentViewModel } from "@/services/content";
 
 type CaptureState =
   | "idle"
+  | "requesting"
   | "recording"
   | "paused"
   | "uploading"
@@ -459,6 +462,7 @@ export function SimpleVoiceComposer({
   );
   const [segments, setSegments] = useState<Segment[]>([]);
   const [transcript, setTranscript] = useState(resumeDraft?.transcript ?? "");
+  const [ideaBrief, setIdeaBrief] = useState<IdeaBriefViewModel | null>(resumeDraft?.ideaBrief ?? null);
   const [contentId, setContentId] = useState<string | null>(resumeDraft?.contentId ?? null);
   const [sourceField, setSourceField] = useState<string | null>(resumeDraft?.sourceFieldKey ?? null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
@@ -496,6 +500,9 @@ export function SimpleVoiceComposer({
   const [copyTextFamilyTarget, setCopyTextFamilyTarget] = useState(true);
   const [exactPlatform, setExactPlatform] = useState<PlatformKey>("telegram");
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const pendingStreamRef = useRef<MediaStream | null>(null);
+  const captureRequestRef = useRef(0);
+  const mountedRef = useRef(true);
   const chunksRef = useRef<Blob[]>([]);
   const transcriptRef = useRef(resumeDraft?.transcript ?? "");
   const contentIdRef = useRef<string | null>(resumeDraft?.contentId ?? null);
@@ -503,6 +510,24 @@ export function SimpleVoiceComposer({
   const sourceBlockIdRef = useRef<string | null>(resumeDraft?.sourceBlockId ?? null);
   const lockedTranscriptRef = useRef(resumeDraft?.transcript ?? "");
   const didFocusRequestedPlatformRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      captureRequestRef.current += 1;
+      const recorder = recorderRef.current;
+      if (recorder) {
+        recorder.ondataavailable = null;
+        recorder.onstop = null;
+        if (recorder.state !== "inactive") recorder.stop();
+        recorder.stream.getTracks().forEach((track) => track.stop());
+        recorderRef.current = null;
+      }
+      pendingStreamRef.current?.getTracks().forEach((track) => track.stop());
+      pendingStreamRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!resumeDraft || !initialPlatformKey || didFocusRequestedPlatformRef.current) return;
@@ -546,7 +571,6 @@ export function SimpleVoiceComposer({
   }
 
   function updateProject(projectId: string) {
-    const nextProject = viewModel.projects.find((item) => item.id === projectId);
     setSelectedProjectId(projectId);
     setSelectedRubricId("");
     setContentId(null);
@@ -555,14 +579,38 @@ export function SimpleVoiceComposer({
     sourceFieldRef.current = null;
     sourceBlockIdRef.current = null;
     setSegments([]);
+    setIdeaBrief(null);
     updateTranscript("");
     setResults(emptyResults());
     setMessage("Проект изменён. Можно выбрать рубрику или начать без неё.");
   }
 
+  async function acceptGeneratedIdea(result: IdeaAcceptedResult) {
+    contentIdRef.current = result.content_item.id;
+    sourceFieldRef.current = null;
+    sourceBlockIdRef.current = null;
+    lockedTranscriptRef.current = "";
+    setContentId(result.content_item.id);
+    setSourceField(null);
+    setIdeaBrief(result.idea);
+    setResults(emptyResults());
+    setMessage("Идея выбрана. Добавьте личные факты голосом или текстом — заготовка не считается вашей расшифровкой.");
+    const params = new URLSearchParams(window.location.search);
+    params.set("edit", result.content_item.id);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
+    window.requestAnimationFrame(() => document.getElementById("voice-transcript")?.focus());
+  }
+
   async function ensureContent(): Promise<{ contentId: string; fieldKey: string }> {
-    if (contentIdRef.current && sourceFieldRef.current) {
-      return { contentId: contentIdRef.current, fieldKey: sourceFieldRef.current };
+    if (contentIdRef.current) {
+      if (sourceFieldRef.current) return { contentId: contentIdRef.current, fieldKey: sourceFieldRef.current };
+      const guidedForm = await apiRequest<GuidedFormResponse>(`/api/v1/content-items/${contentIdRef.current}/guided-form`, {
+        method: "GET",
+      });
+      const fieldKey = sourceFieldKey(guidedForm);
+      sourceFieldRef.current = fieldKey;
+      setSourceField(fieldKey);
+      return { contentId: contentIdRef.current, fieldKey };
     }
     if (!canUseApi || !project) {
       throw new Error("Для создания материала нужен доступный API и проект.");
@@ -664,6 +712,10 @@ export function SimpleVoiceComposer({
   }
 
   async function startRecording() {
+    if (!["idle", "accepted", "error"].includes(captureState)) return;
+    const requestId = captureRequestRef.current + 1;
+    captureRequestRef.current = requestId;
+    let stream: MediaStream | null = null;
     try {
       if (currentJobId) {
         setMessage("Сначала примите текущую расшифровку.");
@@ -672,27 +724,47 @@ export function SimpleVoiceComposer({
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
         throw new Error("Браузер не дал доступ к микрофону. Загрузите аудиофайл.");
       }
+      setCaptureState("requesting");
+      setMessage("Подключаю микрофон…");
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const activeStream = stream;
+      if (!mountedRef.current || requestId !== captureRequestRef.current) {
+        activeStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      pendingStreamRef.current = activeStream;
       const context = await ensureContent();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!mountedRef.current || requestId !== captureRequestRef.current) {
+        activeStream.getTracks().forEach((track) => track.stop());
+        pendingStreamRef.current = null;
+        return;
+      }
       const mimeType = preferredMimeType();
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const recorder = new MediaRecorder(activeStream, { mimeType });
       chunksRef.current = [];
       recorder.ondataavailable = (event) => {
         if (event.data.size) chunksRef.current.push(event.data);
       };
       recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
+        activeStream.getTracks().forEach((track) => track.stop());
+        pendingStreamRef.current = null;
         recorderRef.current = null;
+        if (!mountedRef.current) return;
         const blob = new Blob(chunksRef.current, { type: mimeType });
         void uploadVoice(blob, context);
       };
       recorder.start();
       recorderRef.current = recorder;
+      pendingStreamRef.current = null;
       setCaptureState("recording");
       setMessage(`Идёт запись фрагмента ${segments.length + 1}.`);
     } catch (error) {
-      setCaptureState("error");
-      setMessage(error instanceof Error ? error.message : "Не удалось начать запись.");
+      stream?.getTracks().forEach((track) => track.stop());
+      pendingStreamRef.current = null;
+      if (mountedRef.current && requestId === captureRequestRef.current) {
+        setCaptureState("error");
+        setMessage(error instanceof Error ? error.message : "Не удалось начать запись.");
+      }
     }
   }
 
@@ -1043,7 +1115,7 @@ export function SimpleVoiceComposer({
       setFeedbackByVariant((current) => ({ ...current, [variant.id]: response.feedback }));
       setMessage(
         learnStyle
-          ? `${platformLabel(activePlatform)}: финальная ручная версия сохранена как внутренний пример стиля. OpenAI не обучается.`
+          ? "Мы сохраняем эту версию как пример для следующих текстов; сама модель не переобучается."
           : `${platformLabel(activePlatform)}: отдельная реакция сохранена.`,
       );
     } catch (error) {
@@ -1161,7 +1233,7 @@ export function SimpleVoiceComposer({
             </p>
           </div>
           {contentId ? (
-            <Button asChild size="sm" variant="secondary">
+            <Button asChild className="min-h-11" size="sm" variant="secondary">
               <Link href={`/app/content/${contentId}`}>Расширенный режим</Link>
             </Button>
           ) : null}
@@ -1186,7 +1258,7 @@ export function SimpleVoiceComposer({
             Проект
             <span className="relative">
               <select
-                  className="h-10 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary sm:h-11"
+                  className="h-11 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary"
                 disabled={Boolean(contentId)}
                 value={project?.id ?? ""}
                 onChange={(event) => updateProject(event.currentTarget.value)}
@@ -1202,7 +1274,7 @@ export function SimpleVoiceComposer({
             Рубрика <span className="font-normal text-muted">(необязательно)</span>
             <span className="relative">
               <select
-                  className="h-10 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary sm:h-11"
+                  className="h-11 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary"
                 disabled={Boolean(contentId)}
                 value={selectedRubricId}
                 onChange={(event) => setSelectedRubricId(event.currentTarget.value)}
@@ -1261,8 +1333,8 @@ export function SimpleVoiceComposer({
                   aria-pressed={selected}
                   className={
                     selected
-                      ? "flex min-w-0 items-center gap-2 rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-2.5 text-left sm:p-3"
-                      : "flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background p-2.5 text-left sm:p-3"
+                      ? "flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-2.5 text-left sm:p-3"
+                      : "flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-border bg-background p-2.5 text-left sm:p-3"
                   }
                   key={platform.key}
                   type="button"
@@ -1329,7 +1401,7 @@ export function SimpleVoiceComposer({
           <span className="text-primary">Изменить</span>
         </button>
         <Button
-          className="h-12 w-full text-base"
+          className="hidden h-12 w-full text-base lg:flex"
           disabled={isAssembling || !transcript.trim() || !selectedPlatforms.length || !canUseApi || Boolean(instagramFormatIssue())}
           type="button"
           onClick={() => void assembleVersions()}
@@ -1343,7 +1415,7 @@ export function SimpleVoiceComposer({
       {lengthSheetOpen ? (
         <div className="fixed inset-0 z-50 flex items-end bg-black/35 sm:items-center sm:justify-center" role="presentation" onMouseDown={() => setLengthSheetOpen(false)}>
           <section aria-labelledby="length-sheet-title" aria-modal="true" className="grid max-h-[90vh] w-full gap-4 overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-popover sm:max-w-lg sm:rounded-2xl" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold text-foreground" id="length-sheet-title">Длина этого поста</h2><p className="mt-1 text-sm leading-6 text-muted">Меняет только текущую сборку. Правила проекта и рубрики сохраняются.</p></div><button aria-label="Закрыть" className="p-2 text-muted" type="button" onClick={() => setLengthSheetOpen(false)}><X size={20} /></button></div>
+            <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold text-foreground" id="length-sheet-title">Длина этого поста</h2><p className="mt-1 text-sm leading-6 text-muted">Меняет только текущую сборку. Правила проекта и рубрики сохраняются.</p></div><button aria-label="Закрыть" className="grid min-h-11 min-w-11 place-items-center text-muted" type="button" onClick={() => setLengthSheetOpen(false)}><X size={20} /></button></div>
             <div className="grid grid-cols-2 gap-2">
               {([['auto', 'Авто по правилам'], ['short', 'Короткий'], ['normal', 'Обычный'], ['detailed', 'Подробный'], ['exact', 'Точно']] as Array<[LengthMode, string]>).map(([mode, label]) => (
                 <button aria-pressed={lengthMode === mode} className={lengthMode === mode ? "rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-3 text-left text-sm font-semibold" : "rounded-lg border border-border p-3 text-left text-sm"} key={mode} type="button" onClick={() => setLengthMode(mode)}>{label}</button>
@@ -1352,8 +1424,8 @@ export function SimpleVoiceComposer({
             {lengthMode === "exact" ? (
               <div className="grid gap-3 rounded-lg border border-border p-3">
                 <label className="flex items-start gap-2 text-sm"><input checked={copyTextFamilyTarget} className="mt-1" type="checkbox" onChange={(event) => setCopyTextFamilyTarget(event.currentTarget.checked)} /><span><span className="font-semibold text-foreground">Одинаковая цель для Telegram, MAX и VK</span><span className="block text-xs leading-5 text-muted">Каждая версия всё равно хранится отдельно.</span></span></label>
-                {!copyTextFamilyTarget ? <label className="grid gap-1 text-sm font-semibold">Площадка<select className="h-10 rounded-lg border border-border bg-background px-3" value={exactPlatform} onChange={(event) => setExactPlatform(event.currentTarget.value as PlatformKey)}>{selectedPlatforms.map((key) => <option key={key} value={key}>{platformLabel(key)}</option>)}</select></label> : null}
-                <div className="grid grid-cols-2 gap-2"><label className="grid gap-1 text-sm">От<input className="h-10 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMinChars} onChange={(event) => setExactMinChars(event.currentTarget.value)} /></label><label className="grid gap-1 text-sm">До<input className="h-10 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMaxChars} onChange={(event) => setExactMaxChars(event.currentTarget.value)} /></label></div>
+                {!copyTextFamilyTarget ? <label className="grid gap-1 text-sm font-semibold">Площадка<select className="h-11 rounded-lg border border-border bg-background px-3" value={exactPlatform} onChange={(event) => setExactPlatform(event.currentTarget.value as PlatformKey)}>{selectedPlatforms.map((key) => <option key={key} value={key}>{platformLabel(key)}</option>)}</select></label> : null}
+                <div className="grid grid-cols-2 gap-2"><label className="grid gap-1 text-sm">От<input className="h-11 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMinChars} onChange={(event) => setExactMinChars(event.currentTarget.value)} /></label><label className="grid gap-1 text-sm">До<input className="h-11 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMaxChars} onChange={(event) => setExactMaxChars(event.currentTarget.value)} /></label></div>
                 {copyTextFamilyTarget && Number(exactMaxChars) > 4000 ? <p className="text-sm text-danger">Для MAX укажите не больше 4 000 знаков.</p> : null}
               </div>
             ) : null}
@@ -1372,29 +1444,47 @@ export function SimpleVoiceComposer({
         </div>
         <div className="order-2 flex justify-center border-t border-border pt-5 lg:order-3">
           <button
-            aria-label="Начать диктовку"
+            aria-label={captureState === "recording" || captureState === "paused" ? "Остановить и сохранить фрагмент" : "Начать диктовку"}
+            aria-pressed={captureState === "recording" || captureState === "paused"}
             className="grid size-28 place-items-center rounded-full bg-accent text-accent-foreground shadow-popover transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 sm:size-32"
-            disabled={["uploading", "transcribing", "review"].includes(captureState)}
+            disabled={["requesting", "uploading", "transcribing", "review"].includes(captureState)}
             type="button"
-            onClick={() => void startRecording()}
+            onClick={() => {
+              if (captureState === "recording" || captureState === "paused") finishSegment();
+              else void startRecording();
+            }}
           >
-            {captureState === "uploading" || captureState === "transcribing" ? (
-              <Loader2 className="animate-spin" size={36} />
+            {captureState === "requesting" || captureState === "uploading" || captureState === "transcribing" ? (
+              <Loader2 className="animate-spin motion-reduce:animate-none" size={36} />
+            ) : captureState === "recording" || captureState === "paused" ? (
+              <Square size={34} />
             ) : (
               <Mic size={40} />
             )}
           </button>
         </div>
+        {!contentId && project ? (
+          <div className="order-3 flex min-w-0 justify-center lg:order-4">
+            <IdeaGeneratorSheet
+              disabledReason={transcript.trim() || segments.length
+                ? "Чтобы не смешать два черновика, идеи доступны до начала диктовки."
+                : undefined}
+              onAccepted={acceptGeneratedIdea}
+              projectId={project.id}
+              rubricId={rubric?.id ?? null}
+            />
+          </div>
+        ) : null}
         <div className="order-4 flex flex-wrap justify-center gap-2">
-          <Button disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={pauseRecording}>
+          <Button className="min-h-11" disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={pauseRecording}>
             <Pause size={15} />
             Пауза
           </Button>
-          <Button disabled={captureState !== "paused"} size="sm" type="button" variant="secondary" onClick={continueRecording}>
+          <Button className="min-h-11" disabled={captureState !== "paused"} size="sm" type="button" variant="secondary" onClick={continueRecording}>
             <Play size={15} />
             Продолжить
           </Button>
-          <Button disabled={!["recording", "paused"].includes(captureState)} size="sm" type="button" onClick={finishSegment}>
+          <Button className="min-h-11" disabled={!["recording", "paused"].includes(captureState)} size="sm" type="button" onClick={finishSegment}>
             <CheckCircle2 size={15} />
             Закончить фрагмент
           </Button>
@@ -1427,6 +1517,28 @@ export function SimpleVoiceComposer({
           </div>
         ) : null}
 
+        {ideaBrief ? (
+          <section aria-labelledby="selected-idea-title" className="order-6 grid min-w-0 gap-3 rounded-xl border border-success/55 bg-[color-mix(in_srgb,var(--success),transparent_93%)] p-4" data-testid="selected-idea-brief">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Badge tone="success">Идея выбрана</Badge>
+                <h2 className="mt-2 break-words text-lg font-semibold text-foreground" id="selected-idea-title">{ideaBrief.title}</h2>
+                <p className="mt-1 text-sm leading-6 text-muted">{ideaBrief.angle}</p>
+              </div>
+              <CheckCircle2 className="shrink-0 text-success" size={21} />
+            </div>
+            <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-foreground">{ideaBrief.ideaBrief}</p>
+            <p className="text-xs leading-5 text-muted"><strong className="text-foreground">План:</strong> {ideaBrief.starterOutline}</p>
+            <div>
+              <div className="text-sm font-semibold text-foreground">Расскажите своими словами:</div>
+              <ol className="mt-2 grid gap-1.5 pl-5 text-sm leading-6 text-muted">
+                {ideaBrief.detailQuestions.map((question) => <li className="list-decimal" key={question}>{question}</li>)}
+              </ol>
+            </div>
+            <p className="text-xs leading-5 text-muted">Заготовка не добавлена в расшифровку. Здесь нужны ваши факты и личный опыт.</p>
+          </section>
+        ) : null}
+
         <label className="order-3 grid min-w-0 gap-2 text-sm font-semibold text-foreground lg:order-2">
           Общая расшифровка
           <span className="text-xs font-normal leading-5 text-muted">
@@ -1457,7 +1569,7 @@ export function SimpleVoiceComposer({
               Вставить текст
             </Button>
           )}
-          <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground">
+          <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground">
             <Upload size={16} />
             Загрузить аудиофайл
             <input
@@ -1486,7 +1598,7 @@ export function SimpleVoiceComposer({
               </p>
             </div>
           </div>
-          <label className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground">
+          <label className="inline-flex h-11 w-fit cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground">
             <Plus size={16} />
             Добавить фото или видео
             <input
@@ -1508,7 +1620,7 @@ export function SimpleVoiceComposer({
           </div>
         </div>
         <Button
-          className="order-9 h-12 w-full text-base"
+          className="order-9 h-12 w-full text-base lg:hidden"
           disabled={isAssembling || !transcript.trim() || !selectedPlatforms.length || !canUseApi || Boolean(instagramFormatIssue())}
           type="button"
           onClick={() => void assembleVersions()}
@@ -1667,6 +1779,7 @@ export function SimpleVoiceComposer({
               )}
               <div className="flex min-w-0 flex-wrap gap-2">
                 <Button
+                  className="min-h-11"
                   disabled={hasMechanicalPlatformTruncation(activeResult.variant)}
                   type="button"
                   onClick={() => void copyActive()}
@@ -1676,14 +1789,15 @@ export function SimpleVoiceComposer({
                 </Button>
                 {editingPlatform === activePlatform ? (
                   <>
-                    <Button disabled={isSavingVariant} type="button" variant="secondary" onClick={() => void saveVariantText(activePlatform, editRichText)}>
+                    <Button className="min-h-11" disabled={isSavingVariant} type="button" variant="secondary" onClick={() => void saveVariantText(activePlatform, editRichText)}>
                       {isSavingVariant ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                       Сохранить
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => setEditingPlatform(null)}>Отмена</Button>
+                    <Button className="min-h-11" type="button" variant="ghost" onClick={() => setEditingPlatform(null)}>Отмена</Button>
                   </>
                 ) : (
                   <Button
+                    className="min-h-11"
                     type="button"
                     variant="secondary"
                     onClick={() => {
@@ -1696,6 +1810,7 @@ export function SimpleVoiceComposer({
                   </Button>
                 )}
                 <Button
+                  className="min-h-11"
                   disabled={isRefining}
                   type="button"
                   variant="secondary"
@@ -1707,6 +1822,7 @@ export function SimpleVoiceComposer({
                   Короче
                 </Button>
                 <Button
+                  className="min-h-11"
                   disabled={isRefining}
                   type="button"
                   variant="secondary"
@@ -1718,28 +1834,19 @@ export function SimpleVoiceComposer({
                   Живее
                 </Button>
                 <Button
+                  className="min-h-11"
                   disabled={isRefining}
                   type="button"
                   variant="secondary"
                   onClick={() => void refineVariants(
-                    "Добавь 2–4 уместные короткие шутки или образные формулировки из контекста материала. Не выдумывай события и не шути вместо фактов.",
-                    "Больше юмора",
+                    "Убери рекламный пафос, общие громкие обещания и канцелярит. Сделай формулировки спокойнее и конкретнее, не меняя факты и вывод автора.",
+                    "Без пафоса",
                   )}
                 >
-                  Больше юмора
+                  Без пафоса
                 </Button>
                 <Button
-                  disabled={isRefining}
-                  type="button"
-                  variant="secondary"
-                  onClick={() => void refineVariants(
-                    "Убери все эмодзи и поправь пробелы после удаления. Остальной текст и факты сохрани.",
-                    "Без эмодзи",
-                  )}
-                >
-                  Без эмодзи
-                </Button>
-                <Button
+                  className="min-h-11"
                   disabled={isRefining}
                   type="button"
                   variant="secondary"
@@ -1752,12 +1859,42 @@ export function SimpleVoiceComposer({
                   Пересобрать
                 </Button>
               </div>
+              <details className="group rounded-lg border border-border bg-surface-muted">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                  <span>Ещё правки</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
+                </summary>
+                <div className="grid gap-3 border-t border-border p-3">
+                  <div className="flex min-w-0 flex-wrap gap-2">
+                    <Button className="min-h-11" disabled={isRefining} type="button" variant="secondary" onClick={() => void refineVariants(
+                      "Добавь 2–4 уместные короткие шутки или образные формулировки из контекста материала. Не выдумывай события и не шути вместо фактов.",
+                      "Больше юмора",
+                    )}>Больше юмора</Button>
+                    <Button className="min-h-11" disabled={isRefining} type="button" variant="secondary" onClick={() => void refineVariants(
+                      "Убери все эмодзи и поправь пробелы после удаления. Остальной текст и факты сохрани.",
+                      "Без эмодзи",
+                    )}>Без эмодзи</Button>
+                  </div>
+                  <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    <label className="grid gap-1 text-xs font-semibold text-muted">
+                      Своя команда для {platformLabel(activePlatform)}
+                      <input className="h-11 min-w-0 rounded-md border border-border bg-background px-3 text-sm font-normal text-foreground outline-none" placeholder="Например: сохрани цену, сократи вступление" value={instruction} onChange={(event) => setInstruction(event.currentTarget.value)} />
+                    </label>
+                    <Button className="min-h-11" disabled={isRefining || !instruction.trim()} type="button" variant="secondary" onClick={() => void refineVariants(instruction.trim(), "Команда")}>
+                      {isRefining ? <Loader2 className="animate-spin motion-reduce:animate-none" size={15} /> : <WandSparkles size={15} />}Применить
+                    </Button>
+                  </div>
+                  <label className="flex min-h-11 items-center gap-2 text-xs font-medium text-foreground">
+                    <input checked={applyToAll} type="checkbox" onChange={(event) => setApplyToAll(event.currentTarget.checked)} />
+                    Применить свою команду ко всем выбранным версиям
+                  </label>
+                </div>
+              </details>
               <section className="grid min-w-0 gap-3 rounded-lg border border-border bg-surface-muted p-3" data-testid="platform-feedback">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Как получилась версия для {platformLabel(activePlatform)}?</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Сохранить вашу окончательную редакцию?</h3>
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      Оценка относится только к этой площадке. «Отлично» запомнит стиль лишь после вашей ручной правки; OpenAI не обучается.
+                      После ручной правки «Наговори» может использовать эту версию как удачный пример именно для {platformLabel(activePlatform)}.
                     </p>
                   </div>
                   {activeFeedback ? <Badge tone={activeFeedback.reaction === "excellent" ? "success" : activeFeedback.reaction === "good" ? "info" : "warning"}>
@@ -1767,46 +1904,29 @@ export function SimpleVoiceComposer({
                 <div className="flex min-w-0 flex-wrap gap-2">
                   <Button
                     onClick={() => void setVariantFeedback("excellent", true)}
-                    size="sm"
+                    className="min-h-11"
                     type="button"
                     variant={activeFeedback?.reaction === "excellent" ? "primary" : "secondary"}
                   >
-                    Отлично · запомнить стиль
+                    Запомнить эту редакцию для {platformLabel(activePlatform)}
                   </Button>
-                  <Button onClick={() => void setVariantFeedback("good")} size="sm" type="button" variant={activeFeedback?.reaction === "good" ? "primary" : "secondary"}>Хорошо</Button>
-                  <Button onClick={() => void setVariantFeedback("needs_work")} size="sm" type="button" variant={activeFeedback?.reaction === "needs_work" ? "primary" : "secondary"}>Нужна правка</Button>
-                  <Button onClick={() => void setVariantFeedback("not_my_style")} size="sm" type="button" variant={activeFeedback?.reaction === "not_my_style" ? "primary" : "secondary"}>Не мой стиль</Button>
-                  {activeFeedback ? <Button onClick={() => void clearVariantFeedback()} size="sm" type="button" variant="ghost">Снять оценку</Button> : null}
+                  <details className="group min-w-0">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md px-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground">Оценить результат<ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={15} /></summary>
+                    <div className="mt-2 flex min-w-0 flex-wrap gap-2">
+                      <Button className="min-h-11" onClick={() => void setVariantFeedback("good")} type="button" variant={activeFeedback?.reaction === "good" ? "primary" : "secondary"}>Хорошо</Button>
+                      <Button className="min-h-11" onClick={() => void setVariantFeedback("needs_work")} type="button" variant={activeFeedback?.reaction === "needs_work" ? "primary" : "secondary"}>Нужна правка</Button>
+                      <Button className="min-h-11" onClick={() => void setVariantFeedback("not_my_style")} type="button" variant={activeFeedback?.reaction === "not_my_style" ? "primary" : "secondary"}>Не мой стиль</Button>
+                      {activeFeedback ? <Button className="min-h-11" onClick={() => void clearVariantFeedback()} type="button" variant="ghost">Снять оценку</Button> : null}
+                    </div>
+                  </details>
                 </div>
               </section>
-              <div className="grid min-w-0 gap-2 rounded-lg border border-border bg-surface-muted p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <label className="grid gap-1 text-xs font-semibold text-muted">
-                  Дополнительная команда для {platformLabel(activePlatform)}
-                  <input
-                    className="h-10 min-w-0 rounded-md border border-border bg-background px-3 text-sm font-normal text-foreground outline-none"
-                    placeholder="Например: сохрани цену и адрес, сократи вступление"
-                    value={instruction}
-                    onChange={(event) => setInstruction(event.currentTarget.value)}
-                  />
-                </label>
-                <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-                  <label className="flex items-center gap-2 text-xs font-medium text-foreground">
-                    <input checked={applyToAll} type="checkbox" onChange={(event) => setApplyToAll(event.currentTarget.checked)} />
-                    Применить ко всем выбранным версиям
-                  </label>
-                  <Button
-                    disabled={isRefining || !instruction.trim()}
-                    type="button"
-                    variant="secondary"
-                    onClick={() => void refineVariants(instruction.trim(), "Команда")}
-                  >
-                    {isRefining ? <Loader2 className="animate-spin" size={15} /> : <WandSparkles size={15} />}
-                    Применить команду
-                  </Button>
-                </div>
-              </div>
               {latestAiUsage ? (
-                <div className="grid gap-2 rounded-lg border border-border bg-surface-muted p-3" data-testid="ai-usage-meter">
+                <details className="group rounded-lg border border-border bg-surface-muted" data-testid="ai-usage-meter">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                    <span>Технические сведения об ИИ</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
+                  </summary>
+                  <div className="grid gap-2 border-t border-border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-foreground">Расход ИИ на последнюю операцию</div>
                     <Badge tone={latestAiUsage.estimatedTokens ? "warning" : "info"}>
@@ -1822,7 +1942,8 @@ export function SimpleVoiceComposer({
                     Стоимость текста: {latestAiUsage.costComplete ? `≈ $${(latestAiUsage.costMicroUsd / 1_000_000).toFixed(4)}` : "провайдер не вернул полные данные для расчёта"}.
                     Расшифровка аудио и будущий анализ изображений считаются отдельно. Это оценка себестоимости, не счёт клиенту.
                   </div>
-                </div>
+                  </div>
+                </details>
               ) : null}
             </div>
           ) : null}

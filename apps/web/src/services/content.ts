@@ -65,6 +65,15 @@ export interface MaterialCaptureFlowViewModel {
   templateName: string;
 }
 
+export interface IdeaBriefViewModel {
+  angle: string;
+  detailQuestions: string[];
+  id: string;
+  ideaBrief: string;
+  starterOutline: string;
+  title: string;
+}
+
 export interface ContentStudioViewModel {
   available: boolean;
   aiSuggestions: Array<{
@@ -212,6 +221,7 @@ export interface NewContentViewModel {
   }>;
   resumeDraft?: {
     contentId: string;
+    ideaBrief?: IdeaBriefViewModel;
     latestVariants: PlatformVariantOut[];
     mediaCount: number;
     mediaKinds: string[];
@@ -522,6 +532,37 @@ function valueText(value: unknown): string {
       .join("; ");
   }
   return "";
+}
+
+function ideaBriefFromBlock(block: BlockOut | undefined): IdeaBriefViewModel | undefined {
+  if (!block?.value_json || typeof block.value_json !== "object" || Array.isArray(block.value_json)) return undefined;
+  const container = block.value_json as Record<string, unknown>;
+  const value = container.idea && typeof container.idea === "object" && !Array.isArray(container.idea)
+    ? container.idea as Record<string, unknown>
+    : container;
+  const detailQuestions = value.detail_questions;
+  const id = typeof value.id === "string"
+    ? value.id
+    : typeof value.idea_id === "string"
+      ? value.idea_id
+      : "idea";
+  if (
+    typeof value.title !== "string"
+    || typeof value.angle !== "string"
+    || typeof value.idea_brief !== "string"
+    || typeof value.starter_outline !== "string"
+    || !Array.isArray(detailQuestions)
+    || detailQuestions.length !== 3
+    || !detailQuestions.every((question) => typeof question === "string" && question.trim())
+  ) return undefined;
+  return {
+    angle: value.angle,
+    detailQuestions: detailQuestions as string[],
+    id,
+    ideaBrief: value.idea_brief,
+    starterOutline: value.starter_outline,
+    title: value.title,
+  };
 }
 
 function fieldLabel(fieldKey: string): string {
@@ -1200,8 +1241,9 @@ async function resumeContentDraft(
     safeApiGet<PlatformVariantsResponse>(`/api/v1/content-items/${contentId}/variants`),
   ]);
   const blocks = blocksResponse?.blocks ?? [];
-  const transcriptBlock = blocks.find((block) => block.transcript_text?.trim())
-    ?? blocks.find((block) => valueText(block.value_json).trim());
+  const ideaBriefBlock = blocks.find((block) => block.field_key === "idea_brief");
+  const transcriptBlock = blocks.find((block) => block.field_key !== "idea_brief" && block.transcript_text?.trim())
+    ?? blocks.find((block) => block.field_key !== "idea_brief" && valueText(block.value_json).trim());
   const formFields = flattenGuidedFields(guidedForm?.ui_schema.fields ?? []);
   const preferredField = formFields.find((field) =>
     ["voice", "voice_or_long_text", "long_text", "text"].includes(field.type),
@@ -1218,6 +1260,7 @@ async function resumeContentDraft(
   );
   return {
     contentId: item.id,
+    ideaBrief: ideaBriefFromBlock(ideaBriefBlock),
     latestVariants,
     mediaCount: mediaResponse?.media.length ?? 0,
     mediaKinds: mediaAssets.flatMap((media) => media?.kind ? [media.kind] : []),

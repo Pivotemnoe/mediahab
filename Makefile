@@ -6,8 +6,12 @@ PIP := $(PY) -m pip
 PHASE00_PYTHONPATH ?= /private/tmp/phase00-python-deps
 COMPOSE ?= docker compose
 MIGRATE_DATABASE_URL ?= postgresql+asyncpg://media_hub:media_hub@localhost:55434/media_hub
+EVAL_CONTENT_IDEAS_ENV_FILE ?= .env.local
+EVAL_CONTENT_IDEAS_ARGS ?=
+EVAL_CONTENT_IDEAS_RAW_RESULTS ?=
+EVAL_CONTENT_IDEAS_HUMAN_REVIEW ?=
 
-.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
+.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening eval-content-ideas-validate eval-content-ideas eval-content-ideas-gate migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
 
 deps: node_modules/.pnpm $(VENV)/.deps-installed
 
@@ -45,6 +49,8 @@ test-ui-hardening: deps
 	node tools/check_sw_capabilities.mjs
 	node tools/check_offline_notebook_contract.mjs
 	node tools/check_examples_first_contract.mjs
+	node tools/check_idea_generator_contract.mjs
+	node tools/check_content_idea_eval_fixture.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs
@@ -55,6 +61,15 @@ test-ui-hardening: deps
 	node tools/check_guided_action_payloads.mjs
 	node tools/check_api_request_headers.mjs
 	$(PY) tools/check_guided_form_api_mode.py
+
+eval-content-ideas-validate: deps
+	PYTHONPATH="$(CURDIR)/services/api" $(PY) tools/eval_content_ideas.py validate
+
+eval-content-ideas: deps
+	PYTHONPATH="$(CURDIR)/services/api" $(PY) tools/eval_content_ideas.py run --env-file "$(EVAL_CONTENT_IDEAS_ENV_FILE)" --confirm-live $(EVAL_CONTENT_IDEAS_ARGS)
+
+eval-content-ideas-gate: deps
+	PYTHONPATH="$(CURDIR)/services/api" $(PY) tools/eval_content_ideas.py gate --raw-results "$(EVAL_CONTENT_IDEAS_RAW_RESULTS)" --human-review "$(EVAL_CONTENT_IDEAS_HUMAN_REVIEW)"
 
 migrate: deps
 	cd services/api && DATABASE_URL="$(MIGRATE_DATABASE_URL)" ../../$(PY) -m alembic -c alembic.ini upgrade head

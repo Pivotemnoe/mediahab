@@ -326,7 +326,7 @@ export interface TranscriptionJobOut {
 
 export interface GenerationRunOut {
   completed_at: string | null;
-  content_item_id: string;
+  content_item_id: string | null;
   cost_estimate_micro_usd: number | null;
   created_at: string;
   error_code: string | null;
@@ -343,10 +343,18 @@ export interface GenerationRunOut {
   response_json: JsonObject | null;
   retrieved_example_ids: string[];
   retry_count: number;
-  rubric_id: string;
+  rubric_id: string | null;
   status: string;
   task_type: string;
   workspace_id: string;
+}
+
+export interface IdeaCapabilityOut {
+  can_generate: boolean;
+  daily_limit: number;
+  enabled: boolean;
+  remaining_today: number;
+  used_today: number;
 }
 
 export interface PlatformVariantOut {

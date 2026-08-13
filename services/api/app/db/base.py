@@ -1004,8 +1004,10 @@ class GenerationRun(Base):
     id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
     workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
-    rubric_id: Mapped[UUID] = mapped_column(ForeignKey("rubrics.id"), index=True)
-    content_item_id: Mapped[UUID] = mapped_column(ForeignKey("content_items.id"), index=True)
+    rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
+    content_item_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_items.id"), index=True
+    )
     task_type: Mapped[str] = mapped_column(String(80), index=True)
     provider_key: Mapped[str] = mapped_column(String(80), default="mock", index=True)
     model_id: Mapped[str] = mapped_column(String(160), default="mock-editor-v1")

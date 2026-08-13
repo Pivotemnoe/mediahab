@@ -166,6 +166,8 @@ POST /transcription-jobs/{job_id}/retry
 ## AI assembly and evaluation
 
 ```text
+GET  /projects/{project_id}/ideas/capability
+POST /projects/{project_id}/ideas/generate
 POST /content-items/{content_id}/extract-facts
 POST /content-items/{content_id}/assemble-master
 POST /content-items/{content_id}/suggest-hook
@@ -173,9 +175,26 @@ POST /content-items/{content_id}/suggest-ratings
 POST /content-items/{content_id}/quality-check
 POST /content-items/{content_id}/generate-variants
 GET  /ai-runs/{run_id}
+POST /ai-runs/{run_id}/ideas/{idea_id}/accept
 POST /ai-runs/{run_id}/cancel
 POST /ai-runs/{run_id}/retry
 ```
+
+The capability response is authoritative for the current workspace and actor. It
+separates feature availability from `can_generate`, and includes the server-side
+daily limit and remaining count. Idea generation is disabled by default, requires
+an explicit workspace allowlist, an editor-capable role, subscription entitlement,
+and available daily and monthly quota before the provider is called.
+
+`POST /projects/{project_id}/ideas/generate` accepts an optional rubric, optional
+topic, and editorial goal. It creates a project-scoped generation run and returns
+exactly five structured, non-factual idea outlines; it does not create a content
+item. `POST /ai-runs/{run_id}/ideas/{idea_id}/accept` accepts a client-generated
+`client_content_id`. Repeating the same tuple is idempotent and returns the same
+draft, while reusing that client ID for another run or idea is a conflict. The first
+revision and usage event preserve the run, idea, client, and content identifiers as
+provenance. Accepted AI outlines remain untrusted planning context until the user
+adds or confirms source facts.
 
 `POST /content-items/{content_id}/generate-variants` accepts optional `length_overrides` keyed by platform. The override applies only to that build and is snapshotted in `PlatformVariant.payload.length_target`; it does not mutate the project or rubric. `ProjectOut.character_count_policy` and `RubricOut.platform_overrides` expose the active versioned editorial targets.
 
@@ -187,7 +206,8 @@ For `vk`, the generated variant snapshots `payload.vk_export_package` with resul
 
 Every newly generated or explicitly validated platform variant includes `validation.preflight`. It contains an overall `pass | warning | block` status and four ordered checks (`length`, `media`, `format`, `delivery`), each with a stable code and Russian user-facing label/message. Delivery readiness does not imply that a specific account is connected: manual connectors report manual export, while automated connector capabilities remain `warning` until a concrete destination is checked. The snapshot is additive, contains no credentials, and does not replace human approval.
 
-All endpoints create durable jobs and return `202` except cheap deterministic validators.
+All generation endpoints create durable audit runs and return `202` except cheap
+deterministic validators and capability reads.
 
 ## Revisions and approval
 

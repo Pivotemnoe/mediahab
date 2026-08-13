@@ -251,12 +251,20 @@ Normalized facts for validation:
 
 ### `generation_runs`
 
-- `id`, `workspace_id`, `content_item_id`
+- `id`, `workspace_id`, `project_id`
+- `rubric_id` nullable
+- `content_item_id` nullable for project-scoped tasks such as idea generation
 - `task_type`
 - `provider_key`, `model_id`
 - prompt/rule/rubric version references
 - status, latency, input/output usage, cost estimate
 - error fields
+
+Project-scoped runs retain request context, retrieved style-example identifiers,
+prompt/schema/validator fingerprints, and provider-attempt metadata without
+requiring a content item. Accepted ideas link back to the run through the first
+content revision and an idempotent usage/activation event. Tenant authorization
+always follows `workspace_id`, including when either nullable foreign key is absent.
 
 ### `generation_steps`
 

@@ -26,6 +26,7 @@ class StructuredGenerationRequest:
     user_prompt: str
     fallback_payload: dict[str, Any]
     input_images: list[str] | None = None
+    reasoning_effort: str | None = None
 
 
 @dataclass
@@ -76,8 +77,11 @@ class MockTextGenerationProvider:
             model_id=self.model_id,
             payload=request.fallback_payload,
             usage={
-                "input_characters": len(request.system_prompt) + len(request.user_prompt),
-                "output_characters": len(json.dumps(request.fallback_payload, ensure_ascii=False)),
+                "input_characters": len(request.system_prompt)
+                + len(request.user_prompt),
+                "output_characters": len(
+                    json.dumps(request.fallback_payload, ensure_ascii=False)
+                ),
             },
         )
 
@@ -94,7 +98,9 @@ class OpenAITextGenerationProvider:
         request: StructuredGenerationRequest,
     ) -> StructuredGenerationResult:
         if not self.settings.openai_api_key:
-            raise ProviderError("openai_not_configured", "OPENAI_API_KEY is not configured.")
+            raise ProviderError(
+                "openai_not_configured", "OPENAI_API_KEY is not configured."
+            )
         input_payload: str | list[dict[str, Any]] = request.user_prompt
         if request.input_images:
             input_payload = [
@@ -126,6 +132,8 @@ class OpenAITextGenerationProvider:
                 }
             },
         }
+        if request.reasoning_effort:
+            payload["reasoning"] = {"effort": request.reasoning_effort}
         endpoint = f"{self.settings.openai_base_url.rstrip('/')}/responses"
         try:
             async with openai_async_client(
@@ -147,7 +155,18 @@ class OpenAITextGenerationProvider:
                 "openai_request_failed",
                 f"OpenAI text generation returned HTTP {response.status_code}.",
             )
-        response_payload = response.json()
+        try:
+            response_payload = response.json()
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ProviderError(
+                "openai_invalid_response",
+                "OpenAI text generation response was not valid JSON.",
+            ) from exc
+        if not isinstance(response_payload, dict):
+            raise ProviderError(
+                "openai_invalid_response",
+                "OpenAI text generation response did not contain a JSON object.",
+            )
         parsed = extract_response_json(response_payload)
         if not isinstance(parsed, dict):
             raise ProviderError(
@@ -192,7 +211,9 @@ class OpenAIEmbeddingProvider:
 
     async def embed(self, texts: list[str]) -> EmbeddingResult:
         if not self.settings.openai_api_key:
-            raise ProviderError("openai_not_configured", "OPENAI_API_KEY is not configured.")
+            raise ProviderError(
+                "openai_not_configured", "OPENAI_API_KEY is not configured."
+            )
         endpoint = f"{self.settings.openai_base_url.rstrip('/')}/embeddings"
         try:
             async with openai_async_client(
@@ -214,13 +235,35 @@ class OpenAIEmbeddingProvider:
                 "openai_request_failed",
                 f"OpenAI embedding returned HTTP {response.status_code}.",
             )
-        payload = response.json()
+        try:
+            payload = response.json()
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ProviderError(
+                "openai_invalid_response",
+                "OpenAI embedding response was not valid JSON.",
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ProviderError(
+                "openai_invalid_response", "OpenAI embedding response is invalid."
+            )
         data = payload.get("data")
-        if not isinstance(data, list):
-            raise ProviderError("openai_invalid_response", "OpenAI embedding response is invalid.")
-        embeddings = [row.get("embedding") for row in sorted(data, key=lambda row: row.get("index", 0))]
+        if not isinstance(data, list) or not all(isinstance(row, dict) for row in data):
+            raise ProviderError(
+                "openai_invalid_response", "OpenAI embedding response is invalid."
+            )
+        embeddings = [
+            row.get("embedding")
+            for row in sorted(
+                data,
+                key=lambda row: row.get("index")
+                if isinstance(row.get("index"), int)
+                else 0,
+            )
+        ]
         if not all(isinstance(vector, list) for vector in embeddings):
-            raise ProviderError("openai_invalid_response", "OpenAI embedding vector is missing.")
+            raise ProviderError(
+                "openai_invalid_response", "OpenAI embedding vector is missing."
+            )
         return EmbeddingResult(
             provider_key=self.provider_key,
             model_id=self.model_id,
@@ -229,14 +272,17 @@ class OpenAIEmbeddingProvider:
         )
 
 
-def text_provider_for(settings: Settings, task_type: str | None = None) -> TextGenerationProvider:
+def text_provider_for(
+    settings: Settings, task_type: str | None = None
+) -> TextGenerationProvider:
     provider_key = settings.ai_text_provider.strip().lower()
     if provider_key == "openai":
-        model_id = (
-            settings.openai_editor_model
-            if task_type in {"assemble_master", "refine_variant"}
-            else settings.openai_text_model
-        )
+        if task_type in {"assemble_master", "refine_variant"}:
+            model_id = settings.openai_editor_model
+        elif task_type == "suggest_content_ideas":
+            model_id = settings.openai_idea_model
+        else:
+            model_id = settings.openai_text_model
         return OpenAITextGenerationProvider(settings, model_id=model_id)
     if provider_key in {"yandexgpt", "gigachat"}:
         return ContractMockTextGenerationProvider(provider_key)
@@ -253,8 +299,18 @@ def embedding_provider_for(settings: Settings) -> EmbeddingProvider:
 def extract_response_json(payload: dict[str, Any]) -> Any:
     if "output_text" in payload:
         return parse_json_text(payload["output_text"])
-    for item in payload.get("output", []) or []:
-        for content in item.get("content", []) or []:
+    output = payload.get("output")
+    if not isinstance(output, list):
+        return None
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        contents = item.get("content")
+        if not isinstance(contents, list):
+            continue
+        for content in contents:
+            if not isinstance(content, dict):
+                continue
             if content.get("type") in {"output_text", "text"}:
                 parsed = parse_json_text(content.get("text"))
                 if parsed is not None:

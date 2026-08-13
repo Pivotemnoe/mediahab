@@ -13,7 +13,9 @@ const [styleSource, projectFormSource, builderSource, examplesSource, examplesSh
 ]);
 
 assert.match(styleSource, /Покажите удачные посты/);
-assert.match(styleSource, /Главное обучение — на примерах/);
+assert.match(styleSource, /Стиль настраивается по удачным постам/);
+assert.match(styleSource, /Быстрый старт/);
+assert.match(styleSource, /3/);
 assert.match(styleSource, /10/);
 assert.match(styleSource, /Дополнительные настройки/);
 assert.match(styleSource, /не загрузилось/);
@@ -32,7 +34,10 @@ const newProjectShell = builderSource.slice(
 assert.match(newProjectShell, /ProjectCreateForm/);
 assert.doesNotMatch(newProjectShell, /Visual Builder|Мастер проекта|Этап UI 03/);
 
-assert.match(examplesSource, /RECOMMENDED_EXAMPLES = 10/);
+assert.match(examplesSource, /STEADY_STYLE_EXAMPLES = 10/);
+assert.match(examplesSource, /QUICK_START_EXAMPLES = 3/);
+assert.match(examplesSource, /Быстрый старт/);
+assert.match(examplesSource, /ChatGPT/);
 assert.match(examplesSource, /splitBulkExamples/);
 assert.match(examplesSource, /---/);
 assert.match(examplesSource, /Ко всему каналу — рекомендуется/);

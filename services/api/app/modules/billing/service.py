@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
@@ -50,6 +52,27 @@ SENSITIVE_HEADER_NAMES = {
     "x-api-key",
     "x-mock-payment-signature",
 }
+
+AI_TEXT_GENERATIONS_KEY = "ai.text_generations.monthly"
+AI_TEXT_GENERATIONS_LEGACY_KEY = "ai.text_generations"
+USABLE_SUBSCRIPTION_STATUSES = frozenset({"active", "trialing", "cancel_pending"})
+
+
+class UsageEntitlementError(ValueError):
+    def __init__(self, code: str, message: str, details: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.details = details
+
+
+@dataclass(frozen=True)
+class UsageReservation:
+    entitlement: str
+    used: int
+    limit: int
+    period_start: datetime
+    period_end: datetime
 
 
 @dataclass(frozen=True)
@@ -110,6 +133,203 @@ async def usage_totals(session: AsyncSession, workspace_id: UUID) -> dict[str, f
         .group_by(UsageEvent.key)
     )
     return {key: float(total) for key, total in rows.all()}
+
+
+def _utc_month_window(now: datetime | None = None) -> tuple[datetime, datetime]:
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    current = current.astimezone(timezone.utc)
+    start = current.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if start.month == 12:
+        end = start.replace(year=start.year + 1, month=1)
+    else:
+        end = start.replace(month=start.month + 1)
+    return start, end
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _subscription_usage_window(
+    subscription: Subscription,
+    now: datetime | None = None,
+) -> tuple[datetime, datetime]:
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    start = subscription.current_period_start
+    end = subscription.current_period_end
+    if start is not None and end is not None:
+        start = _as_utc(start)
+        end = _as_utc(end)
+        if start <= current < end:
+            return start, end
+    return _utc_month_window(current)
+
+
+async def monthly_usage_quantity(
+    session: AsyncSession,
+    workspace_id: UUID,
+    keys: tuple[str, ...],
+    period_start: datetime,
+    period_end: datetime,
+) -> int:
+    total = await session.scalar(
+        select(func.coalesce(func.sum(UsageEvent.quantity), 0)).where(
+            UsageEvent.workspace_id == workspace_id,
+            UsageEvent.key.in_(keys),
+            UsageEvent.created_at >= period_start,
+            UsageEvent.created_at < period_end,
+        )
+    )
+    return int(total or 0)
+
+
+def _positive_integer_entitlement(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    if parsed <= 0 or parsed != parsed.to_integral_value():
+        return None
+    return int(parsed)
+
+
+async def reserve_ai_text_generation_usage(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    generation_run_id: UUID,
+    source: str,
+    metadata: dict[str, Any],
+    workspace_lock_held: bool = False,
+    now: datetime | None = None,
+) -> UsageReservation:
+    """Atomically reserve one user-visible AI generation before provider I/O.
+
+    Callers that combine this with another workspace quota must acquire the same
+    workspace row lock first and pass ``workspace_lock_held=True``. The usage
+    event id deliberately equals the generation run id, making a duplicate
+    reservation for one run fail closed instead of double charging.
+    """
+
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    if not workspace_lock_held:
+        workspace = await session.scalar(
+            select(Workspace).where(Workspace.id == workspace_id).with_for_update()
+        )
+        if workspace is None:
+            raise UsageEntitlementError(
+                "subscription_inactive",
+                "An active subscription is required for AI generation.",
+                {"entitlement": AI_TEXT_GENERATIONS_KEY},
+            )
+
+    subscription_row = (
+        await session.execute(
+            select(Subscription, Plan)
+            .join(Plan, Plan.id == Subscription.plan_id)
+            .where(Subscription.workspace_id == workspace_id)
+        )
+    ).first()
+    if subscription_row is None:
+        raise UsageEntitlementError(
+            "subscription_inactive",
+            "An active subscription is required for AI generation.",
+            {"entitlement": AI_TEXT_GENERATIONS_KEY},
+        )
+    subscription, plan = subscription_row
+    period_expired = subscription.current_period_end is not None and _as_utc(
+        subscription.current_period_end
+    ) <= current
+    trial_expired = (
+        subscription.status == "trialing"
+        and subscription.trial_ends_at is not None
+        and _as_utc(subscription.trial_ends_at) <= current
+    )
+    if (
+        subscription.status not in USABLE_SUBSCRIPTION_STATUSES
+        or period_expired
+        or trial_expired
+        or not plan.is_active
+    ):
+        raise UsageEntitlementError(
+            "subscription_inactive",
+            "An active subscription is required for AI generation.",
+            {
+                "entitlement": AI_TEXT_GENERATIONS_KEY,
+                "subscription_status": subscription.status,
+            },
+        )
+
+    entitlement = await session.scalar(
+        select(Entitlement).where(
+            Entitlement.plan_id == plan.id,
+            Entitlement.key == AI_TEXT_GENERATIONS_KEY,
+        )
+    )
+    limit = _positive_integer_entitlement(
+        entitlement.value_json if entitlement is not None else None
+    )
+    if limit is None:
+        raise UsageEntitlementError(
+            "ai_text_generation_not_included",
+            "AI text generation is not included in this subscription.",
+            {"entitlement": AI_TEXT_GENERATIONS_KEY},
+        )
+
+    period_start, period_end = _subscription_usage_window(subscription, current)
+    used = await monthly_usage_quantity(
+        session,
+        workspace_id,
+        (AI_TEXT_GENERATIONS_KEY, AI_TEXT_GENERATIONS_LEGACY_KEY),
+        period_start,
+        period_end,
+    )
+    if used >= limit:
+        raise UsageEntitlementError(
+            "limit_exceeded",
+            "AI text generation limit reached.",
+            {
+                "entitlement": AI_TEXT_GENERATIONS_KEY,
+                "limit": limit,
+                "used": used,
+                "period_start": period_start.isoformat(),
+                "period_end": period_end.isoformat(),
+            },
+        )
+
+    session.add(
+        UsageEvent(
+            id=generation_run_id,
+            workspace_id=workspace_id,
+            key=AI_TEXT_GENERATIONS_KEY,
+            quantity=1,
+            source=source,
+            metadata_json={
+                **metadata,
+                "generation_run_id": str(generation_run_id),
+                "billing_semantics": "one_user_generation_per_run",
+            },
+            created_at=current,
+        )
+    )
+    await session.flush()
+    return UsageReservation(
+        entitlement=AI_TEXT_GENERATIONS_KEY,
+        used=used + 1,
+        limit=limit,
+        period_start=period_start,
+        period_end=period_end,
+    )
 
 
 async def entitlement_map_for_plan(session: AsyncSession, plan_id: UUID) -> dict[str, Any]:
@@ -205,11 +425,27 @@ def _limit_status(used: float, limit: float) -> str:
 async def usage_snapshot(session: AsyncSession, workspace_id: UUID) -> dict[str, Any]:
     usage = await usage_totals(session, workspace_id)
     entitlements = await workspace_entitlements(session, workspace_id)
+    subscription_row = await get_workspace_subscription(session, workspace_id)
+    if subscription_row is not None:
+        subscription, _ = subscription_row
+        period_start, period_end = _subscription_usage_window(subscription)
+        usage[AI_TEXT_GENERATIONS_KEY] = float(
+            await monthly_usage_quantity(
+                session,
+                workspace_id,
+                (AI_TEXT_GENERATIONS_KEY, AI_TEXT_GENERATIONS_LEGACY_KEY),
+                period_start,
+                period_end,
+            )
+        )
     measured_usage = {
         "projects.max": float(await _count_active_projects(session, workspace_id)),
         "rubrics.active.max": float(await _count_active_rubrics(session, workspace_id)),
         "platform_connections.auto.max": float(await _count_auto_destinations(session, workspace_id)),
-        "ai.text_generations.monthly": usage.get("ai.text_generations.monthly", usage.get("ai.text_generations", 0.0)),
+        "ai.text_generations.monthly": usage.get(
+            AI_TEXT_GENERATIONS_KEY,
+            usage.get(AI_TEXT_GENERATIONS_LEGACY_KEY, 0.0),
+        ),
         "ai.transcription_seconds.monthly": usage.get(
             "ai.transcription_seconds.monthly",
             usage.get("ai.transcription_seconds", 0.0),
