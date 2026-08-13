@@ -61,13 +61,17 @@ export function richTextPlain(value: RichTextDocument): string {
 }
 
 export function richTextLinkCount(value: RichTextDocument): number {
-  const links = new Set<string>();
+  let count = 0;
+  let previousHref: string | null = null;
   value.segments.forEach((segment) => {
-    segment.marks.forEach((mark) => {
-      if (mark.type === "link") links.add(mark.href);
-    });
+    const link = segment.marks.find(
+      (mark): mark is Extract<RichTextMark, { type: "link" }> => mark.type === "link",
+    );
+    const href = link?.href ?? null;
+    if (href && href !== previousHref) count += 1;
+    previousHref = href;
   });
-  return links.size;
+  return count;
 }
 
 function escapeHtml(value: string): string {

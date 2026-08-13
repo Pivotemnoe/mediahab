@@ -24,6 +24,8 @@ assert.match(composer, /В постоянном подвале ссылки по
 assert.match(contentService, /footerLinkCount: number/);
 assert.match(contentService, /projectFooterLinkCount/);
 assert.match(richText, /export function richTextLinkCount/);
+assert.match(richText, /href !== previousHref/);
+assert.doesNotMatch(richText, /new Set<string>\(\)/);
 assert.match(projectRules, /Ссылок: \{richTextLinkCount\(footerRichText\)\}/);
 assert.match(projectRules, /humor_config: \{ \.\.\.project\.humor_config, guidance:/);
 assert.match(projectRules, /\{ \.\.\.project\.tone_config, voice: toneRules \}/);
