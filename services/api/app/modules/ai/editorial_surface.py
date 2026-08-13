@@ -19,7 +19,7 @@ STRUCTURAL_LINE_RE = re.compile(
     flags=re.UNICODE,
 )
 
-GENERATED_EDITORIAL_RULES_VERSION = "phase12l-author-voice-surface-v3"
+GENERATED_EDITORIAL_RULES_VERSION = "phase12l-author-voice-surface-v4"
 MARKDOWN_DIVIDER_RE = re.compile(r"^\s*(?:[-*_]\s*){3,}$")
 MARKDOWN_TABLE_SEPARATOR_RE = re.compile(
     r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*$"
@@ -39,6 +39,10 @@ GENERATED_EDITORIAL_PROMPT_RULES = " ".join(
         "Не используй двойные тире или дефисы --, ––, —— и парные вставные конструкции "
         "вида — пояснение —; выбирай точку, запятую, скобки или естественную перестройку фразы.",
         "Одно тире, необходимое по правилам языка, допустимо.",
+        "Не печатай в публикации служебные комментарии о работе редактора или ИИ: "
+        "не называй оценки, факты или текст редакционным предложением модели и не пиши "
+        "читателю, что их можно поправить или нужно проверить. Такие пояснения остаются "
+        "только в интерфейсе и метаданных.",
     ]
 )
 
@@ -177,6 +181,45 @@ def generated_editorial_findings(value: str) -> list[dict[str, str]]:
             {
                 "code": "paired_em_dash",
                 "message": "Сгенерированный текст содержит парную вставку через тире.",
+                "field": "generated_text",
+            }
+        )
+
+    editorial_meta_commentary = False
+    for line in prose_lines:
+        if line is None:
+            continue
+        lowered = line.lower()
+        has_meta_subject = re.search(
+            r"\b(?:оценк\w*|факт\w*|текст\w*|редакц\w*|вариант\w*)\b",
+            lowered,
+        )
+        has_meta_action = re.search(
+            r"\b(?:можно|нужно|следует)\s+(?:поправ\w*|провер\w*)\b"
+            r"|\b(?:проверьте|поправьте)\b",
+            lowered,
+        )
+        model_disclosure = re.search(
+            r"\b(?:я|мы)\s+как\s+(?:ии|модел\w*|искусственн\w+\s+интеллект\w*)\b",
+            lowered,
+        )
+        editorial_suggestion = (
+            "редакционное предложение" in lowered
+            and re.search(r"\b(?:оценк\w*|модел\w*|ии)\b", lowered)
+        )
+        if model_disclosure or editorial_suggestion or (
+            has_meta_subject and has_meta_action
+        ):
+            editorial_meta_commentary = True
+            break
+    if editorial_meta_commentary:
+        findings.append(
+            {
+                "code": "editorial_meta_commentary",
+                "message": (
+                    "Сгенерированный текст содержит служебный комментарий "
+                    "о редактуре или ИИ."
+                ),
                 "field": "generated_text",
             }
         )

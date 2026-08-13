@@ -143,6 +143,7 @@ Every model-generated master, body block, hook, CTA, and platform refinement pas
 
 - Deterministically normalize CRLF, accidental tabs and separator non-breaking spaces, repeated horizontal whitespace, line-edge whitespace, leading/trailing blank lines, and runs of three or more line breaks.
 - Reject doubled dash sequences `--`, `––`, and `——`, and paired parenthetical em-dashes such as `— aside —`. One grammatically necessary dash, dialogue markers, Markdown structure, code, URLs, and email addresses remain valid.
+- Reject internal editorial or model commentary in ready prose, including instructions to edit or verify ratings, facts, or text. Provenance and uncertainty belong to structured metadata and UI warnings.
 - A surface violation receives one focused full-result retry. A second invalid response is blocked and never creates a ready master or platform revision; the last good revision is preserved.
 
 ## Retrieval

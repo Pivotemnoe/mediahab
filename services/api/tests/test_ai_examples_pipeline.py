@@ -729,6 +729,13 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertIn("Предыдущий ответ не прошёл", provider.system_prompts[1])
         self.assertIn("Отдельные правила юмора проекта", provider.system_prompts[0])
         self.assertIn("обязательной редакционной целью", provider.system_prompts[0])
+        self.assertIn(
+            "Считай шуткой только законченный короткий образ",
+            provider.system_prompts[0],
+        )
+        self.assertIn(
+            "служебных комментариев о редактуре", provider.system_prompts[1]
+        )
         self.assertNotIn("однофразных абзац", provider.system_prompts[1])
         self.assertEqual(body["input_tokens"], 23)
         self.assertEqual(body["output_tokens"], 11)
@@ -739,6 +746,61 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertEqual(
             asyncio.run(self._master_revision_text(revision_id)),
             provider.clean_text,
+        )
+
+    def test_custom_provider_master_retries_editorial_meta_commentary(self) -> None:
+        auth = self.register(
+            self.client,
+            email="hygiene-meta-retry@example.com",
+            workspace_name="Hygiene Meta Retry Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class RetryProvider:
+            provider_key = "custom"
+            model_id = "hygiene-meta-retry-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.clean_text = ""
+                self.system_prompts: list[str] = []
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                self.system_prompts.append(request.system_prompt)
+                payload = dict(request.fallback_payload)
+                self.clean_text = str(payload["master_text"]).replace("\n\n", " ")
+                payload["master_text"] = self.clean_text
+                if self.calls == 1:
+                    payload["master_text"] = (
+                        f"{self.clean_text}\n\n"
+                        "Оценки ниже — редакционное предложение модели, их можно поправить."
+                    )
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=payload,
+                    usage={"input_tokens": 4, "output_tokens": 3},
+                )
+
+        provider = RetryProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(body["status"], "completed", body)
+        self.assertEqual(provider.calls, 2)
+        self.assertIn(
+            "служебных комментариев о редактуре", provider.system_prompts[1]
+        )
+        self.assertEqual(body["response_json"]["master_text"], provider.clean_text)
+        self.assertNotIn(
+            "редакционное предложение", body["response_json"]["master_text"]
         )
 
     def test_two_invalid_master_attempts_fail_without_creating_revision(self) -> None:

@@ -170,6 +170,25 @@ class EditorialSurfaceTest(unittest.TestCase):
 
         self.assertEqual(generated_editorial_findings(source), [])
 
+    def test_rejects_editorial_meta_commentary_in_ready_prose(self) -> None:
+        cases = (
+            "Оценки ниже — редакционное предложение модели, их можно поправить.",
+            "Проверьте оценки перед публикацией.",
+            "Я как ИИ предлагаю этот вариант текста.",
+        )
+
+        for text in cases:
+            with self.subTest(text=text):
+                self.assert_finding_code(text, "editorial_meta_commentary")
+
+    def test_allows_real_editorial_topic_without_ui_instruction(self) -> None:
+        source = (
+            "Редакционное предложение обсуждали на планёрке. "
+            "Автор объяснил, почему этот формат нужен читателям."
+        )
+
+        self.assertEqual(generated_editorial_findings(source), [])
+
     def test_normalizes_generated_payload_without_mutating_input(self) -> None:
         payload = {
             "master_text": "\tГлавный  текст.\r\n\r\n\r\nФинал.  ",

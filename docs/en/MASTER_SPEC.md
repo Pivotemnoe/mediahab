@@ -64,6 +64,7 @@ Workspace
 - Master assembly requires at least one non-empty author-originated source block before any provider call.
 - AI may reorder, condense, clarify, connect, and adapt the user's substance while preserving characteristic words, position, emotional tone, and personal conclusion.
 - AI must not introduce a new thesis, factual claim, event, quotation, recommendation, conclusion, emotion, or first-person experience.
+- Ready publication prose must not expose internal editorial or AI commentary such as "model suggestion", "you can edit these ratings", or "verify this text". Uncertainty and provenance remain in structured metadata and UI warnings, not in the post body.
 - For the “Что поесть? Армавир” preset, the target strength remains a light rewrite of approximately 10–15%, not a replacement of the user's voice.
 - A human approves every final variant before publication in the initial release.
 

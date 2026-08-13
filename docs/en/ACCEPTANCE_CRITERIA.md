@@ -57,6 +57,7 @@
 - The “Что поесть?” editor mode keeps all facts and meets the rubric target or produces an explicit warning.
 - Approved examples affect expression only, never the topic, thesis, facts, scenario, quotation, CTA, or personal experience.
 - Generated master, hook, CTA, and refinement text contains no repeated horizontal whitespace, runs of three or more line breaks, or doubled/paired dash patterns. Lossless whitespace is normalized, but the service never merges or rearranges paragraphs. A second invalid dash-pattern regeneration is blocked without a ready revision.
+- Generated master, hook, CTA, and refinement text contains no internal AI/editor commentary such as `editorial suggestion`, `you can edit these ratings`, or `verify the text`; a first violation is retried and a second is blocked.
 - `Rebuild from dictation` creates a new master from author source and approved style examples, then creates new selected-platform variants while preserving every previous master and platform revision. It is not an alias for editing the current weak platform text.
 - Footer UI and copy confirmation report embedded links only when the stored rich-text payload contains valid HTTP(S) link marks; a plain footer is explicitly labeled as not configured with links.
 - Source text and stored transcripts remain byte-for-byte unchanged by generated-text hygiene.
