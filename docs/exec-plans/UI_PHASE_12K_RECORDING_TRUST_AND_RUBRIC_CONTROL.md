@@ -2,7 +2,7 @@
 
 ## Status
 
-In progress on 2026-08-13 after mobile production acceptance exposed three blocking defects in the primary creation flow.
+Implemented, verified, and deployed to production on 2026-08-13 in commit `18b9af3b71b6374147c3bb51a7ee563158dc006c`. No database migration was required.
 
 ## Goal
 
@@ -93,6 +93,17 @@ Stable conflict/error codes:
 - Run focused backend tests, full backend suite, lint, typecheck, UI hardening checks, production Web build, and `git diff --check`.
 - Reproduce the corrected flow at 390 x 844 and compare it with the three production screenshots.
 - Deploy only stateless API, worker, and Web after a fresh PostgreSQL backup. Do not restart/recreate PostgreSQL, Redis, or Caddy; verify their identities after cutover.
+
+## Production acceptance
+
+- Release `20260813-162307-phase12k-mobile-assembly` was installed from the SHA-verified archive `d87b0ab1b71fb391bb4685ca376ce5fca832f77bfc5cb48bea8090c5c42446e7` after validating the protected PostgreSQL backup in `/var/backups/media-hub/20260813-162307-phase12k-mobile-assembly`.
+- Only API, worker, and Web were rebuilt and replaced with `--no-deps --no-build`. PostgreSQL container `89eddc8cf071...`, Redis container `038bcb78e4d7...`, their volumes, and Caddy PID `7331` remained unchanged.
+- Local and public live/ready checks returned HTTP 200; Alembic current and heads both remained `202606200013 (head)`. Pre-cutover control counts were preserved as `13|13|11|19|68|37|5|7`.
+- At 390 x 844 the production UI showed project and the active rubric selector before voice capture. The saved material `2fadd036-d83f-42f1-99ed-6b4e891b857f` accepted `Фаст-обзор` without losing its transcript or three media assets.
+- A real production assembly completed after removal of the paragraph-density blocker: master revision `796ed3e2-7212-47d2-a373-69746fa2abfb` persisted with 2,165 characters; Telegram and MAX variants both persisted as `valid` with 2,233 rendered characters. Reloading the mobile page restored both variants with no assembly spinner.
+- The acceptance itself added the expected rubric-audit and master revisions, moving final control counts to `13|13|11|19|70|37|5|7`; no user, workspace, project, content item, media, notebook, or publication row disappeared.
+- Full backend suite passed `164/164`; UI hardening contracts, TypeScript checks, lint, production Web build, OpenAPI parity, and `git diff --check` passed before deployment.
+- Browser acceptance intentionally did not request access to the operator's microphone. Real analyser movement remains a final device-side iPhone check; code and contract tests confirm that the meter uses Web Audio input and never draws a fake level.
 
 ## Risks and rollback
 
