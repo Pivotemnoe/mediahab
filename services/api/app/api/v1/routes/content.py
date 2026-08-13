@@ -15,6 +15,7 @@ from app.db.base import (
     ContentBlock,
     ContentItem,
     ContentMedia,
+    GenerationRun,
     InputSchema,
     MediaAsset,
     RetentionPolicy,
@@ -91,6 +92,7 @@ class ContentCreateRequest(BaseModel):
 class ContentPatchRequest(BaseModel):
     title_internal: str | None = Field(default=None, max_length=200)
     status: str | None = Field(default=None, pattern="^(draft|collecting|ready_for_ai|archived)$")
+    rubric_id: UUID | None = None
     version: int | None = None
 
 
@@ -101,6 +103,7 @@ class ContentItemOut(BaseModel):
     rubric_id: UUID
     rubric_version_id: UUID
     project_version_id: UUID
+    current_master_revision_id: UUID | None
     title_internal: str
     status: str
     version: int
@@ -278,6 +281,7 @@ def content_item_out(item: ContentItem) -> ContentItemOut:
         rubric_id=item.rubric_id,
         rubric_version_id=item.rubric_version_id,
         project_version_id=item.project_version_id,
+        current_master_revision_id=item.current_master_revision_id,
         title_internal=item.title_internal,
         status=item.status,
         version=item.version,
@@ -675,8 +679,55 @@ async def update_content_item(
 ) -> ContentItemOut:
     item = await mutable_item_for_actor(content_id, request, actor, db)
     ensure_item_version(item, requested_version(request, payload.version), request)
-    data = payload.model_dump(exclude_none=True, exclude={"version"})
+    data = payload.model_dump(exclude_none=True, exclude={"rubric_id", "version"})
+
+    if "rubric_id" in payload.model_fields_set:
+        generation_started = await db.scalar(
+            select(GenerationRun.id)
+            .where(
+                GenerationRun.content_item_id == item.id,
+                GenerationRun.task_type == "assemble_master",
+                GenerationRun.status.in_(("queued", "running", "completed")),
+            )
+            .limit(1)
+        )
+        if item.current_master_revision_id is not None or generation_started is not None:
+            raise api_error(
+                409,
+                "content_rubric_locked",
+                "Рубрика уже участвует в сборке или готовом тексте. Дождитесь результата либо создайте новый материал для другой рубрики.",
+                request=request,
+            )
+        create_ctx = await resolve_content_create_context(
+            db,
+            item.project_id,
+            payload.rubric_id,
+            actor.user.id,
+        )
+        if create_ctx is None or create_ctx.project.workspace_id != item.workspace_id:
+            raise api_error(
+                404,
+                "rubric_not_found",
+                "Эта рубрика недоступна в выбранном проекте.",
+                request=request,
+            )
+        previous_rubric_id = item.rubric_id
+        item.rubric_id = create_ctx.rubric.id
+        item.rubric_version_id = create_ctx.rubric_version.id
+        item.project_version_id = create_ctx.project_version.id
+        data.update(
+            {
+                "previous_rubric_id": str(previous_rubric_id),
+                "rubric_id": str(item.rubric_id),
+                "rubric_version_id": str(item.rubric_version_id),
+            }
+        )
+
+    if not data:
+        return content_item_out(item)
     for key, value in data.items():
+        if key in {"previous_rubric_id", "rubric_id", "rubric_version_id"}:
+            continue
         setattr(item, key, value)
     item.updated_at = utc_now()
     item.version += 1
@@ -967,6 +1018,13 @@ async def presign_upload(
 ) -> MediaPresignResponse:
     _, membership = await require_workspace_membership(payload.workspace_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if payload.kind in {"audio", "voice"} and payload.size_bytes <= 0:
+        raise api_error(
+            422,
+            "empty_audio",
+            "Запись получилась пустой — звук не сохранился. Запишите фрагмент ещё раз.",
+            request=request,
+        )
     if payload.content_item_id is not None:
         item, _ = await item_for_actor(payload.content_item_id, request, actor, db)
         if item.workspace_id != payload.workspace_id:
@@ -1145,6 +1203,13 @@ async def transcribe_block(
         raise api_error(404, "media_not_found", "Media asset not found.", request=request)
     if media.kind not in {"audio", "voice"}:
         raise api_error(422, "media_not_voice", "Only audio or voice assets can be transcribed.", request=request)
+    if media.size_bytes <= 0:
+        raise api_error(
+            422,
+            "empty_audio",
+            "Запись получилась пустой — звук не сохранился. Запишите фрагмент ещё раз.",
+            request=request,
+        )
     voice_asset = await db.scalar(select(VoiceAsset).where(VoiceAsset.media_asset_id == media.id))
     if voice_asset is None:
         voice_asset = VoiceAsset(

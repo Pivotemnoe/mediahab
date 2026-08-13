@@ -242,6 +242,77 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         )
         self.assertEqual(rubric_limit["used"], 0.0)
 
+    def test_rubric_can_change_after_draft_creation_without_losing_author_source(self) -> None:
+        auth = self.register(
+            self.client,
+            email="rubric-change04@example.com",
+            workspace_name="Rubric Change Workspace",
+        )
+        project, original_rubric, content = self.create_obzor_content(auth)
+        source = self.client.put(
+            f"/api/v1/content-items/{content['id']}/blocks/atmosphere",
+            headers=self.csrf_headers(auth),
+            json={
+                "value": {"text": "Это мои слова, их нельзя потерять."},
+                "source_type": "transcription",
+                "version": content["version"],
+            },
+        )
+        self.assertEqual(source.status_code, 200, source.text)
+        source_id = source.json()["id"]
+        current = self.client.get(f"/api/v1/content-items/{content['id']}").json()
+        rubrics = self.client.get(f"/api/v1/projects/{project['id']}/rubrics").json()["rubrics"]
+        replacement = next(rubric for rubric in rubrics if rubric["id"] != original_rubric["id"])
+
+        changed = self.client.patch(
+            f"/api/v1/content-items/{content['id']}",
+            headers=self.csrf_headers(auth),
+            json={"rubric_id": replacement["id"], "version": current["version"]},
+        )
+
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(changed.json()["rubric_id"], replacement["id"])
+        blocks = self.client.get(f"/api/v1/content-items/{content['id']}/blocks")
+        self.assertEqual(blocks.status_code, 200, blocks.text)
+        preserved = next(block for block in blocks.json()["blocks"] if block["id"] == source_id)
+        self.assertEqual(preserved["value_json"], {"text": "Это мои слова, их нельзя потерять."})
+        self.assertEqual(preserved["source_type"], "transcription")
+
+        changed_to_common = self.client.patch(
+            f"/api/v1/content-items/{content['id']}",
+            headers=self.csrf_headers(auth),
+            json={"rubric_id": None, "version": changed.json()["version"]},
+        )
+        self.assertEqual(changed_to_common.status_code, 200, changed_to_common.text)
+        self.assertNotIn(
+            changed_to_common.json()["rubric_id"],
+            {rubric["id"] for rubric in rubrics},
+        )
+        blocks_after_common = self.client.get(f"/api/v1/content-items/{content['id']}/blocks").json()["blocks"]
+        self.assertTrue(any(block["id"] == source_id for block in blocks_after_common))
+
+    def test_empty_voice_recording_is_rejected_before_media_creation(self) -> None:
+        auth = self.register(
+            self.client,
+            email="empty-voice04@example.com",
+            workspace_name="Empty Voice Workspace",
+        )
+        response = self.client.post(
+            "/api/v1/media/presign-upload",
+            headers=self.csrf_headers(auth),
+            json={
+                "workspace_id": auth["workspace"]["id"],
+                "filename": "empty.webm",
+                "kind": "voice",
+                "mime_type": "audio/webm",
+                "size_bytes": 0,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error"]["code"], "empty_audio")
+        self.assertNotIn("OpenAI", response.text)
+
     def test_media_presign_order_and_transcription_accept_lock(self) -> None:
         auth = self.register(self.client, email="media04@example.com", workspace_name="Media Workspace")
         workspace_id = auth["workspace"]["id"]

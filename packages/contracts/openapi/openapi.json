@@ -7314,6 +7314,18 @@
             "format": "uuid",
             "title": "Project Version Id"
           },
+          "current_master_revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Master Revision Id"
+          },
           "title_internal": {
             "type": "string",
             "title": "Title Internal"
@@ -7343,6 +7355,7 @@
           "rubric_id",
           "rubric_version_id",
           "project_version_id",
+          "current_master_revision_id",
           "title_internal",
           "status",
           "version",
@@ -7488,6 +7501,18 @@
               }
             ],
             "title": "Status"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
           "version": {
             "anyOf": [

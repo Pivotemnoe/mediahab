@@ -17,13 +17,13 @@ from app.modules.ai.providers import (  # noqa: E402
     StructuredGenerationRequest,
 )
 from app.modules.content.service import transcribe_with_openai  # noqa: E402
+from app.modules.content.service import ContentProviderError  # noqa: E402
 
 
 class FakeResponse:
-    status_code = 200
-
-    def __init__(self, payload: dict[str, object]) -> None:
+    def __init__(self, payload: dict[str, object], status_code: int = 200) -> None:
         self.payload = payload
+        self.status_code = status_code
 
     def json(self) -> dict[str, object]:
         return self.payload
@@ -101,6 +101,28 @@ class OpenAIProxyTest(unittest.TestCase):
         self.assertEqual(metadata["provider"], "openai")
         self.assertEqual(client_factory.call_args.kwargs["proxy"], self.proxy_url)
         self.assertNotIn(self.proxy_url, str(fake.requests))
+
+    def test_empty_recording_never_calls_transcription_provider(self) -> None:
+        media = SimpleNamespace(storage_key="voice/empty.webm", mime_type="audio/webm")
+
+        with patch("app.core.openai_http.httpx.AsyncClient") as client_factory:
+            with self.assertRaises(ContentProviderError) as raised:
+                asyncio.run(transcribe_with_openai(self.settings, media, b""))
+
+        self.assertEqual(raised.exception.code, "empty_audio")
+        client_factory.assert_not_called()
+
+    def test_transcription_http_error_is_redacted_for_product_ui(self) -> None:
+        fake = FakeClient([FakeResponse({"error": "bad request"}, status_code=400)])
+        media = SimpleNamespace(storage_key="voice/test.webm", mime_type="audio/webm")
+
+        with patch("app.core.openai_http.httpx.AsyncClient", return_value=fake):
+            with self.assertRaises(ContentProviderError) as raised:
+                asyncio.run(transcribe_with_openai(self.settings, media, b"audio-bytes"))
+
+        self.assertEqual(raised.exception.code, "transcription_temporarily_unavailable")
+        self.assertNotIn("OpenAI", raised.exception.message)
+        self.assertNotIn("HTTP", raised.exception.message)
 
     def test_text_provider_sends_bounded_image_content_without_logging_it(self) -> None:
         fake = FakeClient([FakeResponse({"output_text": '{"answer":"ok"}', "usage": {}})])

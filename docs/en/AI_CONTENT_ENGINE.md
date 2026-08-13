@@ -143,7 +143,7 @@ Every model-generated master, body block, hook, CTA, and platform refinement pas
 
 - Deterministically normalize CRLF, accidental tabs and separator non-breaking spaces, repeated horizontal whitespace, line-edge whitespace, leading/trailing blank lines, and more than one blank line between paragraphs.
 - Reject doubled dash sequences `--`, `––`, and `——`, and paired parenthetical em-dashes such as `— aside —`. One grammatically necessary dash, dialogue markers, Markdown structure, code, URLs, and email addresses remain valid.
-- Reject excessive short one-sentence paragraph fragmentation.
+- Softly compact consecutive short one-sentence model paragraphs without changing their words. Paragraph density is never a blocking validation error.
 - A surface violation receives one focused full-result retry. A second invalid response is blocked and never creates a ready master or platform revision; the last good revision is preserved.
 
 ## Retrieval

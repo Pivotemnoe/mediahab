@@ -469,10 +469,15 @@ async def transcribe_with_openai(
     media: MediaAsset,
     audio_bytes: bytes,
 ) -> tuple[str, dict[str, Any]]:
+    if not audio_bytes:
+        raise ContentProviderError(
+            "empty_audio",
+            "Запись получилась пустой — звук не сохранился. Запишите фрагмент ещё раз.",
+        )
     if not settings.openai_api_key:
         raise ContentProviderError(
-            "openai_not_configured",
-            "OPENAI_API_KEY is not configured.",
+            "transcription_temporarily_unavailable",
+            "Расшифровка сейчас недоступна. Повторите попытку позже или вставьте текст вручную.",
         )
     endpoint = f"{settings.openai_base_url.rstrip('/')}/audio/transcriptions"
     data: dict[str, str] = {
@@ -501,26 +506,26 @@ async def transcribe_with_openai(
             )
     except httpx.HTTPError as exc:
         raise ContentProviderError(
-            "openai_request_failed",
-            "OpenAI STT request failed before a response was received.",
+            "transcription_temporarily_unavailable",
+            "Не удалось расшифровать сохранённый фрагмент. Повторите попытку позже или вставьте текст вручную.",
         ) from exc
     if response.status_code >= 400:
         raise ContentProviderError(
-            "openai_request_failed",
-            f"OpenAI STT returned HTTP {response.status_code}.",
+            "transcription_temporarily_unavailable",
+            "Не удалось расшифровать сохранённый фрагмент. Повторите попытку позже или вставьте текст вручную.",
         )
     try:
         payload = response.json()
     except ValueError as exc:
         raise ContentProviderError(
-            "openai_invalid_response",
-            "OpenAI STT response was not valid JSON.",
+            "transcription_temporarily_unavailable",
+            "Не удалось расшифровать сохранённый фрагмент. Повторите попытку позже или вставьте текст вручную.",
         ) from exc
     text = payload.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ContentProviderError(
-            "openai_empty_transcript",
-            "OpenAI STT response did not contain transcript text.",
+            "transcription_temporarily_unavailable",
+            "В записи не удалось распознать речь. Запишите фрагмент ещё раз или вставьте текст вручную.",
         )
     return text.strip(), {
         "provider": "openai",

@@ -106,6 +106,7 @@ export interface RubricListResponse {
 
 export interface ContentItemOut {
   created_at: string;
+  current_master_revision_id: string | null;
   id: string;
   project_id: string;
   project_version_id: string;

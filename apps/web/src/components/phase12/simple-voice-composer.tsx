@@ -18,7 +18,6 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
-  Square,
   Upload,
   WandSparkles,
   X,
@@ -123,6 +122,89 @@ type AiUsageSummary = {
   inputTokens: number;
   outputTokens: number;
 };
+
+type AssemblyReceipt = {
+  attempt: number;
+  contentId: string;
+  expiresAt: number;
+  instagramFormat: InstagramFormat | null;
+  lengthOverrides: Partial<Record<PlatformKey, LengthTarget>>;
+  masterRevisionIdAtStart: string | null;
+  platformKeys: PlatformKey[];
+  startedAt: number;
+  workspaceId: string;
+};
+
+type WakeLockHandle = {
+  release: () => Promise<void>;
+  released: boolean;
+};
+
+const ASSEMBLY_RECEIPT_PREFIX = "tmh:content-assembly:v1:";
+const ASSEMBLY_RECEIPT_TTL_MS = 30 * 60 * 1000;
+
+function assemblyReceiptKey(contentId: string): string {
+  return `${ASSEMBLY_RECEIPT_PREFIX}${contentId}`;
+}
+
+function writeAssemblyReceipt(receipt: AssemblyReceipt): void {
+  try {
+    window.localStorage.setItem(assemblyReceiptKey(receipt.contentId), JSON.stringify(receipt));
+  } catch {
+    // Storage can be unavailable in private mode; server state still remains recoverable.
+  }
+}
+
+function readAssemblyReceipt(contentId: string, workspaceId: string): AssemblyReceipt | null {
+  const key = assemblyReceiptKey(contentId);
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<AssemblyReceipt>;
+    const validPlatforms = Array.isArray(value.platformKeys)
+      && value.platformKeys.length > 0
+      && value.platformKeys.every((platform) => isPlatformKey(platform));
+    if (
+      value.contentId !== contentId
+      || value.workspaceId !== workspaceId
+      || typeof value.startedAt !== "number"
+      || typeof value.expiresAt !== "number"
+      || value.expiresAt <= Date.now()
+      || typeof value.attempt !== "number"
+      || value.attempt < 0
+      || !validPlatforms
+      || (value.masterRevisionIdAtStart !== null && typeof value.masterRevisionIdAtStart !== "string")
+      || (value.instagramFormat !== null && !["image", "carousel", "reel"].includes(String(value.instagramFormat)))
+      || !value.lengthOverrides
+      || typeof value.lengthOverrides !== "object"
+      || Array.isArray(value.lengthOverrides)
+    ) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+    return value as AssemblyReceipt;
+  } catch {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Storage is unavailable; continue without client-side recovery metadata.
+    }
+    return null;
+  }
+}
+
+function clearAssemblyReceipt(contentId: string): void {
+  try {
+    window.localStorage.removeItem(assemblyReceiptKey(contentId));
+  } catch {
+    // The server-side content and variants remain the source of truth.
+  }
+}
+
+function formatRecordingSeconds(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
 const platformOptions: Array<{
   hardLimit: number | null;
@@ -318,12 +400,10 @@ async function apiRequest<T>(
   return response.json() as Promise<T>;
 }
 
-function preferredMimeType(): string {
+function preferredMimeType(): string | null {
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mpeg"];
-  if (typeof MediaRecorder === "undefined") {
-    return "audio/webm";
-  }
-  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) ?? "audio/webm";
+  if (typeof MediaRecorder === "undefined") return null;
+  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) ?? null;
 }
 
 function extensionForMimeType(mimeType: string): string {
@@ -474,6 +554,9 @@ export function SimpleVoiceComposer({
     ? initialPlatformKey
     : resumedPlatforms[0] ?? "telegram";
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceLevel, setVoiceLevel] = useState(0);
+  const [voiceSignalDetected, setVoiceSignalDetected] = useState(false);
   const [message, setMessage] = useState(
     resumeDraft
       ? resumeDraft.ideaBrief && !resumeDraft.transcript.trim()
@@ -513,6 +596,8 @@ export function SimpleVoiceComposer({
   const [instruction, setInstruction] = useState("");
   const [applyToAll, setApplyToAll] = useState(false);
   const [isAssembling, setIsAssembling] = useState(false);
+  const [isRubricUpdating, setIsRubricUpdating] = useState(false);
+  const [rubricLocked, setRubricLocked] = useState(Boolean(resumeDraft?.latestVariants.length));
   const [isRefining, setIsRefining] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
   const [latestAiUsage, setLatestAiUsage] = useState<AiUsageSummary | null>(null);
@@ -525,6 +610,9 @@ export function SimpleVoiceComposer({
   const [exactPlatform, setExactPlatform] = useState<PlatformKey>("telegram");
   const recorderRef = useRef<MediaRecorder | null>(null);
   const pendingStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const voiceMeterFrameRef = useRef<number | null>(null);
+  const voiceMeterLastUpdateRef = useRef(0);
   const captureRequestRef = useRef(0);
   const mountedRef = useRef(true);
   const chunksRef = useRef<Blob[]>([]);
@@ -536,6 +624,80 @@ export function SimpleVoiceComposer({
   const pendingStandaloneIdeaRef = useRef<StandaloneIdeaHandoff | null>(null);
   const ensureContentPromiseRef = useRef<Promise<{ contentId: string; fieldKey: string }> | null>(null);
   const didFocusRequestedPlatformRef = useRef(false);
+  const isAssemblingRef = useRef(false);
+  const assemblyRecoveryPromiseRef = useRef<Promise<void> | null>(null);
+  const recoverAssemblyRef = useRef<((receipt: AssemblyReceipt, waitForRunningRequest: boolean) => Promise<void>) | null>(null);
+  const wakeLockRef = useRef<WakeLockHandle | null>(null);
+
+  function stopVoiceMeter() {
+    if (voiceMeterFrameRef.current !== null) {
+      window.cancelAnimationFrame(voiceMeterFrameRef.current);
+      voiceMeterFrameRef.current = null;
+    }
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== "closed") void context.close();
+    if (mountedRef.current) setVoiceLevel(0);
+  }
+
+  function startVoiceMeter(stream: MediaStream) {
+    stopVoiceMeter();
+    try {
+      const context = new AudioContext();
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      context.createMediaStreamSource(stream).connect(analyser);
+      const values = new Uint8Array(analyser.frequencyBinCount);
+      audioContextRef.current = context;
+      voiceMeterLastUpdateRef.current = 0;
+      const measure = (timestamp: number) => {
+        analyser.getByteTimeDomainData(values);
+        if (timestamp - voiceMeterLastUpdateRef.current >= 80) {
+          let sum = 0;
+          for (const value of values) {
+            const normalized = (value - 128) / 128;
+            sum += normalized * normalized;
+          }
+          const level = Math.min(1, Math.sqrt(sum / values.length) * 4);
+          if (mountedRef.current) {
+            setVoiceLevel(level);
+            if (level >= 0.035) setVoiceSignalDetected(true);
+          }
+          voiceMeterLastUpdateRef.current = timestamp;
+        }
+        voiceMeterFrameRef.current = window.requestAnimationFrame(measure);
+      };
+      voiceMeterFrameRef.current = window.requestAnimationFrame(measure);
+    } catch {
+      // The timer and explicit state remain truthful; never draw a fake level.
+      setVoiceLevel(0);
+    }
+  }
+
+  async function releaseWakeLock() {
+    const current = wakeLockRef.current;
+    wakeLockRef.current = null;
+    if (current && !current.released) {
+      try {
+        await current.release();
+      } catch {
+        // Wake Lock is an enhancement; persisted server state is the recovery path.
+      }
+    }
+  }
+
+  async function requestWakeLock() {
+    if (document.visibilityState !== "visible" || wakeLockRef.current) return;
+    const wakeLock = (navigator as Navigator & {
+      wakeLock?: { request: (type: "screen") => Promise<WakeLockHandle> };
+    }).wakeLock;
+    if (!wakeLock) return;
+    try {
+      wakeLockRef.current = await wakeLock.request("screen");
+    } catch {
+      // iOS can deny the request; lifecycle recovery remains active.
+    }
+  }
 
   useEffect(() => {
     mountedRef.current = true;
@@ -552,8 +714,23 @@ export function SimpleVoiceComposer({
       }
       pendingStreamRef.current?.getTracks().forEach((track) => track.stop());
       pendingStreamRef.current = null;
+      stopVoiceMeter();
+      void releaseWakeLock();
     };
   }, []);
+
+  useEffect(() => {
+    if (captureState !== "recording") return;
+    const timer = window.setInterval(() => setRecordingSeconds((current) => current + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [captureState]);
+
+  useEffect(() => {
+    isAssemblingRef.current = isAssembling;
+    const shouldStayAwake = isAssembling || captureState === "recording";
+    if (shouldStayAwake) void requestWakeLock();
+    else void releaseWakeLock();
+  }, [captureState, isAssembling]);
 
   useEffect(() => {
     pendingStandaloneIdeaRef.current = null;
@@ -641,7 +818,47 @@ export function SimpleVoiceComposer({
     setSegments([]);
     if (!pendingStandaloneIdeaRef.current) setIdeaBrief(null);
     setResults(emptyResults());
+    setRubricLocked(false);
     setMessage("Проект изменён. Ваш текст остался на месте; можно выбрать рубрику или начать без неё.");
+  }
+
+  async function updateRubric(rubricId: string) {
+    const previousRubricId = selectedRubricId;
+    if (!contentIdRef.current) {
+      setSelectedRubricId(rubricId);
+      setMessage(rubricId ? "Рубрика выбрана. Можно начинать диктовку." : "Будут применены общие правила проекта.");
+      return;
+    }
+    if (rubricLocked || isRubricUpdating) return;
+    setSelectedRubricId(rubricId);
+    setIsRubricUpdating(true);
+    setMessage("Сохраняю рубрику для этого материала…");
+    try {
+      const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentIdRef.current}`, {
+        method: "GET",
+      });
+      await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentIdRef.current}`, {
+        body: { rubric_id: rubricId || null, version: currentItem.version },
+        method: "PATCH",
+      });
+      if (!sourceBlockIdRef.current) {
+        const guidedForm = await apiRequest<GuidedFormResponse>(
+          `/api/v1/content-items/${contentIdRef.current}/guided-form`,
+          { method: "GET" },
+        );
+        const fieldKey = sourceFieldKey(guidedForm);
+        sourceFieldRef.current = fieldKey;
+        setSourceField(fieldKey);
+      }
+      setMessage(rubricId ? "Рубрика изменена. Диктовка и медиа остались на месте." : "Включены общие правила проекта. Диктовка и медиа остались на месте.");
+    } catch (error) {
+      setSelectedRubricId(previousRubricId);
+      const text = error instanceof Error ? error.message : "Не удалось изменить рубрику.";
+      if (text.includes("уже участвует в сборке")) setRubricLocked(true);
+      setMessage(text);
+    } finally {
+      setIsRubricUpdating(false);
+    }
   }
 
   function rememberCreatedContentItem(contentItemId: string) {
@@ -797,6 +1014,11 @@ export function SimpleVoiceComposer({
   }
 
   async function uploadVoice(blob: Blob, context: { contentId: string; fieldKey: string }) {
+    if (blob.size <= 0) {
+      setCaptureState("error");
+      setMessage("Запись получилась пустой — звук не сохранился. Нажмите микрофон и повторите фрагмент.");
+      return;
+    }
     try {
       setCaptureState("uploading");
       setMessage("Загружаю голосовой фрагмент…");
@@ -896,28 +1118,46 @@ export function SimpleVoiceComposer({
         pendingStreamRef.current = null;
         return;
       }
-      const mimeType = preferredMimeType();
-      const recorder = new MediaRecorder(activeStream, { mimeType });
+      const requestedMimeType = preferredMimeType();
+      const recorder = requestedMimeType
+        ? new MediaRecorder(activeStream, { mimeType: requestedMimeType })
+        : new MediaRecorder(activeStream);
+      const mimeType = recorder.mimeType || requestedMimeType || "audio/webm";
       chunksRef.current = [];
+      setRecordingSeconds(0);
+      setVoiceLevel(0);
+      setVoiceSignalDetected(false);
       recorder.ondataavailable = (event) => {
         if (event.data.size) chunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => {
+        activeStream.getTracks().forEach((track) => track.stop());
+        pendingStreamRef.current = null;
+        recorderRef.current = null;
+        stopVoiceMeter();
+        if (!mountedRef.current) return;
+        setCaptureState("error");
+        setMessage("Запись прервалась в браузере. Нажмите микрофон и повторите фрагмент.");
       };
       recorder.onstop = () => {
         activeStream.getTracks().forEach((track) => track.stop());
         pendingStreamRef.current = null;
         recorderRef.current = null;
+        stopVoiceMeter();
         if (!mountedRef.current) return;
         const blob = new Blob(chunksRef.current, { type: mimeType });
         void uploadVoice(blob, context);
       };
-      recorder.start();
+      recorder.start(250);
       recorderRef.current = recorder;
       pendingStreamRef.current = null;
+      startVoiceMeter(activeStream);
       setCaptureState("recording");
       setMessage(`Идёт запись фрагмента ${segments.length + 1}.`);
     } catch (error) {
       stream?.getTracks().forEach((track) => track.stop());
       pendingStreamRef.current = null;
+      stopVoiceMeter();
       if (mountedRef.current && requestId === captureRequestRef.current) {
         setCaptureState("error");
         setMessage(error instanceof Error ? error.message : "Не удалось начать запись.");
@@ -927,6 +1167,11 @@ export function SimpleVoiceComposer({
 
   function pauseRecording() {
     if (recorderRef.current?.state === "recording") {
+      try {
+        recorderRef.current.requestData();
+      } catch {
+        // The final stop still requests the remaining browser buffer.
+      }
       recorderRef.current.pause();
       setCaptureState("paused");
       setMessage("Запись на паузе. Можно продолжить или закончить фрагмент.");
@@ -943,8 +1188,14 @@ export function SimpleVoiceComposer({
 
   function finishSegment() {
     if (recorderRef.current && ["recording", "paused"].includes(recorderRef.current.state)) {
+      setCaptureState("uploading");
+      setMessage("Сохраняю записанный фрагмент…");
+      try {
+        recorderRef.current.requestData();
+      } catch {
+        // `stop()` still dispatches the final dataavailable event.
+      }
       recorderRef.current.stop();
-      setMessage("Фрагмент готов. Начинаю расшифровку…");
     }
   }
 
@@ -1120,15 +1371,26 @@ export function SimpleVoiceComposer({
     setResults((current) => ({ ...current, [key]: result }));
   }
 
-  async function generatePlatform(contentItemId: string, key: PlatformKey): Promise<AiUsageSummary | null> {
+  async function generatePlatform(
+    contentItemId: string,
+    key: PlatformKey,
+    options?: {
+      instagramFormat?: InstagramFormat | null;
+      lengthOverrides?: Partial<Record<PlatformKey, LengthTarget>>;
+      propagateError?: boolean;
+    },
+  ): Promise<AiUsageSummary | null> {
     updatePlatformResult(key, { status: "loading" });
     try {
+      const requestedInstagramFormat = options?.instagramFormat === undefined
+        ? instagramFormat
+        : options.instagramFormat;
       const generated = await apiRequest<PlatformVariantsResponse>(
         `/api/v1/content-items/${contentItemId}/generate-variants`,
         {
           body: {
-            instagram_format: key === "instagram" ? instagramFormat : null,
-            length_overrides: buildLengthOverrides(),
+            instagram_format: key === "instagram" ? requestedInstagramFormat : null,
+            length_overrides: options?.lengthOverrides ?? buildLengthOverrides(),
             platform_keys: [key],
           },
           method: "POST",
@@ -1137,10 +1399,12 @@ export function SimpleVoiceComposer({
       let variant = generated.variants.find((item) => item.platform_key === key);
       if (!variant) throw new Error("Сервер не вернул вариант.");
       let adaptationUsage: AiUsageSummary | null = null;
-      const needsFormatAdaptation = key === "instagram" && instagramFormat !== null;
+      const needsFormatAdaptation = key === "instagram" && requestedInstagramFormat !== null;
       if (missesLengthTarget(variant) || needsFormatAdaptation) {
         const instructions = [
-          needsFormatAdaptation ? instagramFormatInstruction(instagramFormat, variant) : "",
+          needsFormatAdaptation && requestedInstagramFormat
+            ? instagramFormatInstruction(requestedInstagramFormat, variant)
+            : "",
           missesLengthTarget(variant) ? lengthRefinementInstruction(variant) : "",
         ].filter(Boolean);
         const refined = await apiRequest<PlatformVariantRefinementResponse>(
@@ -1160,6 +1424,7 @@ export function SimpleVoiceComposer({
         error: error instanceof Error ? error.message : "Не удалось собрать вариант.",
         status: "error",
       });
+      if (options?.propagateError) throw error;
       return null;
     }
   }
@@ -1177,20 +1442,97 @@ export function SimpleVoiceComposer({
     return Object.fromEntries(keys.map((key) => [key, { min_chars: minChars, max_chars: maxChars }]));
   }
 
-  async function assembleVersions() {
-    if (!selectedPlatforms.length) {
+  async function inspectAssembly(receipt: AssemblyReceipt): Promise<{
+    item: ContentItemOut;
+    missing: PlatformKey[];
+    variants: Partial<Record<PlatformKey, PlatformVariantOut>>;
+  }> {
+    const [item, response] = await Promise.all([
+      apiRequest<ContentItemOut>(`/api/v1/content-items/${receipt.contentId}`, { method: "GET" }),
+      apiRequest<PlatformVariantsResponse>(`/api/v1/content-items/${receipt.contentId}/variants`, { method: "GET" }),
+    ]);
+    const variants: Partial<Record<PlatformKey, PlatformVariantOut>> = {};
+    if (item.current_master_revision_id) {
+      for (const variant of response.variants) {
+        if (
+          isPlatformKey(variant.platform_key)
+          && receipt.platformKeys.includes(variant.platform_key)
+          && variant.master_revision_id === item.current_master_revision_id
+          && !variants[variant.platform_key]
+        ) {
+          variants[variant.platform_key] = variant;
+        }
+      }
+    }
+    return {
+      item,
+      missing: receipt.platformKeys.filter((key) => !variants[key]),
+      variants,
+    };
+  }
+
+  async function hydrateAssemblyVariants(
+    receipt: AssemblyReceipt,
+    variants: Partial<Record<PlatformKey, PlatformVariantOut>>,
+  ) {
+    const hydrated = await Promise.all(receipt.platformKeys.flatMap((key) => {
+      const variant = variants[key];
+      if (!variant) return [];
+      return [apiRequest<PlatformVariantOut>(`/api/v1/platform-variants/${variant.id}/validate`, {
+        method: "POST",
+      }).then((validated) => [key, validated] as const)];
+    }));
+    for (const [key, variant] of hydrated) updatePlatformResult(key, { status: "ready", variant });
+  }
+
+  async function assembleVersions(options?: { receipt?: AssemblyReceipt; recovering?: boolean }) {
+    const workspaceId = viewModel.workspaceId;
+    if (!workspaceId) {
+      setMessage("Рабочее пространство недоступно. Обновите страницу и повторите попытку.");
+      return;
+    }
+    const targetPlatforms = options?.receipt?.platformKeys ?? selectedPlatforms;
+    if (!targetPlatforms.length) {
       setMessage("Отметьте хотя бы одну площадку.");
       return;
     }
-    const formatIssue = instagramFormatIssue();
+    if (isAssemblingRef.current && !options?.recovering) return;
+    const requestedInstagramFormat = options?.receipt?.instagramFormat ?? instagramFormat;
+    const formatIssue = options?.recovering ? null : instagramFormatIssue();
     if (formatIssue) {
       setMessage(formatIssue);
       return;
     }
+    let activeReceipt = options?.receipt;
     try {
+      isAssemblingRef.current = true;
       setIsAssembling(true);
       const context = await ensureContent();
       await saveMergedTranscript(context);
+      if (!activeReceipt) {
+        const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${context.contentId}`, {
+          method: "GET",
+        });
+        activeReceipt = {
+          attempt: 0,
+          contentId: context.contentId,
+          expiresAt: Date.now() + ASSEMBLY_RECEIPT_TTL_MS,
+          instagramFormat: requestedInstagramFormat,
+          lengthOverrides: buildLengthOverrides(),
+          masterRevisionIdAtStart: currentItem.current_master_revision_id,
+          platformKeys: targetPlatforms,
+          startedAt: Date.now(),
+          workspaceId,
+        };
+      } else if (options?.recovering) {
+        activeReceipt = { ...activeReceipt, attempt: activeReceipt.attempt + 1 };
+      }
+      const receipt = activeReceipt;
+      const firstPlatform = receipt?.platformKeys[0];
+      if (!receipt || !firstPlatform) throw new Error("Не удалось сохранить параметры сборки.");
+      writeAssemblyReceipt(receipt);
+      setSelectedPlatforms(receipt.platformKeys);
+      setActivePlatform(firstPlatform);
       setMessage("Проверяю факты и собираю мастер-текст…");
       const facts = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${context.contentId}/extract-facts`, {
         method: "POST",
@@ -1206,6 +1548,7 @@ export function SimpleVoiceComposer({
       if (master.status !== "completed") {
         throw new Error(master.error_message || "Мастер-текст не собран.");
       }
+      setRubricLocked(true);
       const masterPayload = master.response_json as {
         quality?: { warnings?: Array<{ code?: string }> };
       } | null;
@@ -1214,9 +1557,16 @@ export function SimpleVoiceComposer({
       );
       const completedHelpers = helpers.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
       const baseUsage = [facts, ...completedHelpers, master].map(generationRunUsage);
-      setActivePlatform(selectedPlatforms[0]);
       setMessage("Мастер готов. Версии площадок появляются по мере готовности.");
-      const adaptationUsage = await Promise.all(selectedPlatforms.map((key) => generatePlatform(context.contentId, key)));
+      const adaptationUsage = await Promise.all(receipt.platformKeys.map((key) => generatePlatform(
+        context.contentId,
+        key,
+        {
+          instagramFormat: receipt.instagramFormat,
+          lengthOverrides: receipt.lengthOverrides,
+          propagateError: true,
+        },
+      )));
       const totalUsage = mergeUsage([...baseUsage, ...adaptationUsage]);
       setLatestAiUsage(totalUsage);
       setMessage(
@@ -1224,12 +1574,116 @@ export function SimpleVoiceComposer({
           ? "ИИ-сервис не ответил: показан безопасный черновик из вашей расшифровки. Проверьте его перед доработкой."
           : "Готовые версии можно проверить, отредактировать и скопировать.",
       );
+      clearAssemblyReceipt(context.contentId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось собрать версии.");
+      if (activeReceipt && activeReceipt.attempt >= 2) clearAssemblyReceipt(activeReceipt.contentId);
     } finally {
+      isAssemblingRef.current = false;
       setIsAssembling(false);
     }
   }
+
+  async function recoverAssembly(receipt: AssemblyReceipt, waitForRunningRequest: boolean) {
+    if (assemblyRecoveryPromiseRef.current) return assemblyRecoveryPromiseRef.current;
+    const recovery = (async () => {
+      const firstPlatform = receipt.platformKeys[0];
+      if (!firstPlatform) return;
+      isAssemblingRef.current = true;
+      setSelectedPlatforms(receipt.platformKeys);
+      setActivePlatform(firstPlatform);
+      if (receipt.instagramFormat) setInstagramFormat(receipt.instagramFormat);
+      setIsAssembling(true);
+      setMessage("Восстанавливаю сборку после возвращения в приложение…");
+
+      const shouldWaitForRunningRequest = waitForRunningRequest || Date.now() < receipt.startedAt + 120_000;
+      const waitUntil = shouldWaitForRunningRequest
+        ? Math.max(Date.now(), receipt.startedAt + 120_000)
+        : Date.now();
+      let inspected = await inspectAssembly(receipt);
+      while (
+        inspected.item.current_master_revision_id === receipt.masterRevisionIdAtStart
+        && Date.now() < waitUntil
+      ) {
+        await new Promise((resolve) => window.setTimeout(resolve, 4000));
+        inspected = await inspectAssembly(receipt);
+      }
+
+      const newMasterReady = Boolean(
+        inspected.item.current_master_revision_id
+        && inspected.item.current_master_revision_id !== receipt.masterRevisionIdAtStart,
+      );
+      if (newMasterReady) {
+        await hydrateAssemblyVariants(receipt, inspected.variants);
+        if (inspected.missing.length) {
+          setMessage("Мастер сохранён. Дособираю версии площадок…");
+          await Promise.all(inspected.missing.map((key) => generatePlatform(
+            receipt.contentId,
+            key,
+            {
+              instagramFormat: receipt.instagramFormat,
+              lengthOverrides: receipt.lengthOverrides,
+              propagateError: true,
+            },
+          )));
+        }
+        clearAssemblyReceipt(receipt.contentId);
+        setRubricLocked(true);
+        setMessage("Сборка восстановлена. Готовые версии можно проверить и скопировать.");
+        isAssemblingRef.current = false;
+        setIsAssembling(false);
+        return;
+      }
+
+      if (receipt.attempt >= 2) {
+        clearAssemblyReceipt(receipt.contentId);
+        isAssemblingRef.current = false;
+        setIsAssembling(false);
+        setMessage("Автоматическое восстановление не завершилось. Ваш текст и медиа сохранены; нажмите «Собрать версии» ещё раз.");
+        return;
+      }
+
+      isAssemblingRef.current = false;
+      setIsAssembling(false);
+      await assembleVersions({ receipt, recovering: true });
+    })().catch((error) => {
+      isAssemblingRef.current = false;
+      setIsAssembling(false);
+      setMessage(error instanceof Error ? error.message : "Не удалось восстановить сборку. Ваш исходник сохранён.");
+    }).finally(() => {
+      assemblyRecoveryPromiseRef.current = null;
+    });
+    assemblyRecoveryPromiseRef.current = recovery;
+    return recovery;
+  }
+
+  recoverAssemblyRef.current = recoverAssembly;
+
+  useEffect(() => {
+    const recoverIfNeeded = (waitForRunningRequest: boolean) => {
+      const contentId = contentIdRef.current;
+      const workspaceId = viewModel.workspaceId;
+      if (document.visibilityState !== "visible" || !contentId || !workspaceId) return;
+      const receipt = readAssemblyReceipt(contentId, workspaceId);
+      if (receipt) void recoverAssemblyRef.current?.(receipt, waitForRunningRequest);
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        if (isAssemblingRef.current || recorderRef.current?.state === "recording") void requestWakeLock();
+        recoverIfNeeded(isAssemblingRef.current);
+      }
+    };
+    const initial = window.setTimeout(() => recoverIfNeeded(false), 0);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => {
+      window.clearTimeout(initial);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+      window.removeEventListener("online", onVisible);
+    };
+  }, [viewModel.workspaceId]);
 
   async function saveVariantText(key: PlatformKey, richText: RichTextDocument) {
     const variant = results[key].variant;
@@ -1425,7 +1879,7 @@ export function SimpleVoiceComposer({
         </div>
       ) : null}
 
-      <Card className="order-3 grid min-w-0 gap-4 p-4 sm:p-5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-7">
+      <Card className="order-1 grid min-w-0 gap-4 p-4 sm:p-5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-7">
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-foreground">
             Проект
@@ -1448,9 +1902,9 @@ export function SimpleVoiceComposer({
             <span className="relative">
               <select
                   className="h-11 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary"
-                disabled={Boolean(contentId)}
+                disabled={isRubricUpdating || rubricLocked || isAssembling}
                 value={selectedRubricId}
-                onChange={(event) => setSelectedRubricId(event.currentTarget.value)}
+                onChange={(event) => void updateRubric(event.currentTarget.value)}
               >
                 <option value="">Без рубрики — общие правила проекта</option>
                 {(project?.rubrics ?? []).map((item) => (
@@ -1458,6 +1912,10 @@ export function SimpleVoiceComposer({
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-3 text-muted" size={18} />
+            </span>
+            <span className="flex min-h-5 items-center gap-1.5 text-xs font-normal leading-5 text-muted">
+              {isRubricUpdating ? <Loader2 className="animate-spin" size={13} /> : null}
+              {rubricLocked ? "Рубрика зафиксирована после сборки поста." : "Рубрику можно менять, пока пост ещё не собран."}
             </span>
           </label>
         </div>
@@ -1611,7 +2069,12 @@ export function SimpleVoiceComposer({
         <div className="order-1 text-left">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-lg font-semibold text-foreground">Ваш голосовой черновик</div>
-            <span className="flex items-center gap-2 text-xs text-muted"><span className="size-2 rounded-full bg-success" />{captureState === "recording" ? "Идёт запись" : "Можно продолжить в любой момент"}</span>
+            <span className="flex items-center gap-2 text-xs text-muted">
+              <span className={captureState === "recording" ? "size-2 animate-pulse rounded-full bg-danger motion-reduce:animate-none" : "size-2 rounded-full bg-success"} />
+              {captureState === "recording"
+                ? voiceSignalDetected ? "Микрофон слышит вас" : "Идёт запись — говорите"
+                : captureState === "paused" ? "Запись на паузе" : "Можно продолжить в любой момент"}
+            </span>
           </div>
           <p className="mt-1 text-sm text-muted">Надиктуйте всё сразу или добавляйте фрагменты по очереди.</p>
         </div>
@@ -1631,7 +2094,24 @@ export function SimpleVoiceComposer({
             {captureState === "requesting" || captureState === "uploading" || captureState === "transcribing" ? (
               <Loader2 className="animate-spin motion-reduce:animate-none" size={36} />
             ) : captureState === "recording" || captureState === "paused" ? (
-              <Square size={34} />
+              <span aria-hidden="true" className="grid place-items-center gap-2">
+                <span className="flex h-10 items-center justify-center gap-1" data-testid="voice-level-bars">
+                  {[0.48, 0.78, 1, 0.66, 0.9, 0.58, 0.74].map((weight, index) => (
+                    <span
+                      className="w-1.5 rounded-full bg-current transition-[height] duration-75 motion-reduce:transition-none"
+                      key={`${weight}-${index}`}
+                      style={{
+                        height: captureState === "paused"
+                          ? `${8 + Math.round(weight * 8)}px`
+                          : `${8 + Math.round(weight * voiceLevel * 34)}px`,
+                      }}
+                    />
+                  ))}
+                </span>
+                <span className="font-mono text-sm font-semibold tabular-nums">
+                  {captureState === "paused" ? "Пауза" : formatRecordingSeconds(recordingSeconds)}
+                </span>
+              </span>
             ) : (
               <Mic size={40} />
             )}

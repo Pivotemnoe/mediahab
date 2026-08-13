@@ -56,7 +56,7 @@
 - User-entered ratings override AI.
 - The “Что поесть?” editor mode keeps all facts and meets the rubric target or produces an explicit warning.
 - Approved examples affect expression only, never the topic, thesis, facts, scenario, quotation, CTA, or personal experience.
-- Generated master, hook, CTA, and refinement text contains no repeated horizontal whitespace, more than one blank line, doubled/paired dash patterns, or excessive short-paragraph fragmentation. Lossless whitespace is normalized; a second invalid regeneration is blocked without a ready revision.
+- Generated master, hook, CTA, and refinement text contains no repeated horizontal whitespace, more than one blank line, or doubled/paired dash patterns. Lossless whitespace is normalized and consecutive short model paragraphs may be compacted without changing words; paragraph density is never a release-blocking error. A second invalid dash-pattern regeneration is blocked without a ready revision.
 - Source text and stored transcripts remain byte-for-byte unchanged by generated-text hygiene.
 - Every run records provider, model, versions, usage, latency, and result.
 

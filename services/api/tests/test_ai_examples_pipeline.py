@@ -251,6 +251,15 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         content_row, run_row = asyncio.run(self._content_and_run(content["id"], body["id"]))
         self.assertIsNotNone(content_row.current_master_revision_id)
         self.assertEqual(run_row.provider_key, "mock")
+        visible_rubrics = self.client.get(f"/api/v1/projects/{project['id']}/rubrics").json()["rubrics"]
+        replacement = next(item for item in visible_rubrics if item["id"] != rubric["id"])
+        locked_change = self.client.patch(
+            f"/api/v1/content-items/{content['id']}",
+            headers=self.csrf_headers(auth),
+            json={"rubric_id": replacement["id"], "version": content_row.version},
+        )
+        self.assertEqual(locked_change.status_code, 409, locked_change.text)
+        self.assertEqual(locked_change.json()["error"]["code"], "content_rubric_locked")
 
     def test_project_wide_examples_apply_without_rubric_assignment(self) -> None:
         auth = self.register(self.client, email="project-wide05@example.com")
@@ -291,7 +300,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
 
     def test_variant_refinement_creates_revision_and_failure_preserves_it(self) -> None:
         auth = self.register(self.client, email="refine05@example.com")
-        _, _, content = self.create_content(auth)
+        project, rubric, content = self.create_content(auth)
         self.seed_content_blocks(auth, content)
         generated = self.client.post(
             f"/api/v1/content-items/{content['id']}/assemble-master",
@@ -560,6 +569,59 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             provider.clean_text,
         )
 
+    def test_fragmented_master_is_compacted_but_never_blocked(self) -> None:
+        auth = self.register(
+            self.client,
+            email="paragraph-soft05@example.com",
+            workspace_name="Paragraph Soft Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class FragmentedProvider:
+            provider_key = "custom"
+            model_id = "fragmented-paragraph-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.words: list[str] = []
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                payload = dict(request.fallback_payload)
+                self.words = str(payload["master_text"]).split()
+                chunk_size = max(1, len(self.words) // 6)
+                chunks = [
+                    " ".join(self.words[index : index + chunk_size])
+                    for index in range(0, len(self.words), chunk_size)
+                ]
+                payload["master_text"] = "\n\n".join(chunks)
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=payload,
+                    usage={"input_tokens": 7, "output_tokens": 5},
+                )
+
+        provider = FragmentedProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(body["status"], "completed", body)
+        self.assertEqual(provider.calls, 1)
+        master_text = body["response_json"]["master_text"]
+        self.assertEqual(master_text.replace("\n", " ").split(), provider.words)
+        self.assertNotIn("excessive_paragraph_fragmentation", str(body))
+        self.assertEqual(
+            asyncio.run(self._master_revision_text(body["response_json"]["revision_id"])),
+            master_text,
+        )
+
     def test_custom_provider_master_retries_invalid_dash_and_sums_usage(self) -> None:
         auth = self.register(
             self.client,
@@ -626,7 +688,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             email="hygiene-fail05@example.com",
             workspace_name="Hygiene Failure Workspace",
         )
-        _, _, content = self.create_content(auth)
+        project, rubric, content = self.create_content(auth)
         self.seed_content_blocks(auth, content)
 
         class AlwaysInvalidProvider:
@@ -670,6 +732,15 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             self._content_and_run(content["id"], body["id"])
         )
         self.assertIsNone(content_row.current_master_revision_id)
+        visible_rubrics = self.client.get(f"/api/v1/projects/{project['id']}/rubrics").json()["rubrics"]
+        replacement = next(item for item in visible_rubrics if item["id"] != rubric["id"])
+        rubric_change = self.client.patch(
+            f"/api/v1/content-items/{content['id']}",
+            headers=self.csrf_headers(auth),
+            json={"rubric_id": replacement["id"], "version": content_row.version},
+        )
+        self.assertEqual(rubric_change.status_code, 200, rubric_change.text)
+        self.assertEqual(rubric_change.json()["rubric_id"], replacement["id"])
 
     def test_two_invalid_refinement_attempts_preserve_previous_variant(self) -> None:
         auth = self.register(

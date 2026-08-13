@@ -9,6 +9,7 @@ BASE = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(BASE / "services" / "api"))
 
 from app.modules.ai.editorial_surface import (  # noqa: E402
+    compact_generated_editorial_paragraphs,
     generated_editorial_findings,
     normalize_generated_editorial_payload,
     normalize_generated_editorial_text,
@@ -91,7 +92,7 @@ class EditorialSurfaceTest(unittest.TestCase):
 
         self.assertEqual(generated_editorial_findings(source), [])
 
-    def test_rejects_six_short_prose_paragraphs(self) -> None:
+    def test_short_prose_paragraphs_are_not_release_blocking(self) -> None:
         source = "\n\n".join(
             (
                 "Первая короткая мысль.",
@@ -103,9 +104,9 @@ class EditorialSurfaceTest(unittest.TestCase):
             )
         )
 
-        self.assert_finding_code(source, "excessive_paragraph_fragmentation")
+        self.assertEqual(generated_editorial_findings(source), [])
 
-    def test_rejects_short_visual_lines_without_blank_separators(self) -> None:
+    def test_short_visual_lines_are_not_release_blocking(self) -> None:
         source = "\n".join(
             (
                 "Первая короткая мысль.",
@@ -117,16 +118,54 @@ class EditorialSurfaceTest(unittest.TestCase):
             )
         )
 
-        self.assert_finding_code(source, "excessive_paragraph_fragmentation")
+        self.assertEqual(generated_editorial_findings(source), [])
 
-    def test_rejects_three_consecutive_short_prose_paragraphs(self) -> None:
+    def test_three_short_paragraphs_are_not_release_blocking(self) -> None:
         source = (
             "Это первая короткая мысль.\n\n"
             "Это вторая короткая мысль.\n\n"
             "Это третья короткая мысль."
         )
 
-        self.assert_finding_code(source, "excessive_paragraph_fragmentation")
+        self.assertEqual(generated_editorial_findings(source), [])
+
+    def test_compacts_fragmented_model_prose_without_changing_words(self) -> None:
+        source = (
+            "Первая короткая мысль.\n\n"
+            "Вторая короткая мысль.\n\n"
+            "Третья короткая мысль.\n\n"
+            "Четвёртая короткая мысль.\n\n"
+            "Пятая короткая мысль."
+        )
+
+        repaired = compact_generated_editorial_paragraphs(source)
+
+        self.assertEqual(
+            repaired,
+            "Первая короткая мысль. Вторая короткая мысль. Третья короткая мысль.\n\n"
+            "Четвёртая короткая мысль. Пятая короткая мысль.",
+        )
+        self.assertEqual(generated_editorial_findings(repaired), [])
+        self.assertEqual(
+            repaired.replace("\n", " ").split(),
+            source.replace("\n", " ").split(),
+        )
+
+    def test_compaction_preserves_lists_dialogue_links_and_code(self) -> None:
+        source = (
+            "Первая мысль.\n\nВторая мысль.\n\nТретья мысль.\n\n"
+            "- Первый пункт.\n"
+            "— Реплика автора.\n"
+            "Ссылка: https://example.com/a--b\n"
+            "```bash\ncommand --flag\n```"
+        )
+
+        repaired = compact_generated_editorial_paragraphs(source)
+
+        self.assertIn("Первая мысль. Вторая мысль. Третья мысль.", repaired)
+        self.assertIn("- Первый пункт.\n— Реплика автора.", repaired)
+        self.assertIn("Ссылка: https://example.com/a--b", repaired)
+        self.assertIn("```bash\ncommand --flag\n```", repaired)
 
     def test_allows_normal_connected_prose(self) -> None:
         source = (

@@ -20,7 +20,7 @@ STRUCTURAL_LINE_RE = re.compile(
     flags=re.UNICODE,
 )
 
-GENERATED_EDITORIAL_RULES_VERSION = "phase12i-author-voice-surface-v1"
+GENERATED_EDITORIAL_RULES_VERSION = "phase12k-author-voice-surface-v2"
 MARKDOWN_DIVIDER_RE = re.compile(r"^\s*(?:[-*_]\s*){3,}$")
 MARKDOWN_TABLE_SEPARATOR_RE = re.compile(
     r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*$"
@@ -199,6 +199,100 @@ def _paragraph_fragmentation(value: str) -> bool:
     return False
 
 
+def _short_single_sentence_prose(line: str) -> bool:
+    return (
+        len(line) <= 180
+        and len(re.findall(r"[.!?…]+(?=\s|$)", line)) <= 1
+        and STRUCTURAL_LINE_RE.match(line) is None
+        and MARKDOWN_DIVIDER_RE.match(line) is None
+        and MARKDOWN_TABLE_SEPARATOR_RE.match(line) is None
+        and INLINE_CODE_SPAN_RE.search(line) is None
+        and PROTECTED_INLINE_RE.search(line) is None
+    )
+
+
+def compact_generated_editorial_paragraphs(value: str) -> str:
+    """Repair only paragraph boundaries in generated prose.
+
+    Three or more consecutive short one-sentence model paragraphs are merged
+    into two- or three-sentence paragraphs. Words and punctuation are kept
+    byte-for-byte; user-authored text never passes through this helper.
+    """
+
+    normalized = normalize_generated_editorial_text(value)
+    if not _paragraph_fragmentation(normalized):
+        return normalized
+
+    output: list[str] = []
+    prose_run: list[tuple[str, bool]] = []
+    pending_blank = False
+    in_fence = False
+
+    def append_line(line: str, blank_before: bool) -> None:
+        if blank_before and output and output[-1] != "":
+            output.append("")
+        output.append(line)
+
+    def flush_prose_run() -> None:
+        nonlocal prose_run
+        index = 0
+        while index < len(prose_run):
+            line, blank_before = prose_run[index]
+            if not _short_single_sentence_prose(line):
+                append_line(line, blank_before)
+                index += 1
+                continue
+            end = index
+            while end < len(prose_run) and _short_single_sentence_prose(prose_run[end][0]):
+                end += 1
+            streak = prose_run[index:end]
+            if len(streak) < 3:
+                for streak_line, streak_blank in streak:
+                    append_line(streak_line, streak_blank)
+            else:
+                offset = 0
+                first_group = True
+                while offset < len(streak):
+                    remaining = len(streak) - offset
+                    group_size = 3 if remaining % 2 == 1 else 2
+                    group = streak[offset : offset + group_size]
+                    append_line(
+                        " ".join(part[0] for part in group),
+                        group[0][1] if first_group else True,
+                    )
+                    first_group = False
+                    offset += group_size
+            index = end
+        prose_run = []
+
+    for line in normalized.split("\n"):
+        is_fence = FENCE_RE.match(line) is not None
+        protected = (
+            in_fence
+            or is_fence
+            or STRUCTURAL_LINE_RE.match(line) is not None
+            or MARKDOWN_DIVIDER_RE.match(line) is not None
+            or MARKDOWN_TABLE_SEPARATOR_RE.match(line) is not None
+            or INLINE_CODE_SPAN_RE.search(line) is not None
+            or PROTECTED_INLINE_RE.search(line) is not None
+        )
+        if not line:
+            pending_blank = True
+            continue
+        if protected:
+            flush_prose_run()
+            append_line(line, pending_blank)
+            pending_blank = False
+            if is_fence:
+                in_fence = not in_fence
+            continue
+        prose_run.append((line, pending_blank))
+        pending_blank = False
+
+    flush_prose_run()
+    return "\n".join(output).strip()
+
+
 def generated_editorial_findings(value: str) -> list[dict[str, str]]:
     normalized = normalize_generated_editorial_text(value)
     findings: list[dict[str, str]] = []
@@ -238,14 +332,6 @@ def generated_editorial_findings(value: str) -> list[dict[str, str]]:
             }
         )
 
-    if _paragraph_fragmentation(normalized):
-        findings.append(
-            {
-                "code": "excessive_paragraph_fragmentation",
-                "message": "Сгенерированный текст раздроблен на слишком короткие абзацы.",
-                "field": "generated_text",
-            }
-        )
     return findings
 
 
@@ -253,14 +339,14 @@ def normalize_generated_editorial_payload(payload: dict[str, Any]) -> dict[str, 
     normalized = copy.deepcopy(payload)
     for key in ("master_text", "text", "cta_candidate"):
         if isinstance(normalized.get(key), str):
-            normalized[key] = normalize_generated_editorial_text(normalized[key])
+            normalized[key] = compact_generated_editorial_paragraphs(normalized[key])
     for collection_key in ("body_blocks", "hook_candidates"):
         collection = normalized.get(collection_key)
         if not isinstance(collection, list):
             continue
         for item in collection:
             if isinstance(item, dict) and isinstance(item.get("text"), str):
-                item["text"] = normalize_generated_editorial_text(item["text"])
+                item["text"] = compact_generated_editorial_paragraphs(item["text"])
     return normalized
 
 

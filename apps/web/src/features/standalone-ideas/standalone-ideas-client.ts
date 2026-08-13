@@ -39,6 +39,8 @@ const voiceErrors: Record<string, string> = {
   openai_invalid_response: "Не удалось расшифровать голос. Повторите запись чуть позже.",
   openai_not_configured: "Расшифровка голоса сейчас не настроена.",
   openai_request_failed: "Сервис расшифровки не ответил. Повторите запись чуть позже.",
+  empty_audio: "Запись получилась пустой — звук не сохранился. Запишите тему ещё раз.",
+  transcription_temporarily_unavailable: "Не удалось расшифровать сохранённую запись. Повторите попытку позже или напишите тему вручную.",
   standalone_idea_generator_unavailable: "Генератор идей сейчас недоступен для этого кабинета.",
   standalone_idea_topic_already_transcribed: "Эта запись уже была отправлена на расшифровку.",
   standalone_idea_topic_empty: "Голос не удалось распознать. Напишите тему или запишите её ещё раз.",
