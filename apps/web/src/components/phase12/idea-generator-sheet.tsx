@@ -396,7 +396,7 @@ export function IdeaGeneratorSheet({
                 <Badge tone="success">Идеи для постов</Badge>
                 <h2 className="mt-3 text-2xl font-semibold text-foreground" id="idea-generator-title">О чём написать сегодня?</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted" id="idea-generator-description">
-                  Подберём пять разных заходов по теме проекта и выбранной рубрике. Идея станет заготовкой, а личные факты вы добавите голосом или текстом.
+                  Подберём пять направлений для публикации. Идея только подскажет, о чём рассказать; основные слова останутся вашими.
                 </p>
               </div>
               <Button aria-label="Закрыть генератор идей" className="min-h-11 min-w-11" onClick={closeSheet} size="icon" type="button" variant="ghost"><X size={20} /></Button>
@@ -461,7 +461,7 @@ export function IdeaGeneratorSheet({
                     </div>
                     <details className="group rounded-lg border border-border bg-surface-muted">
                       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                        <span>Заготовка и вопросы</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
+                        <span>Опорная идея и вопросы</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
                       </summary>
                       <div className="grid gap-3 border-t border-border p-3">
                         <p className="text-sm leading-6 text-foreground">{idea.ideaBrief}</p>

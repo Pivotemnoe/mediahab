@@ -4,6 +4,8 @@
 
 Preserve the user’s facts and voice while automating structure, hooks, ratings, transitions, platform adaptation, and quality control. The system is not a generic “write anything” chat box. It is a deterministic editorial pipeline with versioned context and structured outputs.
 
+The user's typed text, accepted voice transcript, explicitly confirmed import, and locked facts are authoritative substance. An AI idea may help the user decide what to say next, but its title, angle, brief, outline, questions, and internal content title are excluded from source manifests and master-generation input. Idea-only content is rejected before a provider call.
+
 ## Provider interfaces
 
 ```python
@@ -103,7 +105,16 @@ Recommended order:
 7. Locked facts and source blocks.
 8. Current task.
 
-Examples are enclosed and explicitly labeled as style references, not factual sources.
+Examples are enclosed and explicitly labeled as untrusted `style_only` references, not factual sources. They may guide register, sentence rhythm, paragraph density, humor intensity, transitions, and broad vocabulary preferences. They must not contribute a topic, thesis, fact, event, scenario, motif, metaphor, quotation, proper name, CTA, personal experience, or distinctive phrase sequence. Prompt context preserves their real paragraph structure; normalized text remains a retrieval/hash representation only.
+
+## Generated-text hygiene
+
+Every model-generated master, body block, hook, CTA, and platform refinement passes one product-wide prose normalizer and validator before persistence as ready text. User source, stored transcripts, imports, manual edits, rich text, URLs, code, and fixed boilerplate remain unchanged.
+
+- Deterministically normalize CRLF, accidental tabs and separator non-breaking spaces, repeated horizontal whitespace, line-edge whitespace, leading/trailing blank lines, and more than one blank line between paragraphs.
+- Reject doubled dash sequences `--`, `––`, and `——`, and paired parenthetical em-dashes such as `— aside —`. One grammatically necessary dash, dialogue markers, Markdown structure, code, URLs, and email addresses remain valid.
+- Reject excessive short one-sentence paragraph fragmentation.
+- A surface violation receives one focused full-result retry. A second invalid response is blocked and never creates a ready master or platform revision; the last good revision is preserved.
 
 ## Retrieval
 
@@ -126,7 +137,7 @@ Create a versioned evaluation set per project:
 - Target character range.
 - Human-approved reference draft when available.
 
-Tests should not demand exact prose. They must check facts, structure, length, forbidden patterns, rating scale, and minimum style criteria. The “У Доника” fixture is the first evaluation case.
+Tests should not demand exact prose. They must check facts, structure, length, forbidden patterns, rating scale, minimum style criteria, author-source provenance, and generated-text hygiene. The “У Доника” fixture is the first evaluation case.
 
 ## Failure behavior
 

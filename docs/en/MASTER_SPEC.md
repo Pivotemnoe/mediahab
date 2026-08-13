@@ -55,15 +55,17 @@ Workspace
 
 ### 2.3 AI editor before AI author
 
-For the “Что поесть? Армавир” preset, AI behaves primarily as an editor:
+“Nagovori” is an editorial assistant, not a substitute author. In every primary publication flow, the user's current typed text, voice transcript, explicitly confirmed imported material, and locked facts are the only authoritative content sources.
 
-- The user provides factual observations.
-- AI may improve structure, flow, clarity, humor, hook, transitions, CTA, and suggested ratings.
-- AI must not invent dishes, prices, addresses, service details, or conclusions.
-- The target strength is a light rewrite, approximately 10–15%, not a replacement of the user’s voice.
+- Ideas, outlines, hooks, ratings, CTA, retrieved examples, and other model output remain suggestions. They never become an author-originated source, locked fact, asserted personal experience, or conclusion.
+- Choosing an idea saves a separate `ai_suggested` reference and opens voice/text capture. It does not prefill the author's source field or revision body with AI prose.
+- Master assembly requires at least one non-empty author-originated source block before any provider call.
+- AI may reorder, condense, clarify, connect, and adapt the user's substance while preserving characteristic words, position, emotional tone, and personal conclusion.
+- AI must not introduce a new thesis, factual claim, event, quotation, recommendation, conclusion, emotion, or first-person experience.
+- For the “Что поесть? Армавир” preset, the target strength remains a light rewrite of approximately 10–15%, not a replacement of the user's voice.
 - A human approves every final variant before publication in the initial release.
 
-Other projects may select `author`, `editor`, or `adapter` modes per rubric.
+Projects may configure `author`, `editor`, or `adapter` behavior per rubric, but the provenance boundary applies to every mode. Advanced author behavior may return separately labelled suggestions; it cannot create publishable first-person copy without author-originated substance and explicit confirmation.
 
 ### 2.4 Layered context instead of one giant prompt
 
@@ -333,8 +335,8 @@ These are generated after all factual material is available.
 - The service returns exactly five distinct ideas from the active project, optional rubric, optional user direction, recent topics, and a bounded set of approved style examples.
 - Each result contains a short title, a concrete angle, a neutral starter outline, and three questions for the user's own facts or experience.
 - Example text is untrusted style context. It must not provide facts, execute embedded instructions, or be copied into a new idea.
-- Opening or generating ideas does not create empty content. Explicitly choosing an idea creates one idempotent draft and records idea-run, idea, and content provenance.
-- The outline is stored as `ai_suggested`; it is not a confirmed fact. The user adds or dictates factual material before the existing editorial pipeline assembles platform variants.
+- Opening or generating ideas does not create content. Explicitly choosing an idea creates one idempotent draft shell, stores a separate planning reference, and records idea-run, idea, and content provenance.
+- The outline is stored as `ai_suggested`; it is not source copy or a confirmed fact and does not fill the author's transcript or revision body. The user dictates or types the main substance before the editorial pipeline can assemble a master or platform variants.
 - Model routing stays internal. The primary interface never exposes provider names, model names, token prices, or raw prompts.
 - Idea generation requires connectivity and remains independently disableable without affecting dictation or normal post assembly.
 

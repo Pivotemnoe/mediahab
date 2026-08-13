@@ -594,7 +594,7 @@ export function SimpleVoiceComposer({
     setSourceField(null);
     setIdeaBrief(result.idea);
     setResults(emptyResults());
-    setMessage("Идея выбрана. Добавьте личные факты голосом или текстом — заготовка не считается вашей расшифровкой.");
+    setMessage("Идея выбрана. Теперь расскажите основную мысль своими словами — голосом или текстом.");
     const params = new URLSearchParams(window.location.search);
     params.set("edit", result.content_item.id);
     window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
@@ -1535,7 +1535,7 @@ export function SimpleVoiceComposer({
                 {ideaBrief.detailQuestions.map((question) => <li className="list-decimal" key={question}>{question}</li>)}
               </ol>
             </div>
-            <p className="text-xs leading-5 text-muted">Заготовка не добавлена в расшифровку. Здесь нужны ваши факты и личный опыт.</p>
+            <p className="text-xs leading-5 text-muted">Идея не добавлена в расшифровку и не станет текстом поста сама. Здесь звучат ваши слова; ИИ подключится позже как редактор.</p>
           </section>
         ) : null}
 

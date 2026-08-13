@@ -362,6 +362,7 @@ def example_matches(context: dict[str, Any]) -> list[ExampleMatch]:
     for index, text in enumerate(context["approved_examples"], start=1):
         example = SimpleNamespace(
             id=stable_uuid(context["id"], f"example-{index}"),
+            text=text,
             normalized_text=normalize_text(text),
         )
         matches.append(ExampleMatch(example=example, score=1.0, reasons=["eval_fixture"]))

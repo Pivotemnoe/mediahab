@@ -44,6 +44,8 @@ assert.match(composerSource, /pendingStreamRef/);
 assert.match(composerSource, /Остановить и сохранить фрагмент/);
 assert.match(contentServiceSource, /ideaBrief/);
 assert.match(contentServiceSource, /idea_brief/);
+assert.match(contentServiceSource, /AUTHOR_SOURCE_TYPES\.has\(block\.source_type\)/);
+assert.match(contentServiceSource, /const authorBlocks = blocks\.filter/);
 
 assert.match(sheetSource, /aria-modal/);
 assert.match(sheetSource, /role="dialog"/);

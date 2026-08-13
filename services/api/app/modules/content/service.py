@@ -35,6 +35,7 @@ from app.modules.projects.service import get_or_create_project_default_rubric
 
 CONTENT_MUTATION_ROLES = {"owner", "admin", "editor"}
 READ_ROLES = {"owner", "admin", "editor", "viewer"}
+AUTHOR_SOURCE_TYPES = frozenset({"user_text", "voice", "transcription", "import"})
 
 
 class ContentProviderError(RuntimeError):
@@ -223,6 +224,7 @@ async def upsert_block(
 ) -> ContentBlock:
     now = utc_now()
     block = await find_block(session, item, field_key, group_key, group_index)
+    was_locked = block.is_locked if block is not None else False
     if block is None:
         block = ContentBlock(
             id=uuid4(),
@@ -252,12 +254,13 @@ async def upsert_block(
         block.updated_by = actor_user_id
         block.updated_at = now
         block.revision_number += 1
-        if lock:
-            block.is_locked = True
+        block.is_locked = lock
     item.updated_at = now
     item.version += 1
     if lock:
         await lock_fact(session, block, actor_user_id)
+    elif was_locked:
+        await unlock_fact(session, block)
     await session.flush()
     return block
 

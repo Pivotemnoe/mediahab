@@ -38,6 +38,8 @@ import {
 } from "@/services/openapi-types";
 import { getDataMode, safeApiGet } from "@/services/runtime";
 
+const AUTHOR_SOURCE_TYPES = new Set(["user_text", "voice", "transcription", "import"]);
+
 export interface ContentIndexViewModel {
   items: Array<{
     href: string;
@@ -1242,8 +1244,11 @@ async function resumeContentDraft(
   ]);
   const blocks = blocksResponse?.blocks ?? [];
   const ideaBriefBlock = blocks.find((block) => block.field_key === "idea_brief");
-  const transcriptBlock = blocks.find((block) => block.field_key !== "idea_brief" && block.transcript_text?.trim())
-    ?? blocks.find((block) => block.field_key !== "idea_brief" && valueText(block.value_json).trim());
+  const authorBlocks = blocks.filter((block) =>
+    AUTHOR_SOURCE_TYPES.has(block.source_type) && block.field_key !== "idea_brief"
+  );
+  const transcriptBlock = authorBlocks.find((block) => block.transcript_text?.trim())
+    ?? authorBlocks.find((block) => valueText(block.value_json).trim());
   const formFields = flattenGuidedFields(guidedForm?.ui_schema.fields ?? []);
   const preferredField = formFields.find((field) =>
     ["voice", "voice_or_long_text", "long_text", "text"].includes(field.type),

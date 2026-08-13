@@ -27,9 +27,13 @@ from app.db.base import (  # noqa: E402
     ExamplePost,
     GenerationRun,
     GenerationStep,
+    LockedFact,
+    MediaAsset,
     Membership,
     Subscription,
+    TranscriptionRun,
     UsageEvent,
+    utc_now,
 )
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
@@ -401,6 +405,86 @@ class ContentIdeasTest(unittest.TestCase):
                 )
                 or 0
             )
+
+    async def _locked_fact_count(self, content_id: str) -> int:
+        async with self.SessionLocal() as session:
+            return int(
+                await session.scalar(
+                    select(func.count())
+                    .select_from(LockedFact)
+                    .where(LockedFact.content_item_id == UUID(content_id))
+                )
+                or 0
+            )
+
+    async def _create_legacy_idea_transcription(
+        self,
+        content_id: str,
+        block_id: str,
+    ) -> str:
+        async with self.SessionLocal() as session:
+            item = await session.get(ContentItem, UUID(content_id))
+            assert item is not None
+            now = utc_now()
+            media = MediaAsset(
+                id=uuid4(),
+                workspace_id=item.workspace_id,
+                storage_key=f"tests/legacy-idea-{uuid4()}.webm",
+                bucket="tests",
+                kind="voice",
+                mime_type="audio/webm",
+                size_bytes=128,
+                upload_status="uploaded",
+                processing_status="ready",
+                created_by=item.created_by,
+                created_at=now,
+                updated_at=now,
+                version=1,
+            )
+            session.add(media)
+            run = TranscriptionRun(
+                id=uuid4(),
+                workspace_id=item.workspace_id,
+                content_item_id=item.id,
+                content_block_id=UUID(block_id),
+                media_asset_id=media.id,
+                voice_asset_id=None,
+                provider_key="mock",
+                status="completed",
+                transcript_text="Поздняя расшифровка не должна заменить идею.",
+                confidence_json={"provider": "mock"},
+                retry_count=0,
+                started_at=now,
+                completed_at=now,
+                created_by=item.created_by,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(run)
+            await session.commit()
+            return str(run.id)
+
+    async def _set_legacy_idea_locked(self, block_id: str) -> None:
+        async with self.SessionLocal() as session:
+            block = await session.get(ContentBlock, UUID(block_id))
+            assert block is not None
+            block.is_locked = True
+            await session.commit()
+
+    async def _content_block(
+        self,
+        content_id: str,
+        field_key: str = "idea_brief",
+    ) -> ContentBlock:
+        async with self.SessionLocal() as session:
+            block = await session.scalar(
+                select(ContentBlock).where(
+                    ContentBlock.content_item_id == UUID(content_id),
+                    ContentBlock.field_key == field_key,
+                )
+            )
+            assert block is not None
+            return block
 
     async def _acceptance_rows(self, run_id: str, content_id: str):
         async with self.SessionLocal() as session:
@@ -1047,14 +1131,262 @@ class ContentIdeasTest(unittest.TestCase):
         self.assertEqual(block.value_json["provenance"], expected)
         self.assertEqual(revision.structured_document["provenance"], expected)
         self.assertEqual(revision.generation_run_id, UUID(run["id"]))
+        self.assertEqual(revision.text, "")
         self.assertEqual(event.metadata_json, {"project_id": project["id"], **expected})
+        self.assertEqual(asyncio.run(self._locked_fact_count(client_content_id)), 0)
+
+        transcribe_idea = self.client.post(
+            f"/api/v1/content-blocks/{block.id}/transcribe",
+            headers=self.csrf(auth),
+            json={"provider_key": "mock", "mock_transcript": "Это мои слова."},
+        )
+        self.assertEqual(transcribe_idea.status_code, 422, transcribe_idea.text)
+        self.assertEqual(
+            transcribe_idea.json()["error"]["code"],
+            "ai_suggestion_is_planning_only",
+        )
+
+        legacy_job_id = asyncio.run(
+            self._create_legacy_idea_transcription(client_content_id, str(block.id))
+        )
+        late_accept = self.client.post(
+            f"/api/v1/transcription-jobs/{legacy_job_id}/accept",
+            headers=self.csrf(auth),
+            json={"corrected_text": "Это мои слова.", "lock": False},
+        )
+        self.assertEqual(late_accept.status_code, 422, late_accept.text)
+        self.assertEqual(
+            late_accept.json()["error"]["code"],
+            "ai_suggestion_is_planning_only",
+        )
+        unchanged_idea = asyncio.run(self._content_block(client_content_id))
+        self.assertEqual(unchanged_idea.source_type, "ai_suggested")
+        self.assertEqual(unchanged_idea.value_json, block.value_json)
+
+        class CapturingMasterProvider:
+            provider_key = "mock"
+            model_id = "author-boundary-test"
+
+            def __init__(self) -> None:
+                self.requests: list[StructuredGenerationRequest] = []
+
+            async def generate_structured(
+                self, request: StructuredGenerationRequest
+            ) -> StructuredGenerationResult:
+                self.requests.append(request)
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=dict(request.fallback_payload),
+                    usage={},
+                )
+
+        provider = CapturingMasterProvider()
+        with patch(
+            "app.modules.ai.service.text_provider_for", return_value=provider
+        ) as provider_factory:
+            idea_only_master = self.client.post(
+                f"/api/v1/content-items/{client_content_id}/assemble-master",
+                headers=self.csrf(auth),
+            )
+        self.assertEqual(idea_only_master.status_code, 422, idea_only_master.text)
+        self.assertEqual(
+            idea_only_master.json()["error"]["code"], "author_source_required"
+        )
+        provider_factory.assert_not_called()
+        self.assertEqual(provider.requests, [])
+
+        planning_system_text = "СИСТЕМНАЯ ПОДСКАЗКА НЕ ЯВЛЯЕТСЯ СЛОВАМИ АВТОРА"
+        current_before_system = self.client.get(
+            f"/api/v1/content-items/{client_content_id}"
+        ).json()
+        system_block = self.client.put(
+            f"/api/v1/content-items/{client_content_id}/blocks/system_hint",
+            headers=self.csrf(auth),
+            json={
+                "value": {"text": planning_system_text},
+                "source_type": "system",
+                "version": current_before_system["version"],
+            },
+        )
+        self.assertEqual(system_block.status_code, 200, system_block.text)
+        with patch(
+            "app.modules.ai.service.text_provider_for", return_value=provider
+        ) as system_provider_factory:
+            system_only_master = self.client.post(
+                f"/api/v1/content-items/{client_content_id}/assemble-master",
+                headers=self.csrf(auth),
+            )
+        self.assertEqual(system_only_master.status_code, 422, system_only_master.text)
+        self.assertEqual(
+            system_only_master.json()["error"]["code"], "author_source_required"
+        )
+        system_provider_factory.assert_not_called()
+
+        notebook_author_text = "Я сам надиктовал в блокнот главную мысль для поста."
+        note = self.client.post(
+            "/api/v1/notebook",
+            headers=self.csrf(auth),
+            json={
+                "workspace_id": auth["workspace"]["id"],
+                "body": notebook_author_text,
+                "kind": "idea",
+            },
+        )
+        self.assertEqual(note.status_code, 201, note.text)
+        transferred = self.client.post(
+            f"/api/v1/notebook/{note.json()['id']}/transfer",
+            headers=self.csrf(auth),
+            json={"content_item_id": client_content_id},
+        )
+        self.assertEqual(transferred.status_code, 200, transferred.text)
+        self.assertNotEqual(transferred.json()["content_block_id"], str(block.id))
+        unchanged_after_transfer = asyncio.run(self._content_block(client_content_id))
+        self.assertEqual(unchanged_after_transfer.source_type, "ai_suggested")
+        imported_source = asyncio.run(self._content_block(client_content_id, "source"))
+        self.assertEqual(imported_source.source_type, "import")
+        self.assertEqual(imported_source.value_json, {"text": notebook_author_text})
+
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            notebook_master = self.client.post(
+                f"/api/v1/content-items/{client_content_id}/assemble-master",
+                headers=self.csrf(auth),
+            )
+        self.assertEqual(notebook_master.status_code, 202, notebook_master.text)
+        self.assertEqual(notebook_master.json()["status"], "completed")
+        self.assertEqual(len(provider.requests), 1)
+        self.assertIn(notebook_author_text, provider.requests[0].user_prompt)
+        self.assertNotIn(idea["idea_brief"], provider.requests[0].user_prompt)
+        provider.requests.clear()
+
+        lock_idea = self.client.post(
+            f"/api/v1/content-blocks/{block.id}/lock",
+            headers=self.csrf(auth),
+        )
+        self.assertEqual(lock_idea.status_code, 422, lock_idea.text)
+        self.assertEqual(
+            lock_idea.json()["error"]["code"], "ai_suggestion_cannot_be_locked"
+        )
+        self.assertEqual(asyncio.run(self._locked_fact_count(client_content_id)), 0)
 
         extracted = self.client.post(
             f"/api/v1/content-items/{client_content_id}/extract-facts",
             headers=self.csrf(auth),
         )
         self.assertEqual(extracted.status_code, 202, extracted.text)
-        self.assertEqual(extracted.json()["response_json"]["facts"], {})
+        extracted_facts = extracted.json()["response_json"]["facts"]
+        self.assertEqual(
+            extracted_facts,
+            {"source": {"text": notebook_author_text}},
+        )
+        self.assertNotIn("idea_brief", extracted_facts)
+
+        current = self.client.get(
+            f"/api/v1/content-items/{client_content_id}"
+        ).json()
+        title_internal = "ВНУТРЕННЕЕ НАЗВАНИЕ НЕ ДЛЯ МОДЕЛИ"
+        renamed = self.client.patch(
+            f"/api/v1/content-items/{client_content_id}",
+            headers=self.csrf(auth),
+            json={"title_internal": title_internal, "version": current["version"]},
+        )
+        self.assertEqual(renamed.status_code, 200, renamed.text)
+        author_text = (
+            "Я сам заметил, что утром мне легче писать спокойно и без спешки."
+        )
+        source = self.client.put(
+            f"/api/v1/content-items/{client_content_id}/blocks/source",
+            headers=self.csrf(auth),
+            json={
+                "value": {"text": author_text},
+                "source_type": "user_text",
+                "version": renamed.json()["version"],
+            },
+        )
+        self.assertEqual(source.status_code, 200, source.text)
+
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            assembled = self.client.post(
+                f"/api/v1/content-items/{client_content_id}/assemble-master",
+                headers=self.csrf(auth),
+            )
+        self.assertEqual(assembled.status_code, 202, assembled.text)
+        self.assertEqual(assembled.json()["status"], "completed")
+        self.assertEqual(len(provider.requests), 1)
+        prompt_payload = json.loads(provider.requests[0].user_prompt)
+
+        def prompt_strings(value: object) -> list[str]:
+            if isinstance(value, str):
+                return [value]
+            if isinstance(value, dict):
+                return [
+                    text
+                    for nested in value.values()
+                    for text in prompt_strings(nested)
+                ]
+            if isinstance(value, list):
+                return [text for nested in value for text in prompt_strings(nested)]
+            return []
+
+        prompt_texts = prompt_strings(prompt_payload)
+        self.assertIn(author_text, prompt_texts)
+        excluded_idea_texts = [
+            idea["title"],
+            idea["angle"],
+            idea["idea_brief"],
+            idea["starter_outline"],
+            *idea["detail_questions"],
+            title_internal,
+            planning_system_text,
+        ]
+        for excluded_text in excluded_idea_texts:
+            self.assertFalse(
+                any(excluded_text in prompt_text for prompt_text in prompt_texts),
+                f"AI suggestion or internal title leaked into user_prompt: {excluded_text!r}",
+            )
+
+        asyncio.run(self._set_legacy_idea_locked(str(block.id)))
+        cloned = self.client.post(
+            f"/api/v1/content-items/{client_content_id}/clone",
+            headers=self.csrf(auth),
+        )
+        self.assertEqual(cloned.status_code, 200, cloned.text)
+        cloned_idea = asyncio.run(self._content_block(cloned.json()["id"]))
+        self.assertEqual(cloned_idea.source_type, "ai_suggested")
+        self.assertFalse(cloned_idea.is_locked)
+        self.assertEqual(asyncio.run(self._locked_fact_count(cloned.json()["id"])), 0)
+
+        current_for_lock = self.client.get(
+            f"/api/v1/content-items/{client_content_id}"
+        ).json()
+        locked_source = self.client.put(
+            f"/api/v1/content-items/{client_content_id}/blocks/source",
+            headers=self.csrf(auth),
+            json={
+                "value": {"text": author_text},
+                "source_type": "user_text",
+                "lock": True,
+                "version": current_for_lock["version"],
+            },
+        )
+        self.assertEqual(locked_source.status_code, 200, locked_source.text)
+        self.assertTrue(locked_source.json()["is_locked"])
+        current_for_ai = self.client.get(
+            f"/api/v1/content-items/{client_content_id}"
+        ).json()
+        converted_to_planning = self.client.put(
+            f"/api/v1/content-items/{client_content_id}/blocks/source",
+            headers=self.csrf(auth),
+            json={
+                "value": {"text": "Отдельная подсказка."},
+                "source_type": "ai_suggested",
+                "lock": False,
+                "version": current_for_ai["version"],
+            },
+        )
+        self.assertEqual(converted_to_planning.status_code, 200, converted_to_planning.text)
+        self.assertFalse(converted_to_planning.json()["is_locked"])
+        self.assertEqual(asyncio.run(self._locked_fact_count(client_content_id)), 0)
 
     def test_reused_client_id_conflicts_and_cross_workspace_is_hidden(self) -> None:
         auth = self.register(email="conflict@example.com")

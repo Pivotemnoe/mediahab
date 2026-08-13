@@ -33,9 +33,19 @@
 - Provider adapters are swappable by configuration.
 - Structured responses are schema-validated.
 - Three to eight relevant examples are selected, never the whole library by default.
+- Accepting an idea stores only an `ai_suggested` planning reference: the author source, transcript, revision body, and locked facts remain empty.
+- Idea-only master assembly returns `author_source_required` before provider invocation. After author text or voice is added, the prompt contains that source and none of the idea title, angle, brief, outline, questions, or internal title.
+- An `ai_suggested` or `idea_brief` block cannot be locked as a confirmed fact.
+- An AI planning block cannot be used as a transcription target; late transcription acceptance cannot mutate it, and cloning cannot preserve a legacy locked state on it.
+- An internal `system` block alone does not satisfy `author_source_required` and is not sent as author source.
+- A notebook transfer into an accepted-idea draft creates a separate author source, preserves idea provenance, and enables master assembly.
+- Replacing a locked source with an unlocked AI suggestion removes the old locked fact atomically.
 - Hook and ratings are marked AI suggestions and are editable.
 - User-entered ratings override AI.
 - The “Что поесть?” editor mode keeps all facts and meets the rubric target or produces an explicit warning.
+- Approved examples affect expression only, never the topic, thesis, facts, scenario, quotation, CTA, or personal experience.
+- Generated master, hook, CTA, and refinement text contains no repeated horizontal whitespace, more than one blank line, doubled/paired dash patterns, or excessive short-paragraph fragmentation. Lossless whitespace is normalized; a second invalid regeneration is blocked without a ready revision.
+- Source text and stored transcripts remain byte-for-byte unchanged by generated-text hygiene.
 - Every run records provider, model, versions, usage, latency, and result.
 
 ## Telegram

@@ -31,6 +31,7 @@ from app.modules.auth.dependencies import (
     require_workspace_membership,
 )
 from app.modules.content.service import (
+    AUTHOR_SOURCE_TYPES,
     CONTENT_MUTATION_ROLES,
     ContentProviderError,
     fetch_s3_object_bytes,
@@ -279,7 +280,11 @@ async def append_note_to_item(
 ) -> ContentBlock:
     existing = await db.scalar(
         select(ContentBlock)
-        .where(ContentBlock.content_item_id == item.id)
+        .where(
+            ContentBlock.content_item_id == item.id,
+            ContentBlock.source_type.in_(AUTHOR_SOURCE_TYPES),
+            ContentBlock.field_key != "idea_brief",
+        )
         .order_by(ContentBlock.updated_at.desc())
     )
     if existing is None:

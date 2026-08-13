@@ -903,7 +903,7 @@ async def accept_content_idea(
             "idea": idea,
             "idea_brief_block_id": str(block.id),
         },
-        text=str(idea["starter_outline"]),
+        text="",
     )
     revision.generation_run_id = run.id
     run.content_item_id = item.id

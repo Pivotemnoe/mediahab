@@ -91,6 +91,16 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
                 or 0
             )
 
+    async def _locked_fact_value(self, content_id: str, fact_key: str):
+        async with self.SessionLocal() as session:
+            fact = await session.scalar(
+                select(LockedFact).where(
+                    LockedFact.content_item_id == UUID(content_id),
+                    LockedFact.fact_key == fact_key,
+                )
+            )
+            return fact.value_json if fact is not None else None
+
     async def _media_order(self, content_id: str) -> list[str]:
         async with self.SessionLocal() as session:
             rows = (
@@ -139,6 +149,18 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         )
         self.assertEqual(venue.status_code, 200, venue.text)
         self.assertTrue(venue.json()["is_locked"])
+
+        patched_venue = self.client.patch(
+            f"/api/v1/content-blocks/{venue.json()['id']}",
+            headers=self.csrf_headers(auth),
+            json={"value": {"text": "Новый город"}},
+        )
+        self.assertEqual(patched_venue.status_code, 200, patched_venue.text)
+        self.assertTrue(patched_venue.json()["is_locked"])
+        self.assertEqual(
+            asyncio.run(self._locked_fact_value(content["id"], "venue_name")),
+            {"text": "Новый город"},
+        )
 
         stale = self.client.patch(
             f"/api/v1/content-items/{content['id']}",
@@ -271,6 +293,27 @@ class Phase04ContentMediaVoiceTest(unittest.TestCase):
         self.assertEqual(accepted.status_code, 200, accepted.text)
         self.assertEqual(accepted.json()["source_type"], "transcription")
         self.assertTrue(accepted.json()["is_locked"])
+
+        second_job = self.client.post(
+            f"/api/v1/content-blocks/{block_id}/transcribe",
+            headers=self.csrf_headers(auth),
+            json={
+                "media_id": voice_id,
+                "provider_key": "mock",
+                "mock_transcript": "Вторая расшифровка.",
+            },
+        )
+        self.assertEqual(second_job.status_code, 202, second_job.text)
+        accepted_unlocked = self.client.post(
+            f"/api/v1/transcription-jobs/{second_job.json()['id']}/accept",
+            headers=self.csrf_headers(auth),
+            json={"corrected_text": "Вторая расшифровка автора.", "lock": False},
+        )
+        self.assertEqual(accepted_unlocked.status_code, 200, accepted_unlocked.text)
+        self.assertFalse(accepted_unlocked.json()["is_locked"])
+        self.assertIsNone(
+            asyncio.run(self._locked_fact_value(content["id"], "atmosphere"))
+        )
 
         image_ids: list[str] = []
         for index in range(2):

@@ -191,10 +191,17 @@ topic, and editorial goal. It creates a project-scoped generation run and return
 exactly five structured, non-factual idea outlines; it does not create a content
 item. `POST /ai-runs/{run_id}/ideas/{idea_id}/accept` accepts a client-generated
 `client_content_id`. Repeating the same tuple is idempotent and returns the same
-draft, while reusing that client ID for another run or idea is a conflict. The first
-revision and usage event preserve the run, idea, client, and content identifiers as
-provenance. Accepted AI outlines remain untrusted planning context until the user
-adds or confirms source facts.
+draft shell, while reusing that client ID for another run or idea is a conflict. The
+first structured revision and usage event preserve the run, idea, client, and content
+identifiers as provenance, while the revision text and author source remain empty.
+The separate `ai_suggested` reference cannot be locked as a fact and is excluded from
+transcription targets and master-generation input. Cloning legacy content never
+preserves a locked state on this planning reference. `assemble-master` returns `422 author_source_required`
+before a provider call until the user adds non-empty voice, text, confirmed import,
+or locked factual material; internal `system` blocks do not satisfy this requirement.
+Moving a notebook note into an idea draft creates or appends an author-source block
+and never overwrites the structured idea reference or its provenance. Updating a
+previously locked block with `lock=false` also removes its matching locked fact.
 
 `POST /content-items/{content_id}/generate-variants` accepts optional `length_overrides` keyed by platform. The override applies only to that build and is snapshotted in `PlatformVariant.payload.length_target`; it does not mutate the project or rubric. `ProjectOut.character_count_policy` and `RubricOut.platform_overrides` expose the active versioned editorial targets.
 

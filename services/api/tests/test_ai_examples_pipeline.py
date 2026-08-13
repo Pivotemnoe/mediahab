@@ -17,7 +17,14 @@ sys.path.insert(0, str(BASE / "services" / "api"))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.config import Settings, get_settings  # noqa: E402
-from app.db.base import Base, ContentItem, ExampleEmbedding, GenerationRun  # noqa: E402
+from app.db.base import (  # noqa: E402
+    Base,
+    ContentItem,
+    ContentRevision,
+    ExampleEmbedding,
+    GenerationRun,
+    GenerationStep,
+)
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.modules.ai.providers import ProviderError, StructuredGenerationResult  # noqa: E402
@@ -187,6 +194,29 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             assert content is not None
             assert run is not None
             return content, run
+
+    async def _master_revision_text(self, revision_id: str) -> str:
+        async with self.SessionLocal() as session:
+            revision = await session.get(ContentRevision, UUID(revision_id))
+            assert revision is not None
+            return revision.text
+
+    async def _generation_attempts(self, run_id: str) -> list[int]:
+        async with self.SessionLocal() as session:
+            rows = list(
+                (
+                    await session.scalars(
+                        select(GenerationStep).where(
+                            GenerationStep.generation_run_id == UUID(run_id),
+                            GenerationStep.step_type == "generation",
+                        )
+                    )
+                ).all()
+            )
+            return [
+                int((row.input_metadata_json or {}).get("attempt", 0))
+                for row in rows
+            ]
 
     def test_examples_retrieval_and_master_generation(self) -> None:
         auth = self.register(self.client)
@@ -481,6 +511,231 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             self._content_and_run(content["id"], repeated_body["id"])
         )
         self.assertEqual(str(content_row.current_master_revision_id), first_revision_id)
+
+    def test_custom_provider_master_normalizes_whitespace_before_revision(self) -> None:
+        auth = self.register(
+            self.client,
+            email="hygiene-space05@example.com",
+            workspace_name="Hygiene Space Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class DirtyWhitespaceProvider:
+            provider_key = "custom"
+            model_id = "dirty-whitespace-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.clean_text = ""
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                payload = dict(request.fallback_payload)
+                self.clean_text = str(payload["master_text"]).replace("\n\n", " ")
+                payload["master_text"] = (
+                    f" \t{self.clean_text.replace(' ', '  \u00a0')}  \n\n\n"
+                )
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=payload,
+                    usage={"input_tokens": 7, "output_tokens": 5},
+                )
+
+        provider = DirtyWhitespaceProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(body["status"], "completed", body)
+        self.assertEqual(provider.calls, 1)
+        self.assertEqual(body["response_json"]["master_text"], provider.clean_text)
+        revision_id = body["response_json"]["revision_id"]
+        self.assertEqual(
+            asyncio.run(self._master_revision_text(revision_id)),
+            provider.clean_text,
+        )
+
+    def test_custom_provider_master_retries_invalid_dash_and_sums_usage(self) -> None:
+        auth = self.register(
+            self.client,
+            email="hygiene-retry05@example.com",
+            workspace_name="Hygiene Retry Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class RetryProvider:
+            provider_key = "custom"
+            model_id = "hygiene-retry-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.clean_text = ""
+                self.system_prompts: list[str] = []
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                self.system_prompts.append(request.system_prompt)
+                payload = dict(request.fallback_payload)
+                self.clean_text = str(payload["master_text"]).replace("\n\n", " ")
+                payload["master_text"] = self.clean_text
+                if self.calls == 1:
+                    payload["master_text"] = f"{self.clean_text} -- лишняя вставка."
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=payload,
+                    usage={
+                        "input_tokens": 10 + self.calls,
+                        "output_tokens": 4 + self.calls,
+                        "input_characters": 100 + self.calls,
+                        "output_characters": 50 + self.calls,
+                    },
+                )
+
+        provider = RetryProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(body["status"], "completed", body)
+        self.assertEqual(provider.calls, 2)
+        self.assertIn("Предыдущий ответ не прошёл", provider.system_prompts[1])
+        self.assertEqual(body["input_tokens"], 23)
+        self.assertEqual(body["output_tokens"], 11)
+        self.assertEqual(body["input_characters"], 203)
+        self.assertEqual(body["output_characters"], 103)
+        self.assertEqual(body["response_json"]["master_text"], provider.clean_text)
+        revision_id = body["response_json"]["revision_id"]
+        self.assertEqual(
+            asyncio.run(self._master_revision_text(revision_id)),
+            provider.clean_text,
+        )
+
+    def test_two_invalid_master_attempts_fail_without_creating_revision(self) -> None:
+        auth = self.register(
+            self.client,
+            email="hygiene-fail05@example.com",
+            workspace_name="Hygiene Failure Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        class AlwaysInvalidProvider:
+            provider_key = "custom"
+            model_id = "hygiene-failure-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                payload = dict(request.fallback_payload)
+                payload["master_text"] = (
+                    f"{payload['master_text']} -- неестественная вставка."
+                )
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload=payload,
+                    usage={"input_tokens": 3, "output_tokens": 2},
+                )
+
+        provider = AlwaysInvalidProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            generated = self.client.post(
+                f"/api/v1/content-items/{content['id']}/assemble-master",
+                headers=self.csrf_headers(auth),
+            )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        body = generated.json()
+        self.assertEqual(provider.calls, 2)
+        self.assertEqual(body["status"], "failed")
+        self.assertEqual(body["error_code"], "generated_text_hygiene_failed")
+        self.assertEqual(
+            body["response_json"]["errors"][0]["code"],
+            "generated_text_hygiene_failed",
+        )
+        self.assertEqual(body["input_tokens"], 6)
+        self.assertEqual(body["output_tokens"], 4)
+        content_row, _ = asyncio.run(
+            self._content_and_run(content["id"], body["id"])
+        )
+        self.assertIsNone(content_row.current_master_revision_id)
+
+    def test_two_invalid_refinement_attempts_preserve_previous_variant(self) -> None:
+        auth = self.register(
+            self.client,
+            email="hygiene-refine05@example.com",
+            workspace_name="Hygiene Refinement Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+        generated = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(generated.status_code, 202, generated.text)
+        variants = self.client.post(
+            f"/api/v1/content-items/{content['id']}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["telegram"]},
+        )
+        self.assertEqual(variants.status_code, 200, variants.text)
+        original = variants.json()["variants"][0]
+
+        class AlwaysInvalidRefinementProvider:
+            provider_key = "custom"
+            model_id = "hygiene-refinement-failure-test"
+
+            def __init__(self) -> None:
+                self.calls = 0
+
+            async def generate_structured(self, request):
+                self.calls += 1
+                return StructuredGenerationResult(
+                    provider_key=self.provider_key,
+                    model_id=self.model_id,
+                    payload={
+                        "text": "Новая версия -- с неестественным тире.",
+                        "warnings": [],
+                    },
+                    usage={"input_tokens": 2, "output_tokens": 1},
+                )
+
+        provider = AlwaysInvalidRefinementProvider()
+        with patch("app.modules.ai.service.text_provider_for", return_value=provider):
+            failed = self.client.post(
+                f"/api/v1/platform-variants/{original['id']}/refine",
+                headers=self.csrf_headers(auth),
+                json={"instruction": "Сделай текст живее."},
+            )
+        self.assertEqual(failed.status_code, 503, failed.text)
+        self.assertEqual(provider.calls, 2)
+        self.assertEqual(
+            failed.json()["error"]["code"],
+            "generated_text_hygiene_failed",
+        )
+        run_id = failed.json()["error"]["details"]["run_id"]
+        self.assertEqual(asyncio.run(self._generation_attempts(run_id)), [1, 2])
+
+        history = self.client.get(f"/api/v1/content-items/{content['id']}/variants")
+        self.assertEqual(history.status_code, 200, history.text)
+        telegram_revisions = [
+            row for row in history.json()["variants"] if row["platform_key"] == "telegram"
+        ]
+        self.assertEqual(len(telegram_revisions), 1)
+        self.assertEqual(telegram_revisions[0]["id"], original["id"])
+        self.assertEqual(telegram_revisions[0]["text"], original["text"])
+        self.assertIsNone(telegram_revisions[0]["superseded_by_variant_id"])
 
     def test_cross_workspace_ai_run_access_returns_404(self) -> None:
         owner_a = self.register(self.client, email="owner-a05@example.com", workspace_name="A Workspace")

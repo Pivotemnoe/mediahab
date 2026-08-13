@@ -17,7 +17,7 @@ The idea generator is a secondary entry inside `Создать`, not a new dashb
 - Show `Помоги придумать` beside the existing voice/text entry points.
 - Generate five materially different ideas from the active project, optional rubric, optional user topic, and approved style examples.
 - Each idea contains a title, a concrete angle, an `idea_brief`, a non-factual `starter_outline`, and three questions that invite personal facts or experience. The outline is structure, not a first-person story or a factual draft.
-- Generating ideas creates no material. Explicitly accepting one idea idempotently creates exactly one non-empty content draft and opens it in the existing composer. The questions remain visible outside the source text, and existing text is never silently overwritten.
+- Generating ideas creates no material. Explicitly accepting one idea idempotently creates exactly one content draft shell, stores a separate planning reference, and opens voice/text capture in the existing composer. The author source remains empty, the questions stay outside it, and existing text is never silently overwritten.
 - Idea output is an editable starting point, not a factual source of truth or an automatic publication.
 - Use the inexpensive auxiliary text model configured for this service. Per-workspace model routing is out of scope. Do not expose provider or model names in the product UI.
 - Record project-level idea generation in the existing generation-run audit trail. Project-scoped runs may have no content item and no rubric.
@@ -37,7 +37,7 @@ The idea generator is a secondary entry inside `Создать`, not a new dashb
 - Persist provider, model, request context, retrieved example IDs, latency, token usage, estimated cost, status, and response in `generation_runs`.
 - Allow `generation_runs.rubric_id` and `generation_runs.content_item_id` to be nullable for project-level AI tasks.
 - Add an authenticated acceptance endpoint. It receives `run_id`, `idea_id`, and a client-generated UUID `client_content_id`; in one transaction it creates or returns exactly one content draft for that tuple.
-- Persist provenance from the accepted suggestion to the draft: `run_id`, `idea_id`, `client_content_id`, and the resulting `content_item_id` are recorded in the first structured content revision and the activation event. The accepted outline remains marked `ai_suggested`; it is not promoted to a confirmed fact.
+- Persist provenance from the accepted suggestion to the draft: `run_id`, `idea_id`, `client_content_id`, and the resulting `content_item_id` are recorded in the first structured content revision and the activation event. The revision text stays empty. The accepted outline remains a separate `ai_suggested` reference; it is not promoted to source text, master input, or a confirmed fact.
 - Repeating the same acceptance request returns the same draft. Reusing one `client_content_id` for another run or idea returns a conflict and never overwrites content.
 - Preserve safe provider errors; do not return mock marketing copy as if real AI generation succeeded.
 - Route `suggest_content_ideas` through the auxiliary text model, independently from master/refinement models.
@@ -83,10 +83,10 @@ The idea generator is a secondary entry inside `Создать`, not a new dashb
 - Cross-workspace project or rubric identifiers return `404` without disclosing their existence.
 - Each returned idea has a stable `idea_id`, non-empty title, angle, `idea_brief`, non-factual `starter_outline`, and exactly three non-empty detail questions.
 - The outline contains no invented names, figures, prices, addresses, quotations, events, personal experience, or other concrete claims that were not supplied in the current request.
-- Accepting an idea with one `client_content_id` creates exactly one non-empty draft; repeated clicks and network retries return the same `content_item_id`.
+- Accepting an idea with one `client_content_id` creates exactly one draft shell with an empty author source and revision body; repeated clicks and network retries return the same `content_item_id`.
 - Reusing that `client_content_id` with another run or idea returns a conflict and leaves the original draft unchanged.
 - The first revision and activation event contain matching `run_id`, `idea_id`, `client_content_id`, and `content_item_id` provenance.
-- Choosing an idea never silently destroys existing source text. The accepted outline remains editable and can enter the existing `assemble -> variants` pipeline only after the user can add or confirm personal facts.
+- Choosing an idea never silently destroys existing source text. The accepted outline remains visible as a reference but is excluded from the existing `assemble -> variants` input. The pipeline stays blocked until the user adds author-originated voice or text.
 - Provider/model names and token prices are absent from the primary UI.
 - Existing master generation, platform variants, voice capture, feedback, and project example imports keep passing.
 - Style UI states clearly say `3 — quick start`, `10 — steadier style`, and do not block work.

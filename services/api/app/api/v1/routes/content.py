@@ -54,6 +54,32 @@ from app.modules.shared.errors import api_error
 router = APIRouter()
 
 
+def ensure_source_can_be_locked(
+    source_type: str, field_key: str, request: Request
+) -> None:
+    if source_type == "ai_suggested" or field_key == "idea_brief":
+        raise api_error(
+            422,
+            "ai_suggestion_cannot_be_locked",
+            "Предложение ИИ не является подтверждённым фактом. Сначала добавьте свои слова.",
+            request=request,
+        )
+
+
+def ensure_block_can_be_locked(block: ContentBlock, request: Request) -> None:
+    ensure_source_can_be_locked(block.source_type, block.field_key, request)
+
+
+def ensure_block_is_not_ai_planning(block: ContentBlock, request: Request) -> None:
+    if block.source_type == "ai_suggested" or block.field_key == "idea_brief":
+        raise api_error(
+            422,
+            "ai_suggestion_is_planning_only",
+            "Подсказка ИИ хранится отдельно. Для диктовки добавьте свой авторский блок.",
+            request=request,
+        )
+
+
 class ContentCreateRequest(BaseModel):
     rubric_id: UUID | None = None
     title_internal: str | None = Field(default=None, max_length=200)
@@ -603,6 +629,11 @@ async def clone_content_item(
         await db.scalars(select(ContentBlock).where(ContentBlock.content_item_id == item.id))
     ).all()
     for block in blocks:
+        clone_lock = (
+            block.is_locked
+            and block.source_type != "ai_suggested"
+            and block.field_key != "idea_brief"
+        )
         await upsert_block(
             db,
             clone,
@@ -614,7 +645,7 @@ async def clone_content_item(
             source_media_id=block.source_media_id,
             group_key=block.group_key,
             group_index=block.group_index,
-            lock=block.is_locked,
+            lock=clone_lock,
         )
     await write_content_revision(db, clone, actor.user.id, "user_edit", {"event": "cloned_from", "source": str(item.id)})
     await db.commit()
@@ -672,6 +703,8 @@ async def put_block(
 ) -> BlockOut:
     item = await mutable_item_for_actor(content_id, request, actor, db)
     ensure_item_version(item, requested_version(request, payload.version), request)
+    if payload.lock:
+        ensure_source_can_be_locked(payload.source_type, field_key, request)
     if payload.source_media_id is not None:
         media, _ = await media_for_actor(payload.source_media_id, request, actor, db)
         if media.workspace_id != item.workspace_id:
@@ -706,6 +739,8 @@ async def add_repeatable_group(
     index = await next_group_index(db, item, group_key)
     blocks: list[ContentBlock] = []
     for field_key, value in payload.values.items():
+        if payload.lock:
+            ensure_source_can_be_locked(payload.source_type, field_key, request)
         block = await upsert_block(
             db,
             item,
@@ -743,18 +778,22 @@ async def patch_block(
         media, _ = await media_for_actor(payload.source_media_id, request, actor, db)
         if media.workspace_id != item.workspace_id:
             raise api_error(404, "media_not_found", "Media asset not found.", request=request)
+    next_source_type = data.get("source_type", block.source_type)
+    remains_locked = payload.lock if payload.lock is not None else block.is_locked
+    if remains_locked:
+        ensure_source_can_be_locked(next_source_type, block.field_key, request)
     block.value_json = data.get("value", block.value_json)
-    block.source_type = data.get("source_type", block.source_type)
+    block.source_type = next_source_type
     if "transcript_text" in data:
         block.transcript_text = data["transcript_text"]
     if "source_media_id" in data:
         block.source_media_id = data["source_media_id"]
-    if payload.lock is not None:
-        block.is_locked = payload.lock
-        if payload.lock:
-            await lock_fact(db, block, actor.user.id)
-        else:
-            await unlock_fact(db, block)
+    block.is_locked = remains_locked
+    if remains_locked:
+        ensure_block_can_be_locked(block, request)
+        await lock_fact(db, block, actor.user.id)
+    else:
+        await unlock_fact(db, block)
     block.updated_by = actor.user.id
     block.updated_at = utc_now()
     block.revision_number += 1
@@ -789,6 +828,7 @@ async def lock_block(
     db: AsyncSession = Depends(get_session),
 ) -> BlockOut:
     block, item = await mutable_block_for_actor(block_id, request, actor, db)
+    ensure_block_can_be_locked(block, request)
     block.is_locked = True
     block.updated_by = actor.user.id
     block.updated_at = utc_now()
@@ -995,6 +1035,7 @@ async def transcribe_block(
     provider_key = settings.stt_provider if payload.provider_key == "default" else payload.provider_key
     provider_key = provider_key.strip().lower()
     block, item = await mutable_block_for_actor(block_id, request, actor, db)
+    ensure_block_is_not_ai_planning(block, request)
     media_id = payload.media_id or block.source_media_id
     if media_id is None:
         raise api_error(422, "media_required", "A voice or audio media asset is required.", request=request)
@@ -1088,6 +1129,7 @@ async def accept_transcription(
     require_role(membership, CONTENT_MUTATION_ROLES, request)
     block = await db.get(ContentBlock, run.content_block_id)
     assert block is not None
+    ensure_block_is_not_ai_planning(block, request)
     run.corrected_text = payload.corrected_text
     run.accepted_at = utc_now()
     run.accepted_by = actor.user.id
@@ -1103,6 +1145,8 @@ async def accept_transcription(
     if payload.lock:
         block.is_locked = True
         await lock_fact(db, block, actor.user.id)
+    else:
+        await unlock_fact(db, block)
     item.updated_at = utc_now()
     item.version += 1
     await write_content_revision(
