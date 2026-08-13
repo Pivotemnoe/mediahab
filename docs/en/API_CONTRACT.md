@@ -166,6 +166,11 @@ POST /transcription-jobs/{job_id}/retry
 ## AI assembly and evaluation
 
 ```text
+GET  /workspaces/{workspace_id}/ideas/capability
+POST /workspaces/{workspace_id}/ideas/generate
+POST /workspaces/{workspace_id}/ideas/transcribe-topic
+
+# Legacy project-scoped idea compatibility
 GET  /projects/{project_id}/ideas/capability
 POST /projects/{project_id}/ideas/generate
 POST /content-items/{content_id}/extract-facts
@@ -180,11 +185,68 @@ POST /ai-runs/{run_id}/cancel
 POST /ai-runs/{run_id}/retry
 ```
 
-The capability response is authoritative for the current workspace and actor. It
-separates feature availability from `can_generate`, and includes the server-side
-daily limit and remaining count. Idea generation is disabled by default, requires
-an explicit workspace allowlist, an editor-capable role, subscription entitlement,
-and available daily and monthly quota before the provider is called.
+The workspace-scoped capability response is authoritative for the current workspace
+and actor. It separates feature availability from `can_generate`, and includes the
+server-side daily limit and remaining count. Standalone idea generation requires an
+explicit feature flag, an editor-capable role, subscription entitlement, and available
+daily and monthly quota before the provider is called. Standalone and legacy project
+idea runs consume the same daily idea budget.
+
+`POST /workspaces/{workspace_id}/ideas/generate` accepts exactly one non-empty
+`topic`; it accepts no project, rubric, editorial goal, examples, recent titles, or
+content item. The topic is untrusted data and is always interpreted as a possible
+subject for a post, never as an instruction to answer, calculate, browse, disclose a
+prompt, or provide professional advice. Empty or whitespace-only input fails with a
+stable `422 idea_topic_required` before provider invocation and before quota usage.
+
+The endpoint creates a durable workspace-scoped generation run with
+`project_id: null`, `rubric_id: null`, and `content_item_id: null`. Its response uses
+the versioned contract `phase12j-standalone-idea-directions-v1` and contains exactly
+five materially distinct objects with no additional fields:
+
+```json
+{
+  "ideas": [
+    {
+      "id": "idea-1",
+      "title": "A short direction name",
+      "direction": "What the author could discuss without asserting facts.",
+      "speaking_prompt": "Which real moment would you like to describe?"
+    }
+  ]
+}
+```
+
+`direction` is an editorial possibility and `speaking_prompt` is one question for the
+author. Neither is an answer, recommendation, post, author quotation, personal event,
+or factual claim. Unsupported proper names, numbers, dates, prices, quotations, URLs,
+first-person assertions, ready-to-publish paragraphs, and regulated medical,
+veterinary, psychological, fitness, legal, tax, or financial advice are invalid. One
+bounded full-batch retry is allowed for provider, schema, or validation failure; a
+second failure returns a stable failed run with no directions. The bounded second
+attempt stays inside the same run and quota reservation. Retrying a failed standalone
+run through the retry endpoint does not require a project and follows the normal
+new-run quota policy.
+
+Generating or selecting a standalone direction creates no `ContentItem`, block,
+notebook note, revision, locked fact, or publication. The client keeps a short-lived
+planning handoff and opens the existing composer with empty author capture. Project
+and rubric selection occurs there. Only starting dictation or explicitly saving
+author text creates one content item; the selected direction is persisted separately
+as an unlocked `ai_suggested` planning block. Selection, refresh, resume,
+transcription, locking, and master assembly must never promote it to author source.
+`assemble-master` therefore continues to return `422 author_source_required` until
+the user supplies non-empty voice, text, confirmed import, or a locked fact.
+
+`POST /workspaces/{workspace_id}/ideas/transcribe-topic` accepts only a short,
+workspace-owned uploaded voice asset. It returns text for the topic field, records STT
+usage, follows the raw-audio retention policy, and creates no notebook note or content
+item.
+
+The following project-scoped contract is legacy compatibility. Its separate feature
+flag remains disabled and its UI is absent from the primary composer while standalone
+ideas are active. Historical project runs and their accept route remain readable and
+retryable for rollback and audit.
 
 `POST /projects/{project_id}/ideas/generate` accepts an optional rubric, optional
 topic, and editorial goal. It creates a project-scoped generation run and returns

@@ -118,6 +118,13 @@ export interface ContentItemOut {
   workspace_id: string;
 }
 
+export interface ContentCreateRequest {
+  assigned_to?: string | null;
+  client_content_id?: string | null;
+  rubric_id?: string | null;
+  title_internal?: string | null;
+}
+
 export interface NotebookNoteOut {
   archived: boolean;
   author_id: string;
@@ -338,7 +345,7 @@ export interface GenerationRunOut {
   model_id: string;
   output_characters: number | null;
   output_tokens: number | null;
-  project_id: string;
+  project_id: string | null;
   provider_key: string;
   response_json: JsonObject | null;
   retrieved_example_ids: string[];
@@ -355,6 +362,21 @@ export interface IdeaCapabilityOut {
   enabled: boolean;
   remaining_today: number;
   used_today: number;
+}
+
+export interface StandaloneIdeaGenerateRequest {
+  topic: string;
+}
+
+export interface StandaloneIdeaTopicTranscribeRequest {
+  media_id: string;
+}
+
+export interface StandaloneIdeaTopicOut {
+  media_id: string;
+  provider_key: string;
+  retention_until: string;
+  transcript_text: string;
 }
 
 export interface PlatformVariantOut {

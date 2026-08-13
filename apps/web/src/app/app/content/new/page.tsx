@@ -4,7 +4,7 @@ import { getNewContentViewModel } from "@/services/content";
 export default async function NewContentPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ edit?: string; pilot_error?: string; platform?: string; project?: string; rubric?: string }>;
+  searchParams?: Promise<{ edit?: string; idea?: string; pilot_error?: string; platform?: string; project?: string; rubric?: string }>;
 }) {
   const params = await searchParams;
   const viewModel = await getNewContentViewModel(params?.edit);
@@ -13,6 +13,7 @@ export default async function NewContentPage({
       initialProjectId={params?.project}
       initialPlatformKey={params?.platform}
       initialRubricId={params?.rubric}
+      initialStandaloneIdeaToken={params?.idea}
       pilotError={params?.pilot_error}
       viewModel={viewModel}
     />

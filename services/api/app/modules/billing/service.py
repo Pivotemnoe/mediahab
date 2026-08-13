@@ -55,6 +55,8 @@ SENSITIVE_HEADER_NAMES = {
 
 AI_TEXT_GENERATIONS_KEY = "ai.text_generations.monthly"
 AI_TEXT_GENERATIONS_LEGACY_KEY = "ai.text_generations"
+AI_TRANSCRIPTION_SECONDS_KEY = "ai.transcription_seconds.monthly"
+AI_TRANSCRIPTION_SECONDS_LEGACY_KEY = "ai.transcription_seconds"
 USABLE_SUBSCRIPTION_STATUSES = frozenset({"active", "trialing", "cancel_pending"})
 
 
@@ -326,6 +328,206 @@ async def reserve_ai_text_generation_usage(
     return UsageReservation(
         entitlement=AI_TEXT_GENERATIONS_KEY,
         used=used + 1,
+        limit=limit,
+        period_start=period_start,
+        period_end=period_end,
+    )
+
+
+async def ai_text_generation_available(
+    session: AsyncSession,
+    workspace_id: UUID,
+    now: datetime | None = None,
+) -> bool:
+    """Return whether a text-generation reservation would fit the current plan.
+
+    This is advisory for capability UI only. Mutation endpoints still acquire the
+    workspace lock and reserve usage atomically before provider I/O.
+    """
+
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    subscription_row = await get_workspace_subscription(session, workspace_id)
+    if subscription_row is None:
+        return False
+    subscription, plan = subscription_row
+    period_expired = subscription.current_period_end is not None and _as_utc(
+        subscription.current_period_end
+    ) <= current
+    trial_expired = (
+        subscription.status == "trialing"
+        and subscription.trial_ends_at is not None
+        and _as_utc(subscription.trial_ends_at) <= current
+    )
+    if (
+        subscription.status not in USABLE_SUBSCRIPTION_STATUSES
+        or period_expired
+        or trial_expired
+        or not plan.is_active
+    ):
+        return False
+    entitlement = await session.scalar(
+        select(Entitlement).where(
+            Entitlement.plan_id == plan.id,
+            Entitlement.key == AI_TEXT_GENERATIONS_KEY,
+        )
+    )
+    limit = _positive_integer_entitlement(
+        entitlement.value_json if entitlement is not None else None
+    )
+    if limit is None:
+        return False
+    period_start, period_end = _subscription_usage_window(subscription, current)
+    used = await monthly_usage_quantity(
+        session,
+        workspace_id,
+        (AI_TEXT_GENERATIONS_KEY, AI_TEXT_GENERATIONS_LEGACY_KEY),
+        period_start,
+        period_end,
+    )
+    return used < limit
+
+
+async def reserve_ai_transcription_usage(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    reservation_id: UUID,
+    seconds: int,
+    source: str,
+    metadata: dict[str, Any],
+    workspace_lock_held: bool = False,
+    now: datetime | None = None,
+) -> UsageReservation:
+    """Atomically reserve known STT seconds before provider I/O.
+
+    The caller supplies a stable media-scoped reservation id. Reusing that id
+    fails closed, which prevents a browser retry or double tap from invoking the
+    paid provider twice for one uploaded recording.
+    """
+
+    if seconds <= 0:
+        raise ValueError("Transcription reservation seconds must be positive.")
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    if not workspace_lock_held:
+        workspace = await session.scalar(
+            select(Workspace).where(Workspace.id == workspace_id).with_for_update()
+        )
+        if workspace is None:
+            raise UsageEntitlementError(
+                "subscription_inactive",
+                "An active subscription is required for transcription.",
+                {"entitlement": AI_TRANSCRIPTION_SECONDS_KEY},
+            )
+
+    existing = await session.get(UsageEvent, reservation_id)
+    if existing is not None:
+        raise UsageEntitlementError(
+            "standalone_idea_topic_already_transcribed",
+            "This voice topic has already been submitted for transcription.",
+            {
+                "entitlement": AI_TRANSCRIPTION_SECONDS_KEY,
+                "reservation_id": str(reservation_id),
+            },
+        )
+
+    subscription_row = (
+        await session.execute(
+            select(Subscription, Plan)
+            .join(Plan, Plan.id == Subscription.plan_id)
+            .where(Subscription.workspace_id == workspace_id)
+        )
+    ).first()
+    if subscription_row is None:
+        raise UsageEntitlementError(
+            "subscription_inactive",
+            "An active subscription is required for transcription.",
+            {"entitlement": AI_TRANSCRIPTION_SECONDS_KEY},
+        )
+    subscription, plan = subscription_row
+    period_expired = subscription.current_period_end is not None and _as_utc(
+        subscription.current_period_end
+    ) <= current
+    trial_expired = (
+        subscription.status == "trialing"
+        and subscription.trial_ends_at is not None
+        and _as_utc(subscription.trial_ends_at) <= current
+    )
+    if (
+        subscription.status not in USABLE_SUBSCRIPTION_STATUSES
+        or period_expired
+        or trial_expired
+        or not plan.is_active
+    ):
+        raise UsageEntitlementError(
+            "subscription_inactive",
+            "An active subscription is required for transcription.",
+            {
+                "entitlement": AI_TRANSCRIPTION_SECONDS_KEY,
+                "subscription_status": subscription.status,
+            },
+        )
+
+    entitlement = await session.scalar(
+        select(Entitlement).where(
+            Entitlement.plan_id == plan.id,
+            Entitlement.key == AI_TRANSCRIPTION_SECONDS_KEY,
+        )
+    )
+    limit = _positive_integer_entitlement(
+        entitlement.value_json if entitlement is not None else None
+    )
+    if limit is None:
+        raise UsageEntitlementError(
+            "ai_transcription_not_included",
+            "Transcription is not included in this subscription.",
+            {"entitlement": AI_TRANSCRIPTION_SECONDS_KEY},
+        )
+
+    period_start, period_end = _subscription_usage_window(subscription, current)
+    used = await monthly_usage_quantity(
+        session,
+        workspace_id,
+        (AI_TRANSCRIPTION_SECONDS_KEY, AI_TRANSCRIPTION_SECONDS_LEGACY_KEY),
+        period_start,
+        period_end,
+    )
+    if used + seconds > limit:
+        raise UsageEntitlementError(
+            "limit_exceeded",
+            "Transcription limit reached.",
+            {
+                "entitlement": AI_TRANSCRIPTION_SECONDS_KEY,
+                "limit": limit,
+                "used": used,
+                "requested": seconds,
+                "period_start": period_start.isoformat(),
+                "period_end": period_end.isoformat(),
+            },
+        )
+
+    session.add(
+        UsageEvent(
+            id=reservation_id,
+            workspace_id=workspace_id,
+            key=AI_TRANSCRIPTION_SECONDS_KEY,
+            quantity=seconds,
+            source=source,
+            metadata_json={
+                **metadata,
+                "reservation_id": str(reservation_id),
+                "billing_semantics": "one_transcription_per_media_asset",
+            },
+            created_at=current,
+        )
+    )
+    await session.flush()
+    return UsageReservation(
+        entitlement=AI_TRANSCRIPTION_SECONDS_KEY,
+        used=used + seconds,
         limit=limit,
         period_start=period_start,
         period_end=period_end,

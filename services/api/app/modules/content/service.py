@@ -385,7 +385,12 @@ def make_presigned_upload_url(settings: Settings, storage_key: str, mime_type: s
         ) from exc
 
 
-def fetch_s3_object_bytes(settings: Settings, media: MediaAsset) -> bytes:
+def fetch_s3_object_bytes(
+    settings: Settings,
+    media: MediaAsset,
+    *,
+    max_bytes: int | None = None,
+) -> bytes:
     if not settings.s3_download_enabled:
         raise ContentProviderError(
             "s3_not_configured",
@@ -402,9 +407,29 @@ def fetch_s3_object_bytes(settings: Settings, media: MediaAsset) -> bytes:
             "s3_object_unavailable",
             "S3 object could not be read for transcription.",
         ) from exc
+    content_length = response.get("ContentLength")
+    if (
+        max_bytes is not None
+        and isinstance(content_length, int)
+        and content_length > max_bytes
+    ):
+        body = response.get("Body")
+        close = getattr(body, "close", None)
+        if callable(close):
+            close()
+        raise ContentProviderError(
+            "media_object_too_large",
+            "Media object exceeds the server-side transcription limit.",
+        )
     body = response["Body"]
     try:
-        return bytes(body.read())
+        payload = bytes(body.read(max_bytes + 1 if max_bytes is not None else None))
+        if max_bytes is not None and len(payload) > max_bytes:
+            raise ContentProviderError(
+                "media_object_too_large",
+                "Media object exceeds the server-side transcription limit.",
+            )
+        return payload
     finally:
         close = getattr(body, "close", None)
         if callable(close):

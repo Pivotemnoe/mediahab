@@ -279,7 +279,10 @@ def text_provider_for(
     if provider_key == "openai":
         if task_type in {"assemble_master", "refine_variant"}:
             model_id = settings.openai_editor_model
-        elif task_type == "suggest_content_ideas":
+        elif task_type in {
+            "suggest_content_ideas",
+            "suggest_standalone_content_ideas",
+        }:
             model_id = settings.openai_idea_model
         else:
             model_id = settings.openai_text_model

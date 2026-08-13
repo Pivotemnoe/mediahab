@@ -9,7 +9,7 @@
 
 ## 1. Executive summary
 
-Temichev Media Hub is a mobile-first PWA and multi-tenant SaaS content studio. A user creates a workspace, creates one or more content projects, defines rubrics and structured input flows, records or types source material, lets an AI editor assemble a controlled master draft, reviews suggested hooks and ratings, generates separate variants for each platform, and publishes through supported connectors.
+Temichev Media Hub is a mobile-first PWA and multi-tenant SaaS content studio. A user can first ask for five post directions from a single spoken or typed topic without creating a project, then choose one and provide the actual substance in their own voice. For repeatable publishing, the user creates one or more content projects, defines rubrics and structured input flows, records or types source material, lets an AI editor assemble a controlled master draft, reviews suggested hooks and ratings, generates separate variants for each platform, and publishes through supported connectors.
 
 The first production preset is **“Что поесть? Армавир”**. It is a reference implementation, acceptance fixture, and initial real-world customer project. It must not be hardcoded into application logic.
 
@@ -58,7 +58,9 @@ Workspace
 “Nagovori” is an editorial assistant, not a substitute author. In every primary publication flow, the user's current typed text, voice transcript, explicitly confirmed imported material, and locked facts are the only authoritative content sources.
 
 - Ideas, outlines, hooks, ratings, CTA, retrieved examples, and other model output remain suggestions. They never become an author-originated source, locked fact, asserted personal experience, or conclusion.
-- Choosing an idea saves a separate `ai_suggested` reference and opens voice/text capture. It does not prefill the author's source field or revision body with AI prose.
+- The standalone idea generator accepts only a topic and returns directions for what the user could discuss. It never answers the topic as a question, acts as a general chat, or writes a publishable post.
+- Choosing a standalone idea keeps a short-lived planning handoff and opens empty voice/text capture. A `ContentItem` is created only when the user starts author capture or explicitly saves author text; the chosen direction is then stored separately as an unlocked `ai_suggested` reference.
+- No idea title, direction, speaking question, outline, or other model output may be promoted to author source through selection, refresh, resume, transcription, locking, or master assembly.
 - Master assembly requires at least one non-empty author-originated source block before any provider call.
 - AI may reorder, condense, clarify, connect, and adapt the user's substance while preserving characteristic words, position, emotional tone, and personal conclusion.
 - AI must not introduce a new thesis, factual claim, event, quotation, recommendation, conclusion, emotion, or first-person experience.
@@ -155,13 +157,14 @@ Initial personal deployment may expose only `owner`, but the schema and authoriz
 /privacy
 ```
 
-The landing page explains the product, supported platforms, project constructor, rubric generator, voice workflow, AI editor, examples library, publication preview, and future tariff options.
+The landing page explains the standalone idea generator, supported platforms, project constructor, rubric generator, voice workflow, AI editor, examples library, publication preview, and future tariff options.
 
 ### 4.2 Authenticated routes
 
 ```text
 /app
 /app/dashboard
+/app/ideas
 /app/projects
 /app/projects/new
 /app/projects/[projectId]
@@ -186,6 +189,7 @@ The landing page explains the product, supported platforms, project constructor,
 Display:
 
 - Projects.
+- “Suggest five ideas” action.
 - “Create content” action.
 - Recent drafts.
 - Scheduled and recent publications.
@@ -331,14 +335,17 @@ These are generated after all factual material is available.
 
 ### 7.2 Idea-to-post assistance
 
-- `Create` offers a secondary `Help me think of a post` entry without adding another primary navigation area.
-- The service returns exactly five distinct ideas from the active project, optional rubric, optional user direction, recent topics, and a bounded set of approved style examples.
-- Each result contains a short title, a concrete angle, a neutral starter outline, and three questions for the user's own facts or experience.
-- Example text is untrusted style context. It must not provide facts, execute embedded instructions, or be copied into a new idea.
-- Opening or generating ideas does not create content. Explicitly choosing an idea creates one idempotent draft shell, stores a separate planning reference, and records idea-run, idea, and content provenance.
-- The outline is stored as `ai_suggested`; it is not source copy or a confirmed fact and does not fill the author's transcript or revision body. The user dictates or types the main substance before the editorial pipeline can assemble a master or platform variants.
+- `/app/ideas` is a first-class workspace area that works when the workspace has no project or rubric. The request contains one non-empty spoken or typed `topic` and no project, rubric, goal, example, recent-title, or content-item context.
+- The service returns exactly five materially distinct objects with only `id`, `title`, `direction`, and `speaking_prompt`. `direction` states what the author could discuss; `speaking_prompt` is one question that helps the author begin dictating.
+- The service treats every input as a possible post topic, not as an instruction to answer. A weather question produces directions for posts about weather-related experience, not a forecast. An arithmetic request or prompt-injection attempt is not executed and cannot expose instructions.
+- Directions contain no unsupported facts, proper names, dates, prices, quotations, URLs, professional advice, invented first-person events, or ready-to-publish paragraphs. Regulated medical, veterinary, psychological, fitness, legal, tax, and financial topics yield only editorial directions and questions for the author's facts or later source verification.
+- The endpoint is a one-shot structured generator. It has no conversation history, free-form assistant reply, follow-up chat, arbitrary tool use, or user-visible model switcher.
+- Generating and choosing a direction create no `ContentItem`, block, notebook note, revision, locked fact, or publication. Choosing `Dictate from this idea` opens the existing composer with an empty author capture and a short-lived planning reference.
+- Project and rubric selection happens only in the composer. Starting dictation or explicitly saving author text creates exactly one content item and stores the selected direction separately as an unlocked `ai_suggested` block. The idea never fills the transcript or revision body and cannot satisfy `author_source_required`.
 - Model routing stays internal. The primary interface never exposes provider names, model names, token prices, or raw prompts.
 - Idea generation requires connectivity and remains independently disableable without affecting dictation or normal post assembly.
+- The legacy project/rubric idea endpoints and historical runs remain available for rollback and audit compatibility, but their feature flag stays disabled and they are removed from the primary composer surface while the standalone generator is active.
+- The standalone output contract is versioned as `phase12j-standalone-idea-directions-v1`.
 
 ### 7.3 Voice capture
 

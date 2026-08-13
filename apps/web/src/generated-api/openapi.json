@@ -3934,6 +3934,155 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/ideas/capability": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Standalone Idea Capability",
+        "operationId": "standalone_idea_capability_api_v1_workspaces__workspace_id__ideas_capability_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaCapabilityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/ideas/generate": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Generate Standalone Ideas",
+        "operationId": "generate_standalone_ideas_api_v1_workspaces__workspace_id__ideas_generate_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandaloneIdeaGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/ideas/transcribe-topic": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Transcribe Standalone Idea Topic",
+        "operationId": "transcribe_standalone_idea_topic_api_v1_workspaces__workspace_id__ideas_transcribe_topic_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandaloneIdeaTopicTranscribeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandaloneIdeaTopicOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/ideas/capability": {
       "get": {
         "tags": [
@@ -7040,6 +7189,18 @@
       },
       "ContentCreateRequest": {
         "properties": {
+          "client_content_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Content Id"
+          },
           "rubric_id": {
             "anyOf": [
               {
@@ -7997,8 +8158,15 @@
             "title": "Workspace Id"
           },
           "project_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Id"
           },
           "rubric_id": {
@@ -12275,6 +12443,66 @@
           "sessions"
         ],
         "title": "SessionsResponse"
+      },
+      "StandaloneIdeaGenerateRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Topic"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "topic"
+        ],
+        "title": "StandaloneIdeaGenerateRequest"
+      },
+      "StandaloneIdeaTopicOut": {
+        "properties": {
+          "transcript_text": {
+            "type": "string",
+            "title": "Transcript Text"
+          },
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Media Id"
+          },
+          "provider_key": {
+            "type": "string",
+            "title": "Provider Key"
+          },
+          "retention_until": {
+            "type": "string",
+            "title": "Retention Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transcript_text",
+          "media_id",
+          "provider_key",
+          "retention_until"
+        ],
+        "title": "StandaloneIdeaTopicOut"
+      },
+      "StandaloneIdeaTopicTranscribeRequest": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Media Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "media_id"
+        ],
+        "title": "StandaloneIdeaTopicTranscribeRequest"
       },
       "SubscriptionResponse": {
         "properties": {

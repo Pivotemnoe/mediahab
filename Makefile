@@ -11,7 +11,7 @@ EVAL_CONTENT_IDEAS_ARGS ?=
 EVAL_CONTENT_IDEAS_RAW_RESULTS ?=
 EVAL_CONTENT_IDEAS_HUMAN_REVIEW ?=
 
-.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening eval-content-ideas-validate eval-content-ideas eval-content-ideas-gate migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
+.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening eval-content-ideas-validate eval-content-ideas eval-content-ideas-gate eval-standalone-ideas-validate migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
 
 deps: node_modules/.pnpm $(VENV)/.deps-installed
 
@@ -50,7 +50,9 @@ test-ui-hardening: deps
 	node tools/check_offline_notebook_contract.mjs
 	node tools/check_examples_first_contract.mjs
 	node tools/check_idea_generator_contract.mjs
+	node tools/check_standalone_ideas_contract.mjs
 	node tools/check_content_idea_eval_fixture.mjs
+	node tools/check_standalone_idea_eval_fixture.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs
@@ -70,6 +72,9 @@ eval-content-ideas: deps
 
 eval-content-ideas-gate: deps
 	PYTHONPATH="$(CURDIR)/services/api" $(PY) tools/eval_content_ideas.py gate --raw-results "$(EVAL_CONTENT_IDEAS_RAW_RESULTS)" --human-review "$(EVAL_CONTENT_IDEAS_HUMAN_REVIEW)"
+
+eval-standalone-ideas-validate:
+	node tools/check_standalone_idea_eval_fixture.mjs
 
 migrate: deps
 	cd services/api && DATABASE_URL="$(MIGRATE_DATABASE_URL)" ../../$(PY) -m alembic -c alembic.ini upgrade head

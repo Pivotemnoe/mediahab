@@ -6,6 +6,7 @@ import {
   BookOpenCheck,
   CheckCircle2,
   FileText,
+  Lightbulb,
   Mic,
   Plus,
   Search,
@@ -16,6 +17,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 const actions = [
+  {
+    description: "Назвать тему и получить пять направлений для будущей диктовки.",
+    href: "/app/ideas",
+    icon: Lightbulb,
+    title: "Придумать идею",
+  },
   {
     description: "Открыть мастер материала и начать с голосового сценария.",
     href: "/app/content/new",
@@ -90,7 +97,7 @@ export function QuickCreatePalette() {
               <Search className="shrink-0 text-muted" size={18} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-foreground">Быстрое действие</div>
-                <div className="truncate text-xs text-muted">Создание, рубрики, медиа и публикации</div>
+                <div className="truncate text-xs text-muted">Идеи, диктовка, медиа и публикации</div>
               </div>
               <Button
                 aria-label="Закрыть быстрые действия"

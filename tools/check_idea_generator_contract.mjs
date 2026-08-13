@@ -25,7 +25,8 @@ const [
 ]);
 
 assert.match(`${composerSource}\n${sheetSource}`, /Помоги придумать|Подобрать идеи/);
-assert.match(composerSource, /IdeaGeneratorSheet/);
+assert.doesNotMatch(composerSource, /<IdeaGeneratorSheet/);
+assert.match(composerSource, /href="\/app\/ideas"/);
 assert.match(composerSource, /ideaBrief/);
 assert.match(composerSource, /replaceState/);
 assert.match(sheetSource, /client_content_id/);
@@ -38,7 +39,7 @@ assert.match(sheetSource, /role_denied/);
 assert.match(sheetSource, /function closeSheet\(\)[\s\S]*?invalidatePendingRequests\(\)/);
 assert.match(sheetSource, /if \(!requestIsCurrent\(epoch, expected\)[\s\S]*?await onAccepted/);
 assert.match(sheetSource, /if \(!capability\?\.enabled \|\| !capability\.can_generate\) return null/);
-assert.match(composerSource, /Чтобы не смешать два черновика/);
+assert.match(composerSource, /Не знаю, о чём рассказать/);
 assert.match(composerSource, /captureRequestRef/);
 assert.match(composerSource, /pendingStreamRef/);
 assert.match(composerSource, /Остановить и сохранить фрагмент/);

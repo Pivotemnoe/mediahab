@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     Boolean,
     BigInteger,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -1000,10 +1001,17 @@ class ProviderConfig(Base):
 
 class GenerationRun(Base):
     __tablename__ = "generation_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "(task_type = 'suggest_standalone_content_ideas' AND project_id IS NULL) "
+            "OR (task_type <> 'suggest_standalone_content_ideas' AND project_id IS NOT NULL)",
+            name="ck_generation_runs_project_scope",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
     workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), index=True)
-    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    project_id: Mapped[UUID | None] = mapped_column(ForeignKey("projects.id"), index=True)
     rubric_id: Mapped[UUID | None] = mapped_column(ForeignKey("rubrics.id"), index=True)
     content_item_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("content_items.id"), index=True

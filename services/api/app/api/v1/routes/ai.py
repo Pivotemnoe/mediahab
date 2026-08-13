@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from datetime import timedelta, timezone
 from typing import Any, Literal
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.db.base import (
     ContentItem,
     ExamplePost,
     GenerationRun,
+    MediaAsset,
     Project,
     Rubric,
     RubricVersion,
@@ -27,16 +29,20 @@ from app.modules.ai.providers import ProviderError
 from app.modules.ai.service import (
     AiPipelineError,
     IDEA_TASK_TYPE,
+    STANDALONE_IDEA_TASK_TYPE,
     approve_example,
     assemble_master,
     create_project_idea_run,
+    create_standalone_idea_run,
     execute_project_idea_run,
+    execute_standalone_idea_run,
     extract_facts,
     idea_generation_usage,
     idea_generator_enabled,
     import_example_post,
     quality_check,
     reject_example,
+    standalone_idea_generator_enabled,
     suggest_hook,
     suggest_ratings,
 )
@@ -49,12 +55,17 @@ from app.modules.auth.dependencies import (
 )
 from app.modules.billing.service import (
     UsageEntitlementError,
+    ai_text_generation_available,
+    reserve_ai_transcription_usage,
     reserve_ai_text_generation_usage,
 )
 from app.modules.content.service import (
     CONTENT_MUTATION_ROLES,
     READ_ROLES,
+    ContentProviderError,
+    fetch_s3_object_bytes,
     resolve_content_create_context,
+    transcribe_with_openai,
     upsert_block,
     write_content_revision,
 )
@@ -62,6 +73,9 @@ from app.modules.projects.service import get_active_project
 from app.modules.shared.errors import api_error
 
 router = APIRouter()
+
+STANDALONE_IDEA_TOPIC_AUDIO_MAX_BYTES = 25 * 1024 * 1024
+STANDALONE_IDEA_RETRY_NAMESPACE = UUID("b91f6f59-1953-4d2d-bfab-78688c227a91")
 
 
 class ExampleMetricsIn(BaseModel):
@@ -116,7 +130,7 @@ class ExampleListResponse(BaseModel):
 class GenerationRunOut(BaseModel):
     id: UUID
     workspace_id: UUID
-    project_id: UUID
+    project_id: UUID | None
     rubric_id: UUID | None
     content_item_id: UUID | None
     task_type: str
@@ -155,6 +169,25 @@ class IdeaGenerateRequest(BaseModel):
     rubric_id: UUID | None = None
     topic: str | None = Field(default=None, max_length=1000)
     goal: Literal["engage", "explain", "share_experience", "soft_sell", "open"] = "open"
+
+
+class StandaloneIdeaGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    topic: str = Field(min_length=1, max_length=1000)
+
+
+class StandaloneIdeaTopicTranscribeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    media_id: UUID
+
+
+class StandaloneIdeaTopicOut(BaseModel):
+    transcript_text: str
+    media_id: UUID
+    provider_key: str
+    retention_until: str
 
 
 class ContentIdeaOut(BaseModel):
@@ -497,6 +530,91 @@ async def reserve_idea_run(
     return run
 
 
+async def reserve_standalone_idea_run(
+    db: AsyncSession,
+    settings: Settings,
+    workspace: Workspace,
+    actor_user_id: UUID,
+    topic: str,
+    request: Request,
+    retry_count: int = 0,
+    source_run_id: UUID | None = None,
+) -> GenerationRun:
+    await db.scalar(
+        select(Workspace).where(Workspace.id == workspace.id).with_for_update()
+    )
+    run_id = (
+        uuid5(STANDALONE_IDEA_RETRY_NAMESPACE, str(source_run_id))
+        if source_run_id is not None
+        else uuid4()
+    )
+    existing_run = await db.get(GenerationRun, run_id)
+    if existing_run is not None:
+        metadata = (
+            existing_run.request_metadata_json
+            if isinstance(existing_run.request_metadata_json, dict)
+            else {}
+        )
+        if (
+            existing_run.workspace_id != workspace.id
+            or existing_run.task_type != STANDALONE_IDEA_TASK_TYPE
+            or metadata.get("source_run_id") != str(source_run_id)
+        ):
+            raise api_error(
+                409,
+                "standalone_idea_retry_conflict",
+                "This standalone idea retry could not be resumed safely.",
+                request=request,
+            )
+        await db.commit()
+        return existing_run
+    usage = await idea_generation_usage(db, workspace.id, settings)
+    if usage["remaining_today"] <= 0:
+        raise api_error(
+            429,
+            "idea_daily_limit_reached",
+            "Daily idea generation limit reached.",
+            {
+                "daily_limit": usage["daily_limit"],
+                "used_today": usage["used_today"],
+                "reset_at": usage["reset_at"].isoformat(),
+            },
+            request=request,
+        )
+    try:
+        await reserve_ai_text_generation_usage(
+            db,
+            workspace_id=workspace.id,
+            generation_run_id=run_id,
+            source="standalone_idea_generator",
+            metadata={
+                "task_type": STANDALONE_IDEA_TASK_TYPE,
+                "source_run_id": str(source_run_id) if source_run_id is not None else None,
+            },
+            workspace_lock_held=True,
+        )
+    except UsageEntitlementError as exc:
+        raise api_error(
+            402,
+            exc.code,
+            exc.message,
+            exc.details,
+            request=request,
+        ) from exc
+    run = await create_standalone_idea_run(
+        db,
+        settings,
+        workspace.id,
+        actor_user_id,
+        topic,
+        retry_count=retry_count,
+        source_run_id=source_run_id,
+        run_id=run_id,
+    )
+    await db.commit()
+    return run
+
+
 @router.post("/projects/{project_id}/examples/import", response_model=ExampleImportResponse)
 async def import_examples(
     project_id: UUID,
@@ -555,6 +673,256 @@ async def list_examples(
         )
     ).all()
     return ExampleListResponse(examples=[example_out(row) for row in rows])
+
+
+@router.get(
+    "/workspaces/{workspace_id}/ideas/capability",
+    response_model=IdeaCapabilityOut,
+)
+async def standalone_idea_capability(
+    workspace_id: UUID,
+    request: Request,
+    actor: Actor = Depends(get_current_actor),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> IdeaCapabilityOut:
+    _, membership = await require_workspace_membership(workspace_id, request, actor, db)
+    usage = await idea_generation_usage(db, workspace_id, settings)
+    enabled = standalone_idea_generator_enabled(settings, workspace_id)
+    locally_allowed = (
+        enabled
+        and membership.role_key in CONTENT_MUTATION_ROLES
+        and usage["remaining_today"] > 0
+    )
+    can_generate = locally_allowed and await ai_text_generation_available(
+        db, workspace_id
+    )
+    return IdeaCapabilityOut(
+        enabled=enabled,
+        can_generate=can_generate,
+        daily_limit=usage["daily_limit"],
+        used_today=usage["used_today"],
+        remaining_today=usage["remaining_today"] if can_generate else 0,
+    )
+
+
+@router.post(
+    "/workspaces/{workspace_id}/ideas/generate",
+    response_model=GenerationRunOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def generate_standalone_ideas(
+    workspace_id: UUID,
+    payload: StandaloneIdeaGenerateRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> GenerationRunOut:
+    workspace, membership = await require_workspace_membership(
+        workspace_id, request, actor, db
+    )
+    require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if not standalone_idea_generator_enabled(settings, workspace_id):
+        raise api_error(
+            403,
+            "standalone_idea_generator_unavailable",
+            "Standalone idea generation is not enabled for this workspace.",
+            request=request,
+        )
+    run = await reserve_standalone_idea_run(
+        db,
+        settings,
+        workspace,
+        actor.user.id,
+        payload.topic,
+        request,
+    )
+    run = await execute_standalone_idea_run(db, settings, run)
+    await db.commit()
+    return generation_run_out(run)
+
+
+@router.post(
+    "/workspaces/{workspace_id}/ideas/transcribe-topic",
+    response_model=StandaloneIdeaTopicOut,
+)
+async def transcribe_standalone_idea_topic(
+    workspace_id: UUID,
+    payload: StandaloneIdeaTopicTranscribeRequest,
+    request: Request,
+    actor: Actor = Depends(require_csrf),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> StandaloneIdeaTopicOut:
+    _, membership = await require_workspace_membership(workspace_id, request, actor, db)
+    require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if not standalone_idea_generator_enabled(settings, workspace_id):
+        raise api_error(
+            403,
+            "standalone_idea_generator_unavailable",
+            "Standalone idea generation is not enabled for this workspace.",
+            request=request,
+        )
+    await db.scalar(
+        select(Workspace).where(Workspace.id == workspace_id).with_for_update()
+    )
+    media = await db.scalar(
+        select(MediaAsset)
+        .where(MediaAsset.id == payload.media_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if (
+        media is None
+        or media.deleted_at is not None
+        or media.workspace_id != workspace_id
+    ):
+        raise api_error(404, "media_not_found", "Media asset not found.", request=request)
+    if media.kind not in {"audio", "voice"} or media.upload_status != "uploaded":
+        raise api_error(
+            422,
+            "media_not_voice",
+            "An uploaded voice or audio asset is required.",
+            request=request,
+        )
+    if media.duration_ms is None or not 1 <= media.duration_ms <= 120_000:
+        raise api_error(
+            422,
+            "idea_topic_audio_duration_invalid",
+            "Idea topic recording duration must be known and not exceed two minutes.",
+            request=request,
+        )
+    if not 1 <= media.size_bytes <= STANDALONE_IDEA_TOPIC_AUDIO_MAX_BYTES:
+        raise api_error(
+            422,
+            "idea_topic_audio_size_invalid",
+            "Idea topic recording must not exceed 25 MB.",
+            request=request,
+        )
+    if media.processing_status in {"processing", "completed"}:
+        raise api_error(
+            409,
+            "standalone_idea_topic_already_transcribed",
+            "This voice topic has already been submitted for transcription.",
+            request=request,
+        )
+
+    provider_key = settings.stt_provider.strip().lower()
+    if provider_key not in {"mock", "openai"}:
+        raise api_error(
+            503,
+            "stt_provider_unavailable",
+            "Requested speech-to-text provider is unavailable.",
+            request=request,
+        )
+    if provider_key == "openai" and not settings.openai_api_key:
+        raise api_error(
+            503,
+            "openai_not_configured",
+            "Speech-to-text is not configured.",
+            request=request,
+        )
+
+    duration_seconds = (media.duration_ms + 999) // 1000
+    try:
+        await reserve_ai_transcription_usage(
+            db,
+            workspace_id=workspace_id,
+            reservation_id=media.id,
+            seconds=duration_seconds,
+            source=provider_key,
+            metadata={
+                "scope": "standalone_idea_topic",
+                "media_id": str(media.id),
+                "duration_ms": media.duration_ms,
+            },
+            workspace_lock_held=True,
+        )
+        media.processing_status = "processing"
+        media.updated_at = utc_now()
+        await db.commit()
+    except UsageEntitlementError as exc:
+        response_status = (
+            409
+            if exc.code == "standalone_idea_topic_already_transcribed"
+            else 402
+        )
+        raise api_error(
+            response_status,
+            exc.code,
+            exc.message,
+            exc.details,
+            request=request,
+        ) from exc
+    except IntegrityError as exc:
+        await db.rollback()
+        raise api_error(
+            409,
+            "standalone_idea_topic_already_transcribed",
+            "This voice topic has already been submitted for transcription.",
+            request=request,
+        ) from exc
+
+    try:
+        if provider_key == "mock":
+            transcript = "Тема для нового поста"
+        else:
+            transcript, _ = await transcribe_with_openai(
+                settings,
+                media,
+                fetch_s3_object_bytes(
+                    settings,
+                    media,
+                    max_bytes=STANDALONE_IDEA_TOPIC_AUDIO_MAX_BYTES,
+                ),
+            )
+    except ContentProviderError as exc:
+        media.processing_status = "failed"
+        media.updated_at = utc_now()
+        await db.commit()
+        raise api_error(503, exc.code, exc.message, request=request) from exc
+    except Exception:
+        media.processing_status = "failed"
+        media.updated_at = utc_now()
+        await db.commit()
+        raise
+    topic = " ".join(transcript.split())
+    if not topic or len(topic) > 1000:
+        media.processing_status = "failed"
+        media.updated_at = utc_now()
+        await db.commit()
+        if not topic:
+            raise api_error(
+                422,
+                "standalone_idea_topic_empty",
+                "Voice transcript did not contain a topic.",
+                request=request,
+            )
+        raise api_error(
+            422,
+            "standalone_idea_topic_too_long",
+            "Voice topic is too long.",
+            request=request,
+        )
+
+    now = utc_now()
+    short_retention_until = now + timedelta(days=7)
+    current_retention = media.retention_until
+    if current_retention is not None and current_retention.tzinfo is None:
+        current_retention = current_retention.replace(tzinfo=timezone.utc)
+    if current_retention is None or current_retention > short_retention_until:
+        media.retention_until = short_retention_until
+    media.processing_status = "completed"
+    media.updated_at = now
+    await db.commit()
+    assert media.retention_until is not None
+    return StandaloneIdeaTopicOut(
+        transcript_text=topic,
+        media_id=media.id,
+        provider_key=provider_key,
+        retention_until=media.retention_until.isoformat(),
+    )
 
 
 @router.get(
@@ -981,6 +1349,48 @@ async def retry_ai_run(
 ) -> GenerationRunOut:
     run, membership = await run_for_actor(run_id, request, actor, db)
     require_role(membership, CONTENT_MUTATION_ROLES, request)
+    if run.task_type == STANDALONE_IDEA_TASK_TYPE:
+        if run.status != "failed":
+            raise api_error(
+                409,
+                "standalone_idea_run_not_retryable",
+                "Only a failed standalone idea generation run can be retried.",
+                request=request,
+            )
+        if not standalone_idea_generator_enabled(settings, run.workspace_id):
+            raise api_error(
+                403,
+                "standalone_idea_generator_unavailable",
+                "Standalone idea generation is not enabled for this workspace.",
+                request=request,
+            )
+        workspace = await db.get(Workspace, run.workspace_id)
+        if workspace is None or workspace.deleted_at is not None or workspace.status != "active":
+            raise api_error(404, "workspace_not_found", "Workspace not found.", request=request)
+        metadata = run.request_metadata_json if isinstance(run.request_metadata_json, dict) else {}
+        topic = metadata.get("topic") if isinstance(metadata.get("topic"), str) else ""
+        if not topic.strip():
+            raise api_error(
+                409,
+                "standalone_idea_run_not_retryable",
+                "This standalone idea run has no topic to retry.",
+                request=request,
+            )
+        new_run = await reserve_standalone_idea_run(
+            db,
+            settings,
+            workspace,
+            actor.user.id,
+            topic,
+            request,
+            retry_count=run.retry_count + 1,
+            source_run_id=run.id,
+        )
+        if new_run.status != "running":
+            return generation_run_out(new_run)
+        new_run = await execute_standalone_idea_run(db, settings, new_run)
+        await db.commit()
+        return generation_run_out(new_run)
     if run.task_type == IDEA_TASK_TYPE:
         if run.status != "failed":
             raise api_error(

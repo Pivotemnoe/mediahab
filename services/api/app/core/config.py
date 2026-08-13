@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     idea_generator_workspace_allowlist_raw: str = Field(
         default="", alias="IDEA_GENERATOR_WORKSPACE_ALLOWLIST"
     )
+    standalone_idea_generator_enabled: bool = Field(
+        default=False, alias="STANDALONE_IDEA_GENERATOR_ENABLED"
+    )
+    standalone_idea_generator_workspace_allowlist_raw: str = Field(
+        default="", alias="STANDALONE_IDEA_GENERATOR_WORKSPACE_ALLOWLIST"
+    )
     idea_generator_daily_limit: int = Field(
         default=20, ge=1, alias="IDEA_GENERATOR_DAILY_LIMIT"
     )
@@ -106,6 +112,14 @@ class Settings(BaseSettings):
         return {
             value.strip().lower()
             for value in self.idea_generator_workspace_allowlist_raw.split(",")
+            if value.strip()
+        }
+
+    @property
+    def standalone_idea_generator_workspace_allowlist(self) -> set[str]:
+        return {
+            value.strip().lower()
+            for value in self.standalone_idea_generator_workspace_allowlist_raw.split(",")
             if value.strip()
         }
 

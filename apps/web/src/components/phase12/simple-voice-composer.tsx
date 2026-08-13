@@ -9,6 +9,7 @@ import {
   Clipboard,
   FileText,
   Images,
+  Lightbulb,
   Loader2,
   Mic,
   Pause,
@@ -27,8 +28,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { IdeaGeneratorSheet, type IdeaAcceptedResult } from "@/components/phase12/idea-generator-sheet";
 import { RichTextEditor, RichTextPreview } from "@/components/phase12/rich-text-editor";
+import {
+  bindStandaloneIdeaContentCreate,
+  clearStandaloneIdeaHandoff,
+  readStandaloneIdeaHandoff,
+  standaloneIdeaPlanningValue,
+  type StandaloneIdeaHandoff,
+} from "@/features/standalone-ideas/idea-handoff";
 import {
   type RichTextDocument,
   copyRichText,
@@ -38,6 +45,7 @@ import {
 } from "@/lib/rich-text";
 import {
   type BlockOut,
+  type ContentCreateRequest,
   type ContentItemOut,
   type ContentMediaResponse,
   type GenerationRunOut,
@@ -426,15 +434,28 @@ function preflightStatusTone(status: PreflightStatus): "danger" | "success" | "w
   return ({ pass: "success", warning: "warning", block: "danger" } as const)[status];
 }
 
+function standaloneIdeaViewModel(handoff: StandaloneIdeaHandoff): IdeaBriefViewModel {
+  return {
+    angle: handoff.idea.direction,
+    detailQuestions: [handoff.idea.speakingPrompt],
+    id: handoff.idea.id,
+    ideaBrief: handoff.idea.direction,
+    starterOutline: handoff.idea.speakingPrompt,
+    title: handoff.idea.title,
+  };
+}
+
 export function SimpleVoiceComposer({
   initialPlatformKey,
   initialProjectId,
   initialRubricId,
+  initialStandaloneIdeaToken,
   viewModel,
 }: {
   initialPlatformKey?: string;
   initialProjectId?: string;
   initialRubricId?: string;
+  initialStandaloneIdeaToken?: string;
   viewModel: NewContentViewModel;
 }) {
   const resumeDraft = viewModel.resumeDraft;
@@ -455,7 +476,9 @@ export function SimpleVoiceComposer({
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [message, setMessage] = useState(
     resumeDraft
-      ? "Материал открыт из истории. Поправьте исходный текст и нажмите «Пересобрать версии»."
+      ? resumeDraft.ideaBrief && !resumeDraft.transcript.trim()
+        ? "Идея уже сохранена. Теперь расскажите основную мысль своими словами — голосом или текстом."
+        : "Материал открыт из истории. Поправьте исходный текст и нажмите «Пересобрать версии»."
       : viewModel.modeLabel === "api"
       ? "Выберите проект, при необходимости рубрику, и нажмите микрофон."
       : "В демонстрации запись отключена. В рабочем кабинете микрофон будет доступен.",
@@ -463,6 +486,7 @@ export function SimpleVoiceComposer({
   const [segments, setSegments] = useState<Segment[]>([]);
   const [transcript, setTranscript] = useState(resumeDraft?.transcript ?? "");
   const [ideaBrief, setIdeaBrief] = useState<IdeaBriefViewModel | null>(resumeDraft?.ideaBrief ?? null);
+  const [pendingStandaloneIdea, setPendingStandaloneIdea] = useState<StandaloneIdeaHandoff | null>(null);
   const [contentId, setContentId] = useState<string | null>(resumeDraft?.contentId ?? null);
   const [sourceField, setSourceField] = useState<string | null>(resumeDraft?.sourceFieldKey ?? null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
@@ -509,6 +533,8 @@ export function SimpleVoiceComposer({
   const sourceFieldRef = useRef<string | null>(resumeDraft?.sourceFieldKey ?? null);
   const sourceBlockIdRef = useRef<string | null>(resumeDraft?.sourceBlockId ?? null);
   const lockedTranscriptRef = useRef(resumeDraft?.transcript ?? "");
+  const pendingStandaloneIdeaRef = useRef<StandaloneIdeaHandoff | null>(null);
+  const ensureContentPromiseRef = useRef<Promise<{ contentId: string; fieldKey: string }> | null>(null);
   const didFocusRequestedPlatformRef = useRef(false);
 
   useEffect(() => {
@@ -528,6 +554,40 @@ export function SimpleVoiceComposer({
       pendingStreamRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    pendingStandaloneIdeaRef.current = null;
+    setPendingStandaloneIdea(null);
+    if (!initialStandaloneIdeaToken) return;
+    const handoff = readStandaloneIdeaHandoff(initialStandaloneIdeaToken);
+    if (!handoff || handoff.workspaceId !== viewModel.workspaceId) {
+      if (handoff && handoff.workspaceId !== viewModel.workspaceId) {
+        clearStandaloneIdeaHandoff(handoff.handoffToken);
+      }
+      if (!resumeDraft) setIdeaBrief(null);
+      setMessage("Идея устарела или не прошла проверку. Вернитесь в раздел «Идеи» и выберите её заново.");
+      return;
+    }
+    if (resumeDraft?.ideaBrief) {
+      clearStandaloneIdeaHandoff(handoff.handoffToken);
+      removeStandaloneIdeaQuery(resumeDraft.contentId);
+      return;
+    }
+    if (handoff.contentCreate) {
+      setSelectedProjectId(handoff.contentCreate.projectId);
+      setSelectedRubricId(handoff.contentCreate.rubricId ?? "");
+    }
+    pendingStandaloneIdeaRef.current = handoff;
+    setPendingStandaloneIdea(handoff);
+    setIdeaBrief(standaloneIdeaViewModel(handoff));
+    if (!resumeDraft) {
+      transcriptRef.current = "";
+      setTranscript("");
+    }
+    setMessage("Идея выбрана. Теперь расскажите её своими словами — голосом или текстом.");
+    const frame = window.requestAnimationFrame(() => document.getElementById("voice-record-button")?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialStandaloneIdeaToken, resumeDraft, viewModel.workspaceId]);
 
   useEffect(() => {
     if (!resumeDraft || !initialPlatformKey || didFocusRequestedPlatformRef.current) return;
@@ -579,64 +639,161 @@ export function SimpleVoiceComposer({
     sourceFieldRef.current = null;
     sourceBlockIdRef.current = null;
     setSegments([]);
-    setIdeaBrief(null);
-    updateTranscript("");
+    if (!pendingStandaloneIdeaRef.current) setIdeaBrief(null);
     setResults(emptyResults());
-    setMessage("Проект изменён. Можно выбрать рубрику или начать без неё.");
+    setMessage("Проект изменён. Ваш текст остался на месте; можно выбрать рубрику или начать без неё.");
   }
 
-  async function acceptGeneratedIdea(result: IdeaAcceptedResult) {
-    contentIdRef.current = result.content_item.id;
-    sourceFieldRef.current = null;
-    sourceBlockIdRef.current = null;
-    lockedTranscriptRef.current = "";
-    setContentId(result.content_item.id);
-    setSourceField(null);
-    setIdeaBrief(result.idea);
-    setResults(emptyResults());
-    setMessage("Идея выбрана. Теперь расскажите основную мысль своими словами — голосом или текстом.");
+  function rememberCreatedContentItem(contentItemId: string) {
     const params = new URLSearchParams(window.location.search);
-    params.set("edit", result.content_item.id);
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
-    window.requestAnimationFrame(() => document.getElementById("voice-transcript")?.focus());
+    params.set("edit", contentItemId);
+    const suffix = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${suffix ? `?${suffix}` : ""}`);
   }
 
-  async function ensureContent(): Promise<{ contentId: string; fieldKey: string }> {
+  function removeStandaloneIdeaQuery(contentItemId?: string) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("idea");
+    if (contentItemId) params.set("edit", contentItemId);
+    const suffix = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${suffix ? `?${suffix}` : ""}`);
+  }
+
+  function dismissStandaloneIdea() {
+    const handoffToken = pendingStandaloneIdeaRef.current?.handoffToken ?? initialStandaloneIdeaToken;
+    if (handoffToken) clearStandaloneIdeaHandoff(handoffToken);
+    pendingStandaloneIdeaRef.current = null;
+    setPendingStandaloneIdea(null);
+    setIdeaBrief(null);
+    removeStandaloneIdeaQuery();
+    setMessage("Идея убрана. Можно начать другой материал или вернуться за новыми идеями.");
+  }
+
+  async function persistStandaloneIdea(contentItemId: string): Promise<void> {
+    const handoff = pendingStandaloneIdeaRef.current;
+    if (!handoff) return;
+    if (handoff.workspaceId !== viewModel.workspaceId) {
+      clearStandaloneIdeaHandoff(handoff.handoffToken);
+      pendingStandaloneIdeaRef.current = null;
+      setPendingStandaloneIdea(null);
+      setIdeaBrief(null);
+      throw new Error("Идея относится к другому кабинету. Выберите её заново.");
+    }
+    const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentItemId}`, { method: "GET" });
+    await apiRequest<BlockOut>(`/api/v1/content-items/${contentItemId}/blocks/idea_brief`, {
+      body: {
+        lock: false,
+        source_type: "ai_suggested",
+        transcript_text: null,
+        value: standaloneIdeaPlanningValue(handoff),
+        version: currentItem.version,
+      },
+      method: "PUT",
+    });
+    clearStandaloneIdeaHandoff(handoff.handoffToken);
+    pendingStandaloneIdeaRef.current = null;
+    setPendingStandaloneIdea(null);
+    removeStandaloneIdeaQuery(contentItemId);
+  }
+
+  async function ensureContentOnce(): Promise<{ contentId: string; fieldKey: string }> {
+    const handoff = pendingStandaloneIdeaRef.current;
+    if (handoff && handoff.expiresAt <= Date.now()) {
+      clearStandaloneIdeaHandoff(handoff.handoffToken);
+      pendingStandaloneIdeaRef.current = null;
+      setPendingStandaloneIdea(null);
+      setIdeaBrief(null);
+      removeStandaloneIdeaQuery(contentIdRef.current ?? undefined);
+      throw new Error("Идея устарела. Выберите её заново или повторите действие без идеи.");
+    }
     if (contentIdRef.current) {
-      if (sourceFieldRef.current) return { contentId: contentIdRef.current, fieldKey: sourceFieldRef.current };
+      if (sourceFieldRef.current) {
+        await persistStandaloneIdea(contentIdRef.current);
+        return { contentId: contentIdRef.current, fieldKey: sourceFieldRef.current };
+      }
       const guidedForm = await apiRequest<GuidedFormResponse>(`/api/v1/content-items/${contentIdRef.current}/guided-form`, {
         method: "GET",
       });
       const fieldKey = sourceFieldKey(guidedForm);
       sourceFieldRef.current = fieldKey;
       setSourceField(fieldKey);
+      await persistStandaloneIdea(contentIdRef.current);
       return { contentId: contentIdRef.current, fieldKey };
     }
-    if (!canUseApi || !project) {
+    if (viewModel.modeLabel !== "api" || !viewModel.workspaceId) {
       throw new Error("Для создания материала нужен доступный API и проект.");
     }
-    setMessage(rubric ? "Создаю материал по выбранной рубрике…" : "Создаю материал по общим правилам проекта…");
+    let createHandoff = handoff;
+    let createProject = project;
+    let createRubric = rubric;
+    if (createHandoff) {
+      if (!createHandoff.contentCreate) {
+        if (!createProject) {
+          throw new Error("Для создания материала выберите проект.");
+        }
+        createHandoff = bindStandaloneIdeaContentCreate(createHandoff, {
+          projectId: createProject.id,
+          rubricId: createRubric?.id ?? null,
+          titleInternal: createHandoff.idea.title,
+        });
+        pendingStandaloneIdeaRef.current = createHandoff;
+        setPendingStandaloneIdea(createHandoff);
+      }
+      const binding = createHandoff.contentCreate;
+      if (!binding) throw new Error("Не удалось подготовить материал к надёжному сохранению.");
+      const boundProject = viewModel.projects.find((candidate) => candidate.id === binding.projectId);
+      const boundRubric = binding.rubricId
+        ? boundProject?.rubrics.find((candidate) => candidate.id === binding.rubricId)
+        : undefined;
+      if (!boundProject || (binding.rubricId && !boundRubric)) {
+        throw new Error("Проект или рубрика изменились. Вернитесь в раздел «Идеи» и начните заново.");
+      }
+      createProject = boundProject;
+      createRubric = boundRubric;
+      if (selectedProjectId !== binding.projectId) setSelectedProjectId(binding.projectId);
+      if (selectedRubricId !== (binding.rubricId ?? "")) setSelectedRubricId(binding.rubricId ?? "");
+    }
+    if (!createProject) {
+      throw new Error("Для создания материала выберите проект.");
+    }
+    setMessage(createRubric ? "Создаю материал по выбранной рубрике…" : "Создаю материал по общим правилам проекта…");
     const sourceTitle = transcriptRef.current
       .trim()
       .split(/[.!?\n]/, 1)[0]
       ?.trim()
       .slice(0, 120);
-    const item = await apiRequest<ContentItemOut>(`/api/v1/projects/${project.id}/content-items`, {
-      body: {
-        rubric_id: rubric?.id ?? null,
-        title_internal: sourceTitle || (rubric ? `Материал рубрики «${rubric.name}»` : "Новый материал"),
-      },
+    const createBody: ContentCreateRequest = {
+      client_content_id: createHandoff?.clientContentId,
+      rubric_id: createRubric?.id ?? null,
+      title_internal: createHandoff?.contentCreate?.titleInternal
+        || sourceTitle
+        || (createRubric ? `Материал рубрики «${createRubric.name}»` : "Новый материал"),
+    };
+    const item = await apiRequest<ContentItemOut>(`/api/v1/projects/${createProject.id}/content-items`, {
+      body: createBody,
       method: "POST",
     });
+    contentIdRef.current = item.id;
+    setContentId(item.id);
+    rememberCreatedContentItem(item.id);
     const guidedForm = await apiRequest<GuidedFormResponse>(`/api/v1/content-items/${item.id}/guided-form`, {
       method: "GET",
     });
     const fieldKey = sourceFieldKey(guidedForm);
-    contentIdRef.current = item.id;
     sourceFieldRef.current = fieldKey;
-    setContentId(item.id);
     setSourceField(fieldKey);
+    await persistStandaloneIdea(item.id);
     return { contentId: item.id, fieldKey };
+  }
+
+  function ensureContent(): Promise<{ contentId: string; fieldKey: string }> {
+    if (ensureContentPromiseRef.current) return ensureContentPromiseRef.current;
+    let pending: Promise<{ contentId: string; fieldKey: string }>;
+    pending = ensureContentOnce().finally(() => {
+      if (ensureContentPromiseRef.current === pending) ensureContentPromiseRef.current = null;
+    });
+    ensureContentPromiseRef.current = pending;
+    return pending;
   }
 
   async function uploadVoice(blob: Blob, context: { contentId: string; fieldKey: string }) {
@@ -1448,6 +1605,7 @@ export function SimpleVoiceComposer({
             aria-pressed={captureState === "recording" || captureState === "paused"}
             className="grid size-28 place-items-center rounded-full bg-accent text-accent-foreground shadow-popover transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 sm:size-32"
             disabled={["requesting", "uploading", "transcribing", "review"].includes(captureState)}
+            id="voice-record-button"
             type="button"
             onClick={() => {
               if (captureState === "recording" || captureState === "paused") finishSegment();
@@ -1463,16 +1621,11 @@ export function SimpleVoiceComposer({
             )}
           </button>
         </div>
-        {!contentId && project ? (
+        {!contentId && !ideaBrief ? (
           <div className="order-3 flex min-w-0 justify-center lg:order-4">
-            <IdeaGeneratorSheet
-              disabledReason={transcript.trim() || segments.length
-                ? "Чтобы не смешать два черновика, идеи доступны до начала диктовки."
-                : undefined}
-              onAccepted={acceptGeneratedIdea}
-              projectId={project.id}
-              rubricId={rubric?.id ?? null}
-            />
+            <Button asChild className="min-h-11 w-full sm:w-auto" variant="secondary">
+              <Link href="/app/ideas"><Lightbulb size={17} />Не знаю, о чём рассказать</Link>
+            </Button>
           </div>
         ) : null}
         <div className="order-4 flex flex-wrap justify-center gap-2">
@@ -1518,22 +1671,28 @@ export function SimpleVoiceComposer({
         ) : null}
 
         {ideaBrief ? (
-          <section aria-labelledby="selected-idea-title" className="order-6 grid min-w-0 gap-3 rounded-xl border border-success/55 bg-[color-mix(in_srgb,var(--success),transparent_93%)] p-4" data-testid="selected-idea-brief">
+          <section aria-labelledby="selected-idea-title" className="order-3 grid min-w-0 gap-3 rounded-xl border border-success/55 bg-[color-mix(in_srgb,var(--success),transparent_93%)] p-4" data-testid="selected-idea-brief">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
                 <Badge tone="success">Идея выбрана</Badge>
                 <h2 className="mt-2 break-words text-lg font-semibold text-foreground" id="selected-idea-title">{ideaBrief.title}</h2>
                 <p className="mt-1 text-sm leading-6 text-muted">{ideaBrief.angle}</p>
               </div>
-              <CheckCircle2 className="shrink-0 text-success" size={21} />
+              {pendingStandaloneIdea ? (
+                <button aria-label="Убрать выбранную идею" className="grid min-h-11 min-w-11 place-items-center rounded-lg text-muted transition hover:bg-background hover:text-foreground" onClick={dismissStandaloneIdea} type="button"><X size={19} /></button>
+              ) : <CheckCircle2 className="shrink-0 text-success" size={21} />}
             </div>
             <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-foreground">{ideaBrief.ideaBrief}</p>
-            <p className="text-xs leading-5 text-muted"><strong className="text-foreground">План:</strong> {ideaBrief.starterOutline}</p>
+            <p className="text-xs leading-5 text-muted"><strong className="text-foreground">{pendingStandaloneIdea ? "Вопрос для начала:" : "План:"}</strong> {ideaBrief.starterOutline}</p>
             <div>
               <div className="text-sm font-semibold text-foreground">Расскажите своими словами:</div>
-              <ol className="mt-2 grid gap-1.5 pl-5 text-sm leading-6 text-muted">
-                {ideaBrief.detailQuestions.map((question) => <li className="list-decimal" key={question}>{question}</li>)}
-              </ol>
+              {ideaBrief.detailQuestions.length === 1 ? (
+                <p className="mt-2 text-sm leading-6 text-muted">{ideaBrief.detailQuestions[0]}</p>
+              ) : (
+                <ol className="mt-2 grid gap-1.5 pl-5 text-sm leading-6 text-muted">
+                  {ideaBrief.detailQuestions.map((question) => <li className="list-decimal" key={question}>{question}</li>)}
+                </ol>
+              )}
             </div>
             <p className="text-xs leading-5 text-muted">Идея не добавлена в расшифровку и не станет текстом поста сама. Здесь звучат ваши слова; ИИ подключится позже как редактор.</p>
           </section>

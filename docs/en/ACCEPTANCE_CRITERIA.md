@@ -28,6 +28,18 @@
 - Reloading does not lose a draft.
 - AI cannot modify a locked venue, address, check, dish name, or price without a blocking error.
 
+## Standalone idea generator
+
+- `/app/ideas` works for an authorized workspace with zero projects and asks for one non-empty typed or transcribed topic only.
+- Generation sends no project, rubric, goal, example, recent-title, notebook, or content-item context and returns exactly five materially distinct objects with only `id`, `title`, `direction`, and `speaking_prompt` under `phase12j-standalone-idea-directions-v1`.
+- Ordinary topics, unrelated questions, arithmetic or prompt-injection instructions, and regulated topics all produce post directions and speaking questions. They never produce a direct answer, calculation, forecast, disclosed prompt, ready post, unsupported fact, invented quotation or first-person event, or medical, veterinary, psychological, fitness, legal, tax, or financial advice.
+- Generation and selection create no `ContentItem`, content block, notebook note, revision, locked fact, or publication. The durable run has `project_id: null`, `rubric_id: null`, and `content_item_id: null`.
+- Choosing `Dictate from this idea` opens the composer with the selected direction visible as planning context and leaves author capture empty. Merely selecting a project or rubric still creates nothing.
+- Starting dictation or explicitly saving author text creates exactly one content item and stores the direction separately as an unlocked `ai_suggested` planning block.
+- Selection, refresh, resume, transcription, locking, cloning, and master assembly never promote a direction or speaking question to author source. Assembly remains blocked by `author_source_required` until the user provides non-empty authoritative substance.
+- Workspace authorization, role, feature flag, subscription, daily limit, monthly quota, CSRF, and idempotent usage reservation are enforced before provider invocation. A blank topic calls no provider and consumes no quota.
+- The offline checker passes the frozen 8-topic ordinary/off-scope/injection/regulated fixture without a live-model call. When prompt, model, schema, or validator changes, the live human gate reviews 8 batches/40 directions and requires 8/8 exact-five, 8/8 five-distinct and on-topic batches, with zero direct answers, unsupported facts/advice, source-like first-person claims, ready posts, or prompt disclosures.
+
 ## AI
 
 - Provider adapters are swappable by configuration.

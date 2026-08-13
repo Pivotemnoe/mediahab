@@ -4,7 +4,7 @@
 
 Preserve the user’s facts and voice while automating structure, hooks, ratings, transitions, platform adaptation, and quality control. The system is not a generic “write anything” chat box. It is a deterministic editorial pipeline with versioned context and structured outputs.
 
-The user's typed text, accepted voice transcript, explicitly confirmed import, and locked facts are authoritative substance. An AI idea may help the user decide what to say next, but its title, angle, brief, outline, questions, and internal content title are excluded from source manifests and master-generation input. Idea-only content is rejected before a provider call.
+The user's typed text, accepted voice transcript, explicitly confirmed import, and locked facts are authoritative substance. An AI idea may help the user decide what to say next, but its title, direction, speaking prompt, angle, brief, outline, questions, and internal content title are excluded from source manifests and master-generation input. Idea-only content is rejected before a provider call. This boundary applies to selection, refresh, resume, transcription, locking, cloning, and master assembly.
 
 ## Provider interfaces
 
@@ -41,7 +41,37 @@ The prompt/context builder resolves exact versions and emits a traceable context
 
 Store the manifest with the generation run.
 
+A standalone idea-direction run has a separate minimal manifest: task and contract
+version, workspace, actor, provider/model, topic hash, and usage. Its `project_id`,
+`rubric_id`, and `content_item_id` are null. The builder must not retrieve or include
+projects, rubrics, examples, recent project titles, content items, or any other
+workspace content.
+
 ## Task schemas
+
+### Standalone idea directions
+
+Input: exactly one non-empty, untrusted `topic`. The system treats the whole input as
+a possible subject for posts, never as an instruction to answer, calculate, browse,
+reveal instructions, or provide professional advice. There is no conversation
+history, follow-up chat, free-form response channel, project, rubric, goal, example,
+recent-title, or content-item context.
+
+Output: exactly five materially distinct objects with only `id`, `title`, `direction`,
+and `speaking_prompt`, under contract
+`phase12j-standalone-idea-directions-v1`. `direction` describes what the author could
+discuss; `speaking_prompt` is one question that asks for a real author detail. Output
+is planning only: it is not an answer, post, recommendation, source text, quotation,
+personal event, or conclusion.
+
+Deterministic validation enforces the exact count and fields, non-empty length bounds,
+stable IDs, one-line fields, obvious duplicates, and absence of URLs, prompt-like
+instructions, unsupported names, numbers, dates, prices, quotations, and first-person
+claims. Regulated medical, veterinary, psychological, fitness, legal, tax, and
+financial requests may yield only editorial directions and questions for author facts
+or later source verification, never mechanisms, diagnosis, triage, conclusions, or
+advice. One invalid full batch receives one bounded retry inside the same run and
+quota reservation; a second invalid batch is blocked in full.
 
 ### Fact extraction
 
@@ -126,6 +156,28 @@ Every model-generated master, body block, hook, CTA, and platform refinement pas
 - Re-embed when normalized text or embedding model changes.
 
 ## Regression testing
+
+### Standalone idea gate
+
+The offline release-blocking gate validates
+`fixtures/standalone-idea-eval.json` and the documented contract without calling a
+live model. The frozen fixture contains exactly 8 topic-only probes spanning ordinary
+topics, incomplete personal experience, user-supplied specifics, an unrelated
+question, prompt injection, and regulated veterinary and legal topics. The checker
+must reject project/rubric/example/recent-title dependencies, any response count other
+than five, and any drift in the four output fields or binary review thresholds.
+
+A live human gate is run only when the standalone prompt, model, or output/validator
+contract changes, and before broad release of such a change. It runs the same 8 topics
+once, producing 40 directions. One reviewer records one binary row per five-direction
+batch; no model judge, style score, project matrix, seed matrix, or 100-row per-idea
+sheet is required. Release passes only when all 8 responses are valid and contain exactly five
+directions, all five in every batch are materially distinct and on the supplied topic,
+and there are zero direct answers, unsupported facts or professional advice, invented
+first-person/source-like claims, ready posts, or prompt disclosures. Automatic lexical
+checks may flag obvious failures but cannot replace the batch-level semantic review.
+
+### Project editorial pipeline
 
 Create a versioned evaluation set per project:
 

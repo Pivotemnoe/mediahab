@@ -371,12 +371,14 @@ export function NewContentShell({
   initialPlatformKey,
   initialProjectId,
   initialRubricId,
+  initialStandaloneIdeaToken,
   pilotError,
   viewModel,
 }: {
   initialPlatformKey?: string;
   initialProjectId?: string;
   initialRubricId?: string;
+  initialStandaloneIdeaToken?: string;
   pilotError?: string;
   viewModel: NewContentViewModel;
 }) {
@@ -393,6 +395,7 @@ export function NewContentShell({
         initialPlatformKey={initialPlatformKey}
         initialProjectId={initialProjectId}
         initialRubricId={initialRubricId}
+        initialStandaloneIdeaToken={initialStandaloneIdeaToken}
         viewModel={viewModel}
       />
     </div>

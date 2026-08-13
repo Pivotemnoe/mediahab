@@ -10,6 +10,7 @@ import { cabinetMoreItems, cabinetNavItems } from "@/config/navigation";
 import { cn } from "@/lib/cn";
 
 function isActive(pathname: string, href: string): boolean {
+  if (href === "/app") return pathname === "/app" || pathname === "/app/dashboard";
   if (href === "/app/content") return pathname === href || pathname.startsWith("/app/content/") && pathname !== "/app/content/new";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -85,7 +86,7 @@ export function AppSidebar() {
               })}
             </div>
             <div className="border-t border-border pt-2 text-xs leading-5 text-muted">
-              Основная работа всегда начинается через «Создать» или «Блокнот».
+              Начните с «Идеи», «Создать» или «Блокнот» — остальное можно настроить позже.
             </div>
           </section>
         ) : null}

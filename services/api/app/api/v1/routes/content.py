@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -81,6 +82,7 @@ def ensure_block_is_not_ai_planning(block: ContentBlock, request: Request) -> No
 
 
 class ContentCreateRequest(BaseModel):
+    client_content_id: UUID | None = None
     rubric_id: UUID | None = None
     title_internal: str | None = Field(default=None, max_length=200)
     assigned_to: UUID | None = None
@@ -382,6 +384,70 @@ def requested_version(request: Request, body_version: int | None) -> int | None:
         return None
 
 
+def content_create_is_compatible(
+    item: ContentItem,
+    *,
+    actor_id: UUID,
+    assigned_to: UUID | None,
+    project_id: UUID,
+    rubric_id: UUID,
+    title_internal: str,
+    workspace_id: UUID,
+) -> bool:
+    """Match every caller-controlled create dimension without exposing the occupant."""
+
+    return (
+        item.deleted_at is None
+        and item.created_by == actor_id
+        and item.workspace_id == workspace_id
+        and item.project_id == project_id
+        and item.rubric_id == rubric_id
+        and item.title_internal == title_internal
+        and item.assigned_to == assigned_to
+    )
+
+
+def client_content_id_conflict(request: Request) -> HTTPException:
+    return api_error(
+        409,
+        "client_content_id_conflict",
+        "Не удалось безопасно повторить создание материала. Начните новый материал.",
+        request=request,
+    )
+
+
+async def compatible_content_item_for_create(
+    db: AsyncSession,
+    content_id: UUID,
+    request: Request,
+    *,
+    actor_id: UUID,
+    assigned_to: UUID | None,
+    project_id: UUID,
+    rubric_id: UUID,
+    title_internal: str,
+    workspace_id: UUID,
+) -> ContentItem | None:
+    item = await db.scalar(
+        select(ContentItem)
+        .where(ContentItem.id == content_id)
+        .execution_options(populate_existing=True)
+    )
+    if item is None:
+        return None
+    if content_create_is_compatible(
+        item,
+        actor_id=actor_id,
+        assigned_to=assigned_to,
+        project_id=project_id,
+        rubric_id=rubric_id,
+        title_internal=title_internal,
+        workspace_id=workspace_id,
+    ):
+        return item
+    raise client_content_id_conflict(request)
+
+
 def ensure_item_version(item: ContentItem, expected: int | None, request: Request) -> None:
     if expected is not None and expected != item.version:
         raise api_error(
@@ -525,20 +591,35 @@ async def create_content_item(
     )
     if create_ctx is None:
         raise api_error(404, "rubric_not_found", "Rubric not found.", request=request)
+    title_internal = payload.title_internal or (
+        "Голосовой материал"
+        if payload.rubric_id is None
+        else f"Черновик: {create_ctx.rubric_version.name}"
+    )
+    content_id = payload.client_content_id or uuid4()
+    if payload.client_content_id is not None:
+        existing = await compatible_content_item_for_create(
+            db,
+            content_id,
+            request,
+            actor_id=actor.user.id,
+            assigned_to=payload.assigned_to,
+            project_id=ctx.project.id,
+            rubric_id=create_ctx.rubric.id,
+            title_internal=title_internal,
+            workspace_id=ctx.project.workspace_id,
+        )
+        if existing is not None:
+            return content_item_out(existing)
     now = utc_now()
     item = ContentItem(
-        id=uuid4(),
+        id=content_id,
         workspace_id=ctx.project.workspace_id,
         project_id=ctx.project.id,
         rubric_id=create_ctx.rubric.id,
         rubric_version_id=create_ctx.rubric_version.id,
         project_version_id=create_ctx.project_version.id,
-        title_internal=payload.title_internal
-        or (
-            "Голосовой материал"
-            if payload.rubric_id is None
-            else f"Черновик: {create_ctx.rubric_version.name}"
-        ),
+        title_internal=title_internal,
         status="draft",
         created_by=actor.user.id,
         assigned_to=payload.assigned_to,
@@ -546,8 +627,28 @@ async def create_content_item(
         updated_at=now,
         version=1,
     )
-    db.add(item)
-    await db.flush()
+    try:
+        async with db.begin_nested():
+            db.add(item)
+            await db.flush()
+    except IntegrityError:
+        if payload.client_content_id is None:
+            raise
+        existing = await compatible_content_item_for_create(
+            db,
+            content_id,
+            request,
+            actor_id=actor.user.id,
+            assigned_to=payload.assigned_to,
+            project_id=ctx.project.id,
+            rubric_id=create_ctx.rubric.id,
+            title_internal=title_internal,
+            workspace_id=ctx.project.workspace_id,
+        )
+        if existing is not None:
+            await db.commit()
+            return content_item_out(existing)
+        raise client_content_id_conflict(request)
     await write_content_revision(db, item, actor.user.id, "user_edit", {"event": "created"})
     await db.commit()
     return content_item_out(item)
