@@ -57,6 +57,6 @@ assert.match(voiceClientSource, /transcription_temporarily_unavailable:/);
 
 const findingsBody = surfaceSource.match(/def generated_editorial_findings[\s\S]*?return findings/)?.[0] ?? "";
 assert.doesNotMatch(findingsBody, /excessive_paragraph_fragmentation/);
-assert.match(surfaceSource, /compact_generated_editorial_paragraphs/);
+assert.doesNotMatch(surfaceSource, /compact_generated_editorial_paragraphs/);
 
-console.log("phase12k recording, rubric, recovery, and paragraph-softening contract checks passed");
+console.log("phase12k recording, rubric, recovery, and non-blocking paragraph contract checks passed");

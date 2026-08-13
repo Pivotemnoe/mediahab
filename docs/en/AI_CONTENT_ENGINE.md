@@ -135,15 +135,14 @@ Recommended order:
 7. Locked facts and source blocks.
 8. Current task.
 
-Examples are enclosed and explicitly labeled as untrusted `style_only` references, not factual sources. They may guide register, sentence rhythm, paragraph density, humor intensity, transitions, and broad vocabulary preferences. They must not contribute a topic, thesis, fact, event, scenario, motif, metaphor, quotation, proper name, CTA, personal experience, or distinctive phrase sequence. Prompt context preserves their real paragraph structure; normalized text remains a retrieval/hash representation only.
+Examples are enclosed and explicitly labeled as untrusted `style_only` references, not factual sources. They may guide register, composition, sentence rhythm, humor intensity, transitions, and broad vocabulary preferences. They must not contribute a topic, thesis, fact, event, scenario, motif, metaphor, quotation, proper name, CTA, personal experience, or distinctive phrase sequence. Prompt context preserves their original text; normalized text remains a retrieval/hash representation only. Master assembly receives at most six examples and refinement at most five. Project humor guidance is a separate explicit prompt layer rather than a field buried inside one truncated project JSON object.
 
 ## Generated-text hygiene
 
 Every model-generated master, body block, hook, CTA, and platform refinement passes one product-wide prose normalizer and validator before persistence as ready text. User source, stored transcripts, imports, manual edits, rich text, URLs, code, and fixed boilerplate remain unchanged.
 
-- Deterministically normalize CRLF, accidental tabs and separator non-breaking spaces, repeated horizontal whitespace, line-edge whitespace, leading/trailing blank lines, and more than one blank line between paragraphs.
+- Deterministically normalize CRLF, accidental tabs and separator non-breaking spaces, repeated horizontal whitespace, line-edge whitespace, leading/trailing blank lines, and runs of three or more line breaks.
 - Reject doubled dash sequences `--`, `––`, and `——`, and paired parenthetical em-dashes such as `— aside —`. One grammatically necessary dash, dialogue markers, Markdown structure, code, URLs, and email addresses remain valid.
-- Softly compact consecutive short one-sentence model paragraphs without changing their words. Paragraph density is never a blocking validation error.
 - A surface violation receives one focused full-result retry. A second invalid response is blocked and never creates a ready master or platform revision; the last good revision is preserved.
 
 ## Retrieval

@@ -548,6 +548,10 @@ Each platform preview displays:
 
 The user may edit one platform variant without altering the master or other variants.
 
+`Rebuild from dictation` is a separate source-based operation: it creates a new immutable master revision from author-originated source and approved style-only examples, then creates new variants for the selected platforms. It never treats the current platform text as authoritative source, and every previous master and platform revision remains in history.
+
+A fixed footer is called linked only when its versioned rich-text document contains valid HTTP(S) link marks. Plain visible labels such as `TG`, `MAX`, or `SITE` are not links by themselves, and the UI must not claim that embedded links were saved or copied when the marks are absent.
+
 ---
 
 ## 10. Platform connectors

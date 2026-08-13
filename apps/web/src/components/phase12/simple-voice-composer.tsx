@@ -40,6 +40,7 @@ import {
   copyRichText,
   plainRichText,
   richTextFromPayload,
+  richTextLinkCount,
   richTextPlain,
 } from "@/lib/rich-text";
 import {
@@ -1485,7 +1486,11 @@ export function SimpleVoiceComposer({
     for (const [key, variant] of hydrated) updatePlatformResult(key, { status: "ready", variant });
   }
 
-  async function assembleVersions(options?: { receipt?: AssemblyReceipt; recovering?: boolean }) {
+  async function assembleVersions(options?: {
+    receipt?: AssemblyReceipt;
+    rebuildFromSource?: boolean;
+    recovering?: boolean;
+  }) {
     const workspaceId = viewModel.workspaceId;
     if (!workspaceId) {
       setMessage("Рабочее пространство недоступно. Обновите страницу и повторите попытку.");
@@ -1533,7 +1538,11 @@ export function SimpleVoiceComposer({
       writeAssemblyReceipt(receipt);
       setSelectedPlatforms(receipt.platformKeys);
       setActivePlatform(firstPlatform);
-      setMessage("Проверяю факты и собираю мастер-текст…");
+      setMessage(
+        options?.rebuildFromSource
+          ? "Возвращаюсь к вашей диктовке и собираю новый мастер-текст…"
+          : "Проверяю факты и собираю мастер-текст…",
+      );
       const facts = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${context.contentId}/extract-facts`, {
         method: "POST",
       });
@@ -1572,7 +1581,9 @@ export function SimpleVoiceComposer({
       setMessage(
         usedProviderFallback
           ? "ИИ-сервис не ответил: показан безопасный черновик из вашей расшифровки. Проверьте его перед доработкой."
-          : "Готовые версии можно проверить, отредактировать и скопировать.",
+          : options?.rebuildFromSource
+            ? "Новый текст собран из вашей диктовки. Предыдущие редакции сохранены в истории."
+            : "Готовые версии можно проверить, отредактировать и скопировать.",
       );
       clearAssemblyReceipt(context.contentId);
     } catch (error) {
@@ -1798,11 +1809,15 @@ export function SimpleVoiceComposer({
     const variant = activeResult.variant;
     const text = variantText(variant);
     if (!variant || !text) return;
-    const mode = await copyRichText(richTextFromPayload(variant.payload, text));
+    const richText = richTextFromPayload(variant.payload, text);
+    const linkCount = richTextLinkCount(richText);
+    const mode = await copyRichText(richText);
     setMessage(
-      mode === "rich"
-        ? `${platformLabel(activePlatform)}: текст и зашитые ссылки скопированы.`
-        : `${platformLabel(activePlatform)}: браузер скопировал обычный текст без скрытого форматирования.`,
+      linkCount > 0 && mode === "rich"
+        ? `${platformLabel(activePlatform)}: текст и ${linkCount} ${linkCount === 1 ? "ссылка" : linkCount < 5 ? "ссылки" : "ссылок"} скопированы.`
+        : linkCount > 0
+          ? `${platformLabel(activePlatform)}: браузер скопировал обычный текст; скрытые ссылки могли не сохраниться.`
+          : `${platformLabel(activePlatform)}: текст скопирован. В постоянном подвале ссылки пока не настроены.`,
     );
   }
 
@@ -1935,8 +1950,14 @@ export function SimpleVoiceComposer({
             ) : null}
           </div>
         ) : null}
-        {project?.hasFixedBoilerplate ? (
-          <Badge className="w-fit" tone="info">Постоянный подвал со ссылками включён</Badge>
+        {project?.hasFixedBoilerplate ? project.footerLinkCount > 0 ? (
+          <Badge className="w-fit" tone="success">
+            Постоянный подвал: {project.footerLinkCount} {project.footerLinkCount === 1 ? "ссылка" : project.footerLinkCount < 5 ? "ссылки" : "ссылок"}
+          </Badge>
+        ) : (
+          <Link className="w-fit" href={`/app/projects/${project.id}/settings`}>
+            <Badge tone="warning">Подвал добавлен, но ссылки не настроены</Badge>
+          </Link>
         ) : null}
 
         <div className="grid gap-2">
@@ -2502,16 +2523,13 @@ export function SimpleVoiceComposer({
                 </Button>
                 <Button
                   className="min-h-11"
-                  disabled={isRefining}
+                  disabled={isRefining || isAssembling}
                   type="button"
                   variant="secondary"
-                  onClick={() => void refineVariants(
-                    "Перепиши эту версию заново: сохрани факты и вывод автора, но предложи другой сильный заход, более естественный ритм и чистое форматирование без двойных пустых строк.",
-                    "Пересобрать",
-                  )}
+                  onClick={() => void assembleVersions({ rebuildFromSource: true })}
                 >
-                  <RotateCcw size={15} />
-                  Пересобрать
+                  {isAssembling ? <Loader2 className="animate-spin motion-reduce:animate-none" size={15} /> : <RotateCcw size={15} />}
+                  Пересобрать из диктовки
                 </Button>
               </div>
               <details className="group rounded-lg border border-border bg-surface-muted">

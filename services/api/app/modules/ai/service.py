@@ -2291,6 +2291,11 @@ def context_manifest(
 def system_prompt(
     project_version: ProjectVersion, rubric_version: RubricVersion
 ) -> str:
+    humor_rules = (
+        project_version.humor_config
+        if isinstance(project_version.humor_config, dict)
+        else {}
+    )
     project_rules = {
         "description": project_version.description,
         "content_domain": project_version.content_domain,
@@ -2302,9 +2307,6 @@ def system_prompt(
             if isinstance(project_version.editing_strength, dict)
             else project_version.editing_strength
         ),
-        "humor": project_version.humor_config
-        if isinstance(project_version.humor_config, dict)
-        else {},
         "cta": ai_cta_config(project_version.cta_config),
     }
     rubric_rules = {
@@ -2328,6 +2330,12 @@ def system_prompt(
             f"Проект: {project_version.name}",
             f"Рубрика: {rubric_version.name}",
             f"Общие правила проекта: {canonical_json(project_rules)[:6000]}",
+            f"Отдельные правила юмора проекта: {canonical_json(humor_rules)[:6000]}",
+            "Если правила юмора непусты, считай их обязательной редакционной целью. "
+            "Если в них задано количество или плотность шуток и образов, выполни это "
+            "требование по всему тексту, используя только наблюдения из авторского источника. "
+            "Перед возвратом JSON отдельно проверь, что юмор не свёлся к одной локальной фразе "
+            "и не подменил факты.",
             f"Правила выбранной рубрики: {canonical_json(rubric_rules)[:6000]}",
             "Если правила рубрики уточняют общие правила проекта, применяй уточнение рубрики.",
             "Постоянный подвал добавляется приложением после генерации; не воспроизводи его сам.",
@@ -2372,7 +2380,9 @@ def user_prompt(
             "внутренних полей, ключи блоков, слово source или внутреннее название материала. "
             "Сохрани характерные слова, позицию и ритм автора; меняй минимум необходимого для "
             "ясности и связности. Применяй общие правила проекта, выбранной рубрики и стиль "
-            "примеров только к форме выражения. Не добавляй новую основную мысль, опыт, эмоцию "
+            "примеров только к форме выражения. Если проект задаёт юмор, выполни его плотность "
+            "и приёмы в заголовке, наблюдениях и выводе, не копируя формулировки примеров. "
+            "Не добавляй новую основную мысль, опыт, эмоцию "
             "или вывод от первого лица. "
             "Верни все четыре оценки 1-9. Прямые оценки пользователя не меняй; остальные "
             "предложи сам по смыслу диктовки и описания, чтобы пользователь мог их поправить."
@@ -2837,7 +2847,7 @@ async def run_structured_task(
         "extract_facts": 0,
         "suggest_hook": 2,
         "suggest_ratings": 0,
-        "assemble_master": 4,
+        "assemble_master": 6,
     }
     max_examples = min(
         configured_max_examples,
@@ -2922,7 +2932,7 @@ async def run_structured_task(
                             f"{base_system_prompt}\n"
                             "Предыдущий ответ не прошёл обязательную гигиену готовой прозы. "
                             "Создай новый полный JSON с теми же фактами и без двойных/парных "
-                            "тире и без дробления связной мысли на короткие абзацы."
+                            "тире."
                         )
                     ),
                     user_prompt=prompt,
@@ -3226,7 +3236,7 @@ async def refine_platform_variant_text(
         settings,
         item,
         source_text,
-        max_examples=3,
+        max_examples=5,
         platform_key=variant.platform_key,
     )
     provider = text_provider_for(settings, "refine_variant")
@@ -3285,7 +3295,6 @@ async def refine_platform_variant_text(
                 "Не добавляй фактов, которых нет в источнике или текущем варианте.",
                 "Соблюдай правила проекта, рубрики и лимит площадки.",
                 "Если передана editorial_length_target, итоговый основной текст должен попасть в её диапазон min_chars-max_chars.",
-                "Не используй двойные пустые строки подряд.",
                 "Не добавляй постоянный подвал и ссылки проекта: приложение вернёт их после доработки.",
                 GENERATED_EDITORIAL_PROMPT_RULES,
                 *_platform_refinement_requirements(variant.platform_key),
@@ -3338,8 +3347,7 @@ async def refine_platform_variant_text(
                         else (
                             f"{base_system_prompt}\n"
                             "Предыдущая версия не прошла обязательную гигиену готовой прозы. "
-                            "Верни полный новый вариант без двойных/парных тире и без цепочки "
-                            "коротких однофразных абзацев."
+                            "Верни полный новый вариант без двойных/парных тире."
                         )
                     ),
                     user_prompt=prompt,

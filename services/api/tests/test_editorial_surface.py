@@ -9,7 +9,6 @@ BASE = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(BASE / "services" / "api"))
 
 from app.modules.ai.editorial_surface import (  # noqa: E402
-    compact_generated_editorial_paragraphs,
     generated_editorial_findings,
     normalize_generated_editorial_payload,
     normalize_generated_editorial_text,
@@ -129,7 +128,7 @@ class EditorialSurfaceTest(unittest.TestCase):
 
         self.assertEqual(generated_editorial_findings(source), [])
 
-    def test_compacts_fragmented_model_prose_without_changing_words(self) -> None:
+    def test_normalization_preserves_authorial_paragraph_boundaries(self) -> None:
         source = (
             "Первая короткая мысль.\n\n"
             "Вторая короткая мысль.\n\n"
@@ -138,20 +137,12 @@ class EditorialSurfaceTest(unittest.TestCase):
             "Пятая короткая мысль."
         )
 
-        repaired = compact_generated_editorial_paragraphs(source)
+        normalized = normalize_generated_editorial_text(source)
 
-        self.assertEqual(
-            repaired,
-            "Первая короткая мысль. Вторая короткая мысль. Третья короткая мысль.\n\n"
-            "Четвёртая короткая мысль. Пятая короткая мысль.",
-        )
-        self.assertEqual(generated_editorial_findings(repaired), [])
-        self.assertEqual(
-            repaired.replace("\n", " ").split(),
-            source.replace("\n", " ").split(),
-        )
+        self.assertEqual(normalized, source)
+        self.assertEqual(generated_editorial_findings(normalized), [])
 
-    def test_compaction_preserves_lists_dialogue_links_and_code(self) -> None:
+    def test_normalization_preserves_lists_dialogue_links_and_code(self) -> None:
         source = (
             "Первая мысль.\n\nВторая мысль.\n\nТретья мысль.\n\n"
             "- Первый пункт.\n"
@@ -160,12 +151,12 @@ class EditorialSurfaceTest(unittest.TestCase):
             "```bash\ncommand --flag\n```"
         )
 
-        repaired = compact_generated_editorial_paragraphs(source)
+        normalized = normalize_generated_editorial_text(source)
 
-        self.assertIn("Первая мысль. Вторая мысль. Третья мысль.", repaired)
-        self.assertIn("- Первый пункт.\n— Реплика автора.", repaired)
-        self.assertIn("Ссылка: https://example.com/a--b", repaired)
-        self.assertIn("```bash\ncommand --flag\n```", repaired)
+        self.assertEqual(normalized, source)
+        self.assertIn("- Первый пункт.\n— Реплика автора.", normalized)
+        self.assertIn("Ссылка: https://example.com/a--b", normalized)
+        self.assertIn("```bash\ncommand --flag\n```", normalized)
 
     def test_allows_normal_connected_prose(self) -> None:
         source = (

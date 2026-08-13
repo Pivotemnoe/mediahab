@@ -201,6 +201,12 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             assert revision is not None
             return revision.text
 
+    async def _master_revision_parent(self, revision_id: str) -> str | None:
+        async with self.SessionLocal() as session:
+            revision = await session.get(ContentRevision, UUID(revision_id))
+            assert revision is not None
+            return str(revision.parent_revision_id) if revision.parent_revision_id else None
+
     async def _generation_attempts(self, run_id: str) -> list[int]:
         async with self.SessionLocal() as session:
             rows = list(
@@ -241,8 +247,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         body = generated.json()
         self.assertEqual(body["status"], "completed")
         self.assertEqual(body["task_type"], "assemble_master")
-        self.assertGreaterEqual(len(body["retrieved_example_ids"]), 3)
-        self.assertLessEqual(len(body["retrieved_example_ids"]), 8)
+        self.assertEqual(len(body["retrieved_example_ids"]), 6)
         response = body["response_json"]
         self.assertEqual(len(response["hook_candidates"]), 3)
         self.assertEqual(response["ratings_suggestion"]["taste"]["source"], "user")
@@ -294,7 +299,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertEqual(generated.status_code, 202, generated.text)
         retrieved = set(generated.json()["retrieved_example_ids"])
         imported_ids = {row["id"] for row in imported_rows}
-        self.assertGreaterEqual(len(retrieved), 3)
+        self.assertEqual(len(retrieved), 6)
         self.assertTrue(retrieved.issubset(imported_ids))
         self.assertEqual(rubric["id"], content["rubric_id"])
 
@@ -521,6 +526,56 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         )
         self.assertEqual(str(content_row.current_master_revision_id), first_revision_id)
 
+    def test_source_rebuild_creates_child_master_and_new_platform_variant(self) -> None:
+        auth = self.register(
+            self.client,
+            email="source-rebuild05@example.com",
+            workspace_name="Source Rebuild Workspace",
+        )
+        _, _, content = self.create_content(auth)
+        self.seed_content_blocks(auth, content)
+
+        first = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(first.status_code, 202, first.text)
+        first_revision_id = first.json()["response_json"]["revision_id"]
+        first_variants = self.client.post(
+            f"/api/v1/content-items/{content['id']}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["telegram"]},
+        )
+        self.assertEqual(first_variants.status_code, 200, first_variants.text)
+        first_variant = first_variants.json()["variants"][0]
+
+        second = self.client.post(
+            f"/api/v1/content-items/{content['id']}/assemble-master",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(second.status_code, 202, second.text)
+        second_revision_id = second.json()["response_json"]["revision_id"]
+        self.assertNotEqual(second_revision_id, first_revision_id)
+        self.assertEqual(
+            asyncio.run(self._master_revision_parent(second_revision_id)),
+            first_revision_id,
+        )
+        second_variants = self.client.post(
+            f"/api/v1/content-items/{content['id']}/generate-variants",
+            headers=self.csrf_headers(auth),
+            json={"platform_keys": ["telegram"]},
+        )
+        self.assertEqual(second_variants.status_code, 200, second_variants.text)
+        second_variant = second_variants.json()["variants"][0]
+        self.assertNotEqual(second_variant["id"], first_variant["id"])
+        self.assertEqual(second_variant["master_revision_id"], second_revision_id)
+
+        history = self.client.get(
+            f"/api/v1/content-items/{content['id']}/variants"
+        )
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(len(history.json()["variants"]), 2)
+
     def test_custom_provider_master_normalizes_whitespace_before_revision(self) -> None:
         auth = self.register(
             self.client,
@@ -569,7 +624,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
             provider.clean_text,
         )
 
-    def test_fragmented_master_is_compacted_but_never_blocked(self) -> None:
+    def test_fragmented_master_keeps_model_paragraphs_and_is_never_blocked(self) -> None:
         auth = self.register(
             self.client,
             email="paragraph-soft05@example.com",
@@ -616,6 +671,7 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertEqual(provider.calls, 1)
         master_text = body["response_json"]["master_text"]
         self.assertEqual(master_text.replace("\n", " ").split(), provider.words)
+        self.assertGreaterEqual(master_text.count("\n\n"), 4)
         self.assertNotIn("excessive_paragraph_fragmentation", str(body))
         self.assertEqual(
             asyncio.run(self._master_revision_text(body["response_json"]["revision_id"])),
@@ -671,6 +727,9 @@ class Phase05AiExamplesPipelineTest(unittest.TestCase):
         self.assertEqual(body["status"], "completed", body)
         self.assertEqual(provider.calls, 2)
         self.assertIn("Предыдущий ответ не прошёл", provider.system_prompts[1])
+        self.assertIn("Отдельные правила юмора проекта", provider.system_prompts[0])
+        self.assertIn("обязательной редакционной целью", provider.system_prompts[0])
+        self.assertNotIn("однофразных абзац", provider.system_prompts[1])
         self.assertEqual(body["input_tokens"], 23)
         self.assertEqual(body["output_tokens"], 11)
         self.assertEqual(body["input_characters"], 203)

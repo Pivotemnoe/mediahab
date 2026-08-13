@@ -54,6 +54,7 @@ test-ui-hardening: deps
 	node tools/check_content_idea_eval_fixture.mjs
 	node tools/check_standalone_idea_eval_fixture.mjs
 	node tools/check_phase12k_recording_rubric_contract.mjs
+	node tools/check_phase12l_source_rebuild_links_contract.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs

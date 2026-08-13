@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import math
 import re
 from typing import Any
 
@@ -20,7 +19,7 @@ STRUCTURAL_LINE_RE = re.compile(
     flags=re.UNICODE,
 )
 
-GENERATED_EDITORIAL_RULES_VERSION = "phase12k-author-voice-surface-v2"
+GENERATED_EDITORIAL_RULES_VERSION = "phase12l-author-voice-surface-v3"
 MARKDOWN_DIVIDER_RE = re.compile(r"^\s*(?:[-*_]\s*){3,}$")
 MARKDOWN_TABLE_SEPARATOR_RE = re.compile(
     r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*$"
@@ -36,9 +35,7 @@ GENERATED_EDITORIAL_PROMPT_RULES = " ".join(
         "нет в авторском источнике.",
         "Примеры задают только манеру выражения, но не тему, факты, сюжет, метафору, "
         "цитату, CTA или личный опыт.",
-        "В готовой прозе используй обычные одиночные пробелы и не больше одной пустой "
-        "строки между настоящими абзацами.",
-        "Не дроби связанную мысль на цепочку коротких однофразных абзацев.",
+        "В готовой прозе используй обычные одиночные пробелы.",
         "Не используй двойные тире или дефисы --, ––, —— и парные вставные конструкции "
         "вида — пояснение —; выбирай точку, запятую, скобки или естественную перестройку фразы.",
         "Одно тире, необходимое по правилам языка, допустимо.",
@@ -145,154 +142,6 @@ def _surface_prose_lines(value: str) -> list[str | None]:
     return lines
 
 
-def _paragraph_fragmentation(value: str) -> bool:
-    lines = value.split("\n")
-    prose_runs: list[list[str]] = [[]]
-    in_fence = False
-    for line in lines:
-        is_fence = FENCE_RE.match(line) is not None
-        if in_fence:
-            if is_fence:
-                in_fence = False
-            if prose_runs[-1]:
-                prose_runs.append([])
-            continue
-        if is_fence:
-            in_fence = True
-            if prose_runs[-1]:
-                prose_runs.append([])
-            continue
-        if not line.strip():
-            continue
-        if (
-            STRUCTURAL_LINE_RE.match(line)
-            or MARKDOWN_DIVIDER_RE.match(line)
-            or MARKDOWN_TABLE_SEPARATOR_RE.match(line)
-            or INLINE_CODE_SPAN_RE.search(line)
-            or PROTECTED_INLINE_RE.search(line)
-        ):
-            if prose_runs[-1]:
-                prose_runs.append([])
-            continue
-        prose_runs[-1].append(line.strip())
-
-    for run in prose_runs:
-        if not run:
-            continue
-        very_short_streak = 0
-        for paragraph in run:
-            sentence_marks = len(re.findall(r"[.!?…]+(?=\s|$)", paragraph))
-            is_single_sentence = sentence_marks <= 1
-            if len(paragraph) <= 80 and is_single_sentence:
-                very_short_streak += 1
-                if very_short_streak >= 3:
-                    return True
-            else:
-                very_short_streak = 0
-        short_count = sum(
-            len(paragraph) <= 120
-            and len(re.findall(r"[.!?…]+(?=\s|$)", paragraph)) <= 1
-            for paragraph in run
-        )
-        if len(run) >= 6 and short_count >= math.ceil(len(run) * 2 / 3):
-            return True
-    return False
-
-
-def _short_single_sentence_prose(line: str) -> bool:
-    return (
-        len(line) <= 180
-        and len(re.findall(r"[.!?…]+(?=\s|$)", line)) <= 1
-        and STRUCTURAL_LINE_RE.match(line) is None
-        and MARKDOWN_DIVIDER_RE.match(line) is None
-        and MARKDOWN_TABLE_SEPARATOR_RE.match(line) is None
-        and INLINE_CODE_SPAN_RE.search(line) is None
-        and PROTECTED_INLINE_RE.search(line) is None
-    )
-
-
-def compact_generated_editorial_paragraphs(value: str) -> str:
-    """Repair only paragraph boundaries in generated prose.
-
-    Three or more consecutive short one-sentence model paragraphs are merged
-    into two- or three-sentence paragraphs. Words and punctuation are kept
-    byte-for-byte; user-authored text never passes through this helper.
-    """
-
-    normalized = normalize_generated_editorial_text(value)
-    if not _paragraph_fragmentation(normalized):
-        return normalized
-
-    output: list[str] = []
-    prose_run: list[tuple[str, bool]] = []
-    pending_blank = False
-    in_fence = False
-
-    def append_line(line: str, blank_before: bool) -> None:
-        if blank_before and output and output[-1] != "":
-            output.append("")
-        output.append(line)
-
-    def flush_prose_run() -> None:
-        nonlocal prose_run
-        index = 0
-        while index < len(prose_run):
-            line, blank_before = prose_run[index]
-            if not _short_single_sentence_prose(line):
-                append_line(line, blank_before)
-                index += 1
-                continue
-            end = index
-            while end < len(prose_run) and _short_single_sentence_prose(prose_run[end][0]):
-                end += 1
-            streak = prose_run[index:end]
-            if len(streak) < 3:
-                for streak_line, streak_blank in streak:
-                    append_line(streak_line, streak_blank)
-            else:
-                offset = 0
-                first_group = True
-                while offset < len(streak):
-                    remaining = len(streak) - offset
-                    group_size = 3 if remaining % 2 == 1 else 2
-                    group = streak[offset : offset + group_size]
-                    append_line(
-                        " ".join(part[0] for part in group),
-                        group[0][1] if first_group else True,
-                    )
-                    first_group = False
-                    offset += group_size
-            index = end
-        prose_run = []
-
-    for line in normalized.split("\n"):
-        is_fence = FENCE_RE.match(line) is not None
-        protected = (
-            in_fence
-            or is_fence
-            or STRUCTURAL_LINE_RE.match(line) is not None
-            or MARKDOWN_DIVIDER_RE.match(line) is not None
-            or MARKDOWN_TABLE_SEPARATOR_RE.match(line) is not None
-            or INLINE_CODE_SPAN_RE.search(line) is not None
-            or PROTECTED_INLINE_RE.search(line) is not None
-        )
-        if not line:
-            pending_blank = True
-            continue
-        if protected:
-            flush_prose_run()
-            append_line(line, pending_blank)
-            pending_blank = False
-            if is_fence:
-                in_fence = not in_fence
-            continue
-        prose_run.append((line, pending_blank))
-        pending_blank = False
-
-    flush_prose_run()
-    return "\n".join(output).strip()
-
-
 def generated_editorial_findings(value: str) -> list[dict[str, str]]:
     normalized = normalize_generated_editorial_text(value)
     findings: list[dict[str, str]] = []
@@ -339,14 +188,14 @@ def normalize_generated_editorial_payload(payload: dict[str, Any]) -> dict[str, 
     normalized = copy.deepcopy(payload)
     for key in ("master_text", "text", "cta_candidate"):
         if isinstance(normalized.get(key), str):
-            normalized[key] = compact_generated_editorial_paragraphs(normalized[key])
+            normalized[key] = normalize_generated_editorial_text(normalized[key])
     for collection_key in ("body_blocks", "hook_candidates"):
         collection = normalized.get(collection_key)
         if not isinstance(collection, list):
             continue
         for item in collection:
             if isinstance(item, dict) and isinstance(item.get("text"), str):
-                item["text"] = compact_generated_editorial_paragraphs(item["text"])
+                item["text"] = normalize_generated_editorial_text(item["text"])
     return normalized
 
 

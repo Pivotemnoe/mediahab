@@ -60,6 +60,16 @@ export function richTextPlain(value: RichTextDocument): string {
   return value.segments.map((segment) => segment.text).join("");
 }
 
+export function richTextLinkCount(value: RichTextDocument): number {
+  const links = new Set<string>();
+  value.segments.forEach((segment) => {
+    segment.marks.forEach((mark) => {
+      if (mark.type === "link") links.add(mark.href);
+    });
+  });
+  return links.size;
+}
+
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }

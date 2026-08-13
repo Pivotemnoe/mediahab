@@ -17,6 +17,7 @@ import {
   resumeItems,
   reviewBlocks,
 } from "@/features/mobile-capture/mobile-capture-fixtures";
+import { normalizeRichText, richTextLinkCount } from "@/lib/rich-text";
 import {
   type BlockOut,
   type BlocksResponse,
@@ -207,6 +208,7 @@ export interface NewContentViewModel {
   notice?: string;
   projects: Array<{
     characterCountPolicy: JsonObject;
+    footerLinkCount: number;
     hasFixedBoilerplate: boolean;
     id: string;
     name: string;
@@ -973,6 +975,7 @@ function fixtureNewContent(): NewContentViewModel {
     projects: [
       {
         characterCountPolicy: {},
+        footerLinkCount: 0,
         hasFixedBoilerplate: false,
         id: "demo-project",
         name: "Что поесть? Армавир",
@@ -1229,6 +1232,10 @@ function projectHasFixedBoilerplate(project: ProjectOut): boolean {
   return Boolean(stringFromJson(project.cta_config, "footer_template")?.trim());
 }
 
+function projectFooterLinkCount(project: ProjectOut): number {
+  return richTextLinkCount(normalizeRichText(project.cta_config.footer_rich_text));
+}
+
 async function resumeContentDraft(
   contentId: string,
   projects: NewContentViewModel["projects"],
@@ -1302,6 +1309,7 @@ async function apiNewContent(resumeContentId?: string): Promise<NewContentViewMo
     const projectFallbackExampleCount = approvedExamples.filter((example) => !example.rubric_id).length;
     return {
       characterCountPolicy: project.character_count_policy,
+      footerLinkCount: projectFooterLinkCount(project),
       hasFixedBoilerplate: projectHasFixedBoilerplate(project),
       id: project.id,
       name: project.name,
