@@ -13,9 +13,9 @@ export default async function ProjectPage({
     return (
       <PilotUnavailable
         backHref="/app/projects"
-        backLabel="К списку проектов"
-        description={viewModel.notice ?? "Проект не найден или у вас нет к нему доступа."}
-        title="Не удалось открыть проект"
+        backLabel="К списку каналов"
+        description={viewModel.notice ?? "Канал не найден или у тебя нет к нему доступа."}
+        title="Не удалось открыть канал"
       />
     );
   }

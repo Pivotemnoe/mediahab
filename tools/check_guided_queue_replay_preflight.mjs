@@ -14,7 +14,7 @@ assert.match(queueStatusSource, /data-testid="guided-queue-retry-arm"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-shell"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-confirm"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-cancel"/);
-assert.match(queueStatusSource, /Проверьте текущие значения и повторите сохранение/);
+assert.match(queueStatusSource, /Проверь текущие значения и повтори сохранение/);
 assert.doesNotMatch(queueStatusSource, /guided-queue-preflight|replayPreflight/);
 assert.doesNotMatch(source, /Проверка повтора:|значения скрыты и запрос не отправлен|Для повтора не хватает/);
 

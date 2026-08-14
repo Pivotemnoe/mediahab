@@ -9,9 +9,9 @@ interface GuidedActionApiError {
 const refreshRequiredCodes = new Set(["csrf_invalid", "csrf_required", "version_conflict"]);
 
 const guidedActionErrorMessages: Record<string, string> = {
-  csrf_invalid: "Сессия страницы устарела. Обновите страницу и повторите сохранение.",
-  csrf_required: "Сессия страницы устарела. Обновите страницу и повторите сохранение.",
-  version_conflict: "Материал изменился в другой вкладке или сессии. Обновите страницу перед повторным сохранением.",
+  csrf_invalid: "Страница давно открыта. Обнови её и повтори сохранение.",
+  csrf_required: "Страница давно открыта. Обнови её и повтори сохранение.",
+  version_conflict: "Публикация изменилась в другой вкладке. Обнови страницу перед повторным сохранением.",
 };
 
 export function guidedActionRecoveryAction(code: string): GuidedRecoveryAction {
@@ -24,8 +24,8 @@ export function guidedActionMessageForCode(code: string, status: number): string
     return explicitMessage;
   }
   return status >= 500
-    ? "Сейчас не удаётся сохранить изменение. Повторите позже."
-    : "Изменение не сохранено. Проверьте поле и повторите действие.";
+    ? "Сейчас не удаётся сохранить изменение. Повтори позже."
+    : "Изменение не сохранено. Проверь поле и повтори действие.";
 }
 
 export function guidedActionStateFromApiError(error: GuidedActionApiError): GuidedActionState {
@@ -41,7 +41,7 @@ export function guidedActionStateFromApiError(error: GuidedActionApiError): Guid
 export function guidedActionUnavailableState(): GuidedActionState {
   return {
     code: "api_unavailable",
-    message: "Соединение прервано. Изменение не сохранено.",
+    message: "Изменение не сохранилось. Проверь интернет и попробуй ещё раз.",
     recoveryAction: "retry",
     requestId: null,
     tone: "danger",

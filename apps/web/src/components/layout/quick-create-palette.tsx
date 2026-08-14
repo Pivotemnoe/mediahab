@@ -15,22 +15,22 @@ import { Button } from "@/components/ui/button";
 
 const actions = [
   {
-    description: "Открыть мастер материала и начать с голосового сценария.",
+    description: "Начать новую публикацию голосом.",
     href: "/app/content/new",
     icon: Mic,
-    title: "Надиктовать новый материал",
+    title: "Наговорить публикацию",
   },
   {
-    description: "Создать материал и продолжить с готовой заметкой.",
+    description: "Вставить готовый текст и подготовить его для площадок.",
     href: "/app/content/new?input=text",
     icon: FileText,
     title: "Вставить готовый текст",
   },
   {
-    description: "Выбрать проект и добавить новую структуру материала.",
+    description: "Добавить повторяющийся формат для канала.",
     href: "/app/projects",
     icon: BookOpenCheck,
-    title: "Создать рубрику",
+    title: "Добавить формат",
   },
 ];
 
@@ -61,7 +61,7 @@ export function QuickCreatePalette() {
         type="button"
       >
         <Plus size={16} />
-        Создать
+        Наговорить
       </Button>
 
       {open ? (
@@ -75,8 +75,8 @@ export function QuickCreatePalette() {
             <div className="flex items-center gap-3 rounded-md border border-border bg-background px-3 py-2">
               <Search className="shrink-0 text-muted" size={18} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-foreground">Быстрое действие</div>
-                <div className="truncate text-xs text-muted">Диктовка, готовый текст и рубрики</div>
+                <div className="text-sm font-semibold text-foreground">С чего начать?</div>
+                <div className="truncate text-xs text-muted">Голос, готовый текст или новый формат</div>
               </div>
               <Button
                 aria-label="Закрыть быстрые действия"
@@ -109,7 +109,7 @@ export function QuickCreatePalette() {
             </div>
 
             <div className="rounded-md bg-surface-muted px-3 py-2 text-xs leading-5 text-muted">
-              Публикация не отправляется из этого окна. Перед отправкой остаётся отдельная проверка и ручное подтверждение.
+              Здесь ничего не публикуется. Перед отправкой ты всё проверишь.
             </div>
           </div>
         </div>

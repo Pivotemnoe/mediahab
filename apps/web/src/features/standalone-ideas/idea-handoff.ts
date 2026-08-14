@@ -182,7 +182,7 @@ export function bindStandaloneIdeaContentCreate(
 ): StandaloneIdeaHandoff {
   const stored = readStandaloneIdeaHandoff(handoff.handoffToken);
   if (!stored || stored.clientContentId !== handoff.clientContentId) {
-    throw new Error("Идея устарела или не прошла проверку. Выберите её заново.");
+    throw new Error("Эта идея больше недоступна. Выбери её заново.");
   }
   if (stored.contentCreate) return stored;
   const bound = parseHandoff({ ...stored, contentCreate }, Date.now());
@@ -204,8 +204,8 @@ export function clearStandaloneIdeaHandoff(handoffToken: string): void {
 export function standaloneIdeaPlanningValue(handoff: StandaloneIdeaHandoff): Record<string, unknown> {
   const helperQuestions = [
     handoff.idea.speakingPrompt,
-    "Какая ваша собственная деталь делает эту тему живой?",
-    "Какой вывод вы хотите оставить читателю?",
+    "Какая твоя собственная деталь делает эту тему живой?",
+    "Какой вывод ты хочешь оставить читателю?",
   ];
   return {
     idea: {

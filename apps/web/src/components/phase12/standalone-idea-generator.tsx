@@ -33,12 +33,12 @@ function recordingTime(totalSeconds: number): string {
 }
 
 function voiceStatus(state: VoiceState, seconds: number): { description: string; title: string } | null {
-  if (state === "requesting") return { description: "Разрешите доступ к микрофону.", title: "Подключаем микрофон" };
-  if (state === "recording") return { description: `Голос принимается · ${recordingTime(seconds)}`, title: "Запись идёт" };
-  if (state === "uploading") return { description: "Запись уже остановлена и отправляется на расшифровку.", title: "Загружаем голос" };
-  if (state === "transcribing") return { description: "Превращаем запись в тему. Введённый текст пока не меняется.", title: "Расшифровываем" };
-  if (state === "success") return { description: "Тема заполнена. Её можно поправить перед генерацией.", title: "Готово" };
-  if (state === "error") return { description: "Напишите тему вручную или повторите запись.", title: "Голос не сохранён" };
+  if (state === "requesting") return { description: "Разреши доступ к микрофону.", title: "«Наговори» подключает микрофон" };
+  if (state === "recording") return { description: `Микрофон работает · ${recordingTime(seconds)}`, title: "Запись идёт" };
+  if (state === "uploading") return { description: "Запись остановлена и сохранена.", title: "«Наговори» сохраняет запись" };
+  if (state === "transcribing") return { description: "«Наговори» превращает запись в тему. Твой текст пока не меняется.", title: "«Наговори» готовит тему" };
+  if (state === "success") return { description: "Тема заполнена. Её можно поправить перед поиском идей.", title: "Готово" };
+  if (state === "error") return { description: "Напиши тему вручную или повтори запись.", title: "Голос не сохранён" };
   return null;
 }
 
@@ -164,7 +164,7 @@ export function StandaloneIdeaGenerator({
         if (!isAbortError(cause) && !controller.signal.aborted) {
           setCapability(null);
           setCapabilityState("error");
-          setError(cause instanceof Error ? cause.message : "Не удалось проверить доступ к генератору.");
+          setError(cause instanceof Error ? cause.message : "Не удалось открыть идеи.");
         }
       })
       .finally(() => {
@@ -176,7 +176,7 @@ export function StandaloneIdeaGenerator({
   async function transcribeVoice(blob: Blob, durationMs: number) {
     if (!workspaceId || !blob.size) {
       setVoiceState("error");
-      setError("Запись получилась пустой. Попробуйте ещё раз.");
+      setError("Запись получилась пустой. Попробуй ещё раз.");
       return;
     }
     const controller = new AbortController();
@@ -200,7 +200,7 @@ export function StandaloneIdeaGenerator({
     } catch (cause) {
       if (isAbortError(cause) || controller.signal.aborted || !mountedRef.current) return;
       setVoiceState("error");
-      setError(cause instanceof Error ? cause.message : "Не удалось расшифровать голос.");
+      setError(cause instanceof Error ? cause.message : "Не удалось превратить запись в текст.");
     } finally {
       if (voiceAbortRef.current === controller) voiceAbortRef.current = null;
     }
@@ -210,7 +210,7 @@ export function StandaloneIdeaGenerator({
     if (!workspaceId || microphoneRequestPendingRef.current || recorderRef.current || voiceAbortRef.current) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setVoiceState("error");
-      setError("Этот браузер не поддерживает запись. Напишите тему вручную.");
+      setError("Этот браузер не поддерживает запись. Напиши тему вручную.");
       return;
     }
     const requestId = microphoneRequestRef.current + 1;
@@ -257,7 +257,7 @@ export function StandaloneIdeaGenerator({
       stopVoiceMeter();
       if (!mountedRef.current) return;
       setVoiceState("error");
-      setError("Браузер не дал доступ к микрофону. Напишите тему вручную или разрешите доступ.");
+      setError("Браузер не дал доступ к микрофону. Напиши тему вручную или разреши доступ.");
     } finally {
       if (microphoneRequestRef.current === requestId) microphoneRequestPendingRef.current = false;
     }
@@ -272,7 +272,7 @@ export function StandaloneIdeaGenerator({
 
   useEffect(() => {
     if (voiceState === "recording" && voiceSeconds >= 90) {
-      setVoiceNotice("Запись остановлена через 90 секунд. Для темы этого достаточно.");
+      setVoiceNotice("Запись остановлена через 90 секунд — для темы этого достаточно.");
       stopRecording();
     }
   }, [voiceSeconds, voiceState]);
@@ -318,7 +318,7 @@ export function StandaloneIdeaGenerator({
       const handoff = writeStandaloneIdeaHandoff({ idea, runId, topic: topic.trim(), workspaceId });
       router.push(`/app/content/new?idea=${encodeURIComponent(handoff.handoffToken)}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось открыть диктовку по этой идее.");
+      setError(cause instanceof Error ? cause.message : "Не удалось открыть запись по этой идее.");
     }
   }
 
@@ -336,15 +336,15 @@ export function StandaloneIdeaGenerator({
     <div className="mx-auto grid w-full max-w-5xl min-w-0 gap-5" data-testid="standalone-ideas-page">
       <section className="grid min-w-0 gap-4 rounded-2xl border border-border bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
-          <Badge tone="success">Генератор идей</Badge>
+          <Badge tone="success">Идеи для публикаций</Badge>
           <h1 className="font-editorial mt-3 break-words text-4xl leading-tight text-foreground sm:text-5xl">О чём рассказать?</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted sm:text-base">
-            Напишите или надиктуйте одну тему. Получите пять направлений, выберите одно и расскажите всё своими словами.
+            Напиши или наговори одну тему. «Наговори» предложит пять направлений — выбери одно и расскажи всё своими словами.
           </p>
         </div>
         <div className="rounded-xl border border-border bg-surface px-4 py-3 text-xs leading-5 text-muted sm:text-sm">
           <strong className="block text-foreground">Это не чат и не готовый пост</strong>
-          Здесь только направления для вашей следующей диктовки.
+          Здесь только направления для твоей следующей записи.
         </div>
       </section>
 
@@ -371,7 +371,7 @@ export function StandaloneIdeaGenerator({
 
         <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-surface-muted p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-4" data-testid="standalone-idea-voice">
           <button
-            aria-label={voiceState === "recording" ? "Остановить запись темы" : "Надиктовать тему"}
+            aria-label={voiceState === "recording" ? "Остановить запись темы" : "Наговорить тему"}
             aria-pressed={voiceState === "recording"}
             className="grid size-14 place-items-center rounded-full bg-accent text-accent-foreground shadow-panel transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50"
             disabled={
@@ -390,16 +390,16 @@ export function StandaloneIdeaGenerator({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
               {voiceState === "recording" ? <span className="size-2 animate-pulse rounded-full bg-danger motion-reduce:animate-none" /> : null}
-              <span aria-live="polite" role="status">{status?.title ?? "Можно надиктовать тему"}</span>
+              <span aria-live="polite" role="status">{status?.title ?? "Можно наговорить тему"}</span>
             </div>
-            <p aria-hidden={voiceState === "recording" ? "true" : undefined} className="mt-1 text-xs leading-5 text-muted">{status?.description ?? "Нажмите микрофон, скажите одну тему и остановите запись."}</p>
+            <p aria-hidden={voiceState === "recording" ? "true" : undefined} className="mt-1 text-xs leading-5 text-muted">{status?.description ?? "Нажми микрофон, назови одну тему и останови запись."}</p>
             {voiceState === "recording" ? <progress aria-hidden="true" className="mt-2 h-2 w-full accent-danger" max={1} value={Math.max(voiceLevel, 0.03)} /> : null}
             {voiceNotice ? <p className="mt-2 text-xs leading-5 text-warning">{voiceNotice}</p> : null}
           </div>
         </div>
 
         {!workspaceId ? (
-          <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted">Идеи станут доступны, когда в кабинете появится рабочее пространство.</p>
+          <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted">Идеи станут доступны после входа в кабинет.</p>
         ) : capabilityState === "ready" && capability && !unavailable ? (
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted">Осталось подборок сегодня: {capability.remaining_today} из {capability.daily_limit}</span>
@@ -410,14 +410,14 @@ export function StandaloneIdeaGenerator({
               type="button"
             >
               {isGenerating ? <Loader2 className="animate-spin motion-reduce:animate-none" size={18} /> : <Sparkles size={18} />}
-              {isGenerating ? "Подбираем 5 идей…" : ideas.length ? "Предложить другие 5" : "Предложить 5 идей"}
+              {isGenerating ? "«Наговори» подбирает 5 идей…" : ideas.length ? "Предложить другие 5" : "Предложить 5 идей"}
             </Button>
           </div>
         ) : capabilityState === "loading" ? (
-          <div className="flex min-h-12 items-center gap-2 text-sm text-muted"><Loader2 className="animate-spin motion-reduce:animate-none" size={17} />Проверяем доступ к идеям…</div>
+          <div className="flex min-h-12 items-center gap-2 text-sm text-muted"><Loader2 className="animate-spin motion-reduce:animate-none" size={17} />«Наговори» открывает идеи…</div>
         ) : (
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3">
-            <p className="text-sm leading-6 text-muted">Не удалось проверить доступ к идеям.</p>
+            <p className="text-sm leading-6 text-muted">Идеи сейчас не открылись.</p>
             <Button onClick={() => {
               setError(null);
               setCapabilityRetry((current) => current + 1);
@@ -432,7 +432,7 @@ export function StandaloneIdeaGenerator({
 
       {isGenerating ? (
         <section aria-label="Подбираем пять идей" className="grid min-w-0 gap-3" data-testid="standalone-ideas-loading">
-          <div className="text-sm font-semibold text-foreground">Ищем пять разных ракурсов…</div>
+          <div className="text-sm font-semibold text-foreground">«Наговори» ищет пять разных направлений…</div>
           {Array.from({ length: 5 }, (_, index) => (
             <Card className="grid animate-pulse gap-3 p-4 motion-reduce:animate-none sm:p-5" key={index}>
               <span className="h-5 w-2/5 rounded bg-surface-muted" />
@@ -448,7 +448,7 @@ export function StandaloneIdeaGenerator({
           <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
             <div>
               <Badge tone="success">5 направлений готовы</Badge>
-              <h2 className="mt-2 text-2xl font-semibold text-foreground">Выберите, о чём хочется рассказать</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">Выбери, о чём хочется рассказать</h2>
             </div>
             <Button disabled={isGenerating || voiceActive || unavailable || quotaExhausted} onClick={() => void generate()} type="button" variant="ghost"><RotateCcw size={16} />Другие 5</Button>
           </div>
@@ -461,7 +461,7 @@ export function StandaloneIdeaGenerator({
                 <p className="mt-2 flex items-start gap-2 text-xs leading-5 text-foreground"><Lightbulb className="mt-0.5 shrink-0 text-success" size={15} /><span><strong>С чего начать:</strong> {idea.speakingPrompt}</span></p>
               </div>
               <Button className="min-h-11 w-full sm:w-auto" onClick={() => openComposer(idea)} type="button">
-                <Mic size={17} />Надиктовать по этой идее<ArrowRight size={16} />
+                <Mic size={17} />Наговорить по этой идее<ArrowRight size={16} />
               </Button>
             </Card>
           ))}

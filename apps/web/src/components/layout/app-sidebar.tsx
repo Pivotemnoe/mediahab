@@ -66,7 +66,7 @@ export function AppSidebar() {
       <div className="relative mt-auto">
         {moreOpen ? (
           <section className="absolute bottom-14 left-0 z-40 grid w-[292px] gap-2 rounded-xl border border-border bg-surface p-3 shadow-popover" data-testid="sidebar-more-menu">
-            <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Всё остальное</div>
+            <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Настройки канала</div>
             <div className="grid grid-cols-2 gap-1">
               {cabinetMoreItems.map((item) => {
                 const Icon = item.icon;
@@ -87,7 +87,7 @@ export function AppSidebar() {
               })}
             </div>
             <div className="border-t border-border pt-2 text-xs leading-5 text-muted">
-              Начните с «Создать» или «Блокнот» — остальное можно настроить позже.
+              Наговори публикацию или сохрани мысль в блокноте.
             </div>
           </section>
         ) : null}
@@ -109,7 +109,7 @@ export function AppSidebar() {
         <div className="mt-3 border-t border-border px-2 pt-4">
           <Link className="flex min-w-0 items-center gap-2 text-xs text-muted hover:text-foreground" href="/app/account">
             <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border bg-surface text-success"><UserRound size={15} /></span>
-            <span className="truncate">Мой кабинет</span>
+            <span className="truncate">Аккаунт</span>
           </Link>
         </div>
       </div>

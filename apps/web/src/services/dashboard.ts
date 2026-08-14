@@ -100,16 +100,16 @@ function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     archived: "архив",
     cancelled: "отменено",
-    collecting: "сбор фактов",
+    collecting: "в работе",
     draft: "черновик",
-    failed: "ошибка",
-    manual_required: "нужен ручной экспорт",
+    failed: "не получилось",
+    manual_required: "можно опубликовать вручную",
     published: "опубликовано",
     queued: "в очереди",
-    ready_for_ai: "готово к ИИ",
+    ready_for_ai: "можно готовить текст",
     scheduled: "запланировано",
   };
-  return labels[status] ?? status;
+  return labels[status] ?? "в работе";
 }
 
 function usageTone(status: string | undefined): "danger" | "neutral" | "success" | "warning" {
@@ -143,7 +143,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
     return {
       integrationAlerts: [],
       modeLabel: "api",
-      notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      notice: "Не удалось открыть кабинет. Обнови страницу или войди заново.",
       planLabel: "",
       projects: [],
       recentNotes: [],
@@ -182,12 +182,12 @@ async function apiDashboard(): Promise<DashboardViewModel> {
     modeLabel: "api",
     notice: projectsResponse && usageResponse
       ? undefined
-      : "Часть данных кабинета сейчас не загрузилась. Попробуйте обновить страницу.",
-    planLabel: subscriptionResponse?.plan_name ?? "Текущий тариф",
+      : "Не всё загрузилось. Обнови страницу — сохранённые тексты останутся на месте.",
+    planLabel: subscriptionResponse?.plan_name ?? "Текущий план",
     projects: projects.map((project) => ({
       href: `/app/projects/${project.id}`,
       name: project.name,
-      note: project.description ?? project.content_domain ?? "Общие правила можно дополнить в проекте.",
+      note: project.description ?? project.content_domain ?? "Стиль и правила канала можно дополнить позже.",
       rubricCount: project.rubric_count ?? 0,
     })),
     recentNotes: (notesResponse?.notes ?? []).map((note) => ({
@@ -198,7 +198,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
     recentDrafts: contentItems.slice(0, 6).map(({ item, project }) => ({
       href: `/app/content/${item.id}`,
       project: project.name,
-      rubric: `Материал · v${item.version}`,
+      rubric: "текст сохранён",
       status: statusLabel(item.status),
       title: item.title_internal,
     })),
@@ -209,13 +209,13 @@ async function apiDashboard(): Promise<DashboardViewModel> {
         })),
     stats: [
       {
-        label: "Проекты",
-        note: projects[0]?.name ?? "Создайте первый проект",
+        label: "Каналы",
+        note: projects[0]?.name ?? "Создай первый канал",
         value: String(projects.length),
       },
       {
         label: "Черновики",
-        note: "актуальные материалы",
+        note: "сохранённые тексты",
         value: String(contentItems.length),
       },
       {
@@ -246,7 +246,7 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
     return {
       integrationAlerts: [],
       modeLabel: "api",
-      notice: "Данные кабинета сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Кабинет сейчас не загрузился. Обнови страницу и попробуй ещё раз.",
       planLabel: "",
       projects: [],
       recentNotes: [],

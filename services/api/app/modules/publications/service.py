@@ -103,6 +103,22 @@ def _connector_error_to_publication_error(exc: ConnectorValidationError) -> Publ
     return PublicationCoreError(422, exc.code, exc.message, exc.details)
 
 
+def _count_label(value: int, one: str, few: str, many: str) -> str:
+    last_two = value % 100
+    last = value % 10
+    if 11 <= last_two <= 19:
+        return many
+    if last == 1:
+        return one
+    if 2 <= last <= 4:
+        return few
+    return many
+
+
+def _counted(value: int, one: str, few: str, many: str) -> str:
+    return f"{value} {_count_label(value, one, few, many)}"
+
+
 def build_variant_preflight(
     platform_key: str,
     validation: dict[str, Any],
@@ -141,8 +157,8 @@ def build_variant_preflight(
                 "code": "hard_text_limit_exceeded",
                 "label": "Длина",
                 "message": (
-                    f"{total_count} знаков с постоянным подвалом: превышен технический предел площадки "
-                    f"{capability.hard_text_limit}."
+                    f"Получилось {_counted(total_count, 'знак', 'знака', 'знаков')} вместе с текстом в конце. "
+                    f"Для этой площадки нужно не больше {capability.hard_text_limit}."
                 ),
             }
         )
@@ -160,20 +176,20 @@ def build_variant_preflight(
                 "status": "warning",
                 "code": "editorial_length_target_missed",
                 "label": "Длина",
-                "message": f"{body_count} знаков: текст вне выбранной цели {target_label}.",
+                "message": f"Получилось {_counted(body_count, 'знак', 'знака', 'знаков')}, а выбрана длина {target_label}.",
             }
         )
     else:
         target_suffix = ""
         if min_chars is not None or max_chars is not None:
-            target_suffix = f", цель {min_chars or 1}–{max_chars or capability.hard_text_limit}"
+            target_suffix = f", выбрано {min_chars or 1}–{max_chars or capability.hard_text_limit}"
         checks.append(
             {
                 "key": "length",
                 "status": "pass",
                 "code": "length_ready",
                 "label": "Длина",
-                "message": f"{body_count} знаков{target_suffix}: технический предел соблюдён.",
+                "message": f"Получилось {_counted(body_count, 'знак', 'знака', 'знаков')}{target_suffix}. Длина подходит.",
             }
         )
 
@@ -184,8 +200,8 @@ def build_variant_preflight(
                 "key": "media",
                 "status": "block",
                 "code": sorted(media_error_codes)[0],
-                "label": "Медиа",
-                "message": "Количество или тип вложений не соответствует требованиям площадки.",
+                "label": "Фото и видео",
+                "message": "Проверь количество и формат прикреплённых фото или видео.",
             }
         )
     elif platform_key == "instagram":
@@ -197,8 +213,8 @@ def build_variant_preflight(
                     "key": "media",
                     "status": "warning",
                     "code": "instagram_media_not_preflighted",
-                    "label": "Медиа",
-                    "message": f"Добавлено файлов: {media_count}. Выберите формат, чтобы проверить состав медиа.",
+                    "label": "Фото и видео",
+                    "message": f"Добавлено: {_counted(media_count, 'файл', 'файла', 'файлов')}. Выбери вид публикации в Instagram, чтобы продолжить проверку.",
                 }
             )
         else:
@@ -207,20 +223,21 @@ def build_variant_preflight(
                     "key": "media",
                     "status": "pass",
                     "code": "instagram_media_ready",
-                    "label": "Медиа",
-                    "message": f"Проверено вложений: {planned_count if isinstance(planned_count, int) else media_count}.",
+                    "label": "Фото и видео",
+                    "message": f"Добавлено: {_counted(planned_count if isinstance(planned_count, int) else media_count, 'файл', 'файла', 'файлов')}. Всё подходит выбранному виду публикации.",
                 }
             )
     elif platform_key == "vk":
         package = payload.get("vk_export_package")
         attachment_count = package.get("attachment_count") if isinstance(package, dict) else media_count
+        attachment_count = attachment_count if isinstance(attachment_count, int) else media_count
         checks.append(
             {
                 "key": "media",
                 "status": "pass",
                 "code": "vk_media_package_ready",
-                "label": "Медиа",
-                "message": f"В пакет ручного экспорта включено вложений: {attachment_count}.",
+                "label": "Фото и видео",
+                "message": f"Для публикации в VK подготовлено: {_counted(attachment_count, 'файл', 'файла', 'файлов')}.",
             }
         )
     else:
@@ -229,22 +246,22 @@ def build_variant_preflight(
                 "key": "media",
                 "status": "pass",
                 "code": "media_limit_ready",
-                "label": "Медиа",
-                "message": f"Добавлено вложений: {media_count}; известный предел не превышен.",
+                "label": "Фото и видео",
+                "message": f"Добавлено: {_counted(media_count, 'файл', 'файла', 'файлов')}. Количество подходит.",
             }
         )
 
     if platform_key == "instagram":
         instagram_format = payload.get("instagram_format")
         if isinstance(instagram_format, str):
-            format_labels = {"image": "один пост", "carousel": "карусель", "reel": "Reel"}
+            format_labels = {"image": "один пост", "carousel": "карусель", "reel": "короткий ролик"}
             checks.append(
                 {
                     "key": "format",
                     "status": "pass",
                     "code": "instagram_format_ready",
-                    "label": "Формат",
-                    "message": f"Выбран формат: {format_labels.get(instagram_format, instagram_format)}.",
+                    "label": "Вид публикации",
+                    "message": f"Выбран вид публикации: {format_labels.get(instagram_format, instagram_format)}.",
                 }
             )
         else:
@@ -253,8 +270,8 @@ def build_variant_preflight(
                     "key": "format",
                     "status": "warning",
                     "code": "instagram_format_review_required",
-                    "label": "Формат",
-                    "message": "Формат Instagram не был выбран старым клиентом — проверьте его вручную.",
+                    "label": "Вид публикации",
+                    "message": "Вид публикации в Instagram не выбран. Вернись к настройкам и выбери его.",
                 }
             )
     elif platform_key == "vk":
@@ -263,7 +280,7 @@ def build_variant_preflight(
                 "key": "format",
                 "status": "pass",
                 "code": "vk_community_post_ready",
-                "label": "Формат",
+                "label": "Вид публикации",
                 "message": "Подготовлена запись сообщества.",
             }
         )
@@ -273,19 +290,19 @@ def build_variant_preflight(
                 "key": "format",
                 "status": "pass",
                 "code": "platform_format_ready",
-                "label": "Формат",
-                "message": "Формат результата соответствует выбранной площадке.",
+                "label": "Вид публикации",
+                "message": "Текст подготовлен отдельно для выбранной площадки.",
             }
         )
 
     if not capability.automated_delivery:
-        delivery_message = "Готов ручной экспорт; автоматическая отправка для этой площадки не включена."
+        delivery_message = "Автоматическая отправка пока недоступна. Скопируй готовый текст и опубликуй его вручную."
         delivery_code = "manual_export_required"
     else:
-        delivery_message = "Площадка поддерживается. Подключение выбранного аккаунта будет проверено перед отправкой."
+        delivery_message = "Перед отправкой «Наговори» проверит, доступен ли выбранный аккаунт площадки."
         delivery_code = "destination_readiness_unverified"
     if warning_codes and platform_key in {"telegram", "max", "instagram"}:
-        delivery_message += " Аккаунт площадки ещё не подтверждён."
+        delivery_message += " Аккаунт площадки пока не подтверждён."
     checks.append(
         {
             "key": "delivery",

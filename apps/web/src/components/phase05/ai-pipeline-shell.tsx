@@ -47,7 +47,7 @@ function AiHeader({ title, label = "Мой стиль" }: { title: string; label
           </Link>
         </Button>
       }
-      description="Добавляйте удачные публикации, чтобы «Наговори» точнее передавал голос и ритм вашего канала."
+      description="Добавь удачные публикации, чтобы «Наговори» точнее передавал голос и ритм твоего канала."
       eyebrow={label}
       title={title}
     />
@@ -200,17 +200,17 @@ export function ExamplesLibraryShell({
             </div>
             <h1 className="mt-3 break-words text-3xl font-semibold text-ink">{viewModel.projectLabel}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Общие примеры задают голос всего канала. Рубрику выбирайте только тогда, когда отдельный повторяемый формат действительно звучит иначе.
+              Общие примеры показывают подачу всего канала. Отдельный формат выбирай только тогда, когда он действительно звучит иначе.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="secondary">
-              <Link href={`/app/projects/${viewModel.projectId}`}><ArrowLeft size={16} />К проекту</Link>
+              <Link href={`/app/projects/${viewModel.projectId}`}><ArrowLeft size={16} />К каналу</Link>
             </Button>
             <Button asChild>
               <Link href={`/app/content/new?project=${viewModel.projectId}`}>
                 <Mic size={16} />
-                Создать публикацию
+                Наговорить публикацию
               </Link>
             </Button>
           </div>
@@ -223,7 +223,7 @@ export function ExamplesLibraryShell({
         ) : null}
 
         <ExamplesImportForm
-          disabledReason={viewModel.modeLabel === "api" ? undefined : "После входа здесь можно сохранить собственную подборку. Сейчас доступен просмотр сценария."}
+          disabledReason={viewModel.modeLabel === "api" ? undefined : "Войди, чтобы сохранить свою подборку примеров."}
           existingApprovedCount={viewModel.examples.filter((example) => example.status === "одобрено").length}
           initialRubricId={initialRubricId}
           projectId={viewModel.projectId}
@@ -255,12 +255,12 @@ export function ExamplesLibraryShell({
                 <Badge tone={toneForStatus(example.status)}>{example.status}</Badge>
               </div>
               <div className="text-sm leading-6 text-muted">
-                Используется как стиль, а не как источник фактов для нового материала.
+                Эта публикация помогает передать стиль. Её факты не попадут в новый текст.
               </div>
             </div>
           )) : (
             <div className="rounded-lg border border-dashed border-border p-5 text-sm leading-6 text-muted">
-              Пока нет сохранённых примеров. Добавьте первые публикации сейчас и постепенно соберите подборку из 10 или больше сильных постов.
+              Пока нет сохранённых примеров. Добавь несколько публикаций, которые хорошо показывают нужную подачу.
             </div>
           )}
         </Card>

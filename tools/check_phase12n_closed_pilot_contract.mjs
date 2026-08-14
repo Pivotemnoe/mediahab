@@ -56,11 +56,11 @@ assert.match(register, /inviteToken/);
 assert.match(register, /consentRequired/);
 assert.match(authPage, /accept_pilot_terms/);
 assert.match(authPage, /accept_data_notice/);
-assert.match(forgot, /Написать владельцу пилота/);
+assert.match(forgot, /Попросить ссылку/);
 assert.doesNotMatch(forgot, /action="forgot-password"/);
 assert.match(authPage, /type AuthAction = "forgot-password" \| "login" \| "register" \| "reset-password" \| "verify-email"/);
 assert.match(privacy, /закрыт(?:ое|ому) тест/iu);
-assert.match(terms, /ручн/iu);
+assert.match(terms, /Последнее подтверждение публикации всегда остаётся за тобой/iu);
 
 for (const servicePath of [
   "apps/web/src/services/ai.ts",
@@ -82,13 +82,15 @@ for (const route of [
   "integrations",
   "media",
   "publications",
-  "showcase",
   "workspace",
 ]) {
   const page = read(`apps/web/src/app/app/${route}/page.tsx`);
   assert.match(page, /PilotUnavailable/, route);
   assert.doesNotMatch(page, /Этап UI|API-режим|backend|token|mock|fixture|воркер|outbox/i, route);
 }
+const showcase = read("apps/web/src/app/app/showcase/page.tsx");
+assert.match(showcase, /redirect\("\/app"\)/);
+assert.doesNotMatch(showcase, /Этап UI|API-режим|backend|token|mock|fixture|воркер|outbox/i);
 
 assert.match(publicationsRoute, /settings\.publication_execution_mode == "inline"/);
 assert.match(publicationService, /with_for_update\(skip_locked=True\)/);
@@ -102,7 +104,8 @@ assert.doesNotMatch(userFacingErrors, /error\?\.message|error\.message/);
 assert.doesNotMatch(clientApi, /payload\.error\?\.message|Сервер вернул ошибку/);
 assert.doesNotMatch(navigation, /href: "\/app\/ideas"|label: "Идеи"/);
 assert.doesNotMatch(tour, /Найти тему|откройте «Идеи»/);
-assert.doesNotMatch(notebook, /связь есть|на этом устройстве|Локальная копия/);
+assert.doesNotMatch(notebook, /связь есть|Локальная копия/);
+assert.match(notebook, /Сохранены на этом устройстве/);
 assert.doesNotMatch(securityPage, /Argon2|HttpOnly|CSRF|RLS|404|403/);
 assert.match(apiDockerfile, /USER app/);
 assert.match(webDockerfile, /USER node/);
@@ -112,8 +115,8 @@ assert.match(logoutButton, /clientApiRequest<[^>]+>\("\/api\/v1\/auth\/logout", 
 assert.match(logoutButton, /router\.replace\("\/login"\)/);
 assert.doesNotMatch(sidebar, /href="\/login"[^>]*><LogOut/);
 assert.doesNotMatch(contentStudio, /<StudioHeader title="История"|Демо-публикации/);
-assert.match(projectBuilder, /if \(viewModel\.modeLabel === "api" && viewModel\.project\) \{\s+return <ProjectRulesForm/);
-assert.match(projectBuilder, /if \(viewModel\.modeLabel === "api"\) \{\s+return <RubricCreateForm/);
+assert.match(projectBuilder, /if \(viewModel\.project\) \{\s+return <ProjectRulesForm/);
+assert.match(projectBuilder, /if \(viewModel\.modeLabel === "api" \|\| viewModel\.modeLabel === "fixtures"\) \{\s+return <RubricCreateForm/);
 assert.doesNotMatch(projectRules, /Завершение и CTA|Сохранить новую версию|Ссылок: \{richTextLinkCount/);
 assert.doesNotMatch(pricing, /фиктивную покупку|Мой текущий тариф/);
 assert.doesNotMatch(composer, /первые 3 помогают ИИ|Фото JPEG|Публикация не запускается автоматически/);

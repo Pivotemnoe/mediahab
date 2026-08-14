@@ -28,36 +28,36 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const workflow = [
-  ["1", "Диктуете или вставляете", "Расскажите всё одним сообщением или добавляйте голосовые фрагменты по очереди.", Mic],
-  ["2", "Выбираете площадки", "Telegram, MAX, VK и Instagram можно включить вместе или подготовить отдельно.", CheckCircle2],
-  ["3", "Проверяете версии", "«Наговори» учитывает правила проекта, рубрику, примеры и длину каждого результата.", BookOpenCheck],
+  ["1", "Наговори как есть", "Запиши одну длинную мысль или добавляй короткие части — как тебе удобнее.", Mic],
+  ["2", "Выбери площадки", "Отметь одну площадку или сразу несколько: Telegram, MAX, VK и Instagram.", CheckCircle2],
+  ["3", "Проверь готовые тексты", "«Наговори» подготовит отдельный текст для каждой площадки. Перед публикацией ты сможешь всё поправить.", BookOpenCheck],
 ] as const;
 
 const trustPoints = [
-  ["Факты остаются вашими", "Редактор улучшает подачу, но не должен придумывать цены, адреса и выводы.", ShieldCheck],
-  ["Правила запоминаются", "Общий стиль, рубрики, примеры и ограничения применяются при каждой новой сборке.", FileText],
-  ["Каждая версия проверяется", "Никаких публикаций без вашего явного подтверждения.", CheckCircle2],
+  ["Только твои факты", "«Наговори» улучшит подачу, но не станет придумывать цены, адреса или выводы.", ShieldCheck],
+  ["Твой стиль запоминается", "Добавь примеры и правила один раз — «Наговори» учтёт их в следующих публикациях.", FileText],
+  ["Ничего не уйдёт без тебя", "Сначала ты увидишь каждый текст и сам решишь, что публиковать.", CheckCircle2],
 ] as const;
 
 const platformGuide = [
-  ["Telegram", "Полный пост", "Удобная длинная версия с сохранённой структурой и ссылками.", Send],
-  ["MAX", "До 4 000 знаков", "Самостоятельная компактная версия, а не обрезанный Telegram-текст.", MessageCircle],
-  ["VK", "Запись сообщества", "Понятная подача для стены или сообщества с отдельной длиной.", UsersRound],
-  ["Instagram", "Пост, карусель или Reel", "Другая композиция, подпись и подсказки по медиа в рамках формата.", Instagram],
+  ["Telegram", "Подробный пост", "Развёрнутый текст с понятной структурой и нужными ссылками.", Send],
+  ["MAX", "До 4 000 знаков", "Короткий самостоятельный текст, который не выглядит обрезанным.", MessageCircle],
+  ["VK", "Пост для сообщества", "Понятный текст для стены или сообщества.", UsersRound],
+  ["Instagram", "Пост, карусель или ролик", "Своя подпись и подсказки, какие фото или видео подойдут.", Instagram],
 ] as const;
 
 const audiences = [
-  ["Эксперт и личный бренд", "Надиктуйте наблюдение после встречи, консультации или события — и сохраните собственный тон.", UserRound],
-  ["Локальный бизнес", "Быстро превращайте новости, предложения и изменения в понятные публикации для нескольких каналов.", Store],
-  ["Клиника и специалист", "Объясняйте сложное человеческим языком, не теряя важные факты и предупреждения.", HeartPulse],
-  ["Автор и преподаватель", "Собирайте идеи, заметки и фрагменты лекций в регулярный контент без пустого листа.", GraduationCap],
+  ["Эксперт или личный бренд", "Наговори наблюдение после встречи, консультации или события — «Наговори» сохранит твой тон.", UserRound],
+  ["Местный бизнес", "Расскажи о новости, предложении или изменении — «Наговори» подготовит понятные посты для нужных каналов.", Store],
+  ["Клиника или специалист", "Объясняй сложное простыми словами, не теряя факты и важные предупреждения.", HeartPulse],
+  ["Автор или преподаватель", "Сохраняй мысли, заметки и фрагменты лекций, а потом собирай из них публикации.", GraduationCap],
 ] as const;
 
 const faq = [
-  ["Нужно каждый раз заполнять настройки?", "Нет. Стиль, примеры и обычная длина сохраняются в проекте. Для конкретного поста можно изменить только нужное."],
-  ["Можно подготовить несколько площадок сразу?", "Да. Вы отмечаете Telegram, MAX, VK и Instagram вместе или выбираете только одну площадку. Каждая версия создаётся отдельно."],
-  ["Что делать с идеей, которую ещё рано превращать в пост?", "Сохранить в голосовой блокнот. Позже заметку можно перенести в новый или уже существующий материал."],
-  ["Сервис публикует всё автоматически?", "Нет. Сначала вы видите и правите результат. Отправка остаётся отдельным действием с вашим подтверждением."],
+  ["Нужно каждый раз всё настраивать?", "Нет. «Наговори» запомнит твой стиль, примеры и обычную длину. Для нового поста останется выбрать только то, что нужно сейчас."],
+  ["Можно сделать посты сразу для нескольких площадок?", "Да. Выбери одну площадку или сразу Telegram, MAX, VK и Instagram. Для каждой появится свой текст."],
+  ["А если мысль пока не для публикации?", "Сохрани её в блокнот. Когда будешь готов, перенеси заметку в новую публикацию."],
+  ["«Наговори» сам публикует посты?", "Нет. Сначала ты увидишь и проверишь результат. Ничего не отправится без твоего подтверждения."],
 ] as const;
 
 export default function MarketingIndex() {
@@ -70,19 +70,19 @@ export default function MarketingIndex() {
               Твои мысли.<br />Твой стиль.<br />Твои публикации.
             </h1>
             <p className="mt-7 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
-              Надиктуй или напиши мысль — «Наговори» соберёт цельный текст и подготовит отдельную версию для каждой выбранной площадки. Без потери смысла и без публикации за тебя.
+              Наговори мысль или напиши её как есть. «Наговори» соберёт из твоих слов цельную публикацию и подготовит отдельный текст для каждой площадки. Перед публикацией всё решаешь ты.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-12 px-5">
-                <Link href="/register"><Mic size={18} />Начать с диктовки</Link>
+                <Link href="/register"><Mic size={18} />Попросить приглашение</Link>
               </Button>
               <Button asChild className="h-12 px-5" variant="secondary">
-                <Link href="#example"><Play size={17} />Посмотреть пример</Link>
+                <Link href="#example"><Play size={17} />Посмотреть, как это работает</Link>
               </Button>
             </div>
             <div className="mt-7 flex items-center gap-2 text-sm text-muted">
               <CheckCircle2 className="text-success" size={16} />
-              Первые версии — обычно за несколько минут
+              Первый черновик — обычно через несколько минут
             </div>
 
           </div>
@@ -105,7 +105,7 @@ export default function MarketingIndex() {
         <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:px-12 lg:py-14">
           <div className="relative min-h-[300px] overflow-hidden rounded-xl border border-border">
             <Image
-              alt="Нейтральный пример проекта для локального бизнеса"
+              alt="Пример публикации для местного кафе"
               className="object-cover"
               fill
               priority
@@ -114,15 +114,15 @@ export default function MarketingIndex() {
             />
           </div>
           <div className="flex flex-col justify-center py-2">
-            <Badge className="w-fit" tone="success">Пример проекта</Badge>
-            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Правила живут в проекте, а не в вашей памяти.</h2>
+            <Badge className="w-fit" tone="success">Вот как это выглядит</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">«Наговори» запомнит, как тебе нравится писать.</h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Для проекта задаются голос, ограничения, постоянные блоки и примеры. Рубрика необязательна: её выбирают только там, где нужен особый формат поста.
+              Добавь примеры своих постов и важные правила. Повторяющиеся форматы можно настроить позже — для первой публикации они не нужны.
             </p>
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
-              <Metric icon={Mic} title="1 диктовка" text="можно дополнять фрагментами" />
-              <Metric icon={Clock3} title="до 10 минут" text="на первые версии" />
-              <Metric icon={LockKeyhole} title="100% контроль" text="ручное подтверждение" />
+              <Metric icon={Mic} title="Одна мысль" text="можно говорить частями" />
+              <Metric icon={Clock3} title="Несколько минут" text="до первых текстов" />
+              <Metric icon={LockKeyhole} title="Ты решаешь" text="ничего не публикуется само" />
             </div>
           </div>
         </div>
@@ -133,10 +133,10 @@ export default function MarketingIndex() {
           <div>
             <Badge tone="success">Как это работает</Badge>
             <h2 className="font-editorial mt-4 max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">
-              Один исходник. Несколько самостоятельных версий.
+              Наговори один раз — получи тексты для нужных площадок.
             </h2>
           </div>
-          <Button asChild variant="secondary"><Link href="/features">Все возможности<ArrowRight size={16} /></Link></Button>
+          <Button asChild variant="secondary"><Link href="/features">Что ещё умеет «Наговори»<ArrowRight size={16} /></Link></Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -156,9 +156,9 @@ export default function MarketingIndex() {
       <section className="border-y border-border bg-sidebar" data-testid="public-home-platforms">
         <div className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:px-12">
           <div className="max-w-3xl">
-            <Badge tone="success">Площадки отличаются</Badge>
-            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Не один текст, растянутый на четыре окна.</h2>
-            <p className="mt-4 text-base leading-7 text-muted">«Наговори» учитывает ограничения и привычный формат каждой площадки. Длину можно оставить по твоим правилам или поменять только для текущего поста.</p>
+            <Badge tone="success">У каждой площадки — своя подача</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Не один и тот же текст во всех соцсетях.</h2>
+            <p className="mt-4 text-base leading-7 text-muted">«Наговори» поменяет длину и подачу под каждую площадку. Для конкретной публикации ты всегда сможешь выбрать свой вариант.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {platformGuide.map(([name, format, text, Icon]) => (
@@ -176,10 +176,10 @@ export default function MarketingIndex() {
       <section className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:px-12" id="audience-types" data-testid="public-home-audiences">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-end">
           <div>
-            <Badge tone="success">Для тех, кто говорит по делу</Badge>
-            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Подходит не одной теме и не одному блогу.</h2>
+            <Badge tone="success">Кому пригодится</Badge>
+            <h2 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-5xl">Если тебе есть что сказать — «Наговори» поможет это оформить.</h2>
           </div>
-          <p className="max-w-2xl text-base leading-7 text-muted lg:justify-self-end">Проект хранит ваши правила, примеры и привычную подачу. Рубрики добавляются только для повторяющихся форматов — пользоваться ими необязательно.</p>
+          <p className="max-w-2xl text-base leading-7 text-muted lg:justify-self-end">Неважно, ведёшь ты личный блог, клинику, магазин или учебный канал: «Наговори» запомнит твою подачу.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {audiences.map(([title, text, Icon]) => (
@@ -195,12 +195,12 @@ export default function MarketingIndex() {
       <section className="border-y border-border bg-surface" data-testid="public-home-safety">
         <div className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:px-12">
           <div>
-            <Badge tone="success">Вы управляете результатом</Badge>
-            <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Редактор помогает с подачей. Решение остаётся вашим.</h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Исходник, готовые версии и изменения разделены. Можно поправить одну площадку, не затрагивая остальные, и ничего не отправлять до финальной проверки.</p>
+            <Badge tone="success">Всё под твоим контролем</Badge>
+            <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">«Наговори» помогает оформить мысль. Решение всегда за тобой.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Ты видишь свою исходную мысль и каждый готовый текст отдельно. Одну площадку можно поправить, не меняя остальные.</p>
           </div>
           <div className="grid gap-3">
-            {["Проверяете каждую версию", "Меняете длину без механической обрезки", "Сохраняете собственную лексику и тон", "Подтверждаете публикацию вручную"].map((item) => (
+            {["Проверь каждый текст", "Меняй длину — «Наговори» подготовит текст заново, а не просто обрежет его", "Сохраняй собственную лексику и тон", "Сам решай, когда публиковать"].map((item) => (
               <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground" key={item}><ShieldCheck className="shrink-0 text-success" size={18} />{item}</div>
             ))}
           </div>
@@ -224,13 +224,13 @@ export default function MarketingIndex() {
 
       <section className="mx-auto grid max-w-[1440px] gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-12" data-testid="public-home-entry">
         <div>
-          <Badge tone="success">Готовы попробовать</Badge>
-          <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Начните с материала, а настройки докрутите по ходу работы.</h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Создайте кабинет, назовите свой проект и сразу откройте диктовку. Стиль и дополнительные правила можно добавить постепенно.</p>
+          <Badge tone="success">Готов попробовать?</Badge>
+          <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Наговори первую мысль. Остальное настроишь потом.</h2>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Попроси приглашение, назови канал и переходи к первой записи. Примеры стиля добавишь позже.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-          <Button asChild className="h-12 px-5"><Link href="/register">Создать кабинет<ArrowRight size={16} /></Link></Button>
-          <Button asChild className="h-12 px-5" variant="secondary"><Link href="/login">Уже есть кабинет</Link></Button>
+          <Button asChild className="h-12 px-5"><Link href="/register">Попросить приглашение<ArrowRight size={16} /></Link></Button>
+          <Button asChild className="h-12 px-5" variant="secondary"><Link href="/login">Войти</Link></Button>
         </div>
       </section>
     </MarketingShell>

@@ -10,19 +10,19 @@ export const FIRST_RUN_TOUR_OPEN_EVENT = "nagovori:first-run-tour:open";
 
 const steps = [
   {
-    body: "Если канал ещё не настроен, сначала создайте проект. Затем нажмите «Создать» и большую кнопку с микрофоном — или вставьте готовый текст.",
+    body: "Сначала создай канал. Затем открой «Наговорить», нажми микрофон и расскажи свою мысль — или вставь готовый текст.",
     icon: Mic,
-    title: "Создать публикацию",
+    title: "Наговорить публикацию",
   },
   {
-    body: "Нажмите «Блокнот», чтобы быстро сохранить мысль. Проект и площадку можно выбрать позже.",
+    body: "В «Блокноте» можно сохранить мысль за несколько секунд. Канал и площадку выберешь позже.",
     icon: NotebookPen,
-    title: "Сохранить заметку",
+    title: "Не потерять мысль",
   },
   {
-    body: "В разделе «Мой стиль» добавьте удачные посты. «Наговори» возьмёт из них подачу, но не чужие факты.",
+    body: "Добавь в «Мой стиль» публикации, подача которых тебе нравится. «Наговори» возьмёт из них ритм и тон, но не чужие факты.",
     icon: Palette,
-    title: "Настроить свой стиль",
+    title: "Показать свой стиль",
   },
 ] as const;
 
@@ -91,10 +91,10 @@ export function FirstRunTour() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-success">
-              Короткое обучение · шаг {stepIndex + 1} из {steps.length}
+              Быстрое знакомство · шаг {stepIndex + 1} из {steps.length}
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-foreground" id="first-run-tour-title">
-              Как пользоваться «Наговори»
+              Три шага — и можно начинать
             </h2>
           </div>
           <button
@@ -142,7 +142,7 @@ export function FirstRunTour() {
               onClick={() => lastStep ? finish("completed") : setStepIndex((current) => current + 1)}
               type="button"
             >
-              {lastStep ? "Начать" : "Далее"}
+              {lastStep ? "Попробовать" : "Далее"}
             </Button>
           </div>
         </div>

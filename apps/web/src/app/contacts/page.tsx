@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/card";
 
 const contacts = [
   ["Почта", "pivo.temnoe@gmail.com", Mail],
-  ["Вопрос по работе", "Опишите, на каком шаге нужна помощь: вход, диктовка, версии или настройки.", MessageCircle],
-  ["Данные и безопасность", "Отдельно сообщайте о вопросах доступа и обработки материалов.", ShieldCheck],
+  ["Не получается что-то сделать?", "Напиши, где остановился: на входе, записи, готовых текстах или настройках.", MessageCircle],
+  ["Вопрос о данных", "Напиши отдельно, если вопрос касается доступа к кабинету или твоих материалов.", ShieldCheck],
 ] as const;
 
 export default function ContactsPage() {
@@ -18,16 +18,16 @@ export default function ContactsPage() {
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10 lg:grid-cols-[1fr_360px]">
         <div>
           <Badge tone="info">Контакты</Badge>
-          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Поможем разобраться.</h1>
+          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Если что-то не получилось — напиши.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Напишите, что вы хотели сделать и что увидели на экране. Чем понятнее ситуация, тем быстрее получится помочь.
+            Опиши, что нужно было сделать и что появилось на экране. Если можешь, приложи снимок — так будет проще разобраться.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href="/register">Открыть кабинет</Link>
+              <Link href="/register">Попросить приглашение</Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/security">Безопасность</Link>
+              <Link href="/security">Защита аккаунта</Link>
             </Button>
           </div>
         </div>

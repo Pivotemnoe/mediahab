@@ -21,7 +21,7 @@ export async function clientApiRequest<T>(
 ): Promise<T> {
   const token = csrfToken();
   if (!token) {
-    throw new ClientApiError("Сессия страницы устарела. Обновите страницу и войдите заново.", 403, "csrf_required");
+    throw new ClientApiError("Не получилось подтвердить вход. Обнови страницу и войди ещё раз.", 403, "csrf_required");
   }
   const response = await fetch(path, {
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -49,31 +49,31 @@ export async function clientApiRequest<T>(
 
 function clientErrorMessage(status: number, code: string): string {
   if (code === "limit_exceeded") {
-    return "На текущем тарифе уже создано максимальное количество проектов.";
+    return "Ты уже создал все каналы, доступные во время тестирования.";
   }
   if (status === 401 || code.includes("authentication") || code.includes("session")) {
-    return "Сессия закончилась. Обновите страницу и войдите заново.";
+    return "Нужно войти заново. Обнови страницу и повтори вход.";
   }
   if (status === 403) {
-    return "Для этого действия не хватает доступа.";
+    return "У твоего аккаунта нет доступа к этому действию.";
   }
   if (status === 404) {
-    return "Нужный материал не найден. Обновите страницу.";
+    return "Не получилось найти нужную публикацию. Обнови страницу.";
   }
   if (status === 409 || code.includes("version_conflict")) {
-    return "Данные изменились в другой вкладке. Обновите страницу и повторите действие.";
+    return "Эти данные уже изменились в другой вкладке. Обнови страницу и повтори действие.";
   }
   if (status === 413 || code.includes("too_large")) {
-    return "Файл слишком большой. Выберите файл меньшего размера.";
+    return "Файл слишком большой. Выбери файл меньшего размера.";
   }
   if (status === 422) {
-    return "Проверьте заполненные поля и попробуйте ещё раз.";
+    return "Проверь заполненные поля и попробуй ещё раз.";
   }
   if (status === 429) {
-    return "Слишком много попыток подряд. Подождите немного и повторите.";
+    return "Слишком много попыток подряд. Подожди немного и повтори.";
   }
   if (status >= 500) {
-    return "Сервис временно недоступен. Попробуйте ещё раз чуть позже.";
+    return "Сервис временно недоступен. Попробуй ещё раз чуть позже.";
   }
-  return "Не удалось выполнить действие. Попробуйте ещё раз.";
+  return "Не получилось выполнить действие. Попробуй ещё раз.";
 }

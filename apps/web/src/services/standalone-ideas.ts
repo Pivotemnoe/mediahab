@@ -9,14 +9,14 @@ export interface StandaloneIdeasViewModel {
 export async function getStandaloneIdeasViewModel(): Promise<StandaloneIdeasViewModel> {
   if (getDataMode() !== "api") {
     return {
-      notice: "В демонстрации идеи не генерируются. Войдите в рабочий кабинет.",
+      notice: "После входа «Наговори» сможет предложить идеи по твоей теме.",
       workspaceId: null,
     };
   }
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   return {
-    notice: workspace ? undefined : "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+    notice: workspace ? undefined : "Не удалось открыть кабинет. Обнови страницу или войди заново.",
     workspaceId: workspace?.id ?? null,
   };
 }

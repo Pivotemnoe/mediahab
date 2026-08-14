@@ -103,7 +103,7 @@ assert.deepEqual(normalize(getGuidedQueueReplayReadiness({ entries: [], online: 
   jobCount: 0,
   repeatableGroupJobCount: 0,
   reason: "no_queue_jobs",
-  shellMessage: "Нет интернета. Черновики не потеряются; подготовка версий и публикация продолжатся после подключения.",
+  shellMessage: "Нет интернета. Твои записи не потеряются; подготовку текстов можно продолжить после подключения.",
   status: "offline",
   unknownJobCount: 0,
 });
@@ -115,7 +115,7 @@ assert.equal(onlineQueued.jobCount, 2);
 assert.equal(onlineQueued.repeatableGroupJobCount, 0);
 assert.equal(onlineQueued.reason, "http_only_cookie_csrf_required");
 assert.equal(onlineQueued.status, "manual_retry_required");
-assert.equal(onlineQueued.shellMessage, "Не всё сохранилось: 2. Откройте материал и повторите сохранение.");
+assert.equal(onlineQueued.shellMessage, "Не удалось отправить 2 изменения. Открой публикацию и повтори сохранение.");
 assert.equal(onlineQueued.unknownJobCount, 0);
 
 const mixedQueued = getGuidedQueueReplayReadiness({
@@ -128,24 +128,24 @@ assert.equal(mixedQueued.repeatableGroupJobCount, 1);
 assert.equal(mixedQueued.unknownJobCount, 1);
 assert.equal(
   mixedQueued.shellMessage,
-  "Не всё сохранилось: 3. Откройте материал и повторите сохранение.",
+  "Не удалось отправить 3 изменения. Открой публикацию и повтори сохранение.",
 );
 
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(1), online: false }).shellMessage,
-  "Нет интернета. 1 изменение сохранено; откройте приложение после подключения, чтобы продолжить.",
+  "Нет интернета. 1 изменение сохранено; открой «Наговори» после подключения, чтобы продолжить.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(2), online: false }).shellMessage,
-  "Нет интернета. 2 изменения сохранено; откройте приложение после подключения, чтобы продолжить.",
+  "Нет интернета. 2 изменения сохранены; открой «Наговори» после подключения, чтобы продолжить.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(5), online: false }).shellMessage,
-  "Нет интернета. 5 изменений сохранено; откройте приложение после подключения, чтобы продолжить.",
+  "Нет интернета. 5 изменений сохранено; открой «Наговори» после подключения, чтобы продолжить.",
 );
 assert.equal(
   getGuidedQueueReplayReadiness({ entries: queueEntries(11), online: false }).shellMessage,
-  "Нет интернета. 11 изменений сохранено; откройте приложение после подключения, чтобы продолжить.",
+  "Нет интернета. 11 изменений сохранено; открой «Наговори» после подключения, чтобы продолжить.",
 );
 
 const typedDraft = buildGuidedQueueReplayDraft({

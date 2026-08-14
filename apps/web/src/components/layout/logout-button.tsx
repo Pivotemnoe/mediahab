@@ -20,7 +20,7 @@ export function LogoutButton() {
       router.replace("/login");
       router.refresh();
     } catch {
-      setError("Не удалось выйти. Проверьте интернет и попробуйте ещё раз.");
+      setError("Не удалось выйти. Проверь интернет и попробуй ещё раз.");
       setPending(false);
     }
   }

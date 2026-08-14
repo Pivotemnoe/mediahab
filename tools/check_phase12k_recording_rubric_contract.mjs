@@ -27,7 +27,7 @@ assert.ok(settingsCard >= 0 && voiceCard > settingsCard, "Project/rubric setting
 assert.match(composerSource, /disabled=\{isRubricUpdating \|\| rubricLocked \|\| isAssembling\}/);
 assert.match(composerSource, /onChange=\{\(event\) => void updateRubric\(event\.currentTarget\.value\)\}/);
 assert.match(composerSource, /body: \{ rubric_id: rubricId \|\| null, version: currentItem\.version \}/);
-assert.match(composerSource, /Рубрику можно менять, пока пост ещё не собран/);
+assert.match(composerSource, /Формат можно изменить до подготовки текстов/);
 
 assert.match(composerSource, /ASSEMBLY_RECEIPT_TTL_MS = 30 \* 60 \* 1000/);
 assert.match(composerSource, /window\.localStorage\.setItem/);
@@ -37,7 +37,7 @@ assert.match(composerSource, /visibilitychange/);
 assert.match(composerSource, /pageshow/);
 assert.match(composerSource, /window\.addEventListener\("online"/);
 assert.match(composerSource, /navigator as Navigator[\s\S]*wakeLock/);
-assert.match(composerSource, /Восстанавливаю сборку после возвращения в приложение/);
+assert.match(composerSource, /«Наговори» продолжает подготовку после возвращения в приложение/);
 assert.match(composerSource, /propagateError: true/);
 assert.doesNotMatch(composerSource.match(/type AssemblyReceipt[\s\S]*?};/)?.[0] ?? "", /transcript|media|token|auth/i);
 

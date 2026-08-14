@@ -7,9 +7,9 @@ export default function AppLoading() {
     <div className="grid min-h-[50vh] place-items-center">
       <Card className="grid max-w-md place-items-center gap-3 text-center">
         <Loader2 className="animate-spin text-primary" size={24} />
-        <div className="text-sm font-medium text-foreground">Загружаем кабинет</div>
+        <div className="text-sm font-medium text-foreground">«Наговори» открывает кабинет</div>
         <div className="text-xs leading-5 text-muted">
-          Черновики, сохранённые на этом устройстве, останутся на месте.
+          Твои несохранённые записи на этом устройстве останутся на месте.
         </div>
       </Card>
     </div>

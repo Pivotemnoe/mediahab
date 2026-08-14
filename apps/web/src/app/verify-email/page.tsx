@@ -9,22 +9,22 @@ export default async function VerifyEmailPage({
   if (!params?.token) {
     return (
       <AccessLinkRequired
-        description="Откройте персональную ссылку из сообщения владельца пилота или попросите новую."
-        title="Нужна персональная ссылка"
+        description="Открой личную ссылку из сообщения. Если она больше не работает, попроси новую."
+        title="Открой ссылку из сообщения"
       />
     );
   }
   return (
     <AuthPage
       action="verify-email"
-      eyebrow="Почта"
-      title="Подтвердить почту"
-      description="Нажмите «Подтвердить», чтобы завершить проверку почты. Ссылка действует один раз."
+      eyebrow="Остался один шаг"
+      title="Подтверди свою почту"
+      description="Нажми кнопку ниже — ссылка сработает только один раз."
       fields={[]}
       hiddenFields={{ token: params.token }}
-      submitLabel="Подтвердить"
+      submitLabel="Подтвердить почту"
       secondaryHref="/login"
-      secondaryLabel="Вернуться ко входу"
+      secondaryLabel="Назад ко входу"
     />
   );
 }

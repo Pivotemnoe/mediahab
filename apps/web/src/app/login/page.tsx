@@ -13,11 +13,11 @@ export default async function LoginPage({
       action="login"
       eyebrow="С возвращением"
       title="Войти в «Наговори»"
-      description="Продолжите с сохранённого материала или начните новую диктовку."
+      description="Продолжи сохранённый текст или наговори новую мысль."
       fields={[
         {
           autoComplete: "email",
-          label: "Электронная почта",
+          label: "Почта",
           name: "email",
           placeholder: "name@example.com",
           type: "email",
@@ -26,16 +26,16 @@ export default async function LoginPage({
           autoComplete: "current-password",
           label: "Пароль",
           name: "password",
-          placeholder: "Введите пароль",
+          placeholder: "Твой пароль",
           type: "password",
         },
       ]}
       redirectTo={redirectTo}
-      submitLabel="Войти и продолжить"
+      submitLabel="Войти"
       secondaryHref="/register"
-      secondaryLabel="Нет аккаунта — получить приглашение"
+      secondaryLabel="Ещё нет доступа? Попросить приглашение"
       tertiaryHref="/forgot-password"
-      tertiaryLabel="Восстановить пароль"
+      tertiaryLabel="Не помню пароль"
     />
   );
 }

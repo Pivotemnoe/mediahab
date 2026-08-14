@@ -20,31 +20,31 @@ type RequestOptions = {
 };
 
 const ideaErrors: Record<string, string> = {
-  ai_text_generation_not_included: "Генерация идей не входит в текущий тариф.",
-  duplicate_ideas: "Идеи получились слишком похожими. Попробуйте ещё раз.",
+  ai_text_generation_not_included: "В этом кабинете подбор идей пока недоступен.",
+  duplicate_ideas: "Идеи получились слишком похожими. Попробуй ещё раз.",
   idea_daily_limit_reached: "Подборки на сегодня закончились. Новые будут доступны завтра.",
   idea_generator_unavailable: "Генератор идей сейчас недоступен.",
-  limit_exceeded: "Месячный лимит ИИ-дей исчерпан.",
-  role_denied: "Ваша роль не позволяет создавать идеи.",
+  limit_exceeded: "В этом месяце все подборки идей уже использованы.",
+  role_denied: "У тебя нет доступа к подбору идей.",
   subscription_inactive: "Для идей нужна активная подписка.",
-  unsafe_idea_output: "Ответ не прошёл проверку. Опишите тему немного иначе.",
+  unsafe_idea_output: "Не получилось подготовить идеи по этой теме. Опиши её немного иначе.",
 };
 
 const voiceErrors: Record<string, string> = {
-  ai_transcription_not_included: "Расшифровка голоса не входит в текущий тариф.",
+  ai_transcription_not_included: "В этом кабинете расшифровка голоса пока недоступна.",
   idea_topic_audio_duration_invalid: "Запись темы должна длиться не больше двух минут.",
-  idea_topic_audio_size_invalid: "Запись темы слишком большая. Запишите одну короткую тему.",
-  limit_exceeded: "Месячный лимит расшифровки голоса исчерпан.",
-  openai_empty_transcript: "Голос не удалось распознать. Напишите тему или запишите её ещё раз.",
-  openai_invalid_response: "Не удалось расшифровать голос. Повторите запись чуть позже.",
+  idea_topic_audio_size_invalid: "Запись темы слишком большая. Запиши одну короткую тему.",
+  limit_exceeded: "В этом месяце все доступные расшифровки уже использованы.",
+  openai_empty_transcript: "Голос не удалось распознать. Напиши тему или запиши её ещё раз.",
+  openai_invalid_response: "Не удалось расшифровать голос. Повтори запись чуть позже.",
   openai_not_configured: "Расшифровка голоса сейчас не настроена.",
-  openai_request_failed: "Сервис расшифровки не ответил. Повторите запись чуть позже.",
-  empty_audio: "Запись получилась пустой — звук не сохранился. Запишите тему ещё раз.",
-  transcription_temporarily_unavailable: "Не удалось расшифровать сохранённую запись. Повторите попытку позже или напишите тему вручную.",
+  openai_request_failed: "Сервис расшифровки не ответил. Повтори запись чуть позже.",
+  empty_audio: "Запись получилась пустой — звук не сохранился. Запиши тему ещё раз.",
+  transcription_temporarily_unavailable: "Не удалось расшифровать сохранённую запись. Попробуй позже или напиши тему вручную.",
   standalone_idea_generator_unavailable: "Генератор идей сейчас недоступен для этого кабинета.",
   standalone_idea_topic_already_transcribed: "Эта запись уже была отправлена на расшифровку.",
-  standalone_idea_topic_empty: "Голос не удалось распознать. Напишите тему или запишите её ещё раз.",
-  standalone_idea_topic_too_long: "Тема получилась слишком длинной. Оставьте одну короткую фразу.",
+  standalone_idea_topic_empty: "Голос не удалось распознать. Напиши тему или запиши её ещё раз.",
+  standalone_idea_topic_too_long: "Тема получилась слишком длинной. Оставь одну короткую фразу.",
   stt_provider_unavailable: "Расшифровка голоса сейчас недоступна.",
   subscription_inactive: "Для расшифровки голоса нужна активная подписка.",
 };
@@ -56,25 +56,23 @@ function csrfToken(): string | null {
 
 async function parseApiError(response: Response, scope: RequestOptions["errorScope"]): Promise<Error> {
   let code: string | null = null;
-  let message: string | null = null;
   try {
     const payload = await response.json() as { error?: { code?: string; message?: string } };
     code = payload.error?.code ?? null;
-    message = payload.error?.message ?? null;
   } catch {
     // Use the normalized fallback below.
   }
   if (code && scope === "voice" && voiceErrors[code]) return new Error(voiceErrors[code]);
   if (code && ideaErrors[code]) return new Error(ideaErrors[code]);
-  if (response.status === 401 || response.status === 403) return new Error("Сессия устарела. Обновите страницу и войдите заново.");
-  if (response.status === 429) return new Error("Сейчас слишком много запросов. Подождите немного.");
-  return new Error(message || `Сервер вернул ошибку ${response.status}.`);
+  if (response.status === 401 || response.status === 403) return new Error("Нужно войти заново. Обнови страницу и повтори вход.");
+  if (response.status === 429) return new Error("Сейчас слишком много запросов. Подожди немного.");
+  return new Error("Не получилось выполнить действие. Попробуй ещё раз чуть позже.");
 }
 
 async function apiRequest<T>(path: string, options: RequestOptions): Promise<T> {
   const token = csrfToken();
   if (options.method === "POST" && !token) {
-    throw new Error("Сессия устарела. Обновите страницу и войдите заново.");
+    throw new Error("Не получилось подтвердить вход. Обнови страницу и войди ещё раз.");
   }
   const headers = new Headers({ Accept: "application/json" });
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
@@ -115,7 +113,7 @@ export async function generateStandaloneIdeas({
   const rawIdeas = run.response_json?.ideas;
   const ideas = Array.isArray(rawIdeas) ? rawIdeas.map(standaloneIdeaFromApi) : [];
   if (run.status !== "completed" || ideas.length !== 5 || ideas.some((idea) => idea === null)) {
-    throw new Error((run.error_code && ideaErrors[run.error_code]) || run.error_message || "Сервис не вернул пять разных идей. Попробуйте ещё раз.");
+    throw new Error((run.error_code && ideaErrors[run.error_code]) || "Не получилось подготовить пять разных идей. Попробуй ещё раз.");
   }
   return { ideas: ideas as StandaloneIdeaDirection[], run };
 }
@@ -172,7 +170,7 @@ export async function transcribeStandaloneIdeaTopic({
     method: "PUT",
     signal,
   });
-  if (!upload.ok) throw new Error("Не удалось загрузить голос. Повторите запись.");
+  if (!upload.ok) throw new Error("Не удалось загрузить голос. Повтори запись.");
   await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
     body: { codec_metadata: { source: "standalone-idea-topic" }, duration_ms: durationMs, size_bytes: blob.size },
     errorScope: "voice",
@@ -186,6 +184,6 @@ export async function transcribeStandaloneIdeaTopic({
     { body, errorScope: "voice", method: "POST", signal },
   );
   const transcript = transcription.transcript_text?.trim();
-  if (!transcript) throw new Error("Голос не удалось распознать. Напишите тему или запишите её ещё раз.");
+  if (!transcript) throw new Error("Голос не удалось распознать. Напиши тему или запиши её ещё раз.");
   return transcript;
 }

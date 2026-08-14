@@ -18,22 +18,22 @@ export default async function RegisterPage({
         <div className="grid gap-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-success">
-              Закрытое тестирование
+              Доступ по приглашению
             </div>
             <h1 className="mt-3 text-2xl font-semibold text-foreground">
-              Вход по персональному приглашению
+              Нужна личная ссылка
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted">
-              Сейчас мы подключаем тестировщиков небольшими группами. Попросите владельца пилота прислать одноразовую ссылку — свободной регистрации нет.
+              Сейчас «Наговори» открыт для небольшой группы. Нажми «Попросить приглашение» и напиши, для чего хочешь его попробовать.
             </p>
           </div>
           <Button asChild>
             <a href="mailto:pivo.temnoe@gmail.com?subject=Доступ к закрытому тестированию Наговори">
-              Запросить приглашение
+              Попросить приглашение
             </a>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/login">Уже есть аккаунт</Link>
+            <Link href="/login">Уже есть доступ? Войти</Link>
           </Button>
         </div>
       </AuthShell>
@@ -44,13 +44,13 @@ export default async function RegisterPage({
     <AuthPage
       action="register"
       consentRequired
-      eyebrow="Начало работы"
-      title="Создать свой кабинет в «Наговори»"
-      description="Приглашение действует один раз. После входа короткое обучение покажет диктовку, блокнот, идеи и настройку стиля."
+      eyebrow="Твоё приглашение готово"
+      title="Создай кабинет и начинай наговаривать"
+      description="Ссылка сработает один раз. После входа «Наговори» быстро покажет, где наговорить публикацию, сохранить мысль и добавить примеры своего стиля."
       fields={[
         {
           autoComplete: "email",
-          label: "Электронная почта",
+          label: "Почта",
           name: "email",
           placeholder: "name@example.com",
           type: "email",
@@ -58,28 +58,28 @@ export default async function RegisterPage({
         },
         {
           autoComplete: "new-password",
-          helper: "Минимум 12 символов.",
-          label: "Пароль",
+          helper: "Не короче 12 символов.",
+          label: "Придумай новый пароль",
           name: "password",
-          placeholder: "Надёжный пароль",
+          placeholder: "Новый пароль",
           type: "password",
         },
         {
           autoComplete: "name",
-          label: "Имя",
+          label: "Как к тебе обращаться",
           name: "display_name",
           placeholder: "Константин",
         },
         {
-          label: "Название кабинета",
+          label: "Как назвать кабинет",
           name: "workspace_name",
-          placeholder: "Моя редакция",
+          placeholder: "Мой блог",
         },
       ]}
       hiddenFields={{ invite_token: inviteToken }}
-      submitLabel="Принять приглашение"
+      submitLabel="Начать в «Наговори»"
       secondaryHref="/login"
-      secondaryLabel="Уже есть аккаунт"
+      secondaryLabel="Уже есть доступ? Войти"
     />
   );
 }

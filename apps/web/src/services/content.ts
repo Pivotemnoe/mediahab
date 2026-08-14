@@ -495,12 +495,12 @@ const fixtureGuidedBlocks: GuidedBlockSource[] = [
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     archived: "архив",
-    collecting: "сбор фактов",
+    collecting: "в работе",
     draft: "черновик",
     published: "опубликовано",
-    ready_for_ai: "готово к ИИ",
+    ready_for_ai: "можно готовить текст",
   };
-  return labels[status] ?? status;
+  return labels[status] ?? "в работе";
 }
 
 function formatUpdatedAt(value: string): string {
@@ -821,13 +821,13 @@ function guidedFormView(
     canMutate: params.canMutate,
     description:
       params.canMutate
-        ? "Заполните факты публикации и сохраните изменения перед сборкой текста."
-        : "Поля построены из активной версии рубрики. В демо-режиме сохранение отключено.",
+        ? "Добавь факты публикации и сохрани их перед подготовкой текста."
+        : "Поля собраны по правилам выбранного формата. В этом режиме сохранить изменения не получится.",
     fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
     generatedFields: params.generatedFields.map(generatedFieldLabel),
     itemVersion: params.itemVersion,
     limits: editorialLimitsLabel(params.editorialLimits),
-    title: "Фактическая форма рубрики",
+    title: "Факты для публикации",
   };
 }
 
@@ -865,7 +865,7 @@ function variantStatus(status: string): string {
     approved: "готово к публикации",
     draft: "черновик",
     invalid: "нужна правка",
-    manual_required: "нужен ручной экспорт",
+    manual_required: "можно опубликовать вручную",
     ready: "готово к проверке",
     ready_for_review: "готово к проверке",
     rejected: "отклонено",
@@ -879,36 +879,49 @@ function platformLabel(platformKey: string): string {
     instagram: "Instagram",
     max: "MAX",
     telegram: "Telegram",
+    vk: "VK",
   };
-  return labels[platformKey] ?? platformKey;
+  return labels[platformKey] ?? "Площадка";
 }
 
-function validationMessages(variant: PlatformVariantOut): string[] {
+function validationMessage(value: unknown, platform: string): string {
+  const code = value && typeof value === "object" && "code" in value
+    ? String((value as { code?: unknown }).code ?? "")
+    : "";
+  const message = typeof value === "string"
+    ? value
+    : value && typeof value === "object" && "message" in value
+      ? String((value as { message?: unknown }).message ?? "")
+      : "";
+
+  if (code.includes("text_limit") || /text exceeds|caption exceeds/i.test(message)) {
+    return `Текст длиннее лимита ${platform}. Сократи его перед публикацией.`;
+  }
+  if (code.includes("media_limit") || /media count exceeds/i.test(message)) {
+    return `Для ${platform} выбрано слишком много фото или видео.`;
+  }
+  if (code === "instagram_single_media") {
+    return "Одно фото или видео подходит для обычного поста или короткого ролика; для карусели нужно от 2 до 10 файлов.";
+  }
+  if (code.includes("hashtag_limit")) {
+    return "В подписи Instagram должно быть не больше 30 хештегов.";
+  }
+  if (code.includes("mention_limit")) {
+    return "В подписи Instagram должно быть не больше 20 упоминаний.";
+  }
+  if (code.includes("live_acceptance") || /pending credentials|feature-flagged|live fixture evidence|contract is available/i.test(message)) {
+    return `Автоматическая отправка в ${platform} пока недоступна. Проверь текст, скопируй его и опубликуй вручную.`;
+  }
+  return "Перед публикацией проверь текст, ссылки, фото и видео.";
+}
+
+function validationMessages(variant: PlatformVariantOut, platform: string): string[] {
   const warnings = variant.validation.warnings;
   const errors = variant.validation.errors;
-  const message = (value: unknown): string => {
-    if (typeof value === "string") return value;
-    if (value && typeof value === "object" && "message" in value) {
-      const objectMessage = (value as { message?: unknown }).message;
-      if (typeof objectMessage === "string") return objectMessage;
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  };
   return [
-    ...(Array.isArray(warnings) ? warnings.map(message) : []),
-    ...(Array.isArray(errors) ? errors.map(message) : []),
+    ...(Array.isArray(errors) ? errors.map((value) => validationMessage(value, platform)) : []),
+    ...(Array.isArray(warnings) ? warnings.map((value) => validationMessage(value, platform)) : []),
   ];
-}
-
-function userFacingValidationMessage(message: string, platform: string): string {
-  if (/pending credentials|live fixture evidence|contract is available/i.test(message)) {
-    return `Отправка в ${platform} пока не подключена. Проверьте текст и используйте ручной экспорт.`;
-  }
-  return message;
 }
 
 function latestVariantsByPlatform(variants: PlatformVariantOut[]): PlatformVariantOut[] {
@@ -1018,7 +1031,7 @@ function emptyGuidedForm(): ContentStudioViewModel["guidedForm"] {
     generatedFields: [],
     itemVersion: null,
     limits: "—",
-    title: "Материал",
+    title: "Публикация",
   };
 }
 
@@ -1030,7 +1043,7 @@ function emptyContentStudio(contentId: string, notice: string): ContentStudioVie
     factLocks: [],
     guidedForm: emptyGuidedForm(),
     inputBlocks: [],
-    materialFlow: neutralMaterialFlow("Материал"),
+    materialFlow: neutralMaterialFlow("Публикация"),
     masterBudget: "—",
     masterDraftParagraphs: [],
     materialLabel: contentId,
@@ -1042,12 +1055,12 @@ function emptyContentStudio(contentId: string, notice: string): ContentStudioVie
     summary: {
       autosave: "—",
       lockedFacts: "—",
-      project: "Проект",
+      project: "Канал",
       range: "—",
       revision: "—",
-      rubric: "Без рубрики",
+      rubric: "Обычная публикация",
       status: "недоступен",
-      title: "Материал",
+      title: "Публикация",
     },
     transcriptReview: {
       confidence: "—",
@@ -1065,14 +1078,14 @@ function emptyNewContent(notice?: string, workspaceId: string | null = null): Ne
     activeCaptureBlock: {
       duration: "00:00",
       progress: "0%",
-      prompt: "Расскажите главное своими словами.",
+      prompt: "Расскажи главное своими словами.",
       title: "Новая публикация",
       transcript: "",
     },
     captureSteps: [],
     compactPreviews: [],
     contextLabel: "Создание публикации",
-    materialFlow: neutralMaterialFlow("Без рубрики — общие правила проекта"),
+    materialFlow: neutralMaterialFlow("Обычная публикация — общие правила канала"),
     modeLabel: "api",
     notice,
     offlineDraft: {
@@ -1122,7 +1135,7 @@ function contentItemView(
   return {
     href: `/app/content/${item.id}`,
     project: projectName,
-    rubric: rubricNames.get(item.rubric_id) ?? "Без рубрики",
+    rubric: rubricNames.get(item.rubric_id) ?? "Обычная публикация",
     status: statusLabel(item.status),
     title: item.title_internal,
     version: `v${item.version}`,
@@ -1155,7 +1168,7 @@ async function apiContentIndex(): Promise<ContentIndexViewModel> {
     modeLabel: "api",
     notice: projectItems.every((result) => result.available)
       ? undefined
-      : "Часть истории не загрузилась. Попробуйте обновить страницу.",
+      : "Не все тексты загрузились. Обнови страницу — сохранённые публикации не пропали.",
   };
 }
 
@@ -1163,7 +1176,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
   const item = await safeApiGet<ContentItemOut>(`/api/v1/content-items/${contentId}`);
 
   if (!item) {
-    return emptyContentStudio(contentId, "Материал не найден или у вас нет к нему доступа.");
+    return emptyContentStudio(contentId, "Текст не найден или у тебя нет к нему доступа.");
   }
 
   const [projects, rubricNames, guidedFormResponse, blocksResponse, variantsResponse] = await Promise.all([
@@ -1190,12 +1203,10 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     const warnings = variant.validation.warnings;
     return count + (Array.isArray(warnings) ? warnings.length : 0);
   }, 0);
-  const notices = [
-    guidedFormResponse ? null : "Форма материала сейчас не загрузилась.",
-    blocksResponse ? null : "Исходные данные материала сейчас не загрузились.",
-    variantsResponse ? null : "Версии для площадок сейчас не загрузились.",
-  ].filter(Boolean);
-  const rubricLabel = rubricNames.get(item.rubric_id) ?? "Без рубрики";
+  const notices = [guidedFormResponse, blocksResponse, variantsResponse].some((value) => !value)
+    ? ["Не всё загрузилось. Обнови страницу — сохранённые данные останутся на месте."]
+    : [];
+  const rubricLabel = rubricNames.get(item.rubric_id) ?? "Обычная публикация";
 
   return {
     available: true,
@@ -1207,7 +1218,13 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
           {
             label: "Готовность",
             tone: variants.some((variant) => variant.status === "approved") ? "success" : "warning",
-            value: variants.length ? `${variants.length} вариант(а)` : "варианты не собраны",
+            value: variants.length === 1
+              ? "1 вариант"
+              : variants.length >= 2 && variants.length <= 4
+                ? `${variants.length} варианта`
+                : variants.length
+                  ? `${variants.length} вариантов`
+                  : "варианты не готовы",
           },
         ]
       : [],
@@ -1229,12 +1246,12 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
         })
       : {
           canMutate: false,
-          description: "Форма материала недоступна.",
+          description: "Дополнительные поля сейчас недоступны.",
           fields: [],
           generatedFields: [],
           itemVersion: item.version,
           limits: "без заданного диапазона",
-          title: "Материал",
+          title: "Публикация",
         },
     inputBlocks: blocks.length
       ? blocks.map((block) => ({
@@ -1246,19 +1263,19 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
       : [],
     materialLabel: item.id,
     materialFlow: neutralMaterialFlow(rubricLabel),
-    masterBudget: variants[0] ? `${variants[0].character_count} знаков` : "версии не собраны",
+    masterBudget: variants[0] ? `${variants[0].character_count} знаков` : "тексты не готовы",
     masterDraftParagraphs: textBlocks,
     modeLabel: "api",
     notice: notices.length ? notices.join(" ") : undefined,
     platformPreviews: variants.length
       ? latestVariantsByPlatform(variants).map((variant) => {
           const platform = platformLabel(variant.platform_key);
-          const warning = validationMessages(variant)[0] ?? "";
+          const warning = validationMessages(variant, platform)[0] ?? "";
           return {
           budget: `${variant.character_count} знаков`,
           id: variant.id,
-          media: stringFromJson(variant.payload, "media") ?? "медиа по правилам площадки",
-          mode: stringFromJson(variant.payload, "mode") ?? "вариант публикации",
+          media: stringFromJson(variant.payload, "media") ?? "фото и видео по правилам площадки",
+          mode: stringFromJson(variant.payload, "mode") ?? "готовый текст",
           platform,
           platformKey: variant.platform_key,
           richText: variant.payload.rich_text && typeof variant.payload.rich_text === "object" && !Array.isArray(variant.payload.rich_text)
@@ -1266,7 +1283,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
             : undefined,
           status: variantStatus(variant.status),
           text: variant.rendered_text || variant.text || "",
-          warning: warning ? userFacingValidationMessage(warning, platform) : "",
+          warning,
           };
         })
       : [],
@@ -1277,7 +1294,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
       range: guidedFormResponse
         ? editorialLimitsLabel(guidedFormResponse.editorial_limits)
         : "без заданного диапазона",
-      project: project?.name ?? "Проект",
+      project: project?.name ?? "Канал",
       revision: `v${item.version}`,
       rubric: rubricLabel,
       status: statusLabel(item.status),
@@ -1365,7 +1382,7 @@ async function apiNewContent(resumeContentId?: string): Promise<NewContentViewMo
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   if (!workspace) {
-    return emptyNewContent("Рабочее пространство пока не найдено. Войдите заново или завершите первоначальную настройку.");
+    return emptyNewContent("Не удалось открыть кабинет. Войди заново или закончи первое знакомство.");
   }
 
   const projectsResponse = await safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
@@ -1395,13 +1412,13 @@ async function apiNewContent(resumeContentId?: string): Promise<NewContentViewMo
     };
   }));
   const firstProject = projects[0];
-  const rubricName = "Без рубрики — общие правила проекта";
+  const rubricName = "Обычная публикация";
   const resumeDraft = resumeContentId ? await resumeContentDraft(resumeContentId, projects) : undefined;
   return {
     ...emptyNewContent(undefined, workspace.id),
-    contextLabel: `${firstProject?.name ?? "Проект"} · ${rubricName}`,
+    contextLabel: `${firstProject?.name ?? "Канал"} · ${rubricName}`,
     materialFlow: neutralMaterialFlow(rubricName),
-    notice: projects.length ? undefined : "Сначала создайте свой проект или канал.",
+    notice: projects.length ? undefined : "Сначала создай свой канал.",
     projects,
     resumeDraft,
     workspaceId: workspace.id,
@@ -1419,7 +1436,7 @@ export async function getContentIndexViewModel(): Promise<ContentIndexViewModel>
     return {
       items: [],
       modeLabel: "api",
-      notice: "История сейчас не загрузилась. Попробуйте обновить страницу.",
+      notice: "Тексты сейчас не загрузились. Обнови страницу — сохранённые публикации не пропали.",
     };
   }
 }
@@ -1432,7 +1449,7 @@ export async function getContentStudioViewModel(contentId: string): Promise<Cont
   try {
     return await apiContentStudio(contentId);
   } catch {
-    return emptyContentStudio(contentId, "Материал сейчас не загрузился. Попробуйте вернуться в историю и открыть его снова.");
+    return emptyContentStudio(contentId, "Текст сейчас не загрузился. Вернись ко всем текстам и открой его снова.");
   }
 }
 
@@ -1444,6 +1461,6 @@ export async function getNewContentViewModel(resumeContentId?: string): Promise<
   try {
     return await apiNewContent(resumeContentId);
   } catch {
-    return emptyNewContent("Создание публикации сейчас недоступно. Попробуйте обновить страницу.");
+    return emptyNewContent("Сейчас не получается начать публикацию. Обнови страницу и попробуй ещё раз.");
   }
 }

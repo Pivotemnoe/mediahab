@@ -18,16 +18,24 @@ export default async function DashboardView() {
   const dashboard = await getDashboardViewModel();
   const hasProjects = dashboard.projects.length > 0;
 
+  function formatCount(count: number): string {
+    const lastTwo = count % 100;
+    const last = count % 10;
+    if (lastTwo >= 11 && lastTwo <= 19) return `${count} форматов`;
+    if (last === 1) return `${count} формат`;
+    if (last >= 2 && last <= 4) return `${count} формата`;
+    return `${count} форматов`;
+  }
+
   return (
     <div className="grid min-w-0 gap-5">
       <section className="grid min-w-0 gap-5 rounded-2xl bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
-          <Badge tone="success">Главная</Badge>
           <h1 className="font-editorial mt-4 max-w-3xl text-4xl leading-tight text-white sm:text-5xl">
-            Что будем публиковать сегодня?
+            О чём хочешь рассказать сегодня?
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-sidebar-foreground/78 sm:text-base">
-            Надиктуйте материал целиком или частями. Проект применит ваш стиль и примеры, а рубрику можно выбрать только при необходимости.
+            Расскажи всё своими словами — целиком или по частям. «Наговори» учтёт стиль канала; формат выбирай только тогда, когда он действительно нужен.
           </p>
         </div>
         {hasProjects ? (
@@ -35,7 +43,7 @@ export default async function DashboardView() {
           <Button asChild>
             <Link href="/app/content/new">
               <Mic size={16} />
-              Начать с диктовки
+              Наговорить публикацию
             </Link>
           </Button>
           </div>
@@ -52,10 +60,10 @@ export default async function DashboardView() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold text-foreground">Блокнот</h2>
-            <p className="mt-1 text-sm leading-6 text-muted">Мысли без обязательного проекта, рубрики и подготовки публикации.</p>
+            <p className="mt-1 text-sm leading-6 text-muted">Сохраняй мысли на ходу. Канал и площадку можно выбрать позже.</p>
           </div>
           <Button asChild size="sm" variant="secondary">
-            <Link href="/app/notebook">Новая заметка</Link>
+            <Link href="/app/notebook">Записать мысль</Link>
           </Button>
         </div>
         {dashboard.recentNotes.length ? (
@@ -63,14 +71,14 @@ export default async function DashboardView() {
             {dashboard.recentNotes.map((note, index) => (
               <Link className="rounded-lg border border-border bg-surface p-4 shadow-panel transition hover:bg-surface-muted" href={note.href} key={`${note.updatedAt}-${index}`}>
                 <p className="line-clamp-3 text-sm leading-6 text-foreground">{note.body || "Пустая заметка"}</p>
-                <span className="mt-2 block text-xs text-muted">Открыть и продолжить</span>
+                <span className="mt-2 block text-xs text-muted">Продолжить заметку</span>
               </Link>
             ))}
           </div>
         ) : (
           <Card className="grid justify-items-start gap-3 border-dashed p-5">
             <NotebookPen className="text-muted" size={22} />
-            <p className="text-sm leading-6 text-muted">Сохраните идею сейчас — проект можно выбрать позже.</p>
+            <p className="text-sm leading-6 text-muted">Сохрани мысль сейчас — канал можно выбрать позже.</p>
           </Card>
         )}
       </section>
@@ -78,14 +86,14 @@ export default async function DashboardView() {
       <section className="grid min-w-0 gap-4">
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-semibold text-foreground">Проекты и каналы</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Мои каналы</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
-              У каждого проекта свои общие правила, идеальные примеры и необязательные рубрики.
+              Для каждого канала можно сохранить свой стиль, примеры и повторяющиеся форматы.
             </p>
           </div>
           {hasProjects ? (
             <Button asChild size="sm" variant="secondary">
-              <Link href="/app/projects">Все проекты</Link>
+              <Link href="/app/projects">Все каналы</Link>
             </Button>
           ) : null}
         </div>
@@ -102,12 +110,12 @@ export default async function DashboardView() {
                     </div>
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{project.note}</p>
                   </div>
-                  <Badge>{project.rubricCount ? `${project.rubricCount} ${project.rubricCount === 1 ? "рубрика" : "рубрики"}` : "без рубрик"}</Badge>
+                  {project.rubricCount ? <Badge>{formatCount(project.rubricCount)}</Badge> : null}
                 </div>
                 <div>
                   <Button asChild variant="secondary">
                     <Link href={project.href}>
-                      Открыть проект
+                      Открыть канал
                       <ArrowRight size={16} />
                     </Link>
                   </Button>
@@ -121,15 +129,15 @@ export default async function DashboardView() {
               <FolderKanban size={24} />
             </span>
             <div>
-              <h3 className="text-xl font-semibold text-foreground">Создайте первый проект</h3>
+              <h3 className="text-xl font-semibold text-foreground">Создай первый канал</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                Назовите канал и добавьте несколько удачных публикаций, чья подача вам нравится. После этого можно сразу диктовать — анкета и рубрика не обязательны.
+                Назови канал. Примеры стиля можно добавить сейчас или позже — после этого уже можно наговаривать первый текст.
               </p>
             </div>
             <Button asChild>
               <Link href="/app/projects/new">
                 <Plus size={16} />
-                Создать канал и добавить примеры
+                Создать канал
               </Link>
             </Button>
           </Card>
@@ -140,11 +148,11 @@ export default async function DashboardView() {
         <Card className="grid min-w-0 gap-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Последние материалы</h2>
-              <p className="mt-1 text-sm text-muted">Только ваши реальные черновики и публикации.</p>
+              <h2 className="text-lg font-semibold text-foreground">Недавние тексты</h2>
+              <p className="mt-1 text-sm text-muted">Здесь появятся тексты, над которыми ты недавно работал.</p>
             </div>
             <Button asChild size="sm" variant="secondary">
-              <Link href="/app/content">История</Link>
+              <Link href="/app/content">Все тексты</Link>
             </Button>
           </div>
           {dashboard.recentDrafts.length ? (
@@ -162,8 +170,8 @@ export default async function DashboardView() {
           ) : (
             <div className="grid justify-items-start gap-3 rounded-lg border border-dashed border-border p-5">
               <FileText className="text-muted" size={22} />
-              <div className="text-sm font-semibold text-foreground">Материалов пока нет</div>
-              <p className="text-sm leading-6 text-muted">Когда вы создадите первую публикацию, она появится здесь и в истории.</p>
+              <div className="text-sm font-semibold text-foreground">Здесь пока нет текстов</div>
+              <p className="text-sm leading-6 text-muted">Первая публикация появится здесь сразу после сохранения.</p>
             </div>
           )}
         </Card>

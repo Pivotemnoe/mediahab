@@ -29,7 +29,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
               <Link href="/login">Войти</Link>
             </Button>
             <Button asChild>
-              <Link href="/register">Начать с диктовки</Link>
+              <Link href="/register">Попросить приглашение</Link>
             </Button>
           </div>
         </div>
@@ -39,17 +39,16 @@ export function MarketingShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-9 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-12">
           <div>
             <BrandMark />
-            <p className="mt-3 max-w-md text-sm leading-6 text-muted">Одна идея превращается в отдельные версии для каждой площадки. Последнее слово всегда остаётся за вами.</p>
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted">Наговори мысль — получи свой текст для каждой площадки. Публиковать или нет, решаешь ты.</p>
           </div>
           <nav className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-muted sm:grid-cols-4" aria-label="Нижнее меню">
-            <Link className="hover:text-foreground" href="/features">Возможности</Link>
-            <Link className="hover:text-foreground" href="/pricing">Тарифы</Link>
-            <Link className="hover:text-foreground" href="/security">Безопасность</Link>
+            <Link className="hover:text-foreground" href="/features">Что умеет «Наговори»</Link>
+            <Link className="hover:text-foreground" href="/security">Защита</Link>
             <Link className="hover:text-foreground" href="/contacts">Контакты</Link>
-            <Link className="hover:text-foreground" href="/privacy">Приватность</Link>
+            <Link className="hover:text-foreground" href="/privacy">Данные</Link>
             <Link className="hover:text-foreground" href="/terms">Условия</Link>
             <Link className="hover:text-foreground" href="/login">Войти</Link>
-            <Link className="text-primary hover:text-foreground" href="/register">Начать</Link>
+            <Link className="text-primary hover:text-foreground" href="/register">Попросить приглашение</Link>
           </nav>
         </div>
       </footer>
@@ -63,16 +62,16 @@ export function AuthShell({ children, className }: { children: ReactNode; classN
       <div className="mx-auto grid min-h-screen max-w-[1440px] items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-12">
         <section className="py-2 lg:py-8 lg:pr-12">
           <BrandMark />
-          <div className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-success lg:mt-12">Один исходник — разные площадки</div>
-          <p className="mt-3 text-sm leading-6 text-muted lg:hidden">Из диктовки — в отдельные версии для Telegram, MAX, VK и Instagram.</p>
+          <div className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-success lg:mt-12">Наговори один раз</div>
+          <p className="mt-3 text-sm leading-6 text-muted lg:hidden">«Наговори» подготовит отдельный текст для Telegram, MAX, VK и Instagram.</p>
           <h1 className="font-editorial mt-4 hidden max-w-3xl text-7xl leading-[0.98] text-foreground lg:block">
-            Вернитесь к своему голосу и готовым постам.
+            Твои мысли и публикации всегда под рукой.
           </h1>
           <p className="mt-6 hidden max-w-xl text-lg leading-7 text-muted lg:block">
-            Надиктуйте факты, проверьте расшифровку и получите отдельные версии для Telegram, MAX, VK и Instagram — без автопубликации.
+            Наговори мысль, проверь текст и выбери площадки. «Наговори» ничего не опубликует без тебя.
           </p>
           <div className="mt-8 hidden max-w-2xl gap-3 lg:grid lg:grid-cols-3">
-            {["Факты остаются вашими", "Правила хранятся в проекте", "Вы подтверждаете результат"].map((item) => (
+            {["Только твои факты", "Твой стиль запоминается", "Последнее слово за тобой"].map((item) => (
               <div className="rounded-lg border border-border bg-surface p-3 text-sm leading-5 text-muted" key={item}>{item}</div>
             ))}
           </div>

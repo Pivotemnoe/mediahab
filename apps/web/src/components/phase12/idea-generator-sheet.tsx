@@ -52,30 +52,30 @@ const goals: Array<{ label: string; value: IdeaGoal }> = [
 
 const ideaErrorMessages: Record<string, string> = {
   ai_text_generation_not_included: "Генерация идей не входит в текущий тариф.",
-  client_content_id_conflict: "Не удалось открыть заготовку. Обновите страницу и попробуйте ещё раз.",
-  duplicate_ideas: "Идеи получились слишком похожими. Запустите ещё одну подборку.",
-  idea_already_accepted: "Одна из идей этой подборки уже сохранена в черновики.",
-  idea_copies_example: "Ответ слишком близко повторил удачный пост. Запустите ещё одну подборку.",
+  client_content_id_conflict: "Не удалось открыть заготовку. Обнови страницу и попробуй ещё раз.",
+  duplicate_ideas: "Идеи получились слишком похожими. Попроси другую подборку.",
+  idea_already_accepted: "Одна из идей этой подборки уже сохранена.",
+  idea_copies_example: "Одна идея слишком близко повторила сохранённую публикацию. Попроси другую подборку.",
   idea_daily_limit_reached: "Подборки на сегодня закончились. Новые будут доступны завтра.",
-  idea_generator_unavailable: "Генератор идей сейчас недоступен для этого проекта.",
-  limit_exceeded: "Месячный лимит ИИ-генераций исчерпан. Лимит обновится в новом расчётном периоде.",
-  idea_repeats_recent_topic: "Получились темы, слишком похожие на недавние публикации. Уточните новый ракурс и попробуйте ещё раз.",
-  project_not_found: "Проект больше недоступен. Обновите страницу.",
-  role_denied: "Ваша роль в проекте не позволяет создавать материалы. Обратитесь к владельцу пространства.",
-  rubric_not_found: "Выбранная рубрика больше недоступна. Обновите страницу.",
+  idea_generator_unavailable: "Идеи сейчас недоступны для этого канала.",
+  limit_exceeded: "Подборки на этот месяц закончились. Новые появятся в следующем месяце.",
+  idea_repeats_recent_topic: "Темы слишком похожи на недавние публикации. Уточни новый ракурс и попробуй ещё раз.",
+  project_not_found: "Канал больше недоступен. Обнови страницу.",
+  role_denied: "У твоего аккаунта нет доступа к созданию публикаций в этом канале.",
+  rubric_not_found: "Выбранный формат больше недоступен. Обнови страницу.",
   subscription_inactive: "Для генерации идей нужна активная подписка.",
-  unsupported_idea_claim: "В идеях появилось слишком категоричное утверждение. Уточните тему или попробуйте ещё раз.",
-  unsupported_idea_quote: "В идеях появилась фраза, которую вы не давали. Мы её не используем — запустите ещё одну подборку.",
-  unsafe_idea_output: "Ответ не прошёл проверку безопасности. Опишите тему немного иначе.",
-  unsafe_idea_outline: "Вместо заготовки получился слишком готовый совет. Запустите ещё одну подборку.",
-  unsupported_idea_specific: "В идеях появились детали, которых не было в описании. Добавьте нужные факты или попробуйте ещё раз.",
+  unsupported_idea_claim: "В идеях появилось слишком категоричное утверждение. Уточни тему или попробуй ещё раз.",
+  unsupported_idea_quote: "В идеях появилась фраза, которой не было в теме. «Наговори» не станет её использовать — попроси другую подборку.",
+  unsafe_idea_output: "Не получилось подготовить идеи по этой теме. Опиши её немного иначе.",
+  unsafe_idea_outline: "Вместо направления получился слишком готовый совет. Попроси другую подборку.",
+  unsupported_idea_specific: "В идеях появились детали, которых не было в описании. Добавь нужные факты или попробуй ещё раз.",
 };
 
 function friendlyIdeaError(code?: string | null, status?: number): string {
   if (code && ideaErrorMessages[code]) return ideaErrorMessages[code];
-  if (status === 401 || status === 403) return "Сессия страницы устарела. Обновите страницу и войдите заново.";
-  if (status === 429) return "Сейчас слишком много запросов. Подождите немного и попробуйте ещё раз.";
-  return "Сейчас не удалось подобрать идеи. Попробуйте ещё раз чуть позже.";
+  if (status === 401 || status === 403) return "Эта страница была открыта давно. Обнови её и войди снова.";
+  if (status === 429) return "Сейчас слишком много запросов. Подожди немного и попробуй ещё раз.";
+  return "Сейчас не удалось подобрать идеи. Попробуй ещё раз чуть позже.";
 }
 
 function csrfToken(): string | null {
@@ -89,7 +89,7 @@ async function ideaApiRequest<T>(
 ): Promise<T> {
   const token = csrfToken();
   if (options.method === "POST" && !token) {
-    throw new Error("Сессия страницы устарела. Обновите страницу и войдите заново.");
+    throw new Error("Эта страница была открыта давно. Обнови её и войди снова.");
   }
   const headers = new Headers({ Accept: "application/json" });
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
@@ -102,7 +102,7 @@ async function ideaApiRequest<T>(
     signal: options.signal,
   });
   if (!response.ok) {
-    let message = `Сервер вернул ошибку ${response.status}.`;
+    let message = friendlyIdeaError(null, response.status);
     try {
       const payload = await response.json() as { error?: { code?: string; message?: string } };
       message = friendlyIdeaError(payload.error?.code, response.status);
@@ -341,7 +341,7 @@ export function IdeaGeneratorSheet({
       closeSheet();
     } catch (cause) {
       if (isAbortError(cause) || !requestIsCurrent(epoch, expected)) return;
-      setError(cause instanceof Error ? cause.message : "Не удалось взять идею. Попробуйте ещё раз.");
+      setError(cause instanceof Error ? cause.message : "Не удалось взять идею. Попробуй ещё раз.");
     } finally {
       if (acceptAbortRef.current === controller) acceptAbortRef.current = null;
       if (requestIsCurrent(epoch, expected)) setAcceptingIdeaId(null);
@@ -396,7 +396,7 @@ export function IdeaGeneratorSheet({
                 <Badge tone="success">Идеи для постов</Badge>
                 <h2 className="mt-3 text-2xl font-semibold text-foreground" id="idea-generator-title">О чём написать сегодня?</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted" id="idea-generator-description">
-                  Подберём пять направлений для публикации. Идея только подскажет, о чём рассказать; основные слова останутся вашими.
+                  «Наговори» предложит пять направлений для публикации. Идея только подскажет, о чём рассказать; основные слова останутся твоими.
                 </p>
               </div>
               <Button aria-label="Закрыть генератор идей" className="min-h-11 min-w-11" onClick={closeSheet} size="icon" type="button" variant="ghost"><X size={20} /></Button>
@@ -437,13 +437,13 @@ export function IdeaGeneratorSheet({
                 <span className="text-xs text-muted">Осталось подборок сегодня: {capability.remaining_today} из {capability.daily_limit}</span>
                 <Button className="min-h-11 w-full sm:w-auto" disabled={isGenerating || quotaExhausted} onClick={() => void generateIdeas()} type="button">
                   {isGenerating ? <Loader2 className="animate-spin motion-reduce:animate-none" size={17} /> : <Sparkles size={17} />}
-                  {isGenerating ? "Подбираем 5 идей…" : ideas.length ? "Предложить другие 5" : "Предложить 5 идей"}
+                  {isGenerating ? "«Наговори» подбирает 5 идей…" : ideas.length ? "Предложить другие 5" : "Предложить 5 идей"}
                 </Button>
               </div>
             </div>
 
             <div aria-atomic="true" aria-live="polite" className="min-h-5 text-sm leading-6 text-muted">
-              {isGenerating ? "Ищем разные темы в контексте проекта и удачных постах…" : ideas.length ? "Пять идей готовы. Выберите одну, чтобы продолжить в голосовой студии." : ""}
+              {isGenerating ? "«Наговори» ищет разные темы по каналу и примерам стиля…" : ideas.length ? "Пять идей готовы. Выбери одну, чтобы начать запись." : ""}
             </div>
 
             {error ? <div className="rounded-lg border border-danger bg-[color-mix(in_srgb,var(--danger),transparent_94%)] p-3 text-sm leading-6 text-danger" role="alert">{error}</div> : null}
@@ -473,7 +473,7 @@ export function IdeaGeneratorSheet({
                     </details>
                     <Button className="min-h-11 w-full sm:justify-self-start sm:w-auto" disabled={Boolean(acceptingIdeaId)} onClick={() => void acceptIdea(idea)} type="button">
                       {acceptingIdeaId === idea.id ? <Loader2 className="animate-spin motion-reduce:animate-none" size={17} /> : <Lightbulb size={17} />}
-                      {acceptingIdeaId === idea.id ? "Сохраняем идею…" : "Взять идею"}
+                      {acceptingIdeaId === idea.id ? "«Наговори» сохраняет идею…" : "Взять идею"}
                     </Button>
                   </article>
                 ))}

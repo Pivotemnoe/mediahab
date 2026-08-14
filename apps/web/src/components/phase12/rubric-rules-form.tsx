@@ -52,9 +52,9 @@ export function RubricRulesForm({ projectId, rubric }: { projectId: string; rubr
         },
         method: "PATCH",
       });
-      setMessage("Правила рубрики сохранены как новая версия.");
+      setMessage("Правила формата сохранены.");
     } catch (cause) {
-      setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить правила рубрики.");
+      setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить правила формата.");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,31 +64,31 @@ export function RubricRulesForm({ projectId, rubric }: { projectId: string; rubr
     <form className="mx-auto grid w-full max-w-4xl gap-5" onSubmit={submit}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex flex-wrap gap-2"><Badge tone="info">Рубрика</Badge><Badge>{rubric.active_version_number}-я версия</Badge></div>
+          <div className="flex flex-wrap gap-2"><Badge tone="info">Формат</Badge></div>
           <h1 className="mt-3 text-3xl font-semibold text-foreground">{rubric.name}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Эти правила дополняют общие правила проекта только для публикаций с выбранной рубрикой.
+            «Наговори» добавит эти правила к правилам канала только для публикаций выбранного формата.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="secondary"><Link href={`/app/projects/${projectId}/examples?rubric=${rubric.id}`}><BookOpenCheck size={16} />Примеры рубрики</Link></Button>
-          <Button asChild><Link href={`/app/content/new?project=${projectId}&rubric=${rubric.id}`}><Mic size={16} />Создать публикацию</Link></Button>
+          <Button asChild variant="secondary"><Link href={`/app/projects/${projectId}/examples?rubric=${rubric.id}`}><BookOpenCheck size={16} />Примеры формата</Link></Button>
+          <Button asChild><Link href={`/app/content/new?project=${projectId}&rubric=${rubric.id}`}><Mic size={16} />Наговорить публикацию</Link></Button>
         </div>
       </div>
 
       <Card className="grid gap-4 p-5 sm:p-6">
-        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Название рубрики</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={rubric.name} maxLength={160} name="name" required /></label>
+        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Название формата</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={rubric.name} maxLength={160} name="name" required /></label>
         <label className="grid gap-1.5 text-sm">
-          <span className="font-semibold text-foreground">Правила рубрики</span>
-          <textarea className="min-h-72 rounded-lg border border-border bg-background px-3 py-3 leading-6 outline-none focus:border-primary" defaultValue={rubric.description ?? ""} name="rules" placeholder="Опишите цель, исходные факты, тон, структуру, обязательные и запрещённые элементы." />
-          <span className="text-xs leading-5 text-muted">Пишите обычным языком. Эти правила будут учтены при сборке публикации.</span>
+          <span className="font-semibold text-foreground">Правила формата</span>
+          <textarea className="min-h-72 rounded-lg border border-border bg-background px-3 py-3 leading-6 outline-none focus:border-primary" defaultValue={rubric.description ?? ""} name="rules" placeholder="Опиши цель, исходные факты, тон, структуру, обязательные и запрещённые элементы." />
+          <span className="text-xs leading-5 text-muted">Пиши обычным языком. «Наговори» учтёт эти правила при подготовке публикации.</span>
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Минимум знаков</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={rubric.editorial_min_chars ?? ""} min={1} name="min_chars" type="number" /></label>
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Максимум знаков</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={rubric.editorial_max_chars ?? ""} min={1} name="max_chars" type="number" /></label>
         </div>
         <div className="grid gap-3 border-t border-border pt-4">
-          <div><div className="text-sm font-semibold text-foreground">Длина отдельно по площадкам</div><p className="mt-1 text-xs leading-5 text-muted">Заполненная цель рубрики имеет приоритет над общей целью проекта.</p></div>
+          <div><div className="text-sm font-semibold text-foreground">Длина отдельно по площадкам</div><p className="mt-1 text-xs leading-5 text-muted">Эта длина заменит обычную длину канала только для выбранного формата.</p></div>
           <div className="grid gap-3 sm:grid-cols-2">
             {lengthPlatforms.map(([key, label]) => (
               <fieldset className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3" key={key}>
@@ -101,7 +101,7 @@ export function RubricRulesForm({ projectId, rubric }: { projectId: string; rubr
         </div>
       </Card>
       <div className="flex flex-wrap items-center gap-3">
-        <Button disabled={isSubmitting} type="submit">{isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}Сохранить новую версию</Button>
+        <Button disabled={isSubmitting} type="submit">{isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}Сохранить правила</Button>
         {message ? <span className="text-sm text-muted">{message}</span> : null}
       </div>
     </form>

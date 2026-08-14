@@ -458,7 +458,7 @@ async function apiAccount(): Promise<AccountViewModel> {
 
   return {
     modeLabel: "api",
-    notice: me && sessions ? undefined : "Часть данных аккаунта сейчас не загрузилась. Попробуйте обновить страницу.",
+    notice: me && sessions ? undefined : "Не всё загрузилось. Обнови страницу — данные аккаунта не пропали.",
     sessions: sessions?.sessions.length
       ? sessions.sessions.map((session) => ({
           ...sessionLabels(session.user_agent, session.current),
@@ -469,7 +469,7 @@ async function apiAccount(): Promise<AccountViewModel> {
     settings: me
       ? [
           { label: "Почта", status: me.user.email_verified ? "подтверждена" : "не подтверждена", value: me.user.email },
-          { label: "Имя", status: "указано вами", value: me.user.display_name },
+          { label: "Имя", status: "сохранено", value: me.user.display_name },
           { label: "Кабинеты", status: me.workspaces.length === 1 ? "доступен" : "доступно", value: String(me.workspaces.length) },
           { label: "Устройства", status: sessions ? "выполнен вход" : "временно не загрузились", value: sessions ? String(sessions.sessions.length) : "—" },
         ]
@@ -523,7 +523,7 @@ export async function getAccountViewModel(): Promise<AccountViewModel> {
   } catch {
     return {
       modeLabel: "api",
-      notice: "Данные аккаунта сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Аккаунт сейчас не загрузился. Обнови страницу и попробуй ещё раз.",
       sessions: [],
       settings: [],
     };

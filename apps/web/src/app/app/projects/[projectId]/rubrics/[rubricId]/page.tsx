@@ -14,9 +14,9 @@ export default async function RubricDetailPage({
     return (
       <PilotUnavailable
         backHref={`/app/projects/${projectId}/rubrics`}
-        backLabel="К списку рубрик"
-        description={viewModel.notice ?? "Рубрика не найдена или у вас нет к ней доступа."}
-        title="Не удалось открыть рубрику"
+        backLabel="К форматам"
+        description={viewModel.notice ?? "Формат не найден или у тебя нет к нему доступа."}
+        title="Не удалось открыть формат"
       />
     );
   }

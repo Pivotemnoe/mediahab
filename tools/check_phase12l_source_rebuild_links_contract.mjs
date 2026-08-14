@@ -8,18 +8,18 @@ const projectRules = fs.readFileSync("apps/web/src/components/phase12/project-ru
 const aiService = fs.readFileSync("services/api/app/modules/ai/service.py", "utf8");
 const editorialSurface = fs.readFileSync("services/api/app/modules/ai/editorial_surface.py", "utf8");
 
-assert.match(composer, /Пересобрать из диктовки/);
+assert.match(composer, /Подготовить заново по записи/);
 assert.match(composer, /assembleVersions\(\{ rebuildFromSource: true \}\)/);
 assert.doesNotMatch(
   composer,
-  /refineVariants\([\s\S]{0,400}Пересобрать из диктовки/,
+  /refineVariants\([\s\S]{0,400}Подготовить заново по записи/,
   "source rebuild must not call platform refinement",
 );
-assert.match(composer, /Ссылки в конце поста добавлены, но не настроены/);
+assert.match(composer, /Ссылки в конце текста пока не добавлены/);
 assert.match(composer, /\/app\/projects\/\$\{project\.id\}\/settings/);
 assert.doesNotMatch(composer, /\/app\/projects\/\$\{project\.id\}\/rules/);
 assert.match(composer, /richTextLinkCount\(richText\)/);
-assert.match(composer, /В постоянном подвале ссылки пока не настроены/);
+assert.match(composer, /Ссылки в конце публикации пока не добавлены/);
 
 assert.match(contentService, /footerLinkCount: number/);
 assert.match(contentService, /projectFooterLinkCount/);

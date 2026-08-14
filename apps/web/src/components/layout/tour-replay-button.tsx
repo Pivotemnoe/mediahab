@@ -21,7 +21,7 @@ export function TourReplayButton() {
   return (
     <Button onClick={replayTour} type="button" variant="secondary">
       <CircleHelp size={16} />
-      Показать обучение ещё раз
+      Повторить знакомство
     </Button>
   );
 }

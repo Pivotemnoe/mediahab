@@ -19,7 +19,7 @@ export default async function AccountPage() {
             <LogoutButton />
           </div>
         )}
-        description="Профиль, подтверждение почты и устройства, на которых выполнен вход."
+        description="Здесь твоя почта и устройства, на которых открыт «Наговори»."
         title="Аккаунт"
       />
       {viewModel.notice ? (
@@ -32,32 +32,38 @@ export default async function AccountPage() {
         <Card className="grid gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MailCheck size={18} className="text-primary" />
-            Настройки профиля
+            Твои данные
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {viewModel.settings.map(({ label, status, value }) => (
-              <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
-                <div className="text-xs text-muted">{label}</div>
-                <div className="mt-1 break-words font-medium text-foreground">{value}</div>
-                <Badge className="mt-2" tone="success">
-                  {status}
-                </Badge>
-              </div>
-            ))}
+            {viewModel.settings.map(({ label, status, value }) => {
+              const showStatus = label === "Почта" || status.includes("не загрузились");
+              const statusNeedsAttention = status.startsWith("не ") || status.includes("не загрузились");
+              return (
+                <div className="rounded-md border border-border bg-surface-muted p-3" key={label}>
+                  <div className="text-xs text-muted">{label}</div>
+                  <div className="mt-1 break-words font-medium text-foreground">{value}</div>
+                  {showStatus ? (
+                    <Badge className="mt-2" tone={statusNeedsAttention ? "warning" : "success"}>
+                      {status}
+                    </Badge>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </Card>
 
         <Card className="grid content-start gap-3">
           <ShieldCheck size={20} className="text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Безопасность</h2>
+          <h2 className="text-lg font-semibold text-foreground">Как защитить аккаунт</h2>
           <p className="text-sm leading-6 text-muted">
-            Пароль хранится в защищённом виде, а вход можно завершить на каждом устройстве отдельно. Никому не сообщайте пароль и коды из писем.
+            Пароль нельзя посмотреть, а вход на каждом устройстве можно завершить отдельно. Никому не сообщай пароль и коды из писем.
           </p>
         </Card>
       </div>
 
       <Card className="grid gap-3">
-        <div className="text-sm font-semibold text-foreground">Активные сессии</div>
+        <div className="text-sm font-semibold text-foreground">Где сейчас выполнен вход</div>
         {viewModel.sessions.map(({ client, device, seen, state }) => (
           <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[180px_1fr_140px_auto]" key={`${device}-${client}-${seen}`}>
             <div className="font-medium text-foreground">{device}</div>

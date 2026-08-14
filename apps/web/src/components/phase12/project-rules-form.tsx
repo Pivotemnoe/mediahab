@@ -39,6 +39,15 @@ function platformTarget(container: JsonObject, platform: string, bound: "min_cha
   return typeof value === "number" ? String(value) : "";
 }
 
+function linkCountLabel(count: number): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return "ссылок";
+  if (last === 1) return "ссылка";
+  if (last >= 2 && last <= 4) return "ссылки";
+  return "ссылок";
+}
+
 export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; projectId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -100,8 +109,8 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
       const linkCount = richTextLinkCount(footerRichText);
       setMessage(
         linkCount > 0
-          ? `Правила сохранены. В подвале: ${linkCount} ${linkCount === 1 ? "ссылка" : linkCount < 5 ? "ссылки" : "ссылок"}.`
-          : "Правила сохранены. Подвал пока без ссылок.",
+          ? `Правила сохранены. В конце публикации: ${linkCount} ${linkCountLabel(linkCount)}.`
+          : "Правила сохранены. В конце публикации пока нет ссылок.",
       );
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить правила.");
@@ -114,18 +123,18 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
     <form className="mx-auto grid w-full max-w-4xl gap-5" onSubmit={submit}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex flex-wrap gap-2"><Badge tone="info">{project.name}</Badge><Badge>общие правила</Badge></div>
-          <h1 className="mt-3 text-3xl font-semibold text-foreground">Правила всего канала</h1>
+          <div className="flex flex-wrap gap-2"><Badge tone="info">{project.name}</Badge><Badge>Для всего канала</Badge></div>
+          <h1 className="mt-3 text-3xl font-semibold text-foreground">Как писать для канала</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Эти правила применяются ко всем публикациям проекта. Если выбрана рубрика, её более точные правила дополняют общие.
+            «Наговори» применит эти правила ко всем публикациям канала. Для отдельного формата можно сохранить свои уточнения.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="secondary">
-            <Link href={`/app/projects/${projectId}`}><ArrowLeft size={16} />К проекту</Link>
+            <Link href={`/app/projects/${projectId}`}><ArrowLeft size={16} />К каналу</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href={`/app/projects/${projectId}/examples`}><BookOpenCheck size={16} />Идеальные примеры</Link>
+            <Link href={`/app/projects/${projectId}/examples`}><BookOpenCheck size={16} />Мой стиль</Link>
           </Button>
         </div>
       </div>
@@ -135,7 +144,7 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Название</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={project.name} maxLength={160} name="name" required /></label>
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Тематика</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={project.content_domain ?? ""} name="content_domain" /></label>
         </div>
-        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Описание проекта</span><textarea className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={project.description ?? ""} maxLength={5000} name="description" /></label>
+        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Описание канала</span><textarea className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={project.description ?? ""} maxLength={5000} name="description" /></label>
         <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Аудитория</span><textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(rules, "audience")} name="audience" /></label>
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Голос и тон</span><textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(rules, "voice")} name="voice" /></label>
@@ -148,7 +157,7 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
         <div className="grid gap-4 border-t border-border pt-4">
           <div>
             <div className="text-sm font-semibold text-foreground">Обычная длина по площадкам</div>
-            <p className="mt-1 text-xs leading-5 text-muted">Это желаемая длина текста. Если оставить поля пустыми, сервис подберёт разумный ориентир.</p>
+            <p className="mt-1 text-xs leading-5 text-muted">Это желаемая длина текста. Если оставить поля пустыми, «Наговори» выберет обычную длину для площадки.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {lengthPlatforms.map(([key, label]) => (
@@ -162,15 +171,15 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
         </div>
         <div className="grid gap-4 border-t border-border pt-4">
           <div>
-            <div className="text-sm font-semibold text-foreground">Постоянный подвал со ссылками</div>
+            <div className="text-sm font-semibold text-foreground">Постоянный текст в конце публикации</div>
             <p className="mt-1 text-xs leading-5 text-muted">
-              Сохраните один раз. Подвал будет без изменений добавляться в конец каждой новой версии и попадёт в скопированный текст вместе со ссылками.
+              Сохрани его один раз. «Наговори» добавит этот блок без изменений в конец каждого нового текста вместе со ссылками.
             </p>
           </div>
           <div className="grid gap-1.5 text-sm">
             <span className="font-semibold text-foreground">Текст и ссылки в конце публикации <span className="font-normal text-muted">(необязательно)</span></span>
             <RichTextEditor
-              ariaLabel="Постоянный подвал публикации"
+              ariaLabel="Постоянный текст в конце публикации"
               minHeightClass="min-h-28"
               value={footerRichText}
               onChange={setFooterRichText}

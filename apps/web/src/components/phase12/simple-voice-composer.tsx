@@ -207,15 +207,14 @@ function formatRecordingSeconds(seconds: number): string {
 }
 
 const platformOptions: Array<{
-  hardLimit: number | null;
   key: PlatformKey;
   label: string;
   note: string;
 }> = [
-  { hardLimit: 32768, key: "telegram", label: "Telegram", note: "длинный пост" },
-  { hardLimit: 4000, key: "max", label: "MAX", note: "до 4 000" },
-  { hardLimit: null, key: "vk", label: "VK", note: "Запись сообщества" },
-  { hardLimit: 2200, key: "instagram", label: "Instagram", note: "подпись" },
+  { key: "telegram", label: "Telegram", note: "подробный пост" },
+  { key: "max", label: "MAX", note: "до 4 000 знаков" },
+  { key: "vk", label: "VK", note: "пост для сообщества" },
+  { key: "instagram", label: "Instagram", note: "подпись к публикации" },
 ];
 
 const lengthProfiles: Record<Exclude<LengthMode, "auto" | "exact">, Record<PlatformKey, LengthTarget>> = {
@@ -242,10 +241,6 @@ function lengthTargetFromVariant(variant: PlatformVariantOut | undefined): (Leng
     min_chars: typeof target.min_chars === "number" ? target.min_chars : null,
     source: typeof target.source === "string" ? target.source : undefined,
   };
-}
-
-function targetSourceLabel(source: string | undefined): string {
-  return ({ post: "этот пост", rubric: "рубрика", project: "проект", system: "авто" } as Record<string, string>)[source ?? ""] ?? "авто";
 }
 
 function variantBodyLength(variant: PlatformVariantOut): number {
@@ -375,7 +370,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const token = csrfToken();
   if (!token) {
-    throw new Error("Сессия страницы устарела. Обновите страницу и войдите заново.");
+    throw new Error("Эта страница была открыта давно. Обнови её и войди снова.");
   }
   const response = await fetch(path, {
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -438,21 +433,27 @@ function variantText(variant?: PlatformVariantOut): string {
   return variant?.rendered_text || variant?.text || "";
 }
 
-function resultHardLimit(
-  key: PlatformKey,
-  variant: PlatformVariantOut | undefined,
-  fallback: number | null,
-): number | null {
-  if (key === "vk") return null;
-  const hardLimits = variant?.payload.hard_limits;
-  if (!hardLimits || typeof hardLimits !== "object" || Array.isArray(hardLimits)) return fallback;
-  const values = Object.values(hardLimits).filter((value): value is number => typeof value === "number");
-  return values[0] ?? fallback;
+function linkCountLabel(count: number): string {
+  return russianCountLabel(count, "ссылка", "ссылки", "ссылок");
+}
+
+function russianCountLabel(count: number, one: string, few: string, many: string): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
 }
 
 function vkExportPackage(variant: PlatformVariantOut | undefined): Record<string, unknown> | null {
   const value = variant?.payload.vk_export_package;
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function vkAttachmentCount(variant: PlatformVariantOut | undefined): number | null {
+  const value = vkExportPackage(variant)?.attachment_count;
+  return typeof value === "number" ? value : null;
 }
 
 function vkAttachmentSummary(variant: PlatformVariantOut | undefined): string[] {
@@ -465,7 +466,34 @@ function vkAttachmentSummary(variant: PlatformVariantOut | undefined): string[] 
   });
 }
 
-function variantPreflight(variant: PlatformVariantOut): VariantPreflight | null {
+function preflightCopy(check: Pick<PreflightCheck, "code" | "key" | "status">, platform: string): Pick<PreflightCheck, "label" | "message"> {
+  const label = {
+    delivery: "Отправка",
+    format: "Вид публикации",
+    length: "Длина",
+    media: "Фото и видео",
+  }[check.key];
+  if (check.key === "length") {
+    if (check.status === "block") return { label, message: `Текст длиннее лимита ${platform}. Сократи его перед публикацией.` };
+    if (check.status === "warning") return { label, message: "Длина отличается от выбранной. Проверь, подходит ли этот вариант." };
+    return { label, message: "Длина подходит выбранной площадке." };
+  }
+  if (check.key === "media") {
+    if (check.status === "block") return { label, message: "Проверь количество и формат прикреплённых фото или видео." };
+    if (check.status === "warning") return { label, message: "Выбери вид публикации и ещё раз проверь фото или видео." };
+    return { label, message: "Фото и видео подходят выбранному виду публикации." };
+  }
+  if (check.key === "format") {
+    if (check.status !== "pass") return { label, message: "Выбери вид публикации перед копированием текста." };
+    return { label, message: `Текст подготовлен отдельно для ${platform}.` };
+  }
+  if (check.code === "manual_export_required") {
+    return { label, message: "Автоматическая отправка пока недоступна. Скопируй текст и опубликуй его вручную." };
+  }
+  return { label, message: "Перед отправкой «Наговори» проверит подключение выбранного аккаунта." };
+}
+
+function variantPreflight(variant: PlatformVariantOut, platform: string): VariantPreflight | null {
   const value = variant.validation.preflight;
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
@@ -484,11 +512,16 @@ function variantPreflight(variant: PlatformVariantOut): VariantPreflight | null 
       || typeof check.status !== "string"
       || !validStatuses.has(check.status as PreflightStatus)
     ) return [];
+    const copy = preflightCopy({
+      code: check.code,
+      key: check.key as PreflightCheck["key"],
+      status: check.status as PreflightStatus,
+    }, platform);
     return [{
       code: check.code,
       key: check.key as PreflightCheck["key"],
-      label: check.label,
-      message: check.message,
+      label: copy.label,
+      message: copy.message,
       status: check.status as PreflightStatus,
     }];
   });
@@ -553,11 +586,11 @@ export function SimpleVoiceComposer({
   const [message, setMessage] = useState(
     resumeDraft
       ? resumeDraft.ideaBrief && !resumeDraft.transcript.trim()
-        ? "Идея уже сохранена. Теперь расскажите основную мысль своими словами — голосом или текстом."
-        : "Материал открыт из истории. Поправьте исходный текст и нажмите «Пересобрать версии»."
+        ? "Идея уже сохранена. Теперь расскажи основную мысль своими словами — голосом или текстом."
+        : "Текст открыт из истории. Поправь исходную мысль и нажми «Подготовить заново»."
       : viewModel.modeLabel === "api"
-      ? "Выберите проект, при необходимости рубрику, и нажмите микрофон."
-      : "В демонстрации запись отключена. В рабочем кабинете микрофон будет доступен.",
+      ? "Выбери канал и нажми микрофон. Формат можно указать по желанию."
+      : "Здесь можно посмотреть экран, но запись голоса сейчас недоступна.",
   );
   const [segments, setSegments] = useState<Segment[]>([]);
   const [transcript, setTranscript] = useState(resumeDraft?.transcript ?? "");
@@ -735,7 +768,7 @@ export function SimpleVoiceComposer({
         clearStandaloneIdeaHandoff(handoff.handoffToken);
       }
       if (!resumeDraft) setIdeaBrief(null);
-      setMessage("Идея устарела или не прошла проверку. Вернитесь в раздел «Идеи» и выберите её заново.");
+      setMessage("Эта идея больше недоступна. Вернись в раздел «Идеи» и выбери её заново.");
       return;
     }
     if (resumeDraft?.ideaBrief) {
@@ -754,7 +787,7 @@ export function SimpleVoiceComposer({
       transcriptRef.current = "";
       setTranscript("");
     }
-    setMessage("Идея выбрана. Теперь расскажите её своими словами — голосом или текстом.");
+    setMessage("Идея выбрана. Теперь расскажи её своими словами — голосом или текстом.");
     const frame = window.requestAnimationFrame(() => document.getElementById("voice-record-button")?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [initialStandaloneIdeaToken, resumeDraft, viewModel.workspaceId]);
@@ -778,8 +811,9 @@ export function SimpleVoiceComposer({
   );
   const canUseApi = viewModel.modeLabel === "api" && Boolean(viewModel.workspaceId && project);
   const activeResult = results[activePlatform];
-  const activePreflight = activeResult.variant ? variantPreflight(activeResult.variant) : null;
+  const activePreflight = activeResult.variant ? variantPreflight(activeResult.variant, platformLabel(activePlatform)) : null;
   const activeFeedback = activeResult.variant ? feedbackByVariant[activeResult.variant.id] : null;
+  const activeVkAttachmentCount = vkAttachmentCount(activeResult.variant);
 
   useEffect(() => {
     const variantId = activeResult.variant?.id;
@@ -812,20 +846,20 @@ export function SimpleVoiceComposer({
     if (!pendingStandaloneIdeaRef.current) setIdeaBrief(null);
     setResults(emptyResults());
     setRubricLocked(false);
-    setMessage("Проект изменён. Ваш текст остался на месте; можно выбрать рубрику или начать без неё.");
+    setMessage("Канал изменён. Твой текст остался на месте; можно выбрать формат или продолжить без него.");
   }
 
   async function updateRubric(rubricId: string) {
     const previousRubricId = selectedRubricId;
     if (!contentIdRef.current) {
       setSelectedRubricId(rubricId);
-      setMessage(rubricId ? "Рубрика выбрана. Можно начинать диктовку." : "Будут применены общие правила проекта.");
+      setMessage(rubricId ? "Формат выбран. Можно начинать запись." : "«Наговори» использует общие правила канала.");
       return;
     }
     if (rubricLocked || isRubricUpdating) return;
     setSelectedRubricId(rubricId);
     setIsRubricUpdating(true);
-    setMessage("Сохраняю рубрику для этого материала…");
+    setMessage("«Наговори» сохраняет формат этой публикации…");
     try {
       const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentIdRef.current}`, {
         method: "GET",
@@ -843,10 +877,10 @@ export function SimpleVoiceComposer({
         sourceFieldRef.current = fieldKey;
         setSourceField(fieldKey);
       }
-      setMessage(rubricId ? "Рубрика изменена. Диктовка и медиа остались на месте." : "Включены общие правила проекта. Диктовка и медиа остались на месте.");
+      setMessage(rubricId ? "Формат изменён. Запись, фото и видео остались на месте." : "Включены общие правила канала. Запись, фото и видео остались на месте.");
     } catch (error) {
       setSelectedRubricId(previousRubricId);
-      const text = error instanceof Error ? error.message : "Не удалось изменить рубрику.";
+      const text = error instanceof Error ? error.message : "Не удалось изменить формат.";
       if (text.includes("уже участвует в сборке")) setRubricLocked(true);
       setMessage(text);
     } finally {
@@ -876,7 +910,7 @@ export function SimpleVoiceComposer({
     setPendingStandaloneIdea(null);
     setIdeaBrief(null);
     removeStandaloneIdeaQuery();
-    setMessage("Идея убрана. Можно начать другой материал или вернуться за новыми идеями.");
+    setMessage("Идея убрана. Можно начать другую публикацию или вернуться за новыми идеями.");
   }
 
   async function persistStandaloneIdea(contentItemId: string): Promise<void> {
@@ -887,7 +921,7 @@ export function SimpleVoiceComposer({
       pendingStandaloneIdeaRef.current = null;
       setPendingStandaloneIdea(null);
       setIdeaBrief(null);
-      throw new Error("Идея относится к другому кабинету. Выберите её заново.");
+      throw new Error("Идея относится к другому кабинету. Выбери её заново.");
     }
     const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${contentItemId}`, { method: "GET" });
     await apiRequest<BlockOut>(`/api/v1/content-items/${contentItemId}/blocks/idea_brief`, {
@@ -914,7 +948,7 @@ export function SimpleVoiceComposer({
       setPendingStandaloneIdea(null);
       setIdeaBrief(null);
       removeStandaloneIdeaQuery(contentIdRef.current ?? undefined);
-      throw new Error("Идея устарела. Выберите её заново или повторите действие без идеи.");
+      throw new Error("Идея больше недоступна. Выбери её заново или продолжи без неё.");
     }
     if (contentIdRef.current) {
       if (sourceFieldRef.current) {
@@ -931,7 +965,7 @@ export function SimpleVoiceComposer({
       return { contentId: contentIdRef.current, fieldKey };
     }
     if (viewModel.modeLabel !== "api" || !viewModel.workspaceId) {
-      throw new Error("Сейчас нельзя создать материал. Обновите страницу и проверьте, что проект доступен.");
+      throw new Error("Сейчас не получается начать публикацию. Обнови страницу и проверь, что канал доступен.");
     }
     let createHandoff = handoff;
     let createProject = project;
@@ -939,7 +973,7 @@ export function SimpleVoiceComposer({
     if (createHandoff) {
       if (!createHandoff.contentCreate) {
         if (!createProject) {
-          throw new Error("Для создания материала выберите проект.");
+          throw new Error("Выбери канал для этой публикации.");
         }
         createHandoff = bindStandaloneIdeaContentCreate(createHandoff, {
           projectId: createProject.id,
@@ -950,13 +984,13 @@ export function SimpleVoiceComposer({
         setPendingStandaloneIdea(createHandoff);
       }
       const binding = createHandoff.contentCreate;
-      if (!binding) throw new Error("Не удалось подготовить материал к надёжному сохранению.");
+      if (!binding) throw new Error("Не удалось сохранить начало публикации. Попробуй ещё раз.");
       const boundProject = viewModel.projects.find((candidate) => candidate.id === binding.projectId);
       const boundRubric = binding.rubricId
         ? boundProject?.rubrics.find((candidate) => candidate.id === binding.rubricId)
         : undefined;
       if (!boundProject || (binding.rubricId && !boundRubric)) {
-        throw new Error("Проект или рубрика изменились. Вернитесь в раздел «Идеи» и начните заново.");
+        throw new Error("Канал или формат изменились. Вернись в раздел «Идеи» и начни заново.");
       }
       createProject = boundProject;
       createRubric = boundRubric;
@@ -964,9 +998,9 @@ export function SimpleVoiceComposer({
       if (selectedRubricId !== (binding.rubricId ?? "")) setSelectedRubricId(binding.rubricId ?? "");
     }
     if (!createProject) {
-      throw new Error("Для создания материала выберите проект.");
+      throw new Error("Выбери канал для этой публикации.");
     }
-    setMessage(createRubric ? "Создаю материал по выбранной рубрике…" : "Создаю материал по общим правилам проекта…");
+    setMessage(createRubric ? "«Наговори» готовит публикацию в выбранном формате…" : "«Наговори» готовит публикацию по правилам канала…");
     const sourceTitle = transcriptRef.current
       .trim()
       .split(/[.!?\n]/, 1)[0]
@@ -977,7 +1011,7 @@ export function SimpleVoiceComposer({
       rubric_id: createRubric?.id ?? null,
       title_internal: createHandoff?.contentCreate?.titleInternal
         || sourceTitle
-        || (createRubric ? `Материал рубрики «${createRubric.name}»` : "Новый материал"),
+        || (createRubric ? `Публикация в формате «${createRubric.name}»` : "Новая публикация"),
     };
     const item = await apiRequest<ContentItemOut>(`/api/v1/projects/${createProject.id}/content-items`, {
       body: createBody,
@@ -1009,12 +1043,12 @@ export function SimpleVoiceComposer({
   async function uploadVoice(blob: Blob, context: { contentId: string; fieldKey: string }) {
     if (blob.size <= 0) {
       setCaptureState("error");
-      setMessage("Запись получилась пустой — звук не сохранился. Нажмите микрофон и повторите фрагмент.");
+      setMessage("Запись получилась пустой — звук не сохранился. Нажми микрофон и повтори фрагмент.");
       return;
     }
     try {
       setCaptureState("uploading");
-      setMessage("Загружаю голосовой фрагмент…");
+      setMessage("«Наговори» сохраняет записанную часть…");
       const mimeType = blob.type || "audio/webm";
       const presign = await apiRequest<MediaPresignResponse>("/api/v1/media/presign-upload", {
         body: {
@@ -1032,7 +1066,7 @@ export function SimpleVoiceComposer({
         headers: { "Content-Type": mimeType },
         method: "PUT",
       });
-      if (!uploadResponse.ok) throw new Error(`Не удалось загрузить аудио: ${uploadResponse.status}.`);
+      if (!uploadResponse.ok) throw new Error("Не удалось загрузить запись. Проверь интернет и попробуй ещё раз.");
       await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
         body: { codec_metadata: { source: "simple-voice-composer" }, size_bytes: blob.size },
         method: "POST",
@@ -1055,7 +1089,7 @@ export function SimpleVoiceComposer({
       );
       sourceBlockIdRef.current = block.id;
       setCaptureState("transcribing");
-      setMessage("Расшифровываю фрагмент…");
+      setMessage("«Наговори» превращает запись в текст…");
       const job = await apiRequest<TranscriptionJobOut>(`/api/v1/content-blocks/${block.id}/transcribe`, {
         body: { media_id: presign.media_id, provider_key: "openai" },
         method: "POST",
@@ -1076,10 +1110,10 @@ export function SimpleVoiceComposer({
       setCurrentSegmentId(segmentId);
       updateTranscript(merged);
       setCaptureState("review");
-      setMessage("Фрагмент расшифрован. Исправьте общий текст и примите его.");
+      setMessage("Текст из записи готов. Проверь его и сохрани.");
     } catch (error) {
       setCaptureState("error");
-      setMessage(error instanceof Error ? error.message : "Не удалось расшифровать фрагмент.");
+      setMessage(error instanceof Error ? error.message : "Не удалось превратить запись в текст.");
     }
   }
 
@@ -1090,14 +1124,14 @@ export function SimpleVoiceComposer({
     let stream: MediaStream | null = null;
     try {
       if (currentJobId) {
-        setMessage("Сначала примите текущую расшифровку.");
+        setMessage("Сначала сохрани текст из текущей записи.");
         return;
       }
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-        throw new Error("Браузер не дал доступ к микрофону. Загрузите аудиофайл.");
+        throw new Error("Браузер не дал доступ к микрофону. Выбери готовую аудиозапись.");
       }
       setCaptureState("requesting");
-      setMessage("Подключаю микрофон…");
+      setMessage("«Наговори» подключает микрофон…");
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const activeStream = stream;
       if (!mountedRef.current || requestId !== captureRequestRef.current) {
@@ -1130,7 +1164,7 @@ export function SimpleVoiceComposer({
         stopVoiceMeter();
         if (!mountedRef.current) return;
         setCaptureState("error");
-        setMessage("Запись прервалась в браузере. Нажмите микрофон и повторите фрагмент.");
+        setMessage("Запись прервалась в браузере. Нажми микрофон и повтори фрагмент.");
       };
       recorder.onstop = () => {
         activeStream.getTracks().forEach((track) => track.stop());
@@ -1146,7 +1180,7 @@ export function SimpleVoiceComposer({
       pendingStreamRef.current = null;
       startVoiceMeter(activeStream);
       setCaptureState("recording");
-      setMessage(`Идёт запись фрагмента ${segments.length + 1}.`);
+      setMessage(`Идёт запись части ${segments.length + 1}.`);
     } catch (error) {
       stream?.getTracks().forEach((track) => track.stop());
       pendingStreamRef.current = null;
@@ -1167,7 +1201,7 @@ export function SimpleVoiceComposer({
       }
       recorderRef.current.pause();
       setCaptureState("paused");
-      setMessage("Запись на паузе. Можно продолжить или закончить фрагмент.");
+      setMessage("Запись остановлена. Продолжи или сохрани эту часть.");
     }
   }
 
@@ -1182,7 +1216,7 @@ export function SimpleVoiceComposer({
   function finishSegment() {
     if (recorderRef.current && ["recording", "paused"].includes(recorderRef.current.state)) {
       setCaptureState("uploading");
-      setMessage("Сохраняю записанный фрагмент…");
+      setMessage("«Наговори» сохраняет запись…");
       try {
         recorderRef.current.requestData();
       } catch {
@@ -1204,14 +1238,14 @@ export function SimpleVoiceComposer({
     setCurrentJobId(null);
     setCurrentSegmentId(null);
     setCaptureState("accepted");
-    setMessage(`Принято фрагментов: ${segments.length}. Можно добавить ещё или собрать версии.`);
+    setMessage(`Сохранённые части: ${segments.length}. Можно записать ещё или подготовить тексты.`);
     if (lock) lockedTranscriptRef.current = transcriptRef.current.trim();
     sourceFieldRef.current = accepted.field_key;
     sourceBlockIdRef.current = accepted.id;
   }
 
   async function saveMergedTranscript(context: { contentId: string; fieldKey: string }) {
-    if (!transcriptRef.current.trim()) throw new Error("Сначала продиктуйте или вставьте исходный текст.");
+    if (!transcriptRef.current.trim()) throw new Error("Сначала наговори или вставь исходный текст.");
     if (currentJobId) await acceptTranscript(false);
     if (lockedTranscriptRef.current === transcriptRef.current.trim()) return;
     let saved: BlockOut;
@@ -1250,7 +1284,7 @@ export function SimpleVoiceComposer({
     const supportedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime"]);
     const media = selected.filter((file) => supportedTypes.has(file.type));
     if (media.length !== selected.length) {
-      setMessage("Этот формат не поддерживается. Выберите другое фото или видео.");
+      setMessage("Этот формат не подходит. Выбери другое фото или видео.");
       return;
     }
     if (media.some((file) => file.size > (file.type.startsWith("video/") ? 100 : 8) * 1024 * 1024)) {
@@ -1263,10 +1297,10 @@ export function SimpleVoiceComposer({
         method: "GET",
       });
       if (existing.media.length + media.length > 10) {
-        setMessage("К одной публикации можно прикрепить до 10 медиафайлов.");
+        setMessage("К одной публикации можно прикрепить до 10 фото или видео.");
         return;
       }
-      setMessage(`Загружаю медиа: 0 из ${media.length}.`);
+      setMessage(`«Наговори» загружает файлы: 0 из ${media.length}.`);
       const uploadedIds: string[] = [];
       const uploadedKinds: string[] = [];
       const uploadedRetentionDates: string[] = [];
@@ -1287,7 +1321,7 @@ export function SimpleVoiceComposer({
           headers: { "Content-Type": file.type },
           method: "PUT",
         });
-        if (!response.ok) throw new Error(`Не удалось загрузить «${file.name}».`);
+        if (!response.ok) throw new Error("Не удалось добавить файл. Проверь интернет или выбери другой файл.");
         const completed = await apiRequest<MediaOut>(`/api/v1/media/${presign.media_id}/complete-upload`, {
           body: { codec_metadata: { original_name: file.name }, size_bytes: file.size },
           method: "POST",
@@ -1295,7 +1329,7 @@ export function SimpleVoiceComposer({
         uploadedIds.push(presign.media_id);
         uploadedKinds.push(completed.kind);
         if (completed.retention_until) uploadedRetentionDates.push(completed.retention_until);
-        setMessage(`Загружаю медиа: ${index + 1} из ${media.length}.`);
+        setMessage(`«Наговори» загружает файлы: ${index + 1} из ${media.length}.`);
       }
       const currentItem = await apiRequest<ContentItemOut>(`/api/v1/content-items/${context.contentId}`, {
         method: "GET",
@@ -1326,24 +1360,24 @@ export function SimpleVoiceComposer({
       setMediaKinds((current) => [...current, ...uploadedKinds]);
       setMediaRetentionDates((current) => [...current, ...uploadedRetentionDates]);
       setMessage(
-        `Медиа прикреплены: ${attached.media.length}. Самые важные файлы поставьте первыми.`,
+        `Фото и видео добавлены: ${attached.media.length}. Самые важные файлы поставь первыми.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось загрузить медиа.");
+      setMessage(error instanceof Error ? error.message : "Не удалось добавить фото или видео.");
     }
   }
 
   function instagramFormatIssue(): string | null {
     if (!selectedPlatforms.includes("instagram")) return null;
-    if (!instagramFormat) return "Для Instagram выберите формат публикации.";
+    if (!instagramFormat) return "Для Instagram выбери вид публикации.";
     if (instagramFormat === "image" && mediaCount !== 1) {
-      return "Для одной публикации Instagram прикрепите ровно один фото- или видеофайл.";
+      return "Для одного поста в Instagram добавь ровно одно фото или видео.";
     }
     if (instagramFormat === "carousel" && (mediaCount < 2 || mediaCount > 10)) {
-      return "Для карусели Instagram прикрепите от 2 до 10 фото или видео.";
+      return "Для карусели Instagram добавь от двух до десяти фото или видео.";
     }
     if (instagramFormat === "reel" && (mediaCount !== 1 || mediaKinds[0] !== "video")) {
-      return "Для Reel Instagram прикрепите ровно одно видео MP4 или MOV.";
+      return "Для короткого ролика в Instagram добавь ровно одно видео MP4 или MOV.";
     }
     return null;
   }
@@ -1356,7 +1390,7 @@ export function SimpleVoiceComposer({
       await uploadVoice(audio, context);
     } catch (error) {
       setCaptureState("error");
-      setMessage(error instanceof Error ? error.message : "Не удалось загрузить аудиофайл.");
+      setMessage(error instanceof Error ? error.message : "Не удалось добавить аудиозапись.");
     }
   }
 
@@ -1390,7 +1424,7 @@ export function SimpleVoiceComposer({
         },
       );
       let variant = generated.variants.find((item) => item.platform_key === key);
-      if (!variant) throw new Error("Версия не была подготовлена.");
+      if (!variant) throw new Error("Текст для этой площадки не подготовлен.");
       let adaptationUsage: AiUsageSummary | null = null;
       const needsFormatAdaptation = key === "instagram" && requestedInstagramFormat !== null;
       if (missesLengthTarget(variant) || needsFormatAdaptation) {
@@ -1414,7 +1448,7 @@ export function SimpleVoiceComposer({
       return adaptationUsage;
     } catch (error) {
       updatePlatformResult(key, {
-        error: error instanceof Error ? error.message : "Не удалось собрать вариант.",
+        error: error instanceof Error ? error.message : "Не получилось подготовить текст для этой площадки.",
         status: "error",
       });
       if (options?.propagateError) throw error;
@@ -1485,12 +1519,12 @@ export function SimpleVoiceComposer({
   }) {
     const workspaceId = viewModel.workspaceId;
     if (!workspaceId) {
-      setMessage("Рабочее пространство недоступно. Обновите страницу и повторите попытку.");
+      setMessage("Не удалось открыть кабинет. Обнови страницу и войди снова.");
       return;
     }
     const targetPlatforms = options?.receipt?.platformKeys ?? selectedPlatforms;
     if (!targetPlatforms.length) {
-      setMessage("Отметьте хотя бы одну площадку.");
+      setMessage("Выбери хотя бы одну площадку.");
       return;
     }
     if (isAssemblingRef.current && !options?.recovering) return;
@@ -1526,14 +1560,14 @@ export function SimpleVoiceComposer({
       }
       const receipt = activeReceipt;
       const firstPlatform = receipt?.platformKeys[0];
-      if (!receipt || !firstPlatform) throw new Error("Не удалось сохранить параметры сборки.");
+      if (!receipt || !firstPlatform) throw new Error("Не удалось начать подготовку текста. Попробуй ещё раз.");
       writeAssemblyReceipt(receipt);
       setSelectedPlatforms(receipt.platformKeys);
       setActivePlatform(firstPlatform);
       setMessage(
         options?.rebuildFromSource
-          ? "Возвращаюсь к вашей диктовке и собираю новый мастер-текст…"
-          : "Проверяю факты и собираю мастер-текст…",
+          ? "«Наговори» заново готовит текст по твоей записи…"
+          : "«Наговори» собирает основной текст и проверяет, что ничего важного не потерялось…",
       );
       const facts = await apiRequest<GenerationRunOut>(`/api/v1/content-items/${context.contentId}/extract-facts`, {
         method: "POST",
@@ -1547,7 +1581,7 @@ export function SimpleVoiceComposer({
         { method: "POST" },
       );
       if (master.status !== "completed") {
-        throw new Error(master.error_message || "Мастер-текст не собран.");
+        throw new Error("Не получилось подготовить основной текст. Проверь исходную запись и попробуй ещё раз.");
       }
       setRubricLocked(true);
       const masterPayload = master.response_json as {
@@ -1558,7 +1592,7 @@ export function SimpleVoiceComposer({
       );
       const completedHelpers = helpers.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
       const baseUsage = [facts, ...completedHelpers, master].map(generationRunUsage);
-      setMessage("Мастер готов. Версии площадок появляются по мере готовности.");
+      setMessage("Основной текст готов. Тексты для площадок появятся один за другим.");
       const adaptationUsage = await Promise.all(receipt.platformKeys.map((key) => generatePlatform(
         context.contentId,
         key,
@@ -1572,14 +1606,14 @@ export function SimpleVoiceComposer({
       setLatestAiUsage(totalUsage);
       setMessage(
         usedProviderFallback
-          ? "Не удалось подготовить текст автоматически. Показан черновик из вашей расшифровки — проверьте его перед доработкой."
+          ? "Не удалось подготовить текст автоматически. Показан черновик из твоей записи — проверь его перед доработкой."
           : options?.rebuildFromSource
-            ? "Новый текст собран из вашей диктовки. Предыдущие редакции сохранены в истории."
-            : "Готовые версии можно проверить, отредактировать и скопировать.",
+            ? "Новый текст подготовлен по твоей записи. Предыдущие варианты сохранены."
+            : "Тексты для площадок можно проверить, поправить и скопировать.",
       );
       clearAssemblyReceipt(context.contentId);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось собрать версии.");
+      setMessage(error instanceof Error ? error.message : "Не удалось подготовить тексты.");
       if (activeReceipt && activeReceipt.attempt >= 2) clearAssemblyReceipt(activeReceipt.contentId);
     } finally {
       isAssemblingRef.current = false;
@@ -1597,7 +1631,7 @@ export function SimpleVoiceComposer({
       setActivePlatform(firstPlatform);
       if (receipt.instagramFormat) setInstagramFormat(receipt.instagramFormat);
       setIsAssembling(true);
-      setMessage("Восстанавливаю сборку после возвращения в приложение…");
+      setMessage("«Наговори» продолжает подготовку после возвращения в приложение…");
 
       const shouldWaitForRunningRequest = waitForRunningRequest || Date.now() < receipt.startedAt + 120_000;
       const waitUntil = shouldWaitForRunningRequest
@@ -1619,7 +1653,7 @@ export function SimpleVoiceComposer({
       if (newMasterReady) {
         await hydrateAssemblyVariants(receipt, inspected.variants);
         if (inspected.missing.length) {
-          setMessage("Мастер сохранён. Дособираю версии площадок…");
+          setMessage("Основной текст сохранён. «Наговори» готовит остальные площадки…");
           await Promise.all(inspected.missing.map((key) => generatePlatform(
             receipt.contentId,
             key,
@@ -1632,7 +1666,7 @@ export function SimpleVoiceComposer({
         }
         clearAssemblyReceipt(receipt.contentId);
         setRubricLocked(true);
-        setMessage("Сборка восстановлена. Готовые версии можно проверить и скопировать.");
+        setMessage("Подготовка продолжена. Тексты для площадок можно проверить и скопировать.");
         isAssemblingRef.current = false;
         setIsAssembling(false);
         return;
@@ -1642,7 +1676,7 @@ export function SimpleVoiceComposer({
         clearAssemblyReceipt(receipt.contentId);
         isAssemblingRef.current = false;
         setIsAssembling(false);
-        setMessage("Автоматическое восстановление не завершилось. Ваш текст и медиа сохранены; нажмите «Собрать версии» ещё раз.");
+        setMessage("Не получилось продолжить автоматически. Твой текст, фото и видео сохранены; нажми «Подготовить тексты» ещё раз.");
         return;
       }
 
@@ -1652,7 +1686,7 @@ export function SimpleVoiceComposer({
     })().catch((error) => {
       isAssemblingRef.current = false;
       setIsAssembling(false);
-      setMessage(error instanceof Error ? error.message : "Не удалось восстановить сборку. Ваш исходник сохранён.");
+      setMessage(error instanceof Error ? error.message : "Не удалось продолжить подготовку. Твоя исходная мысль сохранена.");
     }).finally(() => {
       assemblyRecoveryPromiseRef.current = null;
     });
@@ -1700,9 +1734,9 @@ export function SimpleVoiceComposer({
       });
       updatePlatformResult(key, { status: "ready", variant: updated });
       setEditingPlatform(null);
-      setMessage(`${platformLabel(key)}: изменения сохранены в новой версии.`);
+      setMessage(`${platformLabel(key)}: изменения сохранены.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось сохранить вариант.");
+      setMessage(error instanceof Error ? error.message : "Не удалось сохранить текст.");
     } finally {
       setIsSavingVariant(false);
     }
@@ -1729,11 +1763,11 @@ export function SimpleVoiceComposer({
       setFeedbackByVariant((current) => ({ ...current, [variant.id]: response.feedback }));
       setMessage(
         learnStyle
-          ? "Мы сохраняем эту версию как пример для следующих текстов; сама модель не переобучается."
-          : `${platformLabel(activePlatform)}: отдельная реакция сохранена.`,
+          ? "Этот вариант сохранён как пример для следующих текстов."
+          : `${platformLabel(activePlatform)}: оценка сохранена.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось сохранить реакцию.");
+      setMessage(error instanceof Error ? error.message : "Не удалось сохранить оценку.");
     }
   }
 
@@ -1746,9 +1780,9 @@ export function SimpleVoiceComposer({
         { method: "DELETE" },
       );
       setFeedbackByVariant((current) => ({ ...current, [variant.id]: null }));
-      setMessage(`${platformLabel(activePlatform)}: реакция снята, связанный внутренний пример отключён.`);
+      setMessage(`${platformLabel(activePlatform)}: оценка убрана.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось снять реакцию.");
+      setMessage(error instanceof Error ? error.message : "Не удалось убрать оценку.");
     }
   }
 
@@ -1756,11 +1790,11 @@ export function SimpleVoiceComposer({
     const keys = applyToAll ? selectedPlatforms : [activePlatform];
     const readyKeys = keys.filter((key) => results[key].variant);
     if (!readyKeys.length) {
-      setMessage("Сначала соберите хотя бы одну версию площадки.");
+      setMessage("Сначала подготовь текст хотя бы для одной площадки.");
       return;
     }
     setIsRefining(true);
-    setMessage(`${label}: редактор дорабатывает ${readyKeys.length === 1 ? "открытую версию" : "выбранные версии"}…`);
+    setMessage(`${label}: «Наговори» дорабатывает ${readyKeys.length === 1 ? "открытый текст" : "выбранные тексты"}…`);
     try {
       const usageParts: Array<AiUsageSummary | null> = [];
       const warnings: string[] = [];
@@ -1783,14 +1817,14 @@ export function SimpleVoiceComposer({
       setInstruction("");
       setMessage(
         warnings.length
-          ? `${label}: версия готова, но редактор оставил предупреждение: ${warnings[0]}`
-          : `${label}: новая версия готова. Предыдущая сохранена в истории изменений.`,
+          ? `${label}: текст готов, но перед сохранением проверь важные факты и длину.`
+          : `${label}: новый текст готов. Предыдущий вариант сохранён.`,
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Редактор не смог доработать текст. Последняя хорошая версия сохранена.",
+          : "Не получилось доработать текст. Последний сохранённый вариант остался на месте.",
       );
     } finally {
       setIsRefining(false);
@@ -1806,10 +1840,10 @@ export function SimpleVoiceComposer({
     const mode = await copyRichText(richText);
     setMessage(
       linkCount > 0 && mode === "rich"
-        ? `${platformLabel(activePlatform)}: текст и ${linkCount} ${linkCount === 1 ? "ссылка" : linkCount < 5 ? "ссылки" : "ссылок"} скопированы.`
+        ? `${platformLabel(activePlatform)}: текст и ${linkCount} ${linkCountLabel(linkCount)} скопированы.`
         : linkCount > 0
-          ? `${platformLabel(activePlatform)}: браузер скопировал обычный текст; скрытые ссылки могли не сохраниться.`
-          : `${platformLabel(activePlatform)}: текст скопирован. В постоянном подвале ссылки пока не настроены.`,
+          ? `${platformLabel(activePlatform)}: скопирован только текст. Проверь ссылки перед публикацией.`
+          : `${platformLabel(activePlatform)}: текст скопирован. Ссылки в конце публикации пока не добавлены.`,
     );
   }
 
@@ -1824,15 +1858,15 @@ export function SimpleVoiceComposer({
       : "/app/projects/new";
     return (
       <Card className="mx-auto grid w-full max-w-3xl justify-items-start gap-4 border-dashed p-6 sm:p-8">
-        <Badge tone="info">{hasIdeaToContinue ? "Идея сохранена" : "Перед первой публикацией"}</Badge>
+        <Badge tone="info">{hasIdeaToContinue ? "Идея сохранена" : "Первый шаг"}</Badge>
         <div>
           <h1 className="text-2xl font-semibold text-foreground">
-            {hasIdeaToContinue ? "Создайте первый проект — и продолжим диктовку" : "Сначала создайте проект или канал"}
+            {hasIdeaToContinue ? "Создай первый канал — и продолжи запись" : "Сначала создай канал"}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             {hasIdeaToContinue
-              ? "Проект хранит правила вашего канала. Достаточно указать название: выбранная идея останется с вами, а материал пока не создаётся."
-              : "Проект хранит общие правила и примеры. После этого можно создавать обычные публикации без рубрики или добавлять рубрики для повторяемых форматов."}
+              ? "Достаточно указать название канала. Выбранная идея останется на месте, и после этого можно продолжить запись."
+              : "Для начала достаточно названия. Примеры стиля и повторяющиеся форматы можно добавить позже."}
           </p>
         </div>
         {pendingStandaloneIdea ? (
@@ -1845,7 +1879,7 @@ export function SimpleVoiceComposer({
         <Button asChild>
           <Link href={continueWithIdeaHref}>
             <Plus size={16} />
-            {hasIdeaToContinue ? "Создать проект и продолжить" : "Создать проект"}
+            {hasIdeaToContinue ? "Создать канал и продолжить" : "Создать канал"}
           </Link>
         </Button>
       </Card>
@@ -1858,19 +1892,14 @@ export function SimpleVoiceComposer({
       <section className="grid min-w-0 gap-4 rounded-2xl border border-border bg-sidebar p-4 text-sidebar-foreground shadow-panel sm:p-6 lg:col-start-1 lg:row-start-1">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <Badge tone="success">Голосовая студия</Badge>
+            <Badge tone="success">Новая публикация</Badge>
             <h1 className="font-editorial mt-3 break-words text-4xl leading-tight text-foreground sm:text-5xl">
-              Расскажите идею — остальное мы соберём.
+              Расскажи всё своими словами — «Наговори» подготовит текст.
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Говорите свободно. Получите готовую версию для каждой выбранной площадки.
+              Говори как обычно. Затем выбери площадки и проверь готовые тексты.
             </p>
           </div>
-          {contentId ? (
-            <Button asChild className="min-h-11" size="sm" variant="secondary">
-              <Link href={`/app/content/${contentId}`}>Расширенный режим</Link>
-            </Button>
-          ) : null}
         </div>
       </section>
 
@@ -1882,14 +1911,14 @@ export function SimpleVoiceComposer({
 
       {resumeDraft ? (
         <div className="rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-3 text-sm leading-6 text-foreground lg:col-start-1" data-testid="resume-history-notice">
-          Вы продолжаете сохранённый материал. Исходник, фотографии и готовые версии уже на месте; новая доработка сохранится в этом же материале.
+          Ты продолжаешь сохранённую публикацию. Исходная мысль, фото и готовые тексты уже на месте; новые правки сохранятся здесь же.
         </div>
       ) : null}
 
       <Card className="order-1 grid min-w-0 gap-4 p-4 sm:p-5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-7">
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-foreground">
-            Проект
+            Канал
             <span className="relative">
               <select
                   className="h-11 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary"
@@ -1905,7 +1934,7 @@ export function SimpleVoiceComposer({
             </span>
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-foreground">
-            Рубрика <span className="font-normal text-muted">(необязательно)</span>
+            Формат <span className="font-normal text-muted">(по желанию)</span>
             <span className="relative">
               <select
                   className="h-11 w-full appearance-none rounded-lg border border-border bg-background px-3 pr-9 text-sm outline-none focus:border-primary"
@@ -1913,7 +1942,7 @@ export function SimpleVoiceComposer({
                 value={selectedRubricId}
                 onChange={(event) => void updateRubric(event.currentTarget.value)}
               >
-                <option value="">Без рубрики</option>
+                <option value="">Обычная публикация</option>
                 {(project?.rubrics ?? []).map((item) => (
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
@@ -1922,7 +1951,7 @@ export function SimpleVoiceComposer({
             </span>
             <span className="flex min-h-5 items-center gap-1.5 text-xs font-normal leading-5 text-muted">
               {isRubricUpdating ? <Loader2 className="animate-spin" size={13} /> : null}
-              {rubricLocked ? "Рубрика зафиксирована после сборки поста." : "Рубрику можно менять, пока пост ещё не собран."}
+              {rubricLocked ? "Формат уже применён. Чтобы выбрать другой, начни новую подготовку." : "Формат можно изменить до подготовки текстов."}
             </span>
           </label>
         </div>
@@ -1930,11 +1959,11 @@ export function SimpleVoiceComposer({
         {rubric ? (
           <div className="flex min-w-0 flex-wrap gap-2 text-xs text-muted">
             <Badge tone={rubric.approvedExampleCount + rubric.projectFallbackExampleCount >= 3 ? "success" : "warning"}>
-              Стиль: {rubric.approvedExampleCount + rubric.projectFallbackExampleCount} примеров
+              Примеров стиля: {rubric.approvedExampleCount + rubric.projectFallbackExampleCount}
             </Badge>
             {targetMin || targetMax ? (
               <Badge>
-                цель: {targetMin ? targetMin.toLocaleString("ru-RU") : "—"}–{targetMax ? targetMax.toLocaleString("ru-RU") : "—"} знаков
+                обычно {targetMin ? targetMin.toLocaleString("ru-RU") : "—"}–{targetMax ? targetMax.toLocaleString("ru-RU") : "—"} знаков
               </Badge>
             ) : null}
           </div>
@@ -1945,13 +1974,13 @@ export function SimpleVoiceComposer({
           </Badge>
         ) : (
           <Link className="w-fit" href={`/app/projects/${project.id}/settings`}>
-            <Badge tone="warning">Ссылки в конце поста добавлены, но не настроены</Badge>
+            <Badge tone="warning">Ссылки в конце текста пока не добавлены</Badge>
           </Link>
         ) : null}
 
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-foreground">Куда собрать</div>
+            <div className="text-sm font-medium text-foreground">Для каких площадок подготовить</div>
             <button
               className="text-xs font-semibold text-primary"
               type="button"
@@ -1963,7 +1992,7 @@ export function SimpleVoiceComposer({
                 )
               }
             >
-              {selectedPlatforms.length === platformOptions.length ? "Снять все" : "Выбрать все"}
+              {selectedPlatforms.length === platformOptions.length ? "Очистить выбор" : "Выбрать все"}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -2002,14 +2031,14 @@ export function SimpleVoiceComposer({
         {selectedPlatforms.includes("instagram") ? (
           <div className="grid gap-2 rounded-lg border border-border bg-surface-muted p-3" data-testid="instagram-format-picker">
             <div>
-              <div className="text-sm font-semibold text-foreground">Формат Instagram</div>
-              <p className="mt-0.5 text-xs leading-5 text-muted">Формат определяет требования к медиа и структуру готового текста.</p>
+              <div className="text-sm font-semibold text-foreground">Как будет выглядеть публикация в Instagram</div>
+              <p className="mt-0.5 text-xs leading-5 text-muted">От формата зависит, сколько фото или видео понадобится.</p>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {([
-                ["image", "Один пост", "1 медиа"],
-                ["carousel", "Карусель", "2–10 медиа"],
-                ["reel", "Reel", "1 видео"],
+                ["image", "Один пост", "1 фото или видео"],
+                ["carousel", "Карусель", "2–10 файлов"],
+                ["reel", "Короткий ролик", "1 видео"],
               ] as Array<[InstagramFormat, string, string]>).map(([format, label, note]) => (
                 <button
                   aria-pressed={instagramFormat === format}
@@ -2028,7 +2057,7 @@ export function SimpleVoiceComposer({
             {instagramFormatIssue() ? (
               <p className="text-xs leading-5 text-warning">{instagramFormatIssue()}</p>
             ) : (
-              <Badge className="w-fit" tone="success">формат и медиа готовы</Badge>
+              <Badge className="w-fit" tone="success">Всё готово</Badge>
             )}
           </div>
         ) : null}
@@ -2038,7 +2067,7 @@ export function SimpleVoiceComposer({
           type="button"
           onClick={() => setLengthSheetOpen(true)}
         >
-          <span><span className="font-semibold text-foreground">Длина этого поста</span><span className="ml-2 text-muted">{({ auto: "Авто по правилам", short: "Короткий", normal: "Обычный", detailed: "Подробный", exact: "Точно" } as Record<LengthMode, string>)[lengthMode]}</span></span>
+          <span><span className="font-semibold text-foreground">Длина этого поста</span><span className="ml-2 text-muted">{({ auto: "Как обычно для канала", short: "Короткий", normal: "Обычный", detailed: "Подробный", exact: "Указать длину" } as Record<LengthMode, string>)[lengthMode]}</span></span>
           <span className="text-primary">Изменить</span>
         </button>
         <Button
@@ -2048,29 +2077,29 @@ export function SimpleVoiceComposer({
           onClick={() => void assembleVersions()}
         >
           {isAssembling ? <Loader2 className="animate-spin" size={18} /> : <WandSparkles size={18} />}
-          Подготовить {selectedPlatforms.length || 0} {selectedPlatforms.length === 1 ? "версию" : selectedPlatforms.length < 5 ? "версии" : "версий"}
+          Подготовить тексты для {selectedPlatforms.length || 0} {selectedPlatforms.length === 1 ? "площадки" : "площадок"}
         </Button>
-        <p className="text-center text-xs leading-5 text-muted">Сначала вы увидите результат. Ничего не публикуется автоматически.</p>
+        <p className="text-center text-xs leading-5 text-muted">Сначала ты всё проверишь. Без твоего подтверждения ничего не отправится.</p>
       </Card>
 
       {lengthSheetOpen ? (
         <div className="fixed inset-0 z-50 flex items-end bg-black/35 sm:items-center sm:justify-center" role="presentation" onMouseDown={() => setLengthSheetOpen(false)}>
           <section aria-labelledby="length-sheet-title" aria-modal="true" className="grid max-h-[90vh] w-full gap-4 overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-popover sm:max-w-lg sm:rounded-2xl" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold text-foreground" id="length-sheet-title">Длина этого поста</h2><p className="mt-1 text-sm leading-6 text-muted">Меняет только текущую сборку. Правила проекта и рубрики сохраняются.</p></div><button aria-label="Закрыть" className="grid min-h-11 min-w-11 place-items-center text-muted" type="button" onClick={() => setLengthSheetOpen(false)}><X size={20} /></button></div>
+            <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold text-foreground" id="length-sheet-title">Длина этого поста</h2><p className="mt-1 text-sm leading-6 text-muted">Эта длина применяется только к текущей публикации.</p></div><button aria-label="Закрыть" className="grid min-h-11 min-w-11 place-items-center text-muted" type="button" onClick={() => setLengthSheetOpen(false)}><X size={20} /></button></div>
             <div className="grid grid-cols-2 gap-2">
-              {([['auto', 'Авто по правилам'], ['short', 'Короткий'], ['normal', 'Обычный'], ['detailed', 'Подробный'], ['exact', 'Точно']] as Array<[LengthMode, string]>).map(([mode, label]) => (
+              {([['auto', 'Как обычно для канала'], ['short', 'Короткий'], ['normal', 'Обычный'], ['detailed', 'Подробный'], ['exact', 'Указать длину']] as Array<[LengthMode, string]>).map(([mode, label]) => (
                 <button aria-pressed={lengthMode === mode} className={lengthMode === mode ? "rounded-lg border border-success bg-[color-mix(in_srgb,var(--success),transparent_90%)] p-3 text-left text-sm font-semibold" : "rounded-lg border border-border p-3 text-left text-sm"} key={mode} type="button" onClick={() => setLengthMode(mode)}>{label}</button>
               ))}
             </div>
             {lengthMode === "exact" ? (
               <div className="grid gap-3 rounded-lg border border-border p-3">
-                <label className="flex items-start gap-2 text-sm"><input checked={copyTextFamilyTarget} className="mt-1" type="checkbox" onChange={(event) => setCopyTextFamilyTarget(event.currentTarget.checked)} /><span><span className="font-semibold text-foreground">Одинаковая цель для Telegram, MAX и VK</span><span className="block text-xs leading-5 text-muted">Каждая версия всё равно хранится отдельно.</span></span></label>
+                <label className="flex items-start gap-2 text-sm"><input checked={copyTextFamilyTarget} className="mt-1" type="checkbox" onChange={(event) => setCopyTextFamilyTarget(event.currentTarget.checked)} /><span><span className="font-semibold text-foreground">Одна длина для Telegram, MAX и VK</span><span className="block text-xs leading-5 text-muted">Для каждой площадки всё равно будет отдельный текст.</span></span></label>
                 {!copyTextFamilyTarget ? <label className="grid gap-1 text-sm font-semibold">Площадка<select className="h-11 rounded-lg border border-border bg-background px-3" value={exactPlatform} onChange={(event) => setExactPlatform(event.currentTarget.value as PlatformKey)}>{selectedPlatforms.map((key) => <option key={key} value={key}>{platformLabel(key)}</option>)}</select></label> : null}
                 <div className="grid grid-cols-2 gap-2"><label className="grid gap-1 text-sm">От<input className="h-11 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMinChars} onChange={(event) => setExactMinChars(event.currentTarget.value)} /></label><label className="grid gap-1 text-sm">До<input className="h-11 rounded-lg border border-border bg-background px-3" min={1} type="number" value={exactMaxChars} onChange={(event) => setExactMaxChars(event.currentTarget.value)} /></label></div>
-                {copyTextFamilyTarget && Number(exactMaxChars) > 4000 ? <p className="text-sm text-danger">Для MAX укажите не больше 4 000 знаков.</p> : null}
+                {copyTextFamilyTarget && Number(exactMaxChars) > 4000 ? <p className="text-sm text-danger">Для MAX укажи не больше 4 000 знаков.</p> : null}
               </div>
             ) : null}
-            <Button disabled={lengthMode === "exact" && (!Number(exactMinChars) || !Number(exactMaxChars) || Number(exactMinChars) > Number(exactMaxChars) || (copyTextFamilyTarget && Number(exactMaxChars) > 4000))} type="button" onClick={() => setLengthSheetOpen(false)}>Применить к текущему посту</Button>
+            <Button disabled={lengthMode === "exact" && (!Number(exactMinChars) || !Number(exactMaxChars) || Number(exactMinChars) > Number(exactMaxChars) || (copyTextFamilyTarget && Number(exactMaxChars) > 4000))} type="button" onClick={() => setLengthSheetOpen(false)}>Сохранить длину</Button>
           </section>
         </div>
       ) : null}
@@ -2078,19 +2107,19 @@ export function SimpleVoiceComposer({
       <Card className="order-2 grid min-w-0 gap-4 overflow-hidden p-4 sm:p-6 lg:order-none lg:col-start-1 lg:row-start-2">
         <div className="order-1 text-left">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-lg font-semibold text-foreground">Ваш голосовой черновик</div>
+            <div className="text-lg font-semibold text-foreground">Расскажи свою мысль</div>
             <span className="flex items-center gap-2 text-xs text-muted">
               <span className={captureState === "recording" ? "size-2 animate-pulse rounded-full bg-danger motion-reduce:animate-none" : "size-2 rounded-full bg-success"} />
               {captureState === "recording"
-                ? voiceSignalDetected ? "Микрофон слышит вас" : "Идёт запись — говорите"
-                : captureState === "paused" ? "Запись на паузе" : "Можно продолжить в любой момент"}
+                ? voiceSignalDetected ? "Микрофон слышит тебя" : "Идёт запись — говори"
+                : captureState === "paused" ? "Запись на паузе" : "Можно начать или добавить ещё"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-muted">Надиктуйте всё сразу или добавляйте фрагменты по очереди.</p>
+          <p className="mt-1 text-sm text-muted">Расскажи всё сразу или записывай по частям.</p>
         </div>
         <div className="order-2 flex justify-center border-t border-border pt-5 lg:order-3">
           <button
-            aria-label={captureState === "recording" || captureState === "paused" ? "Остановить и сохранить фрагмент" : "Начать диктовку"}
+            aria-label={captureState === "recording" || captureState === "paused" ? "Остановить и сохранить фрагмент" : "Начать запись"}
             aria-pressed={captureState === "recording" || captureState === "paused"}
             className="grid size-28 place-items-center rounded-full bg-accent text-accent-foreground shadow-popover transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 sm:size-32"
             disabled={["requesting", "uploading", "transcribing", "review"].includes(captureState)}
@@ -2163,7 +2192,7 @@ export function SimpleVoiceComposer({
 
         {segments.length ? (
           <div className="order-6 grid gap-2">
-            <div className="text-sm font-semibold text-foreground">Фрагменты</div>
+            <div className="text-sm font-semibold text-foreground">Записанные части</div>
             {segments.map((segment) => (
               <div className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border bg-background p-3" key={segment.id}>
                 <div className="min-w-0">
@@ -2193,7 +2222,7 @@ export function SimpleVoiceComposer({
             <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-foreground">{ideaBrief.ideaBrief}</p>
             <p className="text-xs leading-5 text-muted"><strong className="text-foreground">{pendingStandaloneIdea ? "Вопрос для начала:" : "План:"}</strong> {ideaBrief.starterOutline}</p>
             <div>
-              <div className="text-sm font-semibold text-foreground">Расскажите своими словами:</div>
+              <div className="text-sm font-semibold text-foreground">Расскажи своими словами:</div>
               {ideaBrief.detailQuestions.length === 1 ? (
                 <p className="mt-2 text-sm leading-6 text-muted">{ideaBrief.detailQuestions[0]}</p>
               ) : (
@@ -2202,19 +2231,19 @@ export function SimpleVoiceComposer({
                 </ol>
               )}
             </div>
-            <p className="text-xs leading-5 text-muted">Идея не добавлена в расшифровку и не станет текстом поста сама. Здесь звучат ваши слова; редактура подключится позже.</p>
+            <p className="text-xs leading-5 text-muted">Подсказка помогает начать, но в публикацию попадут только твои слова.</p>
           </section>
         ) : null}
 
         <label className="order-3 grid min-w-0 gap-2 text-sm font-semibold text-foreground lg:order-2">
-          Общая расшифровка
+          Текст из записи
           <span className="text-xs font-normal leading-5 text-muted">
-            Говорите естественно: назовите важные факты, личный вывод и то, что нельзя потерять. Текст можно поправить вручную до сборки.
+            Говори естественно: назови важные факты, личный вывод и то, что нельзя потерять. Текст можно поправить до подготовки публикации.
           </span>
           <textarea
             id="voice-transcript"
             className="min-h-40 w-full resize-y rounded-lg border border-border bg-background p-3 text-sm font-normal leading-6 outline-none focus:border-primary"
-            placeholder="Расшифровка всех фрагментов появится здесь. Можно также вставить текст вручную."
+            placeholder="Здесь появится текст из всех записанных частей. Можно также вставить готовый текст."
             value={transcript}
             onChange={(event) => updateTranscript(event.currentTarget.value)}
           />
@@ -2223,12 +2252,12 @@ export function SimpleVoiceComposer({
           {currentJobId ? (
             <Button type="button" onClick={() => void acceptTranscript(false)}>
               <Check size={16} />
-              Принять фрагмент
+              Сохранить эту часть
             </Button>
           ) : segments.length ? (
             <Button type="button" variant="secondary" onClick={() => void startRecording()}>
               <Plus size={16} />
-              Добавить ещё диктовку
+              Записать ещё
             </Button>
           ) : (
             <Button type="button" variant="secondary" onClick={() => document.getElementById("voice-transcript")?.focus()}>
@@ -2238,7 +2267,7 @@ export function SimpleVoiceComposer({
           )}
           <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground">
             <Upload size={16} />
-            Загрузить аудиофайл
+            Выбрать готовую запись
             <input
               accept="audio/*"
               className="sr-only"
@@ -2257,17 +2286,17 @@ export function SimpleVoiceComposer({
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="font-semibold text-foreground">Медиа к публикации</div>
-                {mediaCount ? <Badge tone="success">добавлено: {mediaCount}</Badge> : null}
+                <div className="font-semibold text-foreground">Фото и видео</div>
+                {mediaCount ? <Badge tone="success">Добавлено: {mediaCount}</Badge> : null}
               </div>
               <p className="mt-1 text-xs leading-5 text-muted">
-                Добавьте фотографии или видео, если они нужны выбранному формату. До 10 файлов; сначала добавьте три самых важных. Надписи и факты обязательно проверьте.
+                Добавь нужные фото или видео. Самые важные поставь первыми. Перед отправкой проверь надписи и факты.
               </p>
             </div>
           </div>
           <label className="inline-flex h-11 w-fit cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground">
             <Plus size={16} />
-            Добавить фото или видео
+            Выбрать фото или видео
             <input
               accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
               className="sr-only"
@@ -2293,7 +2322,7 @@ export function SimpleVoiceComposer({
           onClick={() => void assembleVersions()}
         >
           {isAssembling ? <Loader2 className="animate-spin" size={18} /> : <WandSparkles size={18} />}
-          {resumeDraft ? "Пересобрать версии" : "Собрать версии"}
+          Подготовить тексты
         </Button>
       </Card>
       </div>
@@ -2301,8 +2330,8 @@ export function SimpleVoiceComposer({
       {selectedPlatforms.some((key) => results[key].status !== "idle") ? (
         <Card className="scroll-mt-20 grid min-w-0 gap-4 p-4 sm:p-5" data-testid="platform-results" id="platform-results">
           <div>
-            <div className="text-lg font-semibold text-foreground">Готовые версии</div>
-            <p className="mt-1 text-sm text-muted">Каждая площадка остаётся независимой. Ошибка одной не стирает остальные.</p>
+            <div className="text-lg font-semibold text-foreground">Тексты для площадок</div>
+            <p className="mt-1 text-sm text-muted">У каждой площадки свой текст. Если один не подготовится, остальные останутся на месте.</p>
           </div>
           <div className="flex min-w-0 gap-2 overflow-x-auto pb-1">
             {selectedPlatforms.map((key) => (
@@ -2325,7 +2354,7 @@ export function SimpleVoiceComposer({
 
           {activeResult.status === "loading" ? (
             <div className="grid min-h-56 place-items-center rounded-lg border border-border bg-background text-sm text-muted">
-              <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={18} />Версия собирается…</span>
+              <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={18} />«Наговори» готовит текст…</span>
             </div>
           ) : null}
           {activeResult.status === "error" ? (
@@ -2337,33 +2366,23 @@ export function SimpleVoiceComposer({
             <div className="grid min-w-0 gap-4">
               <div className="flex min-w-0 flex-wrap gap-2">
                 <Badge tone={hasMechanicalPlatformTruncation(activeResult.variant) ? "warning" : "success"}>
-                  {hasMechanicalPlatformTruncation(activeResult.variant) ? "нужна полноценная пересборка" : "готово"}
+                  {hasMechanicalPlatformTruncation(activeResult.variant) ? "Нужно подготовить заново" : "Готово"}
                 </Badge>
-                <Badge>{activeResult.variant.character_count.toLocaleString("ru-RU")} знаков</Badge>
-                {lengthTargetFromVariant(activeResult.variant) ? (
-                  <Badge>
-                    цель: {lengthTargetFromVariant(activeResult.variant)?.min_chars?.toLocaleString("ru-RU") ?? "—"}–{lengthTargetFromVariant(activeResult.variant)?.max_chars?.toLocaleString("ru-RU") ?? "—"} · {targetSourceLabel(lengthTargetFromVariant(activeResult.variant)?.source)}
-                  </Badge>
-                ) : null}
-                {missesLengthTarget(activeResult.variant) ? <Badge tone="warning">нужна пересборка по длине</Badge> : null}
+                <Badge>
+                  {activeResult.variant.character_count.toLocaleString("ru-RU")} {russianCountLabel(activeResult.variant.character_count, "знак", "знака", "знаков")}
+                </Badge>
+                {missesLengthTarget(activeResult.variant) ? <Badge tone="warning">Нужно поправить длину</Badge> : null}
                 {activePlatform === "instagram" && typeof activeResult.variant.payload.instagram_format === "string" ? (
                   <Badge tone="info">
-                    формат: {({ image: "один пост", carousel: "карусель", reel: "Reel" } as Record<string, string>)[activeResult.variant.payload.instagram_format] ?? activeResult.variant.payload.instagram_format}
+                    формат: {({ image: "один пост", carousel: "карусель", reel: "короткий ролик" } as Record<string, string>)[activeResult.variant.payload.instagram_format] ?? activeResult.variant.payload.instagram_format}
                   </Badge>
                 ) : null}
                 {activePlatform === "vk" ? <Badge tone="info">Запись сообщества</Badge> : null}
-                {activePlatform === "vk" && typeof vkExportPackage(activeResult.variant)?.attachment_count === "number" ? (
+                {activePlatform === "vk" && activeVkAttachmentCount !== null ? (
                   <Badge>
-                    текст + {String(vkExportPackage(activeResult.variant)?.attachment_count)} вложений
+                    текст + {activeVkAttachmentCount} {russianCountLabel(activeVkAttachmentCount, "файл", "файла", "файлов")}
                   </Badge>
                 ) : null}
-                <Badge>
-                  максимум: {resultHardLimit(
-                    activePlatform,
-                    activeResult.variant,
-                    platformOptions.find((item) => item.key === activePlatform)?.hardLimit ?? null,
-                  )?.toLocaleString("ru-RU") ?? "ручной экспорт"}
-                </Badge>
               </div>
               <section
                 aria-labelledby={`platform-preflight-title-${activePlatform}`}
@@ -2375,10 +2394,10 @@ export function SimpleVoiceComposer({
               >
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-foreground" id={`platform-preflight-title-${activePlatform}`}>
-                    Проверка перед экспортом
+                    Проверка перед копированием
                   </h3>
                   <Badge tone={activePreflight ? preflightStatusTone(activePreflight.status) : "warning"}>
-                    {activePreflight ? preflightStatusLabel(activePreflight.status) : "Обновить проверку"}
+                    {activePreflight ? preflightStatusLabel(activePreflight.status) : "Проверить ещё раз"}
                   </Badge>
                 </div>
                 {activePreflight ? (
@@ -2406,36 +2425,36 @@ export function SimpleVoiceComposer({
                   </div>
                 ) : (
                   <p className="text-xs leading-5 text-muted">
-                    Эта сохранённая версия создана до появления полной проверки. Пересоберите её, чтобы проверить длину, медиа, формат и способ отправки.
+                    Этот текст сохранён раньше. Подготовь его заново, чтобы «Наговори» проверил длину, фото и вид публикации.
                   </p>
                 )}
               </section>
               {activePlatform === "vk" ? (
                 <div className="grid gap-2 rounded-lg border border-border bg-surface-muted p-3" data-testid="vk-export-package">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-foreground">Пакет для VK</div>
-                    <Badge tone="warning">публикация вручную</Badge>
+                    <div className="text-sm font-semibold text-foreground">Готово для VK</div>
+                    <Badge tone="warning">Скопируй и опубликуй вручную</Badge>
                   </div>
                   <p className="text-xs leading-5 text-muted">
-                    Текст готов для записи сообщества. Вложения сохранены в том порядке, в котором их нужно добавить в VK.
+                    Текст готов для записи сообщества. Фото и видео стоят в том порядке, в котором их нужно добавить в VK.
                   </p>
                   {vkAttachmentSummary(activeResult.variant).length ? (
                     <div className="flex flex-wrap gap-2">
                       {vkAttachmentSummary(activeResult.variant).map((item) => <Badge key={item}>{item}</Badge>)}
                     </div>
                   ) : (
-                    <div className="text-xs text-muted">Без вложений.</div>
+                    <div className="text-xs text-muted">Фото и видео не добавлены.</div>
                   )}
                 </div>
               ) : null}
               {hasMechanicalPlatformTruncation(activeResult.variant) ? (
                 <div className="rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3 text-sm leading-6 text-foreground">
-                  Эта старая версия была механически обрезана. Нажмите «Пересобрать»: редактор подготовит для Instagram отдельный цельный текст по полному исходнику.
+                  Этот текст был сокращён неудачно. Подготовь его заново по полной записи.
                 </div>
               ) : null}
               {editingPlatform === activePlatform ? (
                 <RichTextEditor
-                  ariaLabel={`Редактор версии для ${platformLabel(activePlatform)}`}
+                  ariaLabel={`Редактирование текста для ${platformLabel(activePlatform)}`}
                   value={editRichText}
                   onChange={setEditRichText}
                 />
@@ -2520,12 +2539,12 @@ export function SimpleVoiceComposer({
                   onClick={() => void assembleVersions({ rebuildFromSource: true })}
                 >
                   {isAssembling ? <Loader2 className="animate-spin motion-reduce:animate-none" size={15} /> : <RotateCcw size={15} />}
-                  Пересобрать из диктовки
+                  Подготовить заново по записи
                 </Button>
               </div>
               <details className="group rounded-lg border border-border bg-surface-muted">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                  <span>Ещё правки</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
+                  <span>Другие изменения</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
                 </summary>
                 <div className="grid gap-3 border-t border-border p-3">
                   <div className="flex min-w-0 flex-wrap gap-2">
@@ -2540,7 +2559,7 @@ export function SimpleVoiceComposer({
                   </div>
                   <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                     <label className="grid gap-1 text-xs font-semibold text-muted">
-                      Своя команда для {platformLabel(activePlatform)}
+                      Что ещё изменить для {platformLabel(activePlatform)}?
                       <input className="h-11 min-w-0 rounded-md border border-border bg-background px-3 text-sm font-normal text-foreground outline-none" placeholder="Например: сохрани цену, сократи вступление" value={instruction} onChange={(event) => setInstruction(event.currentTarget.value)} />
                     </label>
                     <Button className="min-h-11" disabled={isRefining || !instruction.trim()} type="button" variant="secondary" onClick={() => void refineVariants(instruction.trim(), "Команда")}>
@@ -2549,20 +2568,20 @@ export function SimpleVoiceComposer({
                   </div>
                   <label className="flex min-h-11 items-center gap-2 text-xs font-medium text-foreground">
                     <input checked={applyToAll} type="checkbox" onChange={(event) => setApplyToAll(event.currentTarget.checked)} />
-                    Применить свою команду ко всем выбранным версиям
+                    Применить ко всем выбранным площадкам
                   </label>
                 </div>
               </details>
               <section className="grid min-w-0 gap-3 rounded-lg border border-border bg-surface-muted p-3" data-testid="platform-feedback">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Сохранить вашу окончательную редакцию?</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Сохранить этот текст как пример твоего стиля?</h3>
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      После ручной правки «Наговори» может использовать эту версию как удачный пример именно для {platformLabel(activePlatform)}.
+                      Этот текст поможет «Наговори» лучше готовить будущие публикации для {platformLabel(activePlatform)}.
                     </p>
                   </div>
                   {activeFeedback ? <Badge tone={activeFeedback.reaction === "excellent" ? "success" : activeFeedback.reaction === "good" ? "info" : "warning"}>
-                    {activeFeedback.learns_style ? "стиль запомнен" : "реакция сохранена"}
+                    {activeFeedback.learns_style ? "Пример стиля сохранён" : "Оценка сохранена"}
                   </Badge> : null}
                 </div>
                 <div className="flex min-w-0 flex-wrap gap-2">
@@ -2572,7 +2591,7 @@ export function SimpleVoiceComposer({
                     type="button"
                     variant={activeFeedback?.reaction === "excellent" ? "primary" : "secondary"}
                   >
-                    Запомнить эту редакцию для {platformLabel(activePlatform)}
+                    Запомнить этот текст для {platformLabel(activePlatform)}
                   </Button>
                   <details className="group min-w-0">
                     <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md px-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground">Оценить результат<ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={15} /></summary>
@@ -2580,7 +2599,7 @@ export function SimpleVoiceComposer({
                       <Button className="min-h-11" onClick={() => void setVariantFeedback("good")} type="button" variant={activeFeedback?.reaction === "good" ? "primary" : "secondary"}>Хорошо</Button>
                       <Button className="min-h-11" onClick={() => void setVariantFeedback("needs_work")} type="button" variant={activeFeedback?.reaction === "needs_work" ? "primary" : "secondary"}>Нужна правка</Button>
                       <Button className="min-h-11" onClick={() => void setVariantFeedback("not_my_style")} type="button" variant={activeFeedback?.reaction === "not_my_style" ? "primary" : "secondary"}>Не мой стиль</Button>
-                      {activeFeedback ? <Button className="min-h-11" onClick={() => void clearVariantFeedback()} type="button" variant="ghost">Снять оценку</Button> : null}
+                      {activeFeedback ? <Button className="min-h-11" onClick={() => void clearVariantFeedback()} type="button" variant="ghost">Убрать оценку</Button> : null}
                     </div>
                   </details>
                 </div>
@@ -2591,7 +2610,7 @@ export function SimpleVoiceComposer({
       ) : null}
 
       <p className="text-xs leading-5 text-muted">
-        После сборки проверьте каждую версию перед отправкой.
+        Перед отправкой проверь каждый текст.
       </p>
     </div>
   );

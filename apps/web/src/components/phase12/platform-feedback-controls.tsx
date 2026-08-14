@@ -41,7 +41,7 @@ export function PlatformFeedbackControls({ platformLabel, variantId }: { platfor
     let cancelled = false;
     void request<PlatformVariantFeedbackResponse>(`/api/v1/platform-variants/${variantId}/feedback`, "GET")
       .then((response) => { if (!cancelled) setFeedback(response.feedback); })
-      .catch(() => { if (!cancelled) setMessage("Реакция сейчас не загрузилась."); });
+      .catch(() => { if (!cancelled) setMessage("Не получилось загрузить твою оценку."); });
     return () => { cancelled = true; };
   }, [variantId]);
 
@@ -53,9 +53,9 @@ export function PlatformFeedbackControls({ platformLabel, variantId }: { platfor
         { learn_style: learnStyle, reaction, version: feedback?.version ?? null },
       );
       setFeedback(response.feedback);
-      setMessage(learnStyle ? "Внутренний пример стиля сохранён. OpenAI не обучается." : "Реакция сохранена для этой площадки.");
+      setMessage(learnStyle ? "«Наговори» запомнит этот вариант как пример твоего стиля." : "Оценка сохранена для этого текста.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось сохранить реакцию.");
+      setMessage(error instanceof Error ? error.message : "Не удалось сохранить оценку.");
     }
   }
 
@@ -63,9 +63,9 @@ export function PlatformFeedbackControls({ platformLabel, variantId }: { platfor
     try {
       await request<PlatformVariantFeedbackResponse>(`/api/v1/platform-variants/${variantId}/feedback`, "DELETE");
       setFeedback(null);
-      setMessage("Реакция снята; внутренний пример отключён.");
+      setMessage("Оценка убрана. Этот вариант больше не будет примером стиля.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось снять реакцию.");
+      setMessage(error instanceof Error ? error.message : "Не удалось убрать оценку.");
     }
   }
 
@@ -73,13 +73,13 @@ export function PlatformFeedbackControls({ platformLabel, variantId }: { platfor
     <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-surface-muted p-3" data-testid="saved-platform-feedback">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Оценка версии {platformLabel}</h3>
-          <p className="mt-1 text-xs leading-5 text-muted">Отдельно для этой площадки. Стиль запоминается только после ручной правки.</p>
+          <h3 className="text-sm font-semibold text-foreground">Как тебе текст для {platformLabel}?</h3>
+          <p className="mt-1 text-xs leading-5 text-muted">Оценка относится только к этому тексту. Стиль запомнится, если сохранить этот вариант как пример.</p>
         </div>
         {feedback ? <Badge tone={feedback.reaction === "excellent" ? "success" : feedback.reaction === "good" ? "info" : "warning"}>{feedback.learns_style ? "стиль запомнен" : "сохранено"}</Badge> : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void react("excellent", true)} size="sm" variant={feedback?.reaction === "excellent" ? "primary" : "secondary"}>Отлично · запомнить</Button>
+        <Button onClick={() => void react("excellent", true)} size="sm" variant={feedback?.reaction === "excellent" ? "primary" : "secondary"}>Отлично — запомнить</Button>
         <Button onClick={() => void react("good")} size="sm" variant={feedback?.reaction === "good" ? "primary" : "secondary"}>Хорошо</Button>
         <Button onClick={() => void react("needs_work")} size="sm" variant={feedback?.reaction === "needs_work" ? "primary" : "secondary"}>Нужна правка</Button>
         <Button onClick={() => void react("not_my_style")} size="sm" variant={feedback?.reaction === "not_my_style" ? "primary" : "secondary"}>Не мой стиль</Button>

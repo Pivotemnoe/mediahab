@@ -102,7 +102,7 @@ function savedLabel(state: SaveState): string {
     idle: "",
     offline: "без интернета · черновик сохранён",
     saved: "сохранено",
-    saving: "сохраняю…",
+    saving: "сохраняется…",
   }[state];
 }
 
@@ -296,12 +296,12 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
 
   async function transfer(bodyPayload: { content_item_id?: string; project_id?: string }) {
     try {
-      setMessage("Переношу заметку…");
+      setMessage("«Наговори» готовит публикацию из заметки…");
       const result = await apiRequest<NotebookTransferOut>(`/api/v1/notebook/${note.id}/transfer`, {
         body: bodyPayload,
         method: "POST",
       });
-      setMessage("Заметка сохранена, материал открыт в обычном редакторе.");
+      setMessage("Заметка сохранена. «Наговори» открывает из неё публикацию.");
       router.push(result.composer_url);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось перенести заметку.");
@@ -310,16 +310,16 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
 
   async function uploadVoice(blob: Blob) {
     try {
-      setMessage("Загружаю и расшифровываю голос…");
+      setMessage("«Наговори» превращает запись в текст…");
       const updated = await transcribeVoiceIntoNote({ blob, note: currentRef.current, workspaceId });
       currentRef.current = updated;
       setBody(updated.body);
       onChanged(updated);
-      setMessage("Голос расшифрован и добавлен в заметку.");
+      setMessage("Текст из записи добавлен в заметку.");
     } catch (error) {
       try {
         await createOfflineNotebookEntry({ audioBlob: blob, audioMimeType: blob.type, body: "", workspaceId });
-        setMessage("Связи нет. Запись сохранена на устройстве и появится как отдельная заметка после синхронизации.");
+        setMessage("Интернета нет. Запись сохранена на устройстве и появится отдельной заметкой после отправки.");
       } catch {
         setMessage(error instanceof Error ? error.message : "Не удалось сохранить голос.");
       }
@@ -343,7 +343,7 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
       };
       recorder.start();
       recorderRef.current = recorder;
-      setMessage("Идёт запись. Нажмите ещё раз, чтобы закончить.");
+      setMessage("Микрофон работает. Говори и нажми ещё раз, когда закончишь.");
     } catch {
       setMessage("Браузер не дал доступ к микрофону.");
     }
@@ -379,7 +379,7 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
             <option value="draft">Черновик</option><option value="other">Без типа</option>
           </select>
           <Button onClick={() => void toggleRecording()} type="button" variant="secondary">
-            <Mic size={16} /> {recorderRef.current ? "Закончить запись" : "Надиктовать"}
+            <Mic size={16} /> {recorderRef.current ? "Закончить запись" : "Наговорить"}
           </Button>
           <Button onClick={() => void navigator.clipboard.writeText(body)} type="button" variant="secondary">
             <Clipboard size={16} /> Копировать
@@ -402,16 +402,16 @@ function NoteCard({ contentItems, note, onChanged, onRemoved, projects, workspac
         <div className="grid gap-3 rounded-lg border border-border bg-surface-muted p-3 lg:grid-cols-2">
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             <select className="h-10 min-w-0 rounded-md border border-border bg-surface px-3 text-sm" onChange={(event) => setProjectId(event.target.value)} value={projectId}>
-              <option value="">Выберите проект</option>
+              <option value="">Выбери канал</option>
               {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
             </select>
             <Button disabled={!projectId || !body.trim()} onClick={() => void transfer({ project_id: projectId })} type="button">
-              <FilePlus2 size={16} /> Новый материал
+              <FilePlus2 size={16} /> Сделать публикацию
             </Button>
           </div>
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             <select className="h-10 min-w-0 rounded-md border border-border bg-surface px-3 text-sm" onChange={(event) => setContentId(event.target.value)} value={contentId}>
-              <option value="">Выберите материал</option>
+              <option value="">Выбери публикацию</option>
               {contentItems.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
             </select>
             <Button disabled={!contentId || !body.trim()} onClick={() => void transfer({ content_item_id: contentId })} type="button" variant="secondary">
@@ -491,7 +491,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
           if (entry.id === quickVoiceEntryIdRef.current) failedVoiceEntryId = entry.id;
           failed += 1;
           await updateOfflineNotebookEntry(entry.id, {
-            error: error instanceof Error ? error.message : "Не удалось синхронизировать.",
+            error: "Не получилось отправить. Попробуй ещё раз позже.",
             status: "error",
           });
         }
@@ -502,7 +502,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
         setMessage(`Отправлено в блокнот: ${synchronized}.`);
       } else if (failed) {
         setServerUnavailable(true);
-        setMessage("Сохранённые заметки остались на устройстве. Повторим отправку, когда сервис станет доступен.");
+        setMessage("Заметки остались на устройстве. Попробуй отправить их ещё раз позже.");
       }
       if (synchronizedVoiceEntryId && quickVoiceEntryIdRef.current === synchronizedVoiceEntryId) {
         quickVoiceEntryIdRef.current = null;
@@ -642,7 +642,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       setDraft("");
       setDraftLocalState("empty");
       await refreshOfflineEntries();
-      setMessage("Заметка сохранена. Отправим её, когда появится интернет.");
+      setMessage("Заметка сохранена на устройстве. Она отправится, когда появится интернет.");
       if (navigator.onLine) void synchronizeOfflineEntries();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить заметку.");
@@ -653,7 +653,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     if (!viewModel.workspaceId) return;
     if (!blob.size) {
       setQuickVoiceState("idle");
-      setMessage("Не получилось записать звук. Попробуйте ещё раз.");
+      setMessage("Не получилось записать звук. Попробуй ещё раз.");
       return;
     }
     try {
@@ -671,8 +671,8 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       await refreshOfflineEntries();
       setVoiceReceiptState(navigator.onLine ? "saved" : "waiting");
       setMessage(navigator.onLine
-        ? "Голос сохранён на устройстве. Теперь отправляем его на расшифровку."
-        : "Голос сохранён на устройстве. Откройте блокнот снова, когда появится интернет.");
+        ? "Голос сохранён на устройстве. Теперь «Наговори» превращает его в текст."
+        : "Голос сохранён на устройстве. Открой блокнот снова, когда появится интернет.");
       setQuickVoiceState("idle");
       if (navigator.onLine) await synchronizeOfflineEntries();
     } catch (error) {
@@ -688,7 +688,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     if (quickVoiceState === "saving") return;
     if (quickRecorderRef.current) {
       setQuickVoiceState("saving");
-      setMessage("Останавливаю и сохраняю запись…");
+      setMessage("«Наговори» останавливает и сохраняет запись…");
       quickRecorderRef.current.stop();
       return;
     }
@@ -701,7 +701,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       setQuickVoiceState("requesting");
       setVoiceReceiptState("none");
       setRecordingSeconds(0);
-      setMessage("Подключаем микрофон…");
+      setMessage("«Наговори» подключает микрофон…");
       requestedStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!isMountedRef.current) {
         requestedStream.getTracks().forEach((track) => track.stop());
@@ -720,7 +720,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       quickRecorderRef.current = recorder;
       startVoiceMeter(requestedStream);
       setQuickVoiceState("recording");
-      setMessage("Запись идёт. Мы принимаем голос; нажмите кнопку, когда закончите.");
+      setMessage("Микрофон работает. Говори и нажми ещё раз, когда закончишь.");
     } catch {
       requestedStream?.getTracks().forEach((track) => track.stop());
       if (!isMountedRef.current) return;
@@ -745,40 +745,40 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
   const isCurrentVoiceSyncing = isSyncing && (voiceReceiptState === "saved" || quickVoiceEntryIdRef.current !== null);
   const voiceStage = quickVoiceState === "requesting"
-      ? { description: "Разрешите доступ, чтобы начать запись.", title: "Подключаем микрофон" }
+      ? { description: "Разреши доступ, чтобы начать запись.", title: "«Наговори» подключает микрофон" }
     : quickVoiceState === "recording"
       ? { description: "Голос принимается. До остановки текущая фраза ещё не сохранена.", title: "Запись идёт" }
       : quickVoiceState === "saving"
-        ? { description: "Сохраняем запись, чтобы она не потерялась.", title: "Сохраняем запись" }
+        ? { description: "Запись сохраняется, чтобы она не потерялась.", title: "«Наговори» сохраняет запись" }
         : isSyncing
           ? isCurrentVoiceSyncing
-            ? { description: "Отправляем голос и ждём расшифровку.", title: "Отправляем и расшифровываем" }
-            : { description: "Отправляем сохранённые заметки.", title: "Отправляем заметки" }
+            ? { description: "«Наговори» отправляет запись и превращает её в текст.", title: "«Наговори» готовит текст" }
+            : { description: "«Наговори» отправляет сохранённые заметки.", title: "Заметки отправляются" }
           : voiceReceiptState === "waiting"
-            ? { description: "Когда появится интернет, откройте приложение снова — запись отправится на расшифровку.", title: "Запись сохранена" }
+            ? { description: "Когда появится интернет, открой приложение снова — запись превратится в текст.", title: "Запись сохранена" }
             : voiceReceiptState === "synced"
-              ? { description: "Запись отправлена, расшифрована и добавлена в блокнот.", title: "Готово" }
+              ? { description: "Текст из записи добавлен в блокнот.", title: "Готово" }
               : voiceReceiptState === "saved"
-                ? { description: "Запись уже сохранена; начинаем отправку.", title: "Запись сохранена" }
+                ? { description: "Запись уже сохранена и отправляется в блокнот.", title: "Запись сохранена" }
                 : voiceReceiptState === "error"
-                  ? { description: "Проверьте разрешение микрофона или повторите запись.", title: "Запись не завершена" }
+                  ? { description: "Проверь разрешение микрофона или повтори запись.", title: "Запись не завершена" }
                   : null;
 
   return (
     <div className="grid min-w-0 gap-5">
       <section className="grid gap-4 rounded-2xl border border-border bg-sidebar p-5 text-sidebar-foreground shadow-panel sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div>
-          <Badge tone="success">Быстрый вход</Badge>
+          <Badge tone="success">Быстро сохранить</Badge>
           <h1 className="font-editorial mt-3 text-4xl leading-tight text-white sm:text-5xl">Мысль не должна потеряться.</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-sidebar-foreground/80 sm:text-base">
-            Запишите или надиктуйте идею сразу. Проект, рубрика и площадка понадобятся только тогда, когда вы решите сделать из неё публикацию.
+            Запиши или наговори мысль сейчас. Канал и площадку выберешь, когда решишь сделать из неё публикацию.
           </p>
         </div>
         <Lightbulb className="hidden text-primary lg:block" size={52} />
       </section>
 
       <Card className="grid gap-3 p-4 sm:p-5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
+        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Новая мысль</label>
         <textarea
           className="min-h-28 w-full resize-y rounded-lg border border-border bg-background p-3 text-base leading-6 outline-none focus:border-primary"
           id="quick-note"
@@ -786,7 +786,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
             setDraft(event.target.value);
             setDraftLocalState(event.target.value ? "saving" : "empty");
           }}
-          placeholder="Напишите короткую мысль. После сохранения её можно дополнить голосом…"
+          placeholder="Запиши короткую мысль. После сохранения её можно дополнить голосом…"
           value={draft}
         />
         {voiceStage ? (
@@ -817,9 +817,9 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 text-xs text-muted">
-            {draftLocalState === "saving" ? <><Loader2 className="animate-spin" size={13} />Сохраняю черновик…</>
+            {draftLocalState === "saving" ? <><Loader2 className="animate-spin" size={13} />Черновик сохраняется…</>
               : draftLocalState === "saved" ? <><CheckCircle2 className="text-success" size={14} />Черновик сохранён</>
-                : "Текст сохранится автоматически. Кнопка добавит его в блокнот."}
+                : "Текст сохранится на этом устройстве. Добавь его в блокнот, чтобы он появился среди заметок."}
           </span>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -833,17 +833,17 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
               {quickVoiceState === "recording" ? <Circle className="fill-current" size={12} /> : <Mic size={16} />} {quickVoiceState === "recording"
                 ? "Остановить и сохранить"
                 : quickVoiceState === "requesting"
-                  ? "Подключаем микрофон…"
+                  ? "«Наговори» подключает микрофон…"
                 : quickVoiceState === "saving"
-                  ? "Сохраняю запись…"
-                  : "Надиктовать заметку"}
+                  ? "Запись сохраняется…"
+                  : "Наговорить мысль"}
             </Button>
             <Button
               disabled={!draft.trim() || !viewModel.workspaceId || quickVoiceState !== "idle"}
               onClick={() => void createNote()}
               type="button"
             >
-              <Lightbulb size={16} /> Добавить в блокнот
+              <Lightbulb size={16} /> Сохранить в блокнот
             </Button>
           </div>
         </div>
@@ -855,10 +855,10 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
             <div className="grid gap-1">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 {isOnline && !serverUnavailable ? <CloudUpload className="text-primary" size={19} /> : <HardDrive className="text-primary" size={19} />}
-                Ожидают отправки: {offlineEntries.length}
+                Сохранены на этом устройстве: {offlineEntries.length}
               </div>
               <p className="text-sm leading-5 text-muted">
-                Записи не потерялись. Когда появится интернет, откройте приложение снова, чтобы отправить их.
+                Записи не потерялись. Не очищай данные браузера до отправки; когда появится интернет, открой «Наговори» снова.
               </p>
             </div>
             <Button
@@ -867,7 +867,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
               type="button"
               variant="secondary"
             >
-              <CloudUpload size={16} /> {isSyncing ? "Отправляю…" : "Синхронизировать"}
+              <CloudUpload size={16} /> {isSyncing ? "Заметки отправляются…" : "Отправить заметки"}
             </Button>
           </div>
           <div className="grid gap-2">
@@ -884,7 +884,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                   <p className="mt-1 truncate text-sm text-muted">
                     {entry.body || "Аудио расшифруется после появления связи."}
                   </p>
-                  {entry.status === "syncing" ? <progress aria-label="Отправка и расшифровка заметки" className="mt-2 h-1.5 w-full accent-primary" /> : null}
+                  {entry.status === "syncing" ? <progress aria-label="Подготовка текста из заметки" className="mt-2 h-1.5 w-full accent-primary" /> : null}
                   {entry.error ? <p className="mt-1 text-xs text-warning">{entry.error}</p> : null}
                 </div>
                 <Button
@@ -918,13 +918,13 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
         </div>
         <label className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3">
           <Search className="shrink-0 text-muted" size={16} />
-          <input aria-label="Поиск по заметкам" className="h-10 min-w-0 bg-transparent text-sm outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по заметкам" value={query} />
+          <input aria-label="Поиск по заметкам" className="h-10 min-w-0 bg-transparent text-sm outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Найти заметку" value={query} />
         </label>
       </div>
 
       {message ? <p aria-live="polite" className="text-sm text-muted">{message}</p> : null}
       {!isOnline || serverUnavailable ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> Общая история пока не обновляется. Новые заметки не потеряются; откройте блокнот снова, когда появится интернет.</p>
+        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> Старые заметки пока не обновятся без интернета. Новые останутся на этом устройстве.</p>
       ) : null}
       <section className="grid gap-4">
         {visible.length && viewModel.workspaceId ? visible.map((note) => (

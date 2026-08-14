@@ -86,7 +86,7 @@ export function ExamplesImportForm({
 
   function addCurrentDraft() {
     if (!draft.trim()) {
-      setError("Сначала вставьте полный текст удачного поста.");
+      setError("Сначала вставь полный текст удачного поста.");
       return;
     }
     if (addTexts([draft])) setDraft("");
@@ -95,7 +95,7 @@ export function ExamplesImportForm({
   function addBulkDraft() {
     const texts = splitBulkExamples(bulkDraft);
     if (texts.length < 2) {
-      setError("Разделите посты отдельной строкой --- и попробуйте ещё раз.");
+      setError("Раздели публикации строкой --- и попробуй ещё раз.");
       return;
     }
     if (addTexts(texts)) setBulkDraft("");
@@ -112,7 +112,7 @@ export function ExamplesImportForm({
     const rubricId = String(data.get("rubric_id") ?? "").trim() || null;
     const texts = Array.from(new Set([...rows.map((row) => row.text), ...(draft.trim() ? [draft.trim()] : [])]));
     if (!texts.length) {
-      setError("Добавьте хотя бы один полный текст поста.");
+      setError("Добавь хотя бы один полный текст публикации.");
       return;
     }
     setError(null);
@@ -147,17 +147,17 @@ export function ExamplesImportForm({
     <Card className="grid min-w-0 gap-5 border-primary/45 p-5 sm:p-6" data-testid="examples-first-import">
       <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="min-w-0">
-          <Badge tone="success">Главный способ передать стиль</Badge>
-          <h2 className="mt-3 text-2xl font-semibold text-foreground">Добавьте удачные посты</h2>
+          <Badge tone="success">Примеры твоего стиля</Badge>
+          <h2 className="mt-3 text-2xl font-semibold text-foreground">Добавь удачные публикации</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            Вставьте 3–10 удачных постов из ChatGPT, Telegram, VK или другого источника, которым вы вправе пользоваться. Они задают ориентир по ритму, структуре и тону; факты нового материала задаёт новая диктовка.
+            Добавь три публикации для старта или больше, чтобы показать разные оттенки своей подачи. Используй только тексты, которые имеешь право сохранять. Факты для нового текста «Наговори» возьмёт только из новой записи.
           </p>
         </div>
         <div className="min-w-52 rounded-xl border border-border bg-background p-3">
           <div className="flex items-end justify-between gap-3"><span className="text-xs text-muted">Быстрый старт</span><strong className="text-lg text-primary">{Math.min(readinessCount, QUICK_START_EXAMPLES)} из {QUICK_START_EXAMPLES}</strong></div>
           <progress aria-label={`Для быстрого старта сохранено и выбрано ${Math.min(readinessCount, QUICK_START_EXAMPLES)} из ${QUICK_START_EXAMPLES} постов`} className="mt-2 h-2 w-full accent-primary" max={QUICK_START_EXAMPLES} value={Math.min(readinessCount, QUICK_START_EXAMPLES)} />
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-2 text-xs text-muted"><span>Устойчивый стиль</span><strong className="text-foreground">{Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из {STEADY_STYLE_EXAMPLES}</strong></div>
-          <progress aria-label={`Для устойчивого стиля сохранено и выбрано ${Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из ${STEADY_STYLE_EXAMPLES} постов`} className="mt-1.5 h-1.5 w-full accent-success" max={STEADY_STYLE_EXAMPLES} value={Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} />
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-2 text-xs text-muted"><span>Больше оттенков</span><strong className="text-foreground">{Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из {STEADY_STYLE_EXAMPLES}</strong></div>
+          <progress aria-label={`Для разных оттенков стиля сохранено и выбрано ${Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из ${STEADY_STYLE_EXAMPLES} публикаций`} className="mt-1.5 h-1.5 w-full accent-success" max={STEADY_STYLE_EXAMPLES} value={Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} />
           <p className="mt-2 text-xs leading-5 text-muted">{existingApprovedCount ? `Уже сохранено: ${existingApprovedCount}.` : "Можно начать и без примеров."}</p>
         </div>
       </div>
@@ -166,18 +166,18 @@ export function ExamplesImportForm({
         <fieldset className="contents" disabled={isSubmitting}>
         <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-background p-4">
           <label className="grid min-w-0 gap-1.5 text-sm" htmlFor="style-example-draft">
-            <span className="font-semibold text-foreground">Вставьте полный текст одного удачного поста</span>
+            <span className="font-semibold text-foreground">Вставь полный текст одной удачной публикации</span>
             <textarea
               className="min-h-44 min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-base leading-6 outline-none focus:border-primary"
               id="style-example-draft"
               onChange={(event) => { setDraft(event.currentTarget.value); setResult(null); }}
-              placeholder="Скопируйте публикацию целиком — например, готовый текст из ChatGPT или уже опубликованный пост"
+              placeholder="Скопируй публикацию целиком — например, свой уже опубликованный пост"
               value={draft}
             />
           </label>
           <div className="flex flex-wrap items-center gap-2">
             <Button className="min-h-11" onClick={addCurrentDraft} type="button" variant="secondary"><Plus size={16} />Добавить в подборку</Button>
-            <span className="text-xs leading-5 text-muted">Повторяйте, пока не соберёте нужную подборку.</span>
+            <span className="text-xs leading-5 text-muted">Повторяй, пока не соберёшь нужную подборку.</span>
           </div>
         </div>
 
@@ -206,11 +206,11 @@ export function ExamplesImportForm({
 
         <details className="group rounded-xl border border-border bg-background">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-            <span className="flex items-center gap-2"><FileStack size={17} />Вставить 3–10 постов сразу — например из ChatGPT</span>
+            <span className="flex items-center gap-2"><FileStack size={17} />Добавить несколько публикаций сразу</span>
             <ChevronDown className="transition group-open:rotate-180" size={17} />
           </summary>
           <div className="grid gap-3 border-t border-border p-4">
-            <p className="text-sm leading-6 text-muted">Поставьте отдельную строку <strong className="text-foreground">---</strong> между публикациями. Так абзацы внутри каждого поста сохранятся правильно.</p>
+            <p className="text-sm leading-6 text-muted">Поставь отдельную строку <strong className="text-foreground">---</strong> между публикациями. Так абзацы внутри каждого текста сохранятся правильно.</p>
             <textarea className="min-h-44 rounded-lg border border-border bg-surface px-3 py-2 text-sm leading-6 outline-none focus:border-primary" onChange={(event) => setBulkDraft(event.currentTarget.value)} placeholder={'Первый пост целиком\n---\nВторой пост целиком'} value={bulkDraft} />
             <Button className="min-h-11 justify-self-start" onClick={addBulkDraft} type="button" variant="secondary"><Plus size={16} />Разобрать и добавить</Button>
           </div>
@@ -218,7 +218,7 @@ export function ExamplesImportForm({
 
         <details className="group rounded-xl border border-border bg-background" open={Boolean(initialRubricId)}>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-            <span>Разделить по рубрике — необязательно</span>
+            <span>Выбрать формат — по желанию</span>
             <ChevronDown className="transition group-open:rotate-180" size={17} />
           </summary>
           <div className="grid gap-2 border-t border-border p-4">
@@ -226,7 +226,7 @@ export function ExamplesImportForm({
               <span className="font-semibold text-foreground">Куда отнести эту подборку</span>
               <select className="h-11 rounded-lg border border-border bg-surface px-3 outline-none focus:border-primary" defaultValue={initialRubricId ?? ""} name="rubric_id">
                 <option value="">Ко всему каналу — рекомендуется</option>
-                {rubrics.map((rubric) => <option key={rubric.id} value={rubric.id}>Только к рубрике «{rubric.name}»</option>)}
+                {rubrics.map((rubric) => <option key={rubric.id} value={rubric.id}>Только для формата «{rubric.name}»</option>)}
               </select>
             </label>
           </div>
@@ -242,7 +242,7 @@ export function ExamplesImportForm({
               {result.imported ? `Добавлено: ${result.imported}.` : null}
               {result.duplicates ? ` Ещё ${result.duplicates} уже были в подборке.` : null}
             </p>
-            <Button asChild className="justify-self-start"><Link href={`/app/content/new?project=${projectId}`}><Mic size={16} />Надиктовать первый пост</Link></Button>
+            <Button asChild className="justify-self-start"><Link href={`/app/content/new?project=${projectId}`}><Mic size={16} />Наговорить публикацию</Link></Button>
           </div>
         ) : null}
 
@@ -254,7 +254,7 @@ export function ExamplesImportForm({
             {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             Сохранить {selectedCount ? `${selectedCount} ${russianCountLabel(selectedCount, "пост", "поста", "постов")}` : "подборку"}
           </Button>
-          <span className="text-xs leading-5 text-muted">Сохранённые посты используются только как примеры стиля.</span>
+          <span className="text-xs leading-5 text-muted">Эти публикации помогают передать подачу. Их факты не попадут в новый текст.</span>
         </div>
         </fieldset>
       </form>

@@ -21,17 +21,17 @@ const loading = read("apps/web/src/app/app/loading.tsx");
 const publicationService = read("services/api/app/modules/publications/service.py");
 
 assert.match(tour, /nagovori:first-run-tour:v1/);
-assert.match(tour, /Создать публикацию/);
-assert.match(tour, /Сохранить заметку/);
-assert.match(tour, /Настроить свой стиль/);
+assert.match(tour, /Наговорить публикацию/);
+assert.match(tour, /Не потерять мысль/);
+assert.match(tour, /Показать свой стиль/);
 assert.doesNotMatch(tour, /Найти тему/);
 assert.match(tour, /Пропустить/);
 assert.match(tour, /localStorage\.setItem/);
-assert.match(replay, /Показать обучение ещё раз/);
+assert.match(replay, /Повторить знакомство/);
 assert.match(shells, /<FirstRunTour \/>/);
 
 assert.doesNotMatch(topbar, /QuickCreatePalette/);
-for (const label of ["Создать", "Черновики", "Блокнот", "Мой стиль"]) {
+for (const label of ["Наговорить", "Тексты", "Блокнот", "Мой стиль"]) {
   assert.match(navigation, new RegExp(`label: "${label}"`));
 }
 assert.doesNotMatch(navigation, /label: "Идеи"/);
@@ -40,12 +40,12 @@ for (const hiddenRoute of ["publications", "integrations", "calendar", "workspac
 }
 
 assert.doesNotMatch(dashboard, /UsageMeter|Тариф и использование/);
-assert.match(dashboard, /Новая заметка/);
+assert.match(dashboard, /Записать мысль/);
 assert.equal((dashboard.match(/href="\/app\/projects\/new"/g) ?? []).length, 1);
 assert.doesNotMatch(style, /Если примеров недостаточно: дополнительные настройки|Перейти к первой диктовке/);
 
 assert.doesNotMatch(account, /Этап UI|Workspace|CSRF|Argon2|API|Выйти на всех устройствах|Сменить пароль/);
-assert.match(account, /Показать обучение ещё раз|TourReplayButton/);
+assert.match(account, /Повторить знакомство|TourReplayButton/);
 assert.match(accountService, /sessionLabels\(session\.user_agent, session\.current\)/);
 assert.doesNotMatch(accountService, /client: session\.user_agent/);
 assert.match(accountService, /sessions: \[\]/);
@@ -54,15 +54,16 @@ assert.match(composer, /captureState === "recording" \? \(/);
 assert.match(composer, /captureState === "paused" \? \(/);
 assert.doesNotMatch(composer, /Технические сведения об ИИ|Стоимость текста:|Источник: проект → рубрика → площадка/);
 assert.doesNotMatch(composer, /disabled=\{captureState !== "recording"\}|disabled=\{captureState !== "paused"\}/);
-assert.match(contentService, /Создание публикации сейчас недоступно/);
+assert.match(contentService, /Сейчас не получается начать публикацию/);
 assert.match(contentService, /projects: \[\]/);
-assert.doesNotMatch(notebook, /offline · черновик|API станет доступен|связь есть|на этом устройстве/);
-assert.match(notebook, /Добавить в блокнот/);
+assert.doesNotMatch(notebook, /offline · черновик|API станет доступен|связь есть/);
+assert.match(notebook, /Сохранены на этом устройстве/);
+assert.match(notebook, /Сохранить в блокнот/);
 assert.match(notebook, /aria-label="Поиск по заметкам"/);
 assert.match(notebook, /role="tablist"/);
 assert.doesNotMatch(loading, /PWA shell/);
 
 assert.doesNotMatch(publicationService, /Live-проверка|Коннектор поддерживается/);
-assert.match(publicationService, /Аккаунт площадки ещё не подтверждён/);
+assert.match(publicationService, /Аккаунт площадки пока не подтверждён/);
 
 console.log("Phase12M first-run and pilot UI cleanup contract passed.");

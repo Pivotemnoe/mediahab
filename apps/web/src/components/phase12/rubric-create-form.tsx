@@ -59,10 +59,10 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
           editorial_limits: { max_chars: maxChars, min_chars: minChars },
           generated_fields: ["hook", "master_text", "platform_variants"],
           input_flow: [{
-            description: value(data, "source_prompt") || "Продиктуйте или вставьте исходные факты.",
+            description: value(data, "source_prompt") || "Наговори или вставь важные факты.",
             fact_locked: true,
             key: "source",
-            label: "Исходный материал",
+            label: "Исходная мысль",
             required: true,
             type: "voice_or_long_text",
           }],
@@ -82,7 +82,7 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
           : `/app/content/new?project=${projectId}&rubric=${rubric.id}`,
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать рубрику.");
+      setError(cause instanceof Error ? cause.message : "Не удалось создать формат.");
       setIsSubmitting(false);
     }
   }
@@ -95,33 +95,33 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
             <Badge tone="info">{projectLabel}</Badge>
             <Badge>необязательно</Badge>
           </div>
-          <h1 className="mt-3 text-3xl font-semibold text-foreground">Новая рубрика</h1>
+          <h1 className="mt-3 text-3xl font-semibold text-foreground">Новый формат</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Рубрика нужна для повторяемого формата со своими правилами и примерами. Обычные публикации продолжают работать по общим правилам проекта.
+            Сохрани отдельные правила для публикаций, которые часто повторяются. Обычные тексты продолжат работать по правилам канала.
           </p>
         </div>
         <Button asChild variant="secondary">
-          <Link href={`/app/projects/${projectId}/rubrics`}><ArrowLeft size={16} />К рубрикам</Link>
+          <Link href={`/app/projects/${projectId}/rubrics`}><ArrowLeft size={16} />К форматам</Link>
         </Button>
       </div>
 
       <Card className="grid gap-4 p-5 sm:p-6">
         <label className="grid gap-1.5 text-sm">
-          <span className="font-semibold text-foreground">Название рубрики</span>
+          <span className="font-semibold text-foreground">Название формата</span>
           <input autoFocus className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" maxLength={160} name="name" placeholder="Например: Разбор случая или Итоги недели" required />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm">
-            <span className="font-semibold text-foreground">Зачем нужна эта рубрика</span>
+            <span className="font-semibold text-foreground">Для чего нужен этот формат</span>
             <textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" name="purpose" placeholder="Цель, читатель и ожидаемый результат" />
           </label>
           <label className="grid gap-1.5 text-sm">
             <span className="font-semibold text-foreground">Какие факты собирать</span>
-            <textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" name="source_prompt" placeholder="Что обязательно надиктовать или вставить перед сборкой" />
+            <textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" name="source_prompt" placeholder="Что обязательно наговорить или вставить перед подготовкой текста" />
           </label>
           <label className="grid gap-1.5 text-sm">
             <span className="font-semibold text-foreground">Тон</span>
-            <textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" name="tone" placeholder="Чем тон рубрики отличается от общего голоса канала" />
+            <textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" name="tone" placeholder="Чем подача этого формата отличается от обычной подачи канала" />
           </label>
           <label className="grid gap-1.5 text-sm">
             <span className="font-semibold text-foreground">Структура</span>
@@ -171,7 +171,7 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
           Создать и добавить примеры
         </Button>
         <p className="text-xs leading-5 text-muted sm:col-span-2">
-          Правила можно менять позже; уже созданные материалы сохранят прежние настройки.
+          Правила можно менять позже. Уже сохранённые публикации останутся без изменений.
         </p>
       </Card>
     </form>

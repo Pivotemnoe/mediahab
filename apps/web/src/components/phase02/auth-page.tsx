@@ -96,14 +96,14 @@ export function AuthPage({
         return;
       }
       if (action === "verify-email") {
-        setSuccess("Почта подтверждена. Теперь можно войти в кабинет.");
+        setSuccess("Почта подтверждена. Теперь входи в «Наговори».");
       } else if (action === "reset-password") {
-        setSuccess("Пароль изменён. Все прежние входы завершены — войдите с новым паролем.");
+        setSuccess("Новый пароль сохранён. На других устройствах нужно будет войти заново.");
       } else {
-        setSuccess("Запрос принят. Проверьте дальнейшие инструкции по доступу.");
+        setSuccess("Если эта почта зарегистрирована, письмо со ссылкой уже отправлено.");
       }
     } catch {
-      setError("Не удалось продолжить. Проверьте соединение и попробуйте ещё раз.");
+      setError("Не получилось связаться с «Наговори». Проверь интернет и попробуй ещё раз.");
     } finally {
       setIsSubmitting(false);
     }
@@ -121,7 +121,7 @@ export function AuthPage({
             <p className="mt-2 text-sm leading-6 text-muted" role="status">{success}</p>
           </div>
           <Button asChild>
-            <Link href="/login">Перейти ко входу</Link>
+            <Link href="/login">Войти в «Наговори»</Link>
           </Button>
         </div>
       </AuthShell>
@@ -164,11 +164,11 @@ export function AuthPage({
             <div className="grid gap-3 rounded-lg border border-border bg-background p-3 text-sm leading-5 text-muted">
               <label className="flex items-start gap-3">
                 <input className="mt-1 size-4 accent-primary" name="accept_pilot_terms" required type="checkbox" value="yes" />
-                <span>Я принимаю <Link className="text-primary underline" href="/terms" target="_blank">условия закрытого тестирования</Link>.</span>
+                <span>Я принимаю <Link className="text-primary underline" href="/terms" target="_blank">условия тестирования</Link>.</span>
               </label>
               <label className="flex items-start gap-3">
                 <input className="mt-1 size-4 accent-primary" name="accept_data_notice" required type="checkbox" value="yes" />
-                <span>Я прочитал(а), <Link className="text-primary underline" href="/privacy" target="_blank">как обрабатываются данные пилота</Link>.</span>
+                <span>Я понимаю, <Link className="text-primary underline" href="/privacy" target="_blank">как «Наговори» использует мои данные во время тестирования</Link>.</span>
               </label>
             </div>
           ) : null}
@@ -178,7 +178,7 @@ export function AuthPage({
             </div>
           ) : null}
           <Button type="submit" className="mt-2" disabled={isSubmitting}>
-            {isSubmitting ? "Отправляем..." : submitLabel}
+            {isSubmitting ? submittingLabel(action) : submitLabel}
             <ArrowRight size={16} />
           </Button>
         </form>
@@ -207,7 +207,7 @@ export function AccessLinkRequired({ description, title }: { description: string
           <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
         </div>
         <Button asChild>
-          <Link href="/login">Вернуться ко входу</Link>
+          <Link href="/login">Назад ко входу</Link>
         </Button>
       </div>
     </AuthShell>
@@ -224,32 +224,40 @@ async function authErrorMessage(response: Response): Promise<string> {
     };
     const code = typeof payload.error?.code === "string" ? payload.error.code : "api_error";
     if (code === "invalid_credentials") {
-      return "Неверная почта или пароль.";
+      return "Почта или пароль не подошли. Проверь их и попробуй ещё раз.";
     }
     if (code === "registration_failed") {
-      return "Не удалось создать аккаунт. Возможно, такая почта уже используется.";
+      return "Не получилось создать кабинет. Возможно, эта почта уже зарегистрирована.";
     }
     if (code === "pilot_invite_required") {
-      return "Регистрация доступна только по персональному приглашению.";
+      return "Чтобы создать кабинет, нужна личная ссылка-приглашение.";
     }
     if (code === "pilot_invite_invalid") {
-      return "Приглашение не подходит к этой почте, уже использовано или просрочено.";
+      return "Эта ссылка не подходит к указанной почте, уже использована или больше не действует.";
     }
     if (code === "pilot_consent_required") {
-      return "Для участия нужно принять условия тестирования и информацию о данных.";
+      return "Чтобы продолжить, прими условия тестирования и информацию о данных.";
     }
     if (code === "token_invalid") {
-      return "Ссылка недействительна или уже использована. Запросите новую у владельца пилота.";
+      return "Ссылка больше не работает или уже использована. Попроси новую.";
     }
     if (code === "rate_limited") {
-      return "Слишком много попыток. Подождите немного и попробуйте снова.";
+      return "Попыток слишком много. Подожди немного и попробуй снова.";
     }
     if (code === "catalog_missing") {
-      return "Сервис временно не готов создать кабинет. Напишите владельцу пилота.";
+      return "Сейчас не получается подготовить кабинет. Напиши создателю «Наговори» — он поможет.";
     }
   } catch {
     // Non-JSON responses fall through to a generic message.
   }
 
-  return `Сервер вернул ошибку ${response.status}. Попробуйте ещё раз.`;
+  return "Сейчас не получилось продолжить. Попробуй ещё раз; если ошибка повторится, напиши создателю «Наговори».";
+}
+
+function submittingLabel(action: AuthAction): string {
+  if (action === "login") return "«Наговори» открывает кабинет…";
+  if (action === "register") return "«Наговори» создаёт кабинет…";
+  if (action === "reset-password") return "Пароль сохраняется…";
+  if (action === "verify-email") return "«Наговори» проверяет ссылку…";
+  return "«Наговори» готовит ссылку…";
 }

@@ -10,7 +10,7 @@ type CabinetPageProps = {
 export function CabinetPage({ title, description, rows }: CabinetPageProps) {
   return (
     <div className="grid gap-4">
-      <PageHeader description={description} eyebrow="Ваш кабинет" title={title} />
+      <PageHeader description={description} eyebrow="Твой кабинет" title={title} />
       <section className="grid gap-4">
         <Card className="grid gap-3">
           {rows.map(([label, value]) => (

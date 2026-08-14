@@ -9,21 +9,21 @@ export default async function ResetPasswordPage({
   if (!params?.token) {
     return (
       <AccessLinkRequired
-        description="Попросите владельца пилота создать новую ссылку для вашего аккаунта."
-        title="Нужна персональная ссылка"
+        description="Получи ссылку на странице восстановления. Если старая больше не работает, попроси новую."
+        title="Открой ссылку для смены пароля"
       />
     );
   }
   return (
     <AuthPage
       action="reset-password"
-      eyebrow="Новый пароль"
-      title="Задать новый пароль"
-      description="Ссылка действует один раз. После смены пароля все прежние входы будут завершены."
+      eyebrow="Смена пароля"
+      title="Придумай новый пароль"
+      description="Ссылка сработает один раз. После сохранения на других устройствах нужно будет войти заново."
       fields={[
         {
           autoComplete: "new-password",
-          helper: "Минимум 12 символов.",
+          helper: "Не короче 12 символов.",
           label: "Новый пароль",
           name: "password",
           placeholder: "Новый пароль",
@@ -31,9 +31,9 @@ export default async function ResetPasswordPage({
         },
       ]}
       hiddenFields={{ token: params.token }}
-      submitLabel="Сменить пароль"
+      submitLabel="Сохранить новый пароль"
       secondaryHref="/login"
-      secondaryLabel="Вернуться ко входу"
+      secondaryLabel="Назад ко входу"
     />
   );
 }

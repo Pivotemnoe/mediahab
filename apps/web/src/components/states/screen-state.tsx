@@ -61,7 +61,7 @@ export function LoadingState({ className }: { className?: string }) {
     <Card className={cn("grid place-items-center px-6 py-10 text-center", className)}>
       <LoaderCircle className="animate-spin text-primary" size={28} />
       <div className="mt-4 text-sm font-medium text-foreground">Загрузка</div>
-      <div className="mt-1 text-sm text-muted">Загружаем ваш кабинет.</div>
+      <div className="mt-1 text-sm text-muted">«Наговори» открывает твой кабинет.</div>
     </Card>
   );
 }
@@ -70,7 +70,7 @@ export function EmptyState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Здесь появятся ваши материалы после первого сохранения."
+      description="Здесь появятся твои тексты после первого сохранения."
       icon={FileQuestion}
       title="Пока пусто"
     />
@@ -81,7 +81,7 @@ export function ErrorState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Попробуйте обновить страницу. Сохранённые материалы не удалены."
+      description="Обнови страницу. Сохранённые тексты не пропали."
       icon={AlertTriangle}
       title="Не удалось загрузить"
       tone="danger"
@@ -93,7 +93,7 @@ export function OfflineState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Черновик можно продолжить. Для подготовки версий и публикации понадобится интернет."
+      description="Запись можно продолжить. Для подготовки текстов и публикации понадобится интернет."
       icon={CloudOff}
       title="Нет соединения"
       tone="warning"
@@ -105,7 +105,7 @@ export function PermissionState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Для этого действия нужен другой уровень доступа. Обратитесь к владельцу кабинета."
+      description="У твоего аккаунта нет доступа к этому действию."
       icon={LockKeyhole}
       title="Недостаточно прав"
       tone="warning"

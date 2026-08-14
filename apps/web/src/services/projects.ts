@@ -189,7 +189,7 @@ function projectStatusLabel(status: string): string {
 
 function rubricStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    active: "активна",
+    active: "активен",
     archived: "архив",
     draft: "черновик",
   };
@@ -250,7 +250,7 @@ function fixtureProjectIndex(): ProjectIndexViewModel {
         description: "Еда, обзоры, кафе, доставка и локальные подборки.",
         href: "/app/projects/chto-poest-armavir",
         name: "Что поесть? Армавир",
-        rubrics: "10 рубрик",
+        rubrics: "10 форматов",
         status: "активен",
         version: "v9",
       },
@@ -334,9 +334,9 @@ function fixtureProjectDetail(projectId: string): ProjectDetailViewModel {
     modeLabel: "fixtures",
     projectLabel: projectId,
     summaryCards: [
-      { note: "Управляется через API этапа 03 и неизменяемые записи версий.", title: "Версии" },
-      { note: "Рубрики связаны с активной версией проекта и историей материалов.", title: "Рубрики" },
-      { note: "Пресет импортируется как данные, без ветвлений в коде.", title: "Импорт пресета" },
+      { note: "Здесь сохраняются общие правила подачи и темы канала.", title: "Как писать" },
+      { note: "Для повторяющихся публикаций можно добавить отдельные правила.", title: "Форматы" },
+      { note: "Удачные публикации помогают передать лексику, ритм и настроение.", title: "Примеры стиля" },
     ],
   };
 }
@@ -396,13 +396,22 @@ function fixtureRubricBuilder(projectId: string): RubricBuilderViewModel {
 function projectView(project: ProjectOut): ProjectIndexViewModel["projects"][number] {
   const rubricCount = project.rubric_count ?? 0;
   return {
-    description: project.description ?? project.content_domain ?? "Описание проекта не задано.",
+    description: project.description ?? project.content_domain ?? "Описание канала можно добавить позже.",
     href: `/app/projects/${project.id}`,
     name: project.name,
-    rubrics: rubricCount === 0 ? "без рубрик" : `${rubricCount} ${rubricCount === 1 ? "рубрика" : rubricCount >= 2 && rubricCount <= 4 ? "рубрики" : "рубрик"}`,
+    rubrics: rubricCount === 0 ? "без отдельных форматов" : formatRubricCount(rubricCount),
     status: projectStatusLabel(project.status),
     version: `v${project.active_version_number}`,
   };
+}
+
+function formatRubricCount(count: number): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return `${count} форматов`;
+  if (last === 1) return `${count} формат`;
+  if (last >= 2 && last <= 4) return `${count} формата`;
+  return `${count} форматов`;
 }
 
 function apiProjectDetailView(project: ProjectOut): ProjectDetailViewModel {
@@ -412,21 +421,30 @@ function apiProjectDetailView(project: ProjectOut): ProjectDetailViewModel {
     projectLabel: project.name,
     summaryCards: [
       {
-        note: "Аудитория, голос, структура, обязательные элементы и ограничения действуют для всех публикаций канала.",
-        title: "Общие правила",
+        note: "Опиши, для кого ты пишешь, как обычно говоришь, что важно упомянуть и чего лучше избегать.",
+        title: "Как писать для канала",
       },
       {
-        note: "Добавьте несколько удачных публикаций, чтобы точнее передать стиль канала.",
-        title: "Идеальные примеры",
+        note: "Добавь несколько удачных публикаций, чтобы точнее передать стиль канала.",
+        title: "Примеры стиля",
       },
       {
         note: rubricCount
-          ? `${rubricCount} ${rubricCount === 1 ? "рубрика добавлена" : "рубрики добавлены"}.`
-          : "Рубрик пока нет. Обычные публикации уже можно создавать по общим правилам.",
-        title: "Рубрики",
+          ? `${formatCount(rubricCount)}.`
+          : "Отдельных форматов пока нет. Обычные публикации уже можно создавать.",
+        title: "Повторяющиеся форматы",
       },
     ],
   };
+}
+
+function formatCount(count: number): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return `Добавлено ${count} форматов`;
+  if (last === 1) return `Добавлен ${count} формат`;
+  if (last >= 2 && last <= 4) return `Добавлено ${count} формата`;
+  return `Добавлено ${count} форматов`;
 }
 
 function apiProjectBuilderView(project: ProjectOut): ProjectBuilderViewModel {
@@ -480,7 +498,7 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
     return {
       entryPoints: [],
       modeLabel: "api",
-      notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      notice: "Не удалось открыть кабинет. Обнови страницу или войди заново.",
       projects: [],
     };
   }
@@ -491,7 +509,7 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
   return {
     entryPoints: [],
     modeLabel: "api",
-    notice: projectsResponse ? undefined : "Не удалось загрузить проекты. Попробуйте обновить страницу.",
+    notice: projectsResponse ? undefined : "Каналы сейчас не загрузились. Обнови страницу и попробуй ещё раз.",
     projects: projects.map(projectView),
   };
 }
@@ -506,7 +524,7 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
   return {
     ...emptyRubricAssets(),
     modeLabel: "api",
-    notice: rubricsResponse ? undefined : "Не удалось загрузить рубрики. Попробуйте обновить страницу.",
+    notice: rubricsResponse ? undefined : "Форматы сейчас не загрузились. Обнови страницу и попробуй ещё раз.",
     projectLabel: project?.name ?? projectId,
     rubrics: rubrics
       .slice()
@@ -514,7 +532,7 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
       .map((rubric) => ({
             count: rubric.editorial_max_chars
               ? `до ${rubric.editorial_max_chars} знаков`
-              : "лимит не задан",
+              : "обычная длина",
             href: `/app/projects/${projectId}/rubrics/${rubric.id}`,
             id: rubric.id,
             name: rubric.name,
@@ -535,7 +553,7 @@ export async function getProjectIndexViewModel(): Promise<ProjectIndexViewModel>
     return {
       entryPoints: [],
       modeLabel: "api",
-      notice: "Данные проектов сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Каналы сейчас не загрузились. Обнови страницу и попробуй ещё раз.",
       projects: [],
     };
   }
@@ -549,11 +567,11 @@ export async function getNewProjectViewModel(): Promise<NewProjectViewModel> {
   try {
     const workspaceId = await firstWorkspaceId();
     return emptyNewProject(
-      workspaceId ? undefined : "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      workspaceId ? undefined : "Не удалось открыть кабинет. Обнови страницу или войди заново.",
       workspaceId,
     );
   } catch {
-    return emptyNewProject("Форма проекта сейчас не загрузилась. Попробуйте обновить страницу.");
+    return emptyNewProject("Не удалось открыть создание канала. Обнови страницу и попробуй ещё раз.");
   }
 }
 
@@ -566,9 +584,9 @@ export async function getProjectDetailViewModel(projectId: string): Promise<Proj
     const project = await apiProject(projectId);
     return project
       ? apiProjectDetailView(project)
-      : emptyProjectDetail(projectId, "Проект не найден или у вас нет к нему доступа.");
+      : emptyProjectDetail(projectId, "Канал не найден или у тебя нет к нему доступа.");
   } catch {
-    return emptyProjectDetail(projectId, "Данные проекта сейчас не загрузились. Попробуйте обновить страницу.");
+    return emptyProjectDetail(projectId, "Канал сейчас не загрузился. Обнови страницу и попробуй ещё раз.");
   }
 }
 
@@ -581,9 +599,9 @@ export async function getProjectBuilderViewModel(projectId: string): Promise<Pro
     const project = await apiProject(projectId);
     return project
       ? apiProjectBuilderView(project)
-      : emptyProjectBuilder(projectId, "Проект не найден или у вас нет к нему доступа.");
+      : emptyProjectBuilder(projectId, "Канал не найден или у тебя нет к нему доступа.");
   } catch {
-    return emptyProjectBuilder(projectId, "Настройки проекта сейчас не загрузились. Попробуйте обновить страницу.");
+    return emptyProjectBuilder(projectId, "Настройки канала сейчас не загрузились. Обнови страницу и попробуй ещё раз.");
   }
 }
 
@@ -596,9 +614,9 @@ export async function getProjectSettingsViewModel(projectId: string): Promise<Pr
     const project = await apiProject(projectId);
     return project
       ? apiProjectSettingsView(project)
-      : emptyProjectSettings(projectId, "Проект не найден или у вас нет к нему доступа.");
+      : emptyProjectSettings(projectId, "Канал не найден или у тебя нет к нему доступа.");
   } catch {
-    return emptyProjectSettings(projectId, "Правила проекта сейчас не загрузились. Попробуйте обновить страницу.");
+    return emptyProjectSettings(projectId, "Правила канала сейчас не загрузились. Обнови страницу и попробуй ещё раз.");
   }
 }
 
@@ -613,7 +631,7 @@ export async function getRubricBuilderViewModel(projectId: string): Promise<Rubr
     return {
       ...emptyRubricAssets(),
       modeLabel: "api",
-      notice: "Рубрики сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Форматы сейчас не загрузились. Обнови страницу и попробуй ещё раз.",
       projectLabel: projectId,
       rubrics: [],
     };
@@ -635,7 +653,7 @@ export async function getRubricDetailViewModel(
       count: "поля не настроены",
       href: `/app/projects/${projectId}/rubrics/${rubricId}`,
       id: rubricId,
-      name: "Новая рубрика",
+      name: "Новый формат",
       status: "черновик",
       version: "v1",
     };

@@ -24,7 +24,7 @@ export function CopyTextButton({ label, richText, text }: { label: string; richT
 
   return (
     <Button
-      aria-label={`Копировать готовую версию для ${label}`}
+      aria-label={`Копировать текст для ${label}`}
       data-testid="saved-variant-copy"
       size="sm"
       type="button"

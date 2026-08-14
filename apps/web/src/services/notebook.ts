@@ -19,7 +19,7 @@ export async function getNotebookViewModel(): Promise<NotebookViewModel> {
   if (getDataMode() !== "api") {
     return {
       contentItems: [],
-      notice: "В демонстрации заметки не сохраняются. После входа блокнот будет доступен полностью.",
+      notice: "После входа здесь можно будет сохранять мысли и записи.",
       notes: [],
       projects: [],
       workspaceId: null,
@@ -30,7 +30,7 @@ export async function getNotebookViewModel(): Promise<NotebookViewModel> {
   if (!workspace) {
     return {
       contentItems: [],
-      notice: "Рабочее пространство не найдено.",
+      notice: "Не получилось открыть кабинет. Обнови страницу или войди заново.",
       notes: [],
       projects: [],
       workspaceId: null,
@@ -54,7 +54,7 @@ export async function getNotebookViewModel(): Promise<NotebookViewModel> {
         label: `${project.name} · ${item.title_internal}`,
       })),
     ),
-    notice: notesResponse && projectsResponse ? undefined : "Часть данных блокнота сейчас недоступна.",
+    notice: notesResponse && projectsResponse ? undefined : "Не всё загрузилось. Обнови страницу — сохранённые заметки останутся на месте.",
     notes: notesResponse?.notes ?? [],
     projects: projects.map((project) => ({ id: project.id, name: project.name })),
     workspaceId: workspace.id,

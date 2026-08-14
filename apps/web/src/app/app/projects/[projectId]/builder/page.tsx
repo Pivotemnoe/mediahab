@@ -9,9 +9,9 @@ export default async function ProjectBuilderPage({
   return (
     <PilotUnavailable
       backHref={`/app/projects/${projectId}`}
-      backLabel="Вернуться в проект"
-      description="Основные правила проекта уже доступны на его странице. Расширенный редактор появится после проверки простого сценария."
-      title="Расширенная настройка готовится"
+      backLabel="Вернуться в канал"
+      description="Все нужные правила уже доступны на странице канала."
+      title="Все настройки уже на странице канала"
     />
   );
 }

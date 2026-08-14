@@ -1,51 +1,29 @@
-import { BadgeRussianRuble, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
 import { MarketingShell } from "@/components/layout/shells";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-
-const plans = [
-  ["Знакомство", "попробовать на своём материале", "1 проект, диктовка и ручная подготовка версий"],
-  ["Автор", "для регулярных публикаций", "несколько проектов, сохранённый стиль и больше обработок"],
-  ["Редакция", "для совместной работы", "команда, согласование материалов и расширенные лимиты"],
-] as const;
 
 export default function PricingPage() {
   return (
     <MarketingShell>
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10">
         <div className="max-w-3xl">
-          <Badge tone="warning">Тарифы готовятся</Badge>
-          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Начните с идеи, а не с выбора тарифа.</h1>
+          <Badge tone="success">Сейчас бесплатно</Badge>
+          <h1 className="font-editorial mt-4 text-4xl leading-tight text-foreground sm:text-6xl">Во время тестирования платить не нужно.</h1>
           <p className="mt-4 text-base leading-7 text-muted">
-            Сейчас можно познакомиться с продуктом без сложного выбора. Перед запуском оплаты здесь появятся точные цены, лимиты и понятные условия отмены.
+            «Наговори» сейчас доступен по приглашениям и без оплаты. Когда появятся тарифы, здесь заранее будут точные цены, лимиты и условия.
           </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          {plans.map(([name, subtitle, description]) => (
-            <Card className="grid gap-4" key={name}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">{name}</h2>
-                  <p className="mt-1 text-sm text-muted">{subtitle}</p>
-                </div>
-                <BadgeRussianRuble size={20} className="text-primary" />
-              </div>
-              <p className="text-sm leading-6 text-muted">{description}</p>
-              <div className="text-sm font-medium text-primary">Стоимость появится до запуска оплаты</div>
-            </Card>
-          ))}
         </div>
 
         <div className="grid gap-4">
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ShieldAlert size={18} className="text-warning" />
-              Оплата не включена
+              Оплаты пока нет
             </div>
             <p className="text-sm leading-6 text-muted">
-              В закрытом тестировании оплаты нет. Подписка появится только вместе с понятными ценами, чеками, возвратами и условиями отмены.
+              Подписка появится только вместе с понятными ценами, чеками, возвратами и условиями отмены. До этого «Наговори» не попросит данные карты и ничего не спишет.
             </p>
           </Card>
         </div>

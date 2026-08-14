@@ -21,7 +21,7 @@ export function PublicPage({
   description,
   items,
   primaryHref = "/register",
-  primaryLabel = "Регистрация",
+  primaryLabel = "Попросить приглашение",
 }: PublicPageProps) {
   return (
     <MarketingShell>
@@ -46,7 +46,7 @@ export function PublicPage({
               </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/app">Кабинет</Link>
+              <Link href="/app">Войти</Link>
             </Button>
           </div>
         </div>

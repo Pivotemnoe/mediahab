@@ -40,7 +40,7 @@ assert.doesNotMatch(generatorSource, /projectId|rubricId|Выберите про
 assert.match(generatorSource, /ideas\.length === 5/);
 assert.match(generatorSource, /Array\.from\(\{ length: 5 \}/);
 assert.match(generatorSource, /Предложить 5 идей/);
-assert.match(generatorSource, /Надиктовать по этой идее/);
+assert.match(generatorSource, /Наговорить по этой идее/);
 
 assert.match(clientSource, /\/workspaces\/\$\{workspaceId\}\/ideas\/capability/);
 assert.match(clientSource, /\/workspaces\/\$\{workspaceId\}\/ideas\/generate/);
@@ -128,8 +128,8 @@ assert.match(projectCreatePageSource, /initialStandaloneIdeaToken=\{standaloneId
 assert.match(projectBuilderSource, /initialStandaloneIdeaToken=\{initialStandaloneIdeaToken\}/);
 assert.match(projectCreateFormSource, /dictationParams\.set\("idea", initialStandaloneIdeaToken\)/);
 assert.match(projectCreateFormSource, /\/app\/content\/new\?\$\{dictationParams\.toString\(\)\}/);
-assert.match(projectCreateFormSource, /Создать проект и продолжить диктовку/);
-assert.match(projectCreateFormSource, /Материал появится, когда вы начнёте диктовать/);
+assert.match(projectCreateFormSource, /Создать и продолжить запись/);
+assert.match(projectCreateFormSource, /Публикация появится после первой записи или сохранённого текста/);
 assert.doesNotMatch(projectCreateFormSource, /\/content-items/);
 
 const mobileBlock = navigationSource.match(/export const mobileNavItems[\s\S]*?\n\];/)?.[0] ?? "";

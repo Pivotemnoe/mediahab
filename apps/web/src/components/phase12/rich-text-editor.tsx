@@ -131,7 +131,7 @@ export function RichTextEditor({
         onKeyUp={rememberSelection}
         onMouseUp={rememberSelection}
       />
-      <p className="text-xs leading-5 text-muted">Выделите слово или фразу, затем нажмите кнопку ссылки. Можно добавлять обычные ссылки на сайты.</p>
+      <p className="text-xs leading-5 text-muted">Выдели слово или фразу, затем нажми кнопку ссылки. Можно добавлять обычные ссылки на сайты.</p>
     </div>
   );
 }

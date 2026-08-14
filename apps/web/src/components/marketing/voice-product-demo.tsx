@@ -30,11 +30,11 @@ const platforms: Array<{
     key: "telegram",
     icon: Send,
     name: "Telegram",
-    limit: "длинный пост",
+    limit: "подробный текст",
     previews: {
-      short: "Новая идея не обязана быть идеальной. Начните с первого шага — детали можно добавить позже.",
-      normal: "Мы часто откладываем хорошую идею, пока пытаемся довести её до идеала. Но движение важнее идеальности: начните с простого шага и расскажите, что уже знаете.",
-      detailed: "Мы часто откладываем хорошую идею, пока пытаемся довести её до идеала. Но движение важнее идеальности. Начните с простого шага, покажите личный опыт и честно расскажите аудитории, что уже получилось, а что ещё предстоит проверить.",
+      short: "Я часто откладываю хорошие идеи, пока жду идеального момента. Но небольшой шаг сегодня важнее идеального плана на потом.",
+      normal: "Я часто откладываю хорошие идеи, потому что хочу сначала всё продумать. Но движение важнее идеальности: лучше сделать небольшой шаг сегодня, а детали добавить потом.",
+      detailed: "Я часто откладываю хорошие идеи, пока пытаюсь всё продумать и довести до идеала. Но движение важнее идеальности. Даже небольшой шаг сегодня может привести к большим изменениям завтра, а детали можно добавить по ходу.",
     },
   },
   {
@@ -43,31 +43,31 @@ const platforms: Array<{
     name: "MAX",
     limit: "до 4 000 знаков",
     previews: {
-      short: "Не ждите идеального момента. Один небольшой шаг сегодня полезнее большого плана на потом.",
-      normal: "Идея становится живой, когда вы делаете первый шаг. Не ждите идеального момента: поделитесь опытом и добавляйте детали по ходу.",
-      detailed: "Необязательно знать весь путь заранее. Расскажите аудитории, с чего вы начали, что уже поняли и почему эта идея важна. Остальные детали можно добавить после обратной связи.",
+      short: "Небольшой шаг сегодня важнее идеального плана на потом.",
+      normal: "Необязательно сначала продумывать всё до мелочей. Хорошая идея начинает жить, когда делаешь первый шаг, а детали можно добавить по ходу.",
+      detailed: "Я часто жду, пока идея станет идеальной, и из-за этого откладываю первый шаг. Теперь выбираю движение: начинаю с того, что уже знаю, а остальное уточняю по ходу.",
     },
   },
   {
     key: "vk",
     icon: UsersRound,
     name: "VK",
-    limit: "запись сообщества",
+    limit: "пост для сообщества",
     previews: {
-      short: "Движение важнее идеальности. Начните с одной мысли — дальше станет понятнее.",
-      normal: "Как перестать откладывать идею? Сформулируйте один понятный шаг, расскажите о личном опыте и не пытайтесь сразу написать идеальный текст.",
-      detailed: "Как перестать откладывать идею и начать говорить с аудиторией по-настоящему? Зафиксируйте главную мысль, добавьте личный опыт и несколько практических шагов. Читателю важнее ясность и честность, чем идеальная формулировка.",
+      short: "Движение важнее идеальности. Начни с одной мысли — дальше станет понятнее.",
+      normal: "Как перестать откладывать хорошую идею? Не пытаться сразу написать идеальный текст. Начни с одной ясной мысли, а детали добавь по ходу.",
+      detailed: "Хорошую идею легко отложить, если хочется сначала всё продумать. Но движение важнее идеальности. Начни с одной ясной мысли и небольшого шага сегодня — остальное можно добавить позже.",
     },
   },
   {
     key: "instagram",
     icon: Instagram,
     name: "Instagram",
-    limit: "подпись или Reel",
+    limit: "подпись или ролик",
     previews: {
-      short: "Начните до того, как почувствуете себя готовыми. Сохраните, чтобы не потерять эту мысль.",
-      normal: "Иногда первый шаг — просто сказать идею вслух. Без идеальной формулировки и долгой подготовки. А дальше уже появится структура.",
-      detailed: "Начните до того, как почувствуете себя полностью готовыми. Сначала скажите идею вслух, потом соберите из неё понятную историю: личный опыт, один вывод и простой шаг для читателя.",
+      short: "Не жди идеального момента. Скажи мысль вслух и сделай первый шаг.",
+      normal: "Иногда первый шаг — просто сказать идею вслух. Без идеальной формулировки и долгой подготовки. Структура появится потом.",
+      detailed: "Не жди, пока идея станет идеальной. Сначала скажи её вслух, потом собери из неё короткую историю: одна мысль, один вывод и один шаг, который можно сделать сегодня.",
     },
   },
 ];
@@ -86,13 +86,12 @@ export function VoiceProductDemo() {
           <div>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Ваш голосовой черновик</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Твоя мысль</div>
                 <div className="mt-2 flex items-center gap-2 text-xs text-muted">
                   <span className={cn("size-2 rounded-full", listening ? "animate-pulse bg-success" : "bg-border")} />
-                  {listening ? "Идёт запись · 00:24" : "Можно начать в любой момент"}
+                  {listening ? "Идёт запись · 00:24" : "Нажми и наговаривай"}
                 </div>
               </div>
-              <span className="text-xs text-muted">86 слов</span>
             </div>
             <p className="mt-5 text-sm leading-6 text-foreground">
               Хочу рассказать, почему мы часто откладываем хорошие идеи. Кажется, что сначала нужно всё продумать, но движение важнее идеальности.
@@ -115,14 +114,14 @@ export function VoiceProductDemo() {
               </button>
               <AudioLines className={cn("transition", listening && "scale-110")} size={88} strokeWidth={1.35} />
             </div>
-            <div className="text-center text-xs leading-5 text-muted">Можно говорить частями — мы всё объединим.</div>
+            <div className="text-center text-xs leading-5 text-muted">Можно говорить частями — «Наговори» соберёт всё вместе.</div>
           </div>
         </div>
 
         <aside className="grid content-start gap-4 rounded-lg border border-border bg-surface p-4">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Куда подготовить?</h2>
-            <p className="mt-1 text-xs text-muted">Правила площадок уже учтены</p>
+            <h2 className="text-base font-semibold text-foreground">Куда нужен пост?</h2>
+            <p className="mt-1 text-xs text-muted">«Наговори» учтёт формат каждой площадки</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -149,11 +148,11 @@ export function VoiceProductDemo() {
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-semibold text-foreground">Длина поста</div>
+            <div className="mb-2 text-xs font-semibold text-foreground">Какой длины сделать?</div>
             <div className="grid grid-cols-3 gap-2">
               {([[
                 "short", "Коротко",
-              ], ["normal", "Обычно"], ["detailed", "Подробно"]] as Array<[LengthKey, string]>).map(([key, label]) => (
+              ], ["normal", "Средне"], ["detailed", "Подробно"]] as Array<[LengthKey, string]>).map(([key, label]) => (
                 <button
                   aria-pressed={length === key}
                   className={cn(
@@ -173,13 +172,12 @@ export function VoiceProductDemo() {
           <div className="rounded-lg border border-border bg-background p-3" aria-live="polite">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground"><CurrentIcon className="text-success" size={16} />{current.name}</div>
-              <span className="text-[11px] text-muted">{current.previews[length].length} знаков</span>
             </div>
             <p className="mt-2 text-xs leading-5 text-muted">{current.previews[length]}</p>
           </div>
 
           <button className="flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:-translate-y-0.5 hover:brightness-105" type="button">
-            <Play size={16} /> Подготовить 4 версии
+            <Play size={16} /> Собрать 4 текста
           </button>
         </aside>
       </div>

@@ -467,7 +467,7 @@ function ActionStatus({ canRetry, state }: { canRetry: boolean; state: GuidedAct
       {showRetry ? (
         <div className="flex min-w-0 items-center gap-2 text-muted">
           <RotateCcw className="shrink-0" size={14} />
-          <span className="min-w-0 break-words">Исправьте поле при необходимости и нажмите кнопку сохранения ещё раз.</span>
+          <span className="min-w-0 break-words">Если нужно, поправь поле и ещё раз нажми кнопку сохранения.</span>
         </div>
       ) : null}
     </div>
@@ -494,7 +494,7 @@ function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
     disabled: "Автосохранение недоступно для этого поля.",
     failed: "Автосохранение не прошло, но черновик не потерян.",
     idle: "Автосохранение ждёт ввода.",
-    pending: "Сохраняем...",
+    pending: "«Наговори» сохраняет…",
     queued: "Автосохранение запланировано.",
     synced: "Сохранено.",
   };
@@ -571,7 +571,7 @@ function QueueStatusLine({
       {retryShellOpen && canRetryJob ? (
         <div className="grid gap-2 rounded-md border border-warning bg-background px-3 py-2" data-testid="guided-queue-retry-shell">
           <div className="text-foreground">
-            Проверьте текущие значения и повторите сохранение.
+            Проверь текущие значения и повтори сохранение.
           </div>
           <div className="flex flex-wrap gap-2">
             <Button data-testid="guided-queue-retry-confirm" onClick={confirmRetry} size="sm" type="button" variant="secondary">
@@ -591,12 +591,12 @@ function QueueStatusLine({
 function queueStatusLabel(status: QueueStatus, job: GuidedQueueJob | null): string {
   if (status === "blocked") {
     if (job?.metadata?.kind === "repeatable_group") {
-      return "Одно изменение ещё не сохранено. Обновите страницу и повторите действие.";
+      return "Одно изменение ещё не сохранено. Обнови страницу и повтори действие.";
     }
     if (job?.metadata?.kind === "field") {
-      return "Одно поле ещё не сохранено. Обновите страницу и повторите сохранение.";
+      return "Одно поле ещё не сохранено. Обнови страницу и повтори сохранение.";
     }
-    return "Одно изменение ещё не сохранено. Обновите страницу и повторите действие.";
+    return "Одно изменение ещё не сохранено. Обнови страницу и повтори действие.";
   }
   if (status === "queued") {
     if (job?.metadata?.kind === "repeatable_group") {
@@ -610,7 +610,7 @@ function queueStatusLabel(status: QueueStatus, job: GuidedQueueJob | null): stri
 
   const labels: Record<Exclude<QueueStatus, "blocked" | "queued">, string> = {
     empty: "Все изменения сохранены.",
-    retrying: "Повторяем сохранение...",
+    retrying: "«Наговори» повторяет сохранение…",
     synced: "Все изменения сохранены.",
     unavailable: "Автосохранение сейчас недоступно.",
   };
@@ -765,7 +765,7 @@ export function GuidedFieldActionForm({
         />
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="save" variant="secondary">
           <Save size={14} />
-          {isPending ? "Сохраняем" : "Сохранить"}
+          {isPending ? "Сохранение…" : "Сохранить"}
         </Button>
         <Button disabled={disabled} name="intent" size="sm" type="submit" value="lock">
           <LockKeyhole size={14} />

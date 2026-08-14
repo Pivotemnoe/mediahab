@@ -14,7 +14,7 @@ export default function AppError({ reset }: { error: Error & { digest?: string }
           Не удалось открыть раздел
         </div>
         <p className="text-sm leading-6 text-muted">
-          Детали ошибки не показываются в интерфейсе. Можно повторить загрузку или вернуться в кабинет.
+          Сейчас страница не открылась. Попробуй ещё раз — твои сохранённые тексты не пропали.
         </p>
         <Button type="button" onClick={reset}>
           <RotateCcw size={16} />

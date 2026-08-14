@@ -72,32 +72,32 @@ export interface ExamplePreviewViewModel {
 const fallbackSteps: AiStepViewModel[] = [
   {
     status: "готово",
-    text: "Извлечение структуры из блоков и расшифровок",
-    title: "Факты",
+    text: "«Наговори» собирает важные детали из твоей записи.",
+    title: "Важные детали",
   },
   {
     status: "готово",
-    text: "Выбор 3-8 одобренных примеров, а не всей библиотеки",
-    title: "Примеры",
+    text: "Для нового текста берутся только подходящие примеры стиля.",
+    title: "Твоя подача",
   },
   {
     status: "готово",
-    text: "Сборка черновика с крючками, оценками и призывом к действию",
-    title: "Мастер-текст",
+    text: "Из твоих слов получается цельная публикация.",
+    title: "Готовый текст",
   },
   {
     status: "готово",
-    text: "Заблокированные факты, длина, рискованные неподтверждённые утверждения",
-    title: "Проверка",
+    text: "Перед публикацией остаётся проверить факты, длину и фото.",
+    title: "Последняя проверка",
   },
 ];
 
 const fallbackRuns: AiRunViewModel[] = [
-  { provider: "OpenAI", status: "ждёт ключ", task: "Извлечение фактов" },
-  { provider: "OpenAI", status: "ждёт ключ", task: "Сборка мастер-текста" },
-  { provider: "OpenAI", status: "ждёт ключ", task: "Крючки" },
-  { provider: "OpenAI", status: "ждёт ключ", task: "Оценки" },
-  { provider: "OpenAI", status: "ждёт ключ", task: "Проверка качества" },
+  { provider: "Наговори", status: "можно начать", task: "Собрать важные детали" },
+  { provider: "Наговори", status: "можно начать", task: "Подготовить основной текст" },
+  { provider: "Наговори", status: "можно начать", task: "Найти удачное начало" },
+  { provider: "Наговори", status: "можно начать", task: "Сохранить авторскую оценку" },
+  { provider: "Наговори", status: "можно начать", task: "Проверить готовый текст" },
 ];
 
 const fallbackExamples: ExamplePreviewViewModel[] = [
@@ -172,7 +172,7 @@ function examplePreview(
   return {
     fragments: exampleFragments(example),
     id: example.id,
-    rubric: example.rubric_id ? rubricNames.get(example.rubric_id) ?? "Рубрика" : "Без рубрики",
+    rubric: example.rubric_id ? rubricNames.get(example.rubric_id) ?? "Формат" : "Для всего канала",
     score: scoreLabel(example.manual_quality_score),
     status: statusLabel(example.status),
     title: exampleTitle(example),
@@ -190,7 +190,7 @@ function fixtureProjectExamples(projectId: string): ProjectExamplesViewModel {
       },
       {
         label: "На проверке",
-        note: "Нужно решить, подходят ли они вашему каналу.",
+        note: "Реши, подходят ли они твоему каналу.",
         value: "1",
       },
       {
@@ -209,7 +209,7 @@ function fixtureProjectExamples(projectId: string): ProjectExamplesViewModel {
 function fixtureAiPipeline(): AiPipelineViewModel {
   return {
     context: {
-      content: "демо-материал",
+      content: "пример публикации",
       project: "Что поесть? Армавир",
     },
     examples: fallbackExamples,
@@ -223,8 +223,8 @@ function fixtureAiPipeline(): AiPipelineViewModel {
 function emptyAiPipeline(notice?: string): AiPipelineViewModel {
   return {
     context: {
-      content: "Материал не выбран",
-      project: "Проект не выбран",
+      content: "Публикация не выбрана",
+      project: "Канал не выбран",
     },
     examples: [],
     factGuards: [],
@@ -281,13 +281,13 @@ async function apiExamplesForProject(projectId: string): Promise<{
 }
 
 function apiRunRows(hasContent: boolean): AiRunViewModel[] {
-  const status = hasContent ? "готов к запуску" : "нужен материал";
+  const status = hasContent ? "можно начать" : "нужна публикация";
   return [
-    { provider: "OpenAI", status, task: "Извлечение фактов" },
-    { provider: "OpenAI", status, task: "Сборка мастер-текста" },
-    { provider: "OpenAI", status, task: "Крючки" },
-    { provider: "OpenAI", status, task: "Оценки" },
-    { provider: "OpenAI", status, task: "Проверка качества" },
+    { provider: "Наговори", status, task: "Собрать важные детали" },
+    { provider: "Наговори", status, task: "Подготовить основной текст" },
+    { provider: "Наговори", status, task: "Найти удачное начало" },
+    { provider: "Наговори", status, task: "Сохранить авторскую оценку" },
+    { provider: "Наговори", status, task: "Проверить готовый текст" },
   ];
 }
 
@@ -304,7 +304,7 @@ function exampleMetrics(examples: ExamplePreviewViewModel[]): ProjectExamplesVie
     },
     {
       label: "На проверке",
-      note: "Нужно решить, подходят ли они вашему каналу.",
+      note: "Реши, подходят ли они твоему каналу.",
       value: String(pending),
     },
     {
@@ -319,7 +319,7 @@ async function apiAiPipeline(): Promise<AiPipelineViewModel> {
   const project = await firstWorkspaceProject();
 
   if (!project) {
-    return emptyAiPipeline("Сначала создайте проект или канал.");
+    return emptyAiPipeline("Сначала создай канал.");
   }
 
   const [{ examplesResponse, items }, contentLabel] = await Promise.all([
@@ -327,20 +327,15 @@ async function apiAiPipeline(): Promise<AiPipelineViewModel> {
     firstContentLabel(project.id),
   ]);
 
-  const notices = [
-    examplesResponse ? null : "Список примеров из API недоступен.",
-    "Журнал последних AI-запусков пока не читается из API: backend даёт detail/retry/cancel, но не list endpoint.",
-  ].filter(Boolean);
-
   return {
     context: {
-      content: contentLabel ?? "материал не найден",
+      content: contentLabel ?? "публикация не найдена",
       project: project.name,
     },
     examples: items.slice(0, 3),
     factGuards,
     modeLabel: "api",
-    notice: notices.length ? `${notices.join(" ")} Статусы запуска показаны как техническая готовность.` : undefined,
+    notice: examplesResponse ? undefined : "Примеры сейчас не загрузились. Обнови страницу — сохранённые тексты останутся на месте.",
     runs: apiRunRows(Boolean(contentLabel)),
     steps: [],
   };
@@ -357,7 +352,7 @@ async function apiProjectExamples(projectId: string): Promise<ProjectExamplesVie
     examples: items,
     metrics: exampleMetrics(items),
     modeLabel: "api",
-    notice: examplesResponse ? undefined : "Не удалось загрузить список примеров. Попробуйте обновить страницу.",
+    notice: examplesResponse ? undefined : "Примеры сейчас не загрузились. Обнови страницу.",
     projectId,
     projectLabel: project?.name ?? projectId,
     rubrics: (rubricsResponse?.rubrics ?? []).map((rubric) => ({ id: rubric.id, name: rubric.name })),
@@ -372,7 +367,7 @@ export async function getAiPipelineViewModel(): Promise<AiPipelineViewModel> {
   try {
     return await apiAiPipeline();
   } catch {
-    return emptyAiPipeline("Данные помощника сейчас не загрузились. Попробуйте обновить страницу.");
+    return emptyAiPipeline("Помощник сейчас не загрузился. Обнови страницу и попробуй ещё раз.");
   }
 }
 
@@ -388,9 +383,9 @@ export async function getProjectExamplesViewModel(projectId: string): Promise<Pr
       examples: [],
       metrics: exampleMetrics([]),
       modeLabel: "api",
-      notice: "Примеры сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Примеры сейчас не загрузились. Обнови страницу.",
       projectId,
-      projectLabel: "Проект",
+      projectLabel: "Канал",
       rubrics: [],
     };
   }
@@ -406,7 +401,7 @@ export async function getStyleOverviewViewModel(): Promise<StyleOverviewViewMode
   if (!workspace) {
     return {
       modeLabel: "api",
-      notice: "Каналы сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Каналы сейчас не загрузились. Обнови страницу.",
       projects: [],
     };
   }
@@ -415,7 +410,7 @@ export async function getStyleOverviewViewModel(): Promise<StyleOverviewViewMode
   if (!projectsResponse) {
     return {
       modeLabel: "api",
-      notice: "Каналы сейчас не загрузились. Попробуйте обновить страницу.",
+      notice: "Каналы сейчас не загрузились. Обнови страницу.",
       projects: [],
     };
   }

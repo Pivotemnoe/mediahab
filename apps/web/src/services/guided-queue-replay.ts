@@ -198,7 +198,7 @@ export function getGuidedQueueReplayReadiness(params: {
       reason: "no_queue_jobs",
       shellMessage: params.online
         ? null
-        : "Нет интернета. Черновики не потеряются; подготовка версий и публикация продолжатся после подключения.",
+        : "Нет интернета. Твои записи не потеряются; подготовку текстов можно продолжить после подключения.",
       status: params.online ? "empty" : "offline",
     };
   }
@@ -209,7 +209,7 @@ export function getGuidedQueueReplayReadiness(params: {
       ...counts,
       jobCount,
       reason: "network_unavailable",
-      shellMessage: `Нет интернета. ${formatQueuedChanges(jobCount)} сохранено; откройте приложение после подключения, чтобы продолжить.`,
+      shellMessage: `Нет интернета. ${formatQueuedChanges(jobCount)} ${queuedChangesSavedWord(jobCount)}; открой «Наговори» после подключения, чтобы продолжить.`,
       status: "offline",
     };
   }
@@ -219,7 +219,7 @@ export function getGuidedQueueReplayReadiness(params: {
     ...counts,
     jobCount,
     reason: "http_only_cookie_csrf_required",
-    shellMessage: `Не всё сохранилось: ${jobCount}. Откройте материал и повторите сохранение.`,
+    shellMessage: `Не удалось отправить ${formatQueuedChanges(jobCount)}. Открой публикацию и повтори сохранение.`,
     status: "manual_retry_required",
   };
 }
@@ -257,4 +257,10 @@ function formatQueuedChanges(count: number): string {
     return `${count} изменения`;
   }
   return `${count} изменений`;
+}
+
+function queuedChangesSavedWord(count: number): "сохранено" | "сохранены" {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  return mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? "сохранены" : "сохранено";
 }
