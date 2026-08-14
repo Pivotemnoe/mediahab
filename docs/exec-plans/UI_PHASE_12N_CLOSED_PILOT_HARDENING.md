@@ -2,7 +2,7 @@
 
 ## Status
 
-Local implementation and the complete pre-release gate passed on 2026-08-14. GitHub checks, production backup, application-only rollout, and post-release verification remain before the phase can be marked released.
+Released to the closed-pilot production target on 2026-08-14 from commit `8caebf06c18b9a9eb6a5988e623d889bdced6d9d` under immutable tag `pilot-20260814-phase12n`. The local gate, GitHub Actions, fresh backup, application-only rollout, and automated post-release checks passed. The release is ready for invited browser testers; the physical-iPhone microphone/background/sleep pass remains a manual gate before widening the cohort.
 
 ## Goal
 
@@ -105,6 +105,21 @@ No production switch occurs until the complete local gate, GitHub source gate, f
 - Replace only Media Hub API, worker, and web images/containers after migration and backup.
 - Preserve PostgreSQL, Redis, all volumes, server `.env`, Caddy, the NL proxy, and the neighboring `Бери сегодня` application.
 - Verify database counts/identities, container identities for stateful services, public health, login, and core browser flow after rollout.
+
+## Production release evidence — 2026-08-14
+
+- Release ID: `20260814-164046-phase12n-closed-pilot`; deployed source archive SHA-256: `1dd601c6ea9de0c8a66f612d6bf36cfa03169cd42fb0890004846cc98d5107f9`.
+- Deployed code commit: `8caebf06c18b9a9eb6a5988e623d889bdced6d9d`; immutable annotated tag: `pilot-20260814-phase12n`.
+- GitHub Actions push run `31820000375` and pull-request run `31820000578` passed before rollout.
+- A fresh backup was created at `/var/backups/media-hub/20260814-164046-phase12n-closed-pilot`. The PostgreSQL dump and source archive are readable, a SHA-256 manifest verifies all primary before/after artifacts, and `LATEST` points to this backup.
+- Alembic advanced from `202606200013` to exact head `202606200014`; the migration added only the closed-pilot invitation table and indexes.
+- Only Media Hub API, worker, and web containers were recreated. PostgreSQL and Redis container identities and start times stayed unchanged; the Caddy process stayed unchanged.
+- Control counts before and after rollout were identical: users `13`, workspaces `13`, projects `11`, content items `19`, content revisions `72`, media assets `37`, notebook notes `5`, publications `7`.
+- Public liveness and readiness returned `200`; readiness reported database, Redis, and migrations as `ok`. Login and the public home returned `200` over the production TLS host.
+- Registration without an invitation was rejected with `403 pilot_invite_required` and created no account. The invitation table and protected operator CLI are present in the deployed API container.
+- The worker registered the publication outbox task, periodic drains completed with zero failures, and no startup error appeared in API or worker logs.
+- Production mobile-browser acceptance confirmed the public home, closed registration surface, protected-app redirect, and the cleaned first-run workflow. Physical-device microphone/background/sleep behavior remains explicitly unclaimed until the manual iPhone pass.
+- Previous application images are retained under release-specific rollback tags. Rollback restores only API, worker, and web while preserving PostgreSQL, Redis, volumes, and queued outbox records.
 
 ## Risks and rollback
 
