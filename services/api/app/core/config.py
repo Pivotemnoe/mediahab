@@ -94,6 +94,24 @@ class Settings(BaseSettings):
     auth_rate_limit_window_seconds: int = Field(
         default=60, alias="AUTH_RATE_LIMIT_WINDOW_SECONDS"
     )
+    pilot_registration_mode_raw: str = Field(
+        default="", alias="PILOT_REGISTRATION_MODE"
+    )
+    pilot_support_email: str = Field(
+        default="pivo.temnoe@gmail.com", alias="PILOT_SUPPORT_EMAIL"
+    )
+    pilot_public_base_url: str = Field(
+        default="http://localhost:3000", alias="PILOT_PUBLIC_BASE_URL"
+    )
+    publication_execution_mode_raw: str = Field(
+        default="", alias="PUBLICATION_EXECUTION_MODE"
+    )
+    publication_outbox_batch_size: int = Field(
+        default=10, ge=1, le=100, alias="PUBLICATION_OUTBOX_BATCH_SIZE"
+    )
+    publication_outbox_stale_seconds: int = Field(
+        default=300, ge=30, alias="PUBLICATION_OUTBOX_STALE_SECONDS"
+    )
     cors_origins_raw: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000",
         alias="CORS_ORIGINS",
@@ -122,6 +140,20 @@ class Settings(BaseSettings):
             for value in self.standalone_idea_generator_workspace_allowlist_raw.split(",")
             if value.strip()
         }
+
+    @property
+    def pilot_registration_mode(self) -> str:
+        value = self.pilot_registration_mode_raw.strip().lower()
+        if value in {"open", "closed"}:
+            return value
+        return "closed" if self.app_env.strip().lower() == "production" else "open"
+
+    @property
+    def publication_execution_mode(self) -> str:
+        value = self.publication_execution_mode_raw.strip().lower()
+        if value in {"inline", "worker"}:
+            return value
+        return "worker" if self.app_env.strip().lower() == "production" else "inline"
 
     @property
     def resolved_media_bucket(self) -> str:

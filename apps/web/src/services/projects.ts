@@ -272,6 +272,63 @@ function fixtureNewProject(): NewProjectViewModel {
   };
 }
 
+function emptyNewProject(notice?: string, workspaceId: string | null = null): NewProjectViewModel {
+  return {
+    audiencePlaceholder: "Кому вы пишете и каким голосом хотите с ними разговаривать?",
+    exampleImports: [],
+    fields: [],
+    modeLabel: "api",
+    notice,
+    platformOptions: [],
+    rubricSuggestions: [],
+    wizardSteps: [],
+    workspaceId,
+  };
+}
+
+function emptyProjectDetail(projectId: string, notice: string): ProjectDetailViewModel {
+  return {
+    modeLabel: "api",
+    notice,
+    projectLabel: projectId,
+    summaryCards: [],
+  };
+}
+
+function emptyProjectBuilder(projectId: string, notice: string): ProjectBuilderViewModel {
+  return {
+    modeLabel: "api",
+    notice,
+    projectLabel: projectId,
+    settingCards: [],
+    steps: [],
+  };
+}
+
+function emptyProjectSettings(projectId: string, notice: string): ProjectSettingsViewModel {
+  return {
+    modeLabel: "api",
+    notice,
+    platformOptions: [],
+    profileFields: [],
+    project: null,
+    projectLabel: projectId,
+    roleNotes: [],
+    versionNotes: [],
+  };
+}
+
+function emptyRubricAssets(): RubricAssetsViewModel {
+  return {
+    fieldPalette: [],
+    platformStrategies: [],
+    previewBlocks: [],
+    repeatableGroups: [],
+    rubricFields: [],
+    styleRules: [],
+  };
+}
+
 function fixtureProjectDetail(projectId: string): ProjectDetailViewModel {
   return {
     modeLabel: "fixtures",
@@ -342,7 +399,7 @@ function projectView(project: ProjectOut): ProjectIndexViewModel["projects"][num
     description: project.description ?? project.content_domain ?? "Описание проекта не задано.",
     href: `/app/projects/${project.id}`,
     name: project.name,
-    rubrics: `${rubricCount} ${rubricCount === 1 ? "рубрика" : rubricCount >= 2 && rubricCount <= 4 ? "рубрики" : "рубрик"}`,
+    rubrics: rubricCount === 0 ? "без рубрик" : `${rubricCount} ${rubricCount === 1 ? "рубрика" : rubricCount >= 2 && rubricCount <= 4 ? "рубрики" : "рубрик"}`,
     status: projectStatusLabel(project.status),
     version: `v${project.active_version_number}`,
   };
@@ -421,7 +478,7 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
 
   if (!workspaceId) {
     return {
-      entryPoints: fixtureProjectIndex().entryPoints,
+      entryPoints: [],
       modeLabel: "api",
       notice: "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
       projects: [],
@@ -432,7 +489,7 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
   const projects = projectsResponse?.projects ?? [];
 
   return {
-    entryPoints: fixtureProjectIndex().entryPoints,
+    entryPoints: [],
     modeLabel: "api",
     notice: projectsResponse ? undefined : "Не удалось загрузить проекты. Попробуйте обновить страницу.",
     projects: projects.map(projectView),
@@ -440,7 +497,6 @@ async function apiProjectIndex(): Promise<ProjectIndexViewModel> {
 }
 
 async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewModel> {
-  const fallback = fixtureRubricBuilder(projectId);
   const [project, rubricsResponse] = await Promise.all([
     apiProject(projectId),
     safeApiGet<RubricListResponse>(`/api/v1/projects/${projectId}/rubrics`),
@@ -448,7 +504,7 @@ async function apiRubricBuilder(projectId: string): Promise<RubricBuilderViewMod
   const rubrics = rubricsResponse?.rubrics ?? [];
 
   return {
-    ...fallback,
+    ...emptyRubricAssets(),
     modeLabel: "api",
     notice: rubricsResponse ? undefined : "Не удалось загрузить рубрики. Попробуйте обновить страницу.",
     projectLabel: project?.name ?? projectId,
@@ -477,7 +533,7 @@ export async function getProjectIndexViewModel(): Promise<ProjectIndexViewModel>
     return await apiProjectIndex();
   } catch {
     return {
-      entryPoints: fixtureProjectIndex().entryPoints,
+      entryPoints: [],
       modeLabel: "api",
       notice: "Данные проектов сейчас не загрузились. Попробуйте обновить страницу.",
       projects: [],
@@ -490,13 +546,15 @@ export async function getNewProjectViewModel(): Promise<NewProjectViewModel> {
     return fixtureNewProject();
   }
 
-  const workspaceId = await firstWorkspaceId();
-  return {
-    ...fixtureNewProject(),
-    modeLabel: "api",
-    notice: workspaceId ? undefined : "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
-    workspaceId,
-  };
+  try {
+    const workspaceId = await firstWorkspaceId();
+    return emptyNewProject(
+      workspaceId ? undefined : "Рабочее пространство не найдено. Обновите страницу или войдите заново.",
+      workspaceId,
+    );
+  } catch {
+    return emptyNewProject("Форма проекта сейчас не загрузилась. Попробуйте обновить страницу.");
+  }
 }
 
 export async function getProjectDetailViewModel(projectId: string): Promise<ProjectDetailViewModel> {
@@ -508,17 +566,9 @@ export async function getProjectDetailViewModel(projectId: string): Promise<Proj
     const project = await apiProject(projectId);
     return project
       ? apiProjectDetailView(project)
-      : {
-          ...fixtureProjectDetail(projectId),
-          modeLabel: "api",
-          notice: "Проект из API недоступен. Показаны демо-данные.",
-        };
+      : emptyProjectDetail(projectId, "Проект не найден или у вас нет к нему доступа.");
   } catch {
-    return {
-      ...fixtureProjectDetail(projectId),
-      modeLabel: "пример после ошибки загрузки",
-      notice: "Данные проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
-    };
+    return emptyProjectDetail(projectId, "Данные проекта сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -531,17 +581,9 @@ export async function getProjectBuilderViewModel(projectId: string): Promise<Pro
     const project = await apiProject(projectId);
     return project
       ? apiProjectBuilderView(project)
-      : {
-          ...fixtureProjectBuilder(projectId),
-          modeLabel: "api",
-          notice: "Проект из API недоступен. Показаны демо-данные конструктора.",
-        };
+      : emptyProjectBuilder(projectId, "Проект не найден или у вас нет к нему доступа.");
   } catch {
-    return {
-      ...fixtureProjectBuilder(projectId),
-      modeLabel: "пример после ошибки загрузки",
-      notice: "Настройки проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
-    };
+    return emptyProjectBuilder(projectId, "Настройки проекта сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -554,17 +596,9 @@ export async function getProjectSettingsViewModel(projectId: string): Promise<Pr
     const project = await apiProject(projectId);
     return project
       ? apiProjectSettingsView(project)
-      : {
-          ...fixtureProjectSettings(projectId),
-          modeLabel: "api",
-          notice: "Проект из API недоступен. Показаны демо-данные настроек.",
-        };
+      : emptyProjectSettings(projectId, "Проект не найден или у вас нет к нему доступа.");
   } catch {
-    return {
-      ...fixtureProjectSettings(projectId),
-      modeLabel: "пример после ошибки загрузки",
-      notice: "Рубрики проекта сейчас не загрузились. Ниже показан безопасный пример структуры.",
-    };
+    return emptyProjectSettings(projectId, "Правила проекта сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -577,9 +611,10 @@ export async function getRubricBuilderViewModel(projectId: string): Promise<Rubr
     return await apiRubricBuilder(projectId);
   } catch {
     return {
-      ...fixtureRubricBuilder(projectId),
+      ...emptyRubricAssets(),
       modeLabel: "api",
       notice: "Рубрики сейчас не загрузились. Попробуйте обновить страницу.",
+      projectLabel: projectId,
       rubrics: [],
     };
   }

@@ -198,7 +198,7 @@ export function getGuidedQueueReplayReadiness(params: {
       reason: "no_queue_jobs",
       shellMessage: params.online
         ? null
-        : "Нет сети: черновики сохраняются локально, ИИ и публикации недоступны.",
+        : "Нет интернета. Черновики не потеряются; подготовка версий и публикация продолжатся после подключения.",
       status: params.online ? "empty" : "offline",
     };
   }
@@ -209,7 +209,7 @@ export function getGuidedQueueReplayReadiness(params: {
       ...counts,
       jobCount,
       reason: "network_unavailable",
-      shellMessage: `Нет сети: ${formatQueuedChanges(jobCount)} в локальной очереди, ИИ и публикации недоступны.`,
+      shellMessage: `Нет интернета. ${formatQueuedChanges(jobCount)} сохранено; откройте приложение после подключения, чтобы продолжить.`,
       status: "offline",
     };
   }
@@ -219,7 +219,7 @@ export function getGuidedQueueReplayReadiness(params: {
     ...counts,
     jobCount,
     reason: "http_only_cookie_csrf_required",
-    shellMessage: `Есть несинхронизированные изменения: ${jobCount}. Автоповтор выключен: откройте материал и повторите сохранение.`,
+    shellMessage: `Не всё сохранилось: ${jobCount}. Откройте материал и повторите сохранение.`,
     status: "manual_retry_required",
   };
 }

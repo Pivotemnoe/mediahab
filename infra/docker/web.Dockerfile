@@ -26,9 +26,10 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web ./apps/web
+COPY --chown=node:node --from=builder /app/package.json /app/pnpm-workspace.yaml ./
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/apps/web ./apps/web
 
 WORKDIR /app/apps/web
+USER node
 CMD ["./node_modules/.bin/next", "start", "--hostname", "0.0.0.0", "--port", "3000"]

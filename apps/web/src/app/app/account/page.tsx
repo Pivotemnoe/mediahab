@@ -1,8 +1,9 @@
-import { KeyRound, LogOut, MailCheck, ShieldCheck } from "lucide-react";
+import { MailCheck, ShieldCheck } from "lucide-react";
 
+import { LogoutButton } from "@/components/layout/logout-button";
 import { PageHeader } from "@/components/layout/page-header";
+import { TourReplayButton } from "@/components/layout/tour-replay-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getAccountViewModel } from "@/services/workspace-settings";
 
@@ -12,17 +13,13 @@ export default async function AccountPage() {
   return (
     <div className="grid min-w-0 gap-5">
       <PageHeader
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Badge>{viewModel.modeLabel}</Badge>
-            <Button type="button" variant="secondary">
-              <LogOut size={16} />
-              Выйти со всех устройств
-            </Button>
+        actions={(
+          <div className="flex flex-wrap items-start justify-end gap-2">
+            <TourReplayButton />
+            <LogoutButton />
           </div>
-        }
-        description="Профиль, подтверждение почты, безопасность и управление активными сессиями."
-        eyebrow="Этап UI 09"
+        )}
+        description="Профиль, подтверждение почты и устройства, на которых выполнен вход."
         title="Аккаунт"
       />
       {viewModel.notice ? (
@@ -54,19 +51,15 @@ export default async function AccountPage() {
           <ShieldCheck size={20} className="text-primary" />
           <h2 className="text-lg font-semibold text-foreground">Безопасность</h2>
           <p className="text-sm leading-6 text-muted">
-            Cookie-сессия, CSRF-токен, Argon2id и отзыв сессий подключаются через API авторизации.
+            Пароль хранится в защищённом виде, а вход можно завершить на каждом устройстве отдельно. Никому не сообщайте пароль и коды из писем.
           </p>
-          <Button type="button" variant="secondary">
-            <KeyRound size={16} />
-            Сменить пароль
-          </Button>
         </Card>
       </div>
 
       <Card className="grid gap-3">
         <div className="text-sm font-semibold text-foreground">Активные сессии</div>
         {viewModel.sessions.map(({ client, device, seen, state }) => (
-          <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[160px_1fr_140px_auto]" key={device}>
+          <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[180px_1fr_140px_auto]" key={`${device}-${client}-${seen}`}>
             <div className="font-medium text-foreground">{device}</div>
             <div className="text-sm text-muted">{client}</div>
             <div className="text-sm text-muted">{seen}</div>

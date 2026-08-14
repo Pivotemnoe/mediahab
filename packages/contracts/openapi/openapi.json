@@ -6587,11 +6587,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Ready Api V1 Health Ready Get"
-                }
+                "schema": {}
               }
             }
           }
@@ -11530,7 +11526,7 @@
           "password": {
             "type": "string",
             "maxLength": 256,
-            "minLength": 10,
+            "minLength": 12,
             "title": "Password"
           },
           "display_name": {
@@ -11544,6 +11540,29 @@
             "maxLength": 180,
             "minLength": 1,
             "title": "Workspace Name"
+          },
+          "invite_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Token"
+          },
+          "accept_pilot_terms": {
+            "type": "boolean",
+            "title": "Accept Pilot Terms",
+            "default": false
+          },
+          "accept_data_notice": {
+            "type": "boolean",
+            "title": "Accept Data Notice",
+            "default": false
           }
         },
         "type": "object",
@@ -11599,7 +11618,7 @@
           "new_password": {
             "type": "string",
             "maxLength": 256,
-            "minLength": 10,
+            "minLength": 12,
             "title": "New Password"
           }
         },

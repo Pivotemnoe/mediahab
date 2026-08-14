@@ -1,85 +1,10 @@
-import { CalendarClock, Clock3, RotateCcw, Send, XCircle } from "lucide-react";
+import { PilotUnavailable } from "@/components/layout/pilot-unavailable";
 
-import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { getCalendarViewModel } from "@/services/library-planning";
-
-export default async function CalendarPage() {
-  const viewModel = await getCalendarViewModel();
-
+export default function CalendarPage() {
   return (
-    <div className="grid min-w-0 gap-5">
-      <PageHeader
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Badge>{viewModel.modeLabel}</Badge>
-            <Button type="button">
-              <CalendarClock size={16} />
-              Запланировать
-            </Button>
-          </div>
-        }
-        description="Календарь публикаций: часовой пояс workspace, хранение в UTC, перенос, отмена и надёжная исходящая очередь."
-        eyebrow="Этап UI 08"
-        title="Календарь"
-      />
-      {viewModel.notice ? (
-        <Card className="border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] text-sm leading-6 text-muted">
-          {viewModel.notice}
-        </Card>
-      ) : null}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="grid gap-3">
-          <div className="grid gap-3 md:grid-cols-4">
-            {viewModel.days.map(({ day, note, status }) => (
-              <div className="rounded-md border border-border bg-surface-muted p-3" key={day}>
-                <div className="text-sm font-medium text-foreground">{day}</div>
-                <Badge className="mt-2" tone={status === "пусто" ? "neutral" : status === "внимание" ? "warning" : "success"}>
-                  {status}
-                </Badge>
-                <div className="mt-2 text-xs leading-5 text-muted">{note}</div>
-              </div>
-            ))}
-          </div>
-          {viewModel.queue.map(({ date, note, status, title }) => (
-            <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[140px_1fr_auto]" key={title}>
-              <div className="flex items-center gap-2 text-sm text-muted">
-                <CalendarClock size={16} />
-                {date}
-              </div>
-              <div>
-                <div className="text-sm font-medium text-foreground">{title}</div>
-                <div className="mt-1 text-xs text-muted">{note}</div>
-              </div>
-              <Badge tone={status === "запланировано" || status === "перенесено" ? "success" : "warning"}>{status}</Badge>
-            </div>
-          ))}
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" type="button" variant="secondary">
-              <RotateCcw size={14} />
-              Перенести
-            </Button>
-            <Button size="sm" type="button" variant="ghost">
-              <XCircle size={14} />
-              Отменить ожидание
-            </Button>
-          </div>
-        </Card>
-        <Card className="grid content-start gap-3">
-          <Clock3 size={20} className="text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Исходящая очередь и расписание</h2>
-          <p className="text-sm leading-6 text-muted">
-            Наивное локальное время нормализуется по timezone рабочего пространства и хранится в UTC.
-            Перенос обновляет ожидающее событие исходящей очереди, отмена закрывает его без публикации.
-          </p>
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <Send size={16} />
-            Повторный запуск воркера не создаёт дубли внешних постов.
-          </div>
-        </Card>
-      </div>
-    </div>
+    <PilotUnavailable
+      description="В первой тестовой версии публикации отправляются только после вашей проверки и подтверждения. Планирование по времени будет добавлено после проверки ручного сценария."
+      title="Календарь пока не открыт"
+    />
   );
 }

@@ -34,19 +34,46 @@ export async function clientApiRequest<T>(
     method: options.method,
   });
   if (!response.ok) {
-    let message = `Сервер вернул ошибку ${response.status}.`;
     let code = "api_error";
     try {
-      const payload = (await response.json()) as { error?: { code?: string; message?: string } };
-      message = payload.error?.message || message;
+      const payload = (await response.json()) as { error?: { code?: string } };
       code = payload.error?.code || code;
     } catch {
       // Keep the normalized fallback.
     }
-    if (code === "limit_exceeded") {
-      message = "На текущем тарифе уже создано максимальное количество проектов.";
-    }
+    const message = clientErrorMessage(response.status, code);
     throw new ClientApiError(message, response.status, code);
   }
   return response.json() as Promise<T>;
+}
+
+function clientErrorMessage(status: number, code: string): string {
+  if (code === "limit_exceeded") {
+    return "На текущем тарифе уже создано максимальное количество проектов.";
+  }
+  if (status === 401 || code.includes("authentication") || code.includes("session")) {
+    return "Сессия закончилась. Обновите страницу и войдите заново.";
+  }
+  if (status === 403) {
+    return "Для этого действия не хватает доступа.";
+  }
+  if (status === 404) {
+    return "Нужный материал не найден. Обновите страницу.";
+  }
+  if (status === 409 || code.includes("version_conflict")) {
+    return "Данные изменились в другой вкладке. Обновите страницу и повторите действие.";
+  }
+  if (status === 413 || code.includes("too_large")) {
+    return "Файл слишком большой. Выберите файл меньшего размера.";
+  }
+  if (status === 422) {
+    return "Проверьте заполненные поля и попробуйте ещё раз.";
+  }
+  if (status === 429) {
+    return "Слишком много попыток подряд. Подождите немного и повторите.";
+  }
+  if (status >= 500) {
+    return "Сервис временно недоступен. Попробуйте ещё раз чуть позже.";
+  }
+  return "Не удалось выполнить действие. Попробуйте ещё раз.";
 }

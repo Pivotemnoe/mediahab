@@ -1148,6 +1148,7 @@ async def publish_now(
     request: Request,
     actor: Actor = Depends(require_csrf),
     db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
     await require_publication_delivery_role(publication, membership, request, db)
@@ -1156,9 +1157,10 @@ async def publish_now(
     except PublicationCoreError as exc:
         raise handle_publication_error(exc, request) from exc
     await db.commit()
-    processed = await process_publication_outbox(db, queued)
-    await db.commit()
-    return await publication_out(db, processed)
+    if settings.publication_execution_mode == "inline":
+        queued = await process_publication_outbox(db, queued)
+        await db.commit()
+    return await publication_out(db, queued)
 
 
 @router.post("/publications/{publication_id}/cancel", response_model=PublicationOut)
@@ -1184,14 +1186,16 @@ async def retry_publication_endpoint(
     request: Request,
     actor: Actor = Depends(require_csrf),
     db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> PublicationOut:
     publication, membership = await publication_for_actor(publication_id, request, actor, db)
     await require_publication_delivery_role(publication, membership, request, db)
     retried = await retry_publication(db, publication)
     await db.commit()
-    processed = await process_publication_outbox(db, retried)
-    await db.commit()
-    return await publication_out(db, processed)
+    if settings.publication_execution_mode == "inline":
+        retried = await process_publication_outbox(db, retried)
+        await db.commit()
+    return await publication_out(db, retried)
 
 
 @router.post("/publications/{publication_id}/refresh-status", response_model=PublicationOut)

@@ -6,21 +6,18 @@ import { useEffect, useState } from "react";
 import {
   guidedFormQueueEvent,
 } from "@/services/guided-queue-contract";
-import { formatGuidedQueueDiagnostic } from "@/services/guided-queue-diagnostics";
 import {
   getGuidedQueueReplayReadiness,
   type GuidedQueueReplayReadiness,
 } from "@/services/guided-queue-replay";
-import { listGuidedQueueEntries, summarizeGuidedQueueEntries } from "@/services/guided-queue-store";
+import { listGuidedQueueEntries } from "@/services/guided-queue-store";
 
 interface OfflineQueueStatus {
-  diagnostic: string | null;
   readiness: GuidedQueueReplayReadiness;
 }
 
 export function OfflineStatus() {
   const [queueStatus, setQueueStatus] = useState<OfflineQueueStatus>(() => ({
-    diagnostic: null,
     readiness: getGuidedQueueReplayReadiness({ entries: [], online: true }),
   }));
 
@@ -28,7 +25,6 @@ export function OfflineStatus() {
     const update = () => {
       const entries = listGuidedQueueEntries();
       setQueueStatus({
-        diagnostic: formatGuidedQueueDiagnostic(summarizeGuidedQueueEntries(entries)),
         readiness: getGuidedQueueReplayReadiness({
           entries,
           online: navigator.onLine,
@@ -61,12 +57,7 @@ export function OfflineStatus() {
       role="status"
     >
       <Icon size={16} className="mt-0.5 shrink-0 text-warning" />
-      <span className="min-w-0">
-        <span>{queueStatus.readiness.shellMessage}</span>
-        {queueStatus.diagnostic ? (
-          <span className="block pt-0.5 text-xs font-normal text-muted">{queueStatus.diagnostic}</span>
-        ) : null}
-      </span>
+      <span className="min-w-0">{queueStatus.readiness.shellMessage}</span>
     </div>
   );
 }

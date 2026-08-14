@@ -2,6 +2,13 @@
 
 Codex must not silently choose answers for these items. Resolve or record an explicit default in an ADR.
 
+## Phase 12M pilot release decisions
+
+1. Choose the closed-pilot access model: pre-created tester accounts or an email allowlist. Public self-registration must not remain the default while verification and password recovery are not accepted end to end.
+2. Confirm whether the GitHub repository may remain public during the closed pilot.
+3. Confirm that publication and integration routes stay hidden from testers until the durable Celery/outbox worker and real connector adapters pass acceptance, or explicitly approve a manual-export-only pilot.
+4. Approve final privacy, terms, data-retention, and tester-consent text before external access is issued.
+
 ## Phase 00 blockers and high-priority decisions
 
 1. Provide a Telegram bot token and test channel where the bot is an administrator with post, edit, and delete rights.

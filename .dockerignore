@@ -11,3 +11,6 @@ __pycache__
 .DS_Store
 ._*
 **/._*
+output
+tmp
+docs/exec-plans/evidence

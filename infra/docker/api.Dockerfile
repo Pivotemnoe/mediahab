@@ -19,5 +19,11 @@ COPY presets presets
 COPY schemas schemas
 COPY tools tools
 
+RUN addgroup --system app \
+  && adduser --system --ingroup app app \
+  && chown -R app:app /app
+
+USER app
+
 WORKDIR /app/services/api
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

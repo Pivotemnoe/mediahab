@@ -26,6 +26,7 @@ class HealthApiTest(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["status"], "ok")
         self.assertIn("database", payload["checks"])
+        self.assertEqual(payload["checks"]["migrations"], "202606200014")
 
 
 if __name__ == "__main__":

@@ -282,10 +282,10 @@ def build_variant_preflight(
         delivery_message = "Готов ручной экспорт; автоматическая отправка для этой площадки не включена."
         delivery_code = "manual_export_required"
     else:
-        delivery_message = "Коннектор поддерживается, но конкретный аккаунт проверяется перед публикацией."
+        delivery_message = "Площадка поддерживается. Подключение выбранного аккаунта будет проверено перед отправкой."
         delivery_code = "destination_readiness_unverified"
     if warning_codes and platform_key in {"telegram", "max", "instagram"}:
-        delivery_message += " Live-проверка подключения пока не подтверждена."
+        delivery_message += " Аккаунт площадки ещё не подтверждён."
     checks.append(
         {
             "key": "delivery",
@@ -1223,6 +1223,7 @@ async def reschedule_publication(
         )
         .order_by(OutboxEvent.created_at.asc())
         .limit(1)
+        .with_for_update(skip_locked=True)
     )
     if event is None:
         session.add(
@@ -1290,6 +1291,7 @@ async def process_publication_outbox(
         )
         .order_by(OutboxEvent.created_at.asc())
         .limit(1)
+        .with_for_update(skip_locked=True)
     )
     if event is None:
         return publication

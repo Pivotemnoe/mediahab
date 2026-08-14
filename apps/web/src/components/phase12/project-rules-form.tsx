@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenCheck, Loader2, Save } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Loader2, Save } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
@@ -100,8 +100,8 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
       const linkCount = richTextLinkCount(footerRichText);
       setMessage(
         linkCount > 0
-          ? `Общие правила сохранены как новая версия проекта. В подвале: ${linkCount} ${linkCount === 1 ? "ссылка" : linkCount < 5 ? "ссылки" : "ссылок"}.`
-          : "Общие правила сохранены как новая версия проекта. Подвал пока без ссылок.",
+          ? `Правила сохранены. В подвале: ${linkCount} ${linkCount === 1 ? "ссылка" : linkCount < 5 ? "ссылки" : "ссылок"}.`
+          : "Правила сохранены. Подвал пока без ссылок.",
       );
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить правила.");
@@ -120,9 +120,14 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
             Эти правила применяются ко всем публикациям проекта. Если выбрана рубрика, её более точные правила дополняют общие.
           </p>
         </div>
-        <Button asChild variant="secondary">
-          <Link href={`/app/projects/${projectId}/examples`}><BookOpenCheck size={16} />Идеальные примеры</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary">
+            <Link href={`/app/projects/${projectId}`}><ArrowLeft size={16} />К проекту</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href={`/app/projects/${projectId}/examples`}><BookOpenCheck size={16} />Идеальные примеры</Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="grid gap-4 p-5 sm:p-6">
@@ -139,11 +144,11 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Запрещено</span><textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(rules, "avoid")} name="avoid" /></label>
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Юмор и настроение</span><textarea className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(project.humor_config, "guidance")} name="humor" /></label>
         </div>
-        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Завершение и CTA</span><textarea className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(project.cta_config, "guidance")} name="cta" /></label>
+        <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Завершение и призыв к действию</span><textarea className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-primary" defaultValue={stringValue(project.cta_config, "guidance")} name="cta" /></label>
         <div className="grid gap-4 border-t border-border pt-4">
           <div>
             <div className="text-sm font-semibold text-foreground">Обычная длина по площадкам</div>
-            <p className="mt-1 text-xs leading-5 text-muted">Это редакционная цель, а не технический максимум. Пустые поля используют безопасный профиль системы.</p>
+            <p className="mt-1 text-xs leading-5 text-muted">Это желаемая длина текста. Если оставить поля пустыми, сервис подберёт разумный ориентир.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {lengthPlatforms.map(([key, label]) => (
@@ -157,14 +162,9 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
         </div>
         <div className="grid gap-4 border-t border-border pt-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-sm font-semibold text-foreground">Постоянный подвал со ссылками</div>
-              <Badge tone={richTextLinkCount(footerRichText) > 0 ? "success" : "warning"}>
-                Ссылок: {richTextLinkCount(footerRichText)}
-              </Badge>
-            </div>
+            <div className="text-sm font-semibold text-foreground">Постоянный подвал со ссылками</div>
             <p className="mt-1 text-xs leading-5 text-muted">
-              Сохраните один раз. Подвал будет без изменений добавляться в конец каждой новой версии и попадёт в скопированный текст вместе с обычными https-ссылками.
+              Сохраните один раз. Подвал будет без изменений добавляться в конец каждой новой версии и попадёт в скопированный текст вместе со ссылками.
             </p>
           </div>
           <div className="grid gap-1.5 text-sm">
@@ -180,7 +180,7 @@ export function ProjectRulesForm({ project, projectId }: { project: ProjectOut; 
       </Card>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button disabled={isSubmitting} type="submit">{isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}Сохранить новую версию</Button>
+        <Button disabled={isSubmitting} type="submit">{isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}Сохранить правила</Button>
         {message ? <span className="text-sm text-muted">{message}</span> : null}
       </div>
     </form>

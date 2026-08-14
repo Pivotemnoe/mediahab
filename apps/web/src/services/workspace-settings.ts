@@ -189,6 +189,39 @@ function fixtureAccount(): AccountViewModel {
   };
 }
 
+function emptyIntegrations(notice?: string): IntegrationsViewModel {
+  return {
+    connectors: [],
+    modeLabel: "api",
+    notice,
+  };
+}
+
+function emptyBilling(notice?: string): BillingViewModel {
+  return {
+    currentPlan: {
+      description: "Данные тарифа сейчас недоступны.",
+      name: "Не определён",
+      status: "—",
+    },
+    history: [],
+    limits: [],
+    modeLabel: "api",
+    notice,
+    plans: [],
+  };
+}
+
+function emptyWorkspace(notice?: string): WorkspaceViewModel {
+  return {
+    invitationStats: [],
+    modeLabel: "api",
+    notice,
+    permissionNotes: [],
+    roles: [],
+  };
+}
+
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {
     admin: "Администратор",
@@ -206,6 +239,35 @@ function publicationPermissionLabel(value: string): string {
     denied: "не публикует",
   };
   return labels[value] ?? value;
+}
+
+function sessionLabels(userAgent: string | null, current: boolean): { client: string; device: string } {
+  const value = userAgent ?? "";
+  const device = /iPhone/i.test(value)
+    ? "iPhone"
+    : /iPad/i.test(value)
+      ? "iPad"
+      : /Macintosh|Mac OS X/i.test(value)
+        ? "Mac"
+        : /Android/i.test(value)
+          ? "Android"
+          : /Windows/i.test(value)
+            ? "Windows"
+            : "Устройство";
+  const client = /CriOS|Chrome/i.test(value)
+    ? "Chrome"
+    : /FxiOS|Firefox/i.test(value)
+      ? "Firefox"
+      : /EdgiOS|Edg\//i.test(value)
+        ? "Edge"
+        : /Safari/i.test(value)
+          ? "Safari"
+          : "Браузер";
+
+  return {
+    client,
+    device: current ? `Текущее устройство · ${device}` : device,
+  };
 }
 
 function statusLabel(status: string): string {
@@ -297,14 +359,9 @@ async function firstProjectId(workspaceId: string): Promise<string | null> {
 }
 
 async function apiIntegrations(): Promise<IntegrationsViewModel> {
-  const fallback = fixtureIntegrations();
   const { workspace } = await firstWorkspace();
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
-    };
+    return emptyIntegrations("Рабочее пространство не найдено. Обновите страницу или войдите заново.");
   }
 
   const projectId = await firstProjectId(workspace.id);
@@ -313,9 +370,7 @@ async function apiIntegrations(): Promise<IntegrationsViewModel> {
     : null;
 
   return {
-    ...fallback,
-    connectors: destinations?.destinations.length
-      ? destinations.destinations.map((destination) => ({
+    connectors: (destinations?.destinations ?? []).map((destination) => ({
           account: destination.name,
           capability: destination.publication_mode,
           name: destinationName(destination.platform_key),
@@ -323,24 +378,16 @@ async function apiIntegrations(): Promise<IntegrationsViewModel> {
           state: statusLabel(destination.status),
           token: destination.connector_key === "manual_export" ? "секрет не нужен" : "секрет хранится на backend",
           tone: destinationTone(destination.status),
-        }))
-      : fallback.connectors,
+        })),
     modeLabel: "api",
-    notice: destinations
-      ? undefined
-      : "Список назначений из API недоступен. Показаны демо-данные.",
+    notice: destinations ? undefined : "Подключения сейчас не загрузились. Попробуйте обновить страницу.",
   };
 }
 
 async function apiBilling(): Promise<BillingViewModel> {
-  const fallback = fixtureBilling();
   const { workspace } = await firstWorkspace();
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
-    };
+    return emptyBilling("Рабочее пространство не найдено. Обновите страницу или войдите заново.");
   }
 
   const [usage, subscription, plans, payments] = await Promise.all([
@@ -351,74 +398,59 @@ async function apiBilling(): Promise<BillingViewModel> {
   ]);
 
   return {
-    ...fallback,
     currentPlan: subscription
       ? {
-          description: `${subscription.provider_key} · ${subscription.payment_captured ? "оплата подтверждена" : "без списания"}`,
+          description: subscription.payment_captured ? "Оплата подтверждена" : "Списание не выполнялось",
           name: subscription.plan_name,
           status: statusLabel(subscription.status),
         }
-      : fallback.currentPlan,
-    history: payments?.payments.length
-      ? payments.payments.slice(0, 5).map((payment) => ({
+      : emptyBilling().currentPlan,
+    history: (payments?.payments ?? []).slice(0, 5).map((payment) => ({
           amount: amountLabel(payment.amount_minor, payment.currency),
           id: payment.provider_payment_id ?? payment.id,
           note: payment.payment_captured ? "списание подтверждено" : "списания нет",
           status: statusLabel(payment.status),
-        }))
-      : fallback.history,
-    limits: usage?.limits?.length
-      ? usage.limits.map((limit) => ({
+        })),
+    limits: (usage?.limits ?? []).map((limit) => ({
           label: String(limit.label ?? limit.key ?? "Лимит"),
           max: Number(limit.limit ?? 1),
           tone: usageTone(limit.status),
           value: Number(limit.used ?? 0),
-        }))
-      : fallback.limits,
+        })),
     modeLabel: "api",
-    notice: usage && subscription
+    notice: usage && subscription && plans && payments
       ? undefined
-      : "Часть billing API недоступна. Пустые блоки добраны демо-данными.",
-    plans: plans?.plans.length
-      ? plans.plans.map((plan) => ({
+      : "Часть данных тарифа сейчас не загрузилась. Попробуйте обновить страницу.",
+    plans: (plans?.plans ?? []).map((plan) => ({
           description: plan.description,
           name: plan.name,
           status: subscription?.plan_key === plan.key ? "текущий" : "доступен",
-          subtitle: plan.key,
-        }))
-      : fallback.plans,
+          subtitle: "",
+        })),
   };
 }
 
 async function apiWorkspace(): Promise<WorkspaceViewModel> {
-  const fallback = fixtureWorkspace();
   const { workspace } = await firstWorkspace();
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
-    };
+    return emptyWorkspace("Рабочее пространство не найдено. Обновите страницу или войдите заново.");
   }
 
   const members = await safeApiGet<MembersResponse>(`/api/v1/workspaces/${workspace.id}/members`);
   return {
-    ...fallback,
+    ...emptyWorkspace(),
     modeLabel: "api",
-    notice: members ? undefined : "Список участников из API недоступен. Показаны демо-данные.",
-    roles: members?.members.length
-      ? members.members.map((member) => ({
+    notice: members ? undefined : "Участники сейчас не загрузились. Попробуйте обновить страницу.",
+    roles: (members?.members ?? []).map((member) => ({
           permissions: publicationPermissionLabel(member.publication_permission),
           role: roleLabel(member.role),
           tone: member.role === "owner" ? "success" : "neutral",
           user: member.display_name || member.email,
-        }))
-      : fallback.roles,
+        })),
   };
 }
 
 async function apiAccount(): Promise<AccountViewModel> {
-  const fallback = fixtureAccount();
   const [me, sessions] = await Promise.all([
     safeApiGet<MeResponse>("/api/v1/me"),
     safeApiGet<SessionsResponse>("/api/v1/me/sessions"),
@@ -426,23 +458,22 @@ async function apiAccount(): Promise<AccountViewModel> {
 
   return {
     modeLabel: "api",
-    notice: me && sessions ? undefined : "Данные аккаунта из API недоступны частично. Показаны демо-значения.",
+    notice: me && sessions ? undefined : "Часть данных аккаунта сейчас не загрузилась. Попробуйте обновить страницу.",
     sessions: sessions?.sessions.length
       ? sessions.sessions.map((session) => ({
-          client: session.user_agent ?? "неизвестный клиент",
-          device: session.current ? "Текущее устройство" : "Сессия",
+          ...sessionLabels(session.user_agent, session.current),
           seen: formatDate(session.last_seen_at),
-          state: session.revoked_at ? "отозвана" : session.current ? "текущая" : "активна",
+          state: session.revoked_at ? "завершена" : session.current ? "текущая" : "активна",
         }))
-      : fallback.sessions,
+      : [],
     settings: me
       ? [
           { label: "Почта", status: me.user.email_verified ? "подтверждена" : "не подтверждена", value: me.user.email },
-          { label: "Имя", status: "из профиля", value: me.user.display_name },
-          { label: "Workspace", status: "доступно", value: String(me.workspaces.length) },
-          { label: "Сессии", status: sessions ? "получены" : "демо", value: String(sessions?.sessions.length ?? fallback.sessions.length) },
+          { label: "Имя", status: "указано вами", value: me.user.display_name },
+          { label: "Кабинеты", status: me.workspaces.length === 1 ? "доступен" : "доступно", value: String(me.workspaces.length) },
+          { label: "Устройства", status: sessions ? "выполнен вход" : "временно не загрузились", value: sessions ? String(sessions.sessions.length) : "—" },
         ]
-      : fallback.settings,
+      : [],
   };
 }
 
@@ -454,11 +485,7 @@ export async function getIntegrationsViewModel(): Promise<IntegrationsViewModel>
   try {
     return await apiIntegrations();
   } catch {
-    return {
-      ...fixtureIntegrations(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyIntegrations("Подключения сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -470,11 +497,7 @@ export async function getBillingViewModel(): Promise<BillingViewModel> {
   try {
     return await apiBilling();
   } catch {
-    return {
-      ...fixtureBilling(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyBilling("Данные тарифа сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -486,11 +509,7 @@ export async function getWorkspaceViewModel(): Promise<WorkspaceViewModel> {
   try {
     return await apiWorkspace();
   } catch {
-    return {
-      ...fixtureWorkspace(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyWorkspace("Участники сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -503,9 +522,10 @@ export async function getAccountViewModel(): Promise<AccountViewModel> {
     return await apiAccount();
   } catch {
     return {
-      ...fixtureAccount(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
+      modeLabel: "api",
+      notice: "Данные аккаунта сейчас не загрузились. Попробуйте обновить страницу.",
+      sessions: [],
+      settings: [],
     };
   }
 }

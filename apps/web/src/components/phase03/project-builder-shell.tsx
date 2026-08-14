@@ -56,7 +56,6 @@ const projectEntryPointIcons = {
 export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewModel }) {
   return (
     <div className="grid gap-4">
-      <BuilderHeader title="Проекты" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -98,7 +97,6 @@ export function ProjectIndexShell({ viewModel }: { viewModel: ProjectIndexViewMo
               <div className="flex flex-wrap gap-2">
                 <Badge tone={project.status === "активен" ? "success" : "warning"}>{project.status}</Badge>
                 <Badge>{project.rubrics}</Badge>
-                <Badge>{project.version}</Badge>
               </div>
               <Button asChild size="sm" variant="secondary">
                 <Link href={project.href}>Открыть</Link>
@@ -170,7 +168,6 @@ export function ProjectDetailShell({
 }) {
   return (
     <div className="grid gap-4">
-      <BuilderHeader title="Проект" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -379,7 +376,6 @@ export function RubricBuilderShell({
   if (viewModel.modeLabel === "api") {
     return (
       <div className="grid min-w-0 gap-5">
-        <BuilderHeader title="Рубрики проекта" />
         <section className="grid gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -395,12 +391,12 @@ export function RubricBuilderShell({
               <Button asChild variant="secondary">
                 <Link href={`/app/projects/${projectId}`}>Открыть проект</Link>
               </Button>
-              <Button asChild>
+              {viewModel.rubrics.length ? <Button asChild>
                 <Link href={`/app/projects/${projectId}/rubrics/new`}>
                   <Plus size={16} />
                   Добавить рубрику
                 </Link>
-              </Button>
+              </Button> : null}
             </div>
           </div>
 
@@ -711,12 +707,7 @@ export function NewRubricShell({
   viewModel: RubricBuilderViewModel;
 }) {
   if (viewModel.modeLabel === "api") {
-    return (
-      <div className="grid min-w-0 gap-5">
-        <BuilderHeader title="Новая рубрика" />
-        <RubricCreateForm projectId={projectId} projectLabel={viewModel.projectLabel || "Проект"} />
-      </div>
-    );
+    return <RubricCreateForm projectId={projectId} projectLabel={viewModel.projectLabel || "Проект"} />;
   }
 
   return (
@@ -1070,12 +1061,7 @@ export function ProjectSettingsShell({
   viewModel: ProjectSettingsViewModel;
 }) {
   if (viewModel.modeLabel === "api" && viewModel.project) {
-    return (
-      <div className="grid min-w-0 gap-5">
-        <BuilderHeader title="Правила проекта" />
-        <ProjectRulesForm project={viewModel.project} projectId={projectId} />
-      </div>
-    );
+    return <ProjectRulesForm project={viewModel.project} projectId={projectId} />;
   }
 
   return (

@@ -1,21 +1,17 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpenCheck,
-  Blocks,
   FileText,
   FolderKanban,
   Mic,
   NotebookPen,
   Plus,
-  Settings2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { UsageMeter } from "@/components/ui/usage-meter";
 import { getDashboardViewModel } from "@/services/dashboard";
 
 export default async function DashboardView() {
@@ -34,26 +30,16 @@ export default async function DashboardView() {
             Надиктуйте материал целиком или частями. Проект применит ваш стиль и примеры, а рубрику можно выбрать только при необходимости.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="secondary">
-            <Link href="/app/notebook">
-              <NotebookPen size={16} />
-              Быстрая заметка
-            </Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link href="/app/projects/new">
-              <Plus size={16} />
-              Новый проект
-            </Link>
-          </Button>
+        {hasProjects ? (
+          <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href={hasProjects ? "/app/content/new" : "/app/projects/new"}>
+            <Link href="/app/content/new">
               <Mic size={16} />
               Начать с диктовки
             </Link>
           </Button>
-        </div>
+          </div>
+        ) : null}
       </section>
 
       {dashboard.notice ? (
@@ -66,10 +52,10 @@ export default async function DashboardView() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold text-foreground">Блокнот</h2>
-            <p className="mt-1 text-sm leading-6 text-muted">Мысли без обязательного проекта, рубрики и запуска ИИ.</p>
+            <p className="mt-1 text-sm leading-6 text-muted">Мысли без обязательного проекта, рубрики и подготовки публикации.</p>
           </div>
           <Button asChild size="sm" variant="secondary">
-            <Link href="/app/notebook">Открыть блокнот</Link>
+            <Link href="/app/notebook">Новая заметка</Link>
           </Button>
         </div>
         {dashboard.recentNotes.length ? (
@@ -85,7 +71,6 @@ export default async function DashboardView() {
           <Card className="grid justify-items-start gap-3 border-dashed p-5">
             <NotebookPen className="text-muted" size={22} />
             <p className="text-sm leading-6 text-muted">Сохраните идею сейчас — проект можно выбрать позже.</p>
-            <Button asChild><Link href="/app/notebook">Записать идею</Link></Button>
           </Card>
         )}
       </section>
@@ -119,30 +104,13 @@ export default async function DashboardView() {
                   </div>
                   <Badge>{project.rubricCount ? `${project.rubricCount} ${project.rubricCount === 1 ? "рубрика" : "рубрики"}` : "без рубрик"}</Badge>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Button asChild>
-                    <Link href={`/app/content/new?project=${project.href.split("/").pop()}`}>
-                      <Mic size={16} />
-                      Новая публикация
-                    </Link>
-                  </Button>
+                <div>
                   <Button asChild variant="secondary">
                     <Link href={project.href}>
                       Открыть проект
                       <ArrowRight size={16} />
                     </Link>
                   </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-                  <Link className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground" href={`${project.href}/settings`}>
-                    <Settings2 size={14} /> Общие правила
-                  </Link>
-                  <Link className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground" href={`${project.href}/examples`}>
-                    <BookOpenCheck size={14} /> Примеры
-                  </Link>
-                  <Link className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground" href={`${project.href}/rubrics`}>
-                    <Blocks size={14} /> Рубрики
-                  </Link>
                 </div>
               </Card>
             ))}
@@ -168,7 +136,7 @@ export default async function DashboardView() {
         )}
       </section>
 
-      <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid min-w-0 gap-4">
         <Card className="grid min-w-0 gap-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -200,17 +168,6 @@ export default async function DashboardView() {
           )}
         </Card>
 
-        <Card className="grid content-start gap-4 p-5">
-          <div>
-            <div className="text-sm font-semibold text-foreground">Тариф и использование</div>
-            <div className="mt-1 text-xs text-muted">{dashboard.planLabel || "Текущий тариф"}</div>
-          </div>
-          {dashboard.usageRows.length ? dashboard.usageRows.map((row) => (
-            <UsageMeter key={row.label} {...row} />
-          )) : (
-            <p className="text-sm leading-6 text-muted">Данные использования появятся после первой работы.</p>
-          )}
-        </Card>
       </section>
     </div>
   );

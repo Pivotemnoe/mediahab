@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { BrandMark } from "@/components/layout/brand-mark";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { FirstRunTour } from "@/components/layout/first-run-tour";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Topbar } from "@/components/layout/topbar";
 import { OfflineStatus } from "@/components/pwa/offline-status";
@@ -96,6 +97,7 @@ export function CabinetShell({ children }: { children: ReactNode }) {
       </div>
       <MobileNav />
       <OfflineStatus />
+      <FirstRunTour />
     </div>
   );
 }

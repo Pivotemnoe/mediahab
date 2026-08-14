@@ -108,6 +108,18 @@ function fixtureCalendar(): CalendarViewModel {
   };
 }
 
+function emptyExamples(notice?: string): ExamplesLibraryViewModel {
+  return { examples: [], filters: [], modeLabel: "api", notice };
+}
+
+function emptyMedia(notice?: string): MediaLibraryViewModel {
+  return { filters: [], items: [], modeLabel: "api", notice, warnings: [] };
+}
+
+function emptyCalendar(notice?: string): CalendarViewModel {
+  return { days: [], modeLabel: "api", notice, queue: [] };
+}
+
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     approved: "одобрено",
@@ -178,14 +190,9 @@ async function rubricNameMap(projectId: string): Promise<Map<string, string>> {
 }
 
 async function apiExamples(): Promise<ExamplesLibraryViewModel> {
-  const fallback = fixtureExamples();
   const projectId = await firstProjectId();
   if (!projectId) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но проект не найден. Показаны демо-данные.",
-    };
+    return emptyExamples("Сначала создайте проект или канал.");
   }
 
   const [examplesResponse, rubricNames] = await Promise.all([
@@ -195,30 +202,22 @@ async function apiExamples(): Promise<ExamplesLibraryViewModel> {
   const examples = examplesResponse?.examples ?? [];
 
   return {
-    ...fallback,
-    examples: examples.length
-      ? examples.map((example) => ({
+    ...emptyExamples(),
+    examples: examples.map((example) => ({
           fragments: `${example.character_count} знаков`,
           rubric: example.rubric_id ? rubricNames.get(example.rubric_id) ?? "Рубрика" : "Без рубрики",
           score: example.manual_quality_score ? `${example.manual_quality_score}/9` : "без оценки",
           status: statusLabel(example.status),
           title: example.title ?? `Пример ${example.id.slice(0, 8)}`,
-        }))
-      : fallback.examples,
-    modeLabel: "api",
-    notice: examplesResponse ? undefined : "Список примеров из API недоступен. Показаны демо-данные.",
+        })),
+    notice: examplesResponse ? undefined : "Список примеров сейчас не загрузился. Попробуйте обновить страницу.",
   };
 }
 
 async function apiMedia(): Promise<MediaLibraryViewModel> {
-  const fallback = fixtureMedia();
   const projectId = await firstProjectId();
   if (!projectId) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но проект не найден. Показаны демо-данные.",
-    };
+    return emptyMedia("Сначала создайте проект или канал.");
   }
 
   const contentId = await firstContentId(projectId);
@@ -228,32 +227,24 @@ async function apiMedia(): Promise<MediaLibraryViewModel> {
   const media = mediaResponse?.media ?? [];
 
   return {
-    ...fallback,
-    items: media.length
-      ? media.map((item, index) => ({
+    ...emptyMedia(),
+    items: media.map((item, index) => ({
           compatibility: `media_id ${item.media_asset_id.slice(0, 8)}`,
           index: String(index + 1).padStart(2, "0"),
           role: item.role,
           status: "связано",
           title: item.caption ?? `Медиа ${item.media_asset_id.slice(0, 8)}`,
           type: "медиа",
-        }))
-      : fallback.items,
-    modeLabel: "api",
-    notice: mediaResponse ? undefined : "Медиа материала из API недоступны. Показаны демо-данные.",
+        })),
+    notice: contentId && !mediaResponse ? "Медиа материала сейчас не загрузились. Попробуйте обновить страницу." : undefined,
   };
 }
 
 async function apiCalendar(): Promise<CalendarViewModel> {
-  const fallback = fixtureCalendar();
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но рабочее пространство не найдено. Показаны демо-данные.",
-    };
+    return emptyCalendar("Рабочее пространство не найдено. Обновите страницу или войдите заново.");
   }
   const publicationsResponse = await safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`);
   const publications = publicationsResponse?.publications ?? [];
@@ -267,23 +258,19 @@ async function apiCalendar(): Promise<CalendarViewModel> {
   }
 
   return {
-    days: dayCounts.size
-      ? Array.from(dayCounts.entries()).map(([day, count]) => ({
+    days: Array.from(dayCounts.entries()).map(([day, count]) => ({
           day,
           note: `${count} событие публикации`,
           status: `${count} публикац.`,
-        }))
-      : fallback.days,
+        })),
     modeLabel: "api",
-    notice: publicationsResponse ? undefined : "Расписание из API недоступно. Показаны демо-данные.",
-    queue: scheduled.length
-      ? scheduled.map((publication) => ({
+    notice: publicationsResponse ? undefined : "Расписание сейчас не загрузилось. Попробуйте обновить страницу.",
+    queue: scheduled.map((publication) => ({
           date: formatDate(publication.scheduled_at ?? publication.queued_at),
           note: publication.last_error_message ?? publication.publication_method ?? "ожидает обработки",
           status: statusLabel(publication.status),
           title: `Публикация ${publication.id.slice(0, 8)}`,
-        }))
-      : fallback.queue,
+        })),
   };
 }
 
@@ -295,11 +282,7 @@ export async function getExamplesLibraryViewModel(): Promise<ExamplesLibraryView
   try {
     return await apiExamples();
   } catch {
-    return {
-      ...fixtureExamples(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyExamples("Примеры сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -311,11 +294,7 @@ export async function getMediaLibraryViewModel(): Promise<MediaLibraryViewModel>
   try {
     return await apiMedia();
   } catch {
-    return {
-      ...fixtureMedia(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyMedia("Медиа сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 
@@ -327,10 +306,6 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
   try {
     return await apiCalendar();
   } catch {
-    return {
-      ...fixtureCalendar(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyCalendar("Расписание сейчас не загрузилось. Попробуйте обновить страницу.");
   }
 }

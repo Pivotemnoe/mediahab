@@ -49,7 +49,8 @@ assert.match(examplesSource, /existingApprovedCount/);
 assert.match(examplesSource, /<fieldset className="contents" disabled=\{isSubmitting\}>/);
 assert.match(examplesShellSource, /Добавляйте удачные публикации/);
 assert.match(examplesShellSource, /key=\{example\.id\}/);
-assert.match(examplesShellSource, /<h2 className="mt-3 break-words text-3xl font-semibold text-ink">\{viewModel\.projectLabel\}<\/h2>/);
+assert.match(examplesShellSource, /<h1 className="mt-3 break-words text-3xl font-semibold text-ink">\{viewModel\.projectLabel\}<\/h1>/);
+assert.doesNotMatch(examplesShellSource, /<AiHeader title="Удачные посты"/);
 assert.doesNotMatch(examplesShellSource, /Библиотека примеров/);
 
 for (const spec of [englishSpec, russianSpec]) {

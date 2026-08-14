@@ -61,7 +61,7 @@ export function LoadingState({ className }: { className?: string }) {
     <Card className={cn("grid place-items-center px-6 py-10 text-center", className)}>
       <LoaderCircle className="animate-spin text-primary" size={28} />
       <div className="mt-4 text-sm font-medium text-foreground">Загрузка</div>
-      <div className="mt-1 text-sm text-muted">Получаем данные рабочего пространства.</div>
+      <div className="mt-1 text-sm text-muted">Загружаем ваш кабинет.</div>
     </Card>
   );
 }
@@ -70,7 +70,7 @@ export function EmptyState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Здесь появятся материалы после первого действия пользователя."
+      description="Здесь появятся ваши материалы после первого сохранения."
       icon={FileQuestion}
       title="Пока пусто"
     />
@@ -81,7 +81,7 @@ export function ErrorState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Действие не выполнено. Покажите безопасное описание ошибки и предложите повторить."
+      description="Попробуйте обновить страницу. Сохранённые материалы не удалены."
       icon={AlertTriangle}
       title="Не удалось загрузить"
       tone="danger"
@@ -93,7 +93,7 @@ export function OfflineState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Черновики можно продолжить локально, но ИИ-генерация и публикация требуют соединения."
+      description="Черновик можно продолжить. Для подготовки версий и публикации понадобится интернет."
       icon={CloudOff}
       title="Нет соединения"
       tone="warning"
@@ -105,7 +105,7 @@ export function PermissionState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="У текущей роли нет прав на это действие. Сервер всё равно остаётся источником прав."
+      description="Для этого действия нужен другой уровень доступа. Обратитесь к владельцу кабинета."
       icon={LockKeyhole}
       title="Недостаточно прав"
       tone="warning"
@@ -117,7 +117,7 @@ export function LimitReachedState({ className }: { className?: string }) {
   return (
     <ScreenState
       className={className}
-      description="Лимит тарифа достигнут. Интерфейс должен объяснить, что именно ограничено."
+      description="Доступный объём на сегодня закончился. Подробности указаны рядом с нужным действием."
       icon={Ban}
       title="Лимит достигнут"
       tone="warning"

@@ -55,12 +55,12 @@ assert.equal(conflict.tone, "warning");
 
 const rejected = guidedActionStateFromApiError(apiError("validation_error", 400, "req-validation"));
 assert.equal(rejected.recoveryAction, "retry");
-assert.match(rejected.message, /Сервер отклонил сохранение/);
+assert.equal(rejected.message, "Изменение не сохранено. Проверьте поле и повторите действие.");
 assert.equal(rejected.tone, "danger");
 
 const serverError = guidedActionStateFromApiError(apiError("backend_error", 503, "req-backend"));
 assert.equal(serverError.recoveryAction, "retry");
-assert.match(serverError.message, /Сервер сейчас недоступен/);
+assert.equal(serverError.message, "Сейчас не удаётся сохранить изменение. Повторите позже.");
 assert.equal(serverError.requestId, "req-backend");
 
 const unavailable = guidedActionUnavailableState();
@@ -74,8 +74,8 @@ assert.deepEqual(normalize(unavailable), {
 
 assert.equal(guidedActionRecoveryAction("version_conflict"), "refresh");
 assert.equal(guidedActionRecoveryAction("unknown_code"), "retry");
-assert.match(guidedActionMessageForCode("unknown_code", 500), /Сервер сейчас недоступен/);
-assert.match(guidedActionMessageForCode("unknown_code", 422), /Сервер отклонил сохранение/);
+assert.equal(guidedActionMessageForCode("unknown_code", 500), "Сейчас не удаётся сохранить изменение. Повторите позже.");
+assert.equal(guidedActionMessageForCode("unknown_code", 422), "Изменение не сохранено. Проверьте поле и повторите действие.");
 
 console.log("guided action error mapping checks passed");
 

@@ -34,7 +34,7 @@ const workflow = [
 ] as const;
 
 const trustPoints = [
-  ["Факты остаются вашими", "ИИ редактирует подачу, но не должен придумывать цены, адреса и выводы.", ShieldCheck],
+  ["Факты остаются вашими", "Редактор улучшает подачу, но не должен придумывать цены, адреса и выводы.", ShieldCheck],
   ["Правила запоминаются", "Общий стиль, рубрики, примеры и ограничения применяются при каждой новой сборке.", FileText],
   ["Каждая версия проверяется", "Никаких публикаций без вашего явного подтверждения.", CheckCircle2],
 ] as const;
@@ -196,7 +196,7 @@ export default function MarketingIndex() {
         <div className="mx-auto grid max-w-[1440px] gap-7 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:px-12">
           <div>
             <Badge tone="success">Вы управляете результатом</Badge>
-            <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">ИИ помогает редактурой. Решение остаётся вашим.</h2>
+            <h2 className="font-editorial mt-4 max-w-4xl text-4xl leading-tight text-foreground sm:text-5xl">Редактор помогает с подачей. Решение остаётся вашим.</h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">Исходник, готовые версии и изменения разделены. Можно поправить одну площадку, не затрагивая остальные, и ничего не отправлять до финальной проверки.</p>
           </div>
           <div className="grid gap-3">

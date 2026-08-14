@@ -16,6 +16,7 @@ import {
   initialGuidedActionState,
   type GuidedActionState,
 } from "@/services/guided-action-state";
+import { userFacingApiError } from "@/lib/user-facing-api-error";
 import {
   type BlockOut,
   type ContentMediaResponse,
@@ -100,21 +101,7 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    let message = `Сервер вернул ошибку ${response.status}.`;
-    try {
-      const payload = await response.json() as {
-        error?: {
-          code?: string;
-          message?: string;
-        };
-      };
-      if (payload.error?.message) {
-        message = payload.error.message;
-      }
-    } catch {
-      // Keep normalized fallback.
-    }
-    throw new Error(message);
+    throw new Error(await userFacingApiError(response));
   }
 
   return response.json() as Promise<T>;
@@ -471,13 +458,13 @@ export function PilotVoiceTelegramPanel({
               <Mic size={18} className="text-primary" />
               Сбор материала
               <HintPopover
-                body="Это основной блок сбора: сюда надиктовываются факты, прикрепляются медиа, затем материал передаётся на ИИ-сборку и версии площадок."
+                body="Это основной блок сбора: сюда надиктовываются факты, прикрепляются медиа, затем редактор готовит версии для площадок."
                 storageKey="tmh-learning-content-studio"
                 title="Сбор материала"
               />
             </div>
             <p className="mt-2 break-words text-sm leading-6 text-muted">
-              Выберите блок, надиктуйте или вставьте текст, проверьте расшифровку и только потом запускайте ИИ-сборку.
+              Выберите блок, надиктуйте или вставьте текст, проверьте расшифровку и только потом запускайте сборку.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -509,7 +496,7 @@ export function PilotVoiceTelegramPanel({
           <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground">
             Следующий блок материала
             <HintPopover
-              body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так ИИ понимает структуру будущего материала."
+              body="Выберите, какой факт вы сейчас диктуете: атмосферу, название, адрес или итог. Так сохраняется структура будущего материала."
               storageKey="tmh-learning-content-studio"
               title="Поле диктовки"
             />
@@ -633,14 +620,14 @@ export function PilotVoiceTelegramPanel({
         </div>
       </ComposerSection>
 
-      <ComposerSection title="5. ИИ-сборка и версии">
+      <ComposerSection title="5. Сборка и версии">
         <div className="flex items-start gap-2 rounded-md bg-surface-muted p-3 text-xs leading-5 text-muted">
           <HintPopover
-            body="Здесь ИИ собирает мастер-материал из диктовки, фактов и медиа, а затем готовит первую платформенную версию."
+            body="Здесь редактор собирает цельный материал из диктовки, фактов и медиа, а затем готовит первую версию для площадки."
             storageKey="tmh-learning-content-studio"
-            title="ИИ-сборка и версии"
+            title="Сборка и версии"
           />
-          <span className="min-w-0 break-words">ИИ работает после сбора фактов. Версии площадок проверяются отдельно перед публикацией.</span>
+          <span className="min-w-0 break-words">Редактура начинается после сбора фактов. Версии площадок проверяются отдельно перед публикацией.</span>
         </div>
         <div className="grid min-w-0 gap-3 lg:grid-cols-3">
           <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(analysisState.tone)}`}>
@@ -653,7 +640,7 @@ export function PilotVoiceTelegramPanel({
               onClick={() => startAnalysisTransition(() => submitAction(analysisAction))}
             >
               {analysisBusy ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
-              ИИ-разбор
+              Подготовка текста
             </Button>
           </div>
           <div className={`grid gap-2 rounded-md border p-3 ${actionToneClass(fullDraftState.tone)}`}>

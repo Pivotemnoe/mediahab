@@ -220,6 +220,21 @@ function fixtureAiPipeline(): AiPipelineViewModel {
   };
 }
 
+function emptyAiPipeline(notice?: string): AiPipelineViewModel {
+  return {
+    context: {
+      content: "Материал не выбран",
+      project: "Проект не выбран",
+    },
+    examples: [],
+    factGuards: [],
+    modeLabel: "api",
+    notice,
+    runs: [],
+    steps: [],
+  };
+}
+
 async function firstWorkspaceProject(): Promise<ProjectOut | null> {
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
@@ -301,15 +316,10 @@ function exampleMetrics(examples: ExamplePreviewViewModel[]): ProjectExamplesVie
 }
 
 async function apiAiPipeline(): Promise<AiPipelineViewModel> {
-  const fallback = fixtureAiPipeline();
   const project = await firstWorkspaceProject();
 
   if (!project) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "API-режим включён, но проект не найден. Показаны демо-данные.",
-    };
+    return emptyAiPipeline("Сначала создайте проект или канал.");
   }
 
   const [{ examplesResponse, items }, contentLabel] = await Promise.all([
@@ -327,12 +337,12 @@ async function apiAiPipeline(): Promise<AiPipelineViewModel> {
       content: contentLabel ?? "материал не найден",
       project: project.name,
     },
-    examples: items.length ? items.slice(0, 3) : fallback.examples,
+    examples: items.slice(0, 3),
     factGuards,
     modeLabel: "api",
     notice: notices.length ? `${notices.join(" ")} Статусы запуска показаны как техническая готовность.` : undefined,
     runs: apiRunRows(Boolean(contentLabel)),
-    steps: fallbackSteps,
+    steps: [],
   };
 }
 
@@ -362,11 +372,7 @@ export async function getAiPipelineViewModel(): Promise<AiPipelineViewModel> {
   try {
     return await apiAiPipeline();
   } catch {
-    return {
-      ...fixtureAiPipeline(),
-      modeLabel: "fixtures после ошибки API",
-      notice: "API-режим включён, но backend недоступен. Показаны демо-данные.",
-    };
+    return emptyAiPipeline("Данные помощника сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }
 

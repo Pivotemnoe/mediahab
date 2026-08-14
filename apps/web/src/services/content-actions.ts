@@ -106,7 +106,7 @@ function messageState(
 function generationMessage(run: GenerationRunOut): GuidedActionState {
   if (run.status !== "completed") {
     return messageState(
-      run.error_message || "ИИ не смог собрать мастер-текст. Проверьте заполненные факты и повторите.",
+      "Не удалось собрать мастер-текст. Проверьте заполненные факты и повторите.",
       {
         code: run.error_code ?? "generation_failed",
         tone: "danger",
@@ -119,7 +119,7 @@ function generationMessage(run: GenerationRunOut): GuidedActionState {
   return messageState(
     masterText
       ? `Мастер-текст собран: ${masterText.length} знаков. Проверьте версии и выберите площадку публикации.`
-      : "Мастер-текст собран, но сервер не вернул текст в ответе. Обновите страницу перед публикацией.",
+      : "Мастер-текст не открылся. Обновите страницу перед публикацией.",
   );
 }
 
@@ -311,7 +311,7 @@ export async function prepareFullTelegramDraftAction(
     );
     const variant = generated.variants.find((item) => item.platform_key === "telegram");
     if (!variant) {
-      return messageState("Мастер собран, но сервер не вернул Telegram-версию.", {
+      return messageState("Telegram-версия не была подготовлена. Повторите после обновления страницы.", {
         code: "telegram_variant_missing",
         tone: "danger",
       });
@@ -427,7 +427,7 @@ export async function publishPilotTelegramAction(
     );
     const variant = generated.variants.find((item) => item.platform_key === "telegram");
     if (!variant) {
-      return messageState("Сервер не вернул Telegram-версию. Повторите после обновления страницы.", {
+      return messageState("Telegram-версия не была подготовлена. Повторите после обновления страницы.", {
         code: "telegram_variant_missing",
         tone: "danger",
       });

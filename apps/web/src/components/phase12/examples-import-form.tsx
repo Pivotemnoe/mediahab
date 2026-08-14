@@ -158,7 +158,7 @@ export function ExamplesImportForm({
           <progress aria-label={`Для быстрого старта сохранено и выбрано ${Math.min(readinessCount, QUICK_START_EXAMPLES)} из ${QUICK_START_EXAMPLES} постов`} className="mt-2 h-2 w-full accent-primary" max={QUICK_START_EXAMPLES} value={Math.min(readinessCount, QUICK_START_EXAMPLES)} />
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-2 text-xs text-muted"><span>Устойчивый стиль</span><strong className="text-foreground">{Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из {STEADY_STYLE_EXAMPLES}</strong></div>
           <progress aria-label={`Для устойчивого стиля сохранено и выбрано ${Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} из ${STEADY_STYLE_EXAMPLES} постов`} className="mt-1.5 h-1.5 w-full accent-success" max={STEADY_STYLE_EXAMPLES} value={Math.min(readinessCount, STEADY_STYLE_EXAMPLES)} />
-          <p className="mt-2 text-xs leading-5 text-muted">Сохранено: {existingApprovedCount}. В этой загрузке: {selectedCount}. Ни один уровень не блокирует работу.</p>
+          <p className="mt-2 text-xs leading-5 text-muted">{existingApprovedCount ? `Уже сохранено: ${existingApprovedCount}.` : "Можно начать и без примеров."}</p>
         </div>
       </div>
 
@@ -238,7 +238,10 @@ export function ExamplesImportForm({
               <CheckCircle2 className="text-success" size={20} />
               {result.imported ? "Новые примеры добавлены" : "Эти посты уже были в подборке"}
             </div>
-            <p className="text-sm leading-6 text-muted">Новых: {result.imported}. Совпадений: {result.duplicates}. Новые примеры сразу одобрены; статус найденных совпадений не менялся.</p>
+            <p className="text-sm leading-6 text-muted">
+              {result.imported ? `Добавлено: ${result.imported}.` : null}
+              {result.duplicates ? ` Ещё ${result.duplicates} уже были в подборке.` : null}
+            </p>
             <Button asChild className="justify-self-start"><Link href={`/app/content/new?project=${projectId}`}><Mic size={16} />Надиктовать первый пост</Link></Button>
           </div>
         ) : null}
@@ -251,7 +254,7 @@ export function ExamplesImportForm({
             {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             Сохранить {selectedCount ? `${selectedCount} ${russianCountLabel(selectedCount, "пост", "поста", "постов")}` : "подборку"}
           </Button>
-          <span className="text-xs leading-5 text-muted">Новые посты сразу становятся одобренными примерами; найденные совпадения сохраняют прежний статус.</span>
+          <span className="text-xs leading-5 text-muted">Сохранённые посты используются только как примеры стиля.</span>
         </div>
         </fieldset>
       </form>

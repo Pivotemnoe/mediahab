@@ -45,6 +45,7 @@ import {
   updateOfflineNotebookEntry,
   type OfflineNotebookEntry,
 } from "@/services/offline-notebook";
+import { userFacingApiError } from "@/lib/user-facing-api-error";
 
 type SaveState = "idle" | "offline" | "saved" | "saving" | "error";
 type ListMode = "active" | "archived" | "deleted";
@@ -73,8 +74,7 @@ async function apiRequest<T>(
     method: options.method,
   });
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
-    throw new Error(payload?.error?.message || `Ошибка сервера ${response.status}.`);
+    throw new Error(await userFacingApiError(response));
   }
   return response.json() as Promise<T>;
 }
@@ -100,7 +100,7 @@ function savedLabel(state: SaveState): string {
   return {
     error: "не сохранено",
     idle: "",
-    offline: "offline · черновик на устройстве",
+    offline: "без интернета · черновик сохранён",
     saved: "сохранено",
     saving: "сохраняю…",
   }[state];
@@ -502,7 +502,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
         setMessage(`Отправлено в блокнот: ${synchronized}.`);
       } else if (failed) {
         setServerUnavailable(true);
-        setMessage("Сохранённые заметки остались на устройстве. Повторим, когда API станет доступен.");
+        setMessage("Сохранённые заметки остались на устройстве. Повторим отправку, когда сервис станет доступен.");
       }
       if (synchronizedVoiceEntryId && quickVoiceEntryIdRef.current === synchronizedVoiceEntryId) {
         quickVoiceEntryIdRef.current = null;
@@ -642,7 +642,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       setDraft("");
       setDraftLocalState("empty");
       await refreshOfflineEntries();
-      setMessage("Заметка сначала сохранена на этом устройстве.");
+      setMessage("Заметка сохранена. Отправим её, когда появится интернет.");
       if (navigator.onLine) void synchronizeOfflineEntries();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось сохранить заметку.");
@@ -688,7 +688,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
     if (quickVoiceState === "saving") return;
     if (quickRecorderRef.current) {
       setQuickVoiceState("saving");
-      setMessage("Останавливаю запись и сохраняю её на этом устройстве…");
+      setMessage("Останавливаю и сохраняю запись…");
       quickRecorderRef.current.stop();
       return;
     }
@@ -745,21 +745,21 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
   const isCurrentVoiceSyncing = isSyncing && (voiceReceiptState === "saved" || quickVoiceEntryIdRef.current !== null);
   const voiceStage = quickVoiceState === "requesting"
-    ? { description: "Разрешите доступ, чтобы начать запись.", title: "Подключаем микрофон" }
+      ? { description: "Разрешите доступ, чтобы начать запись.", title: "Подключаем микрофон" }
     : quickVoiceState === "recording"
       ? { description: "Голос принимается. До остановки текущая фраза ещё не сохранена.", title: "Запись идёт" }
       : quickVoiceState === "saving"
-        ? { description: "Сначала надёжно сохраняем аудио в памяти этого устройства.", title: "Сохраняем на устройстве" }
+        ? { description: "Сохраняем запись, чтобы она не потерялась.", title: "Сохраняем запись" }
         : isSyncing
           ? isCurrentVoiceSyncing
-            ? { description: "Приложение открыто и в сети: отправляем голос и ждём расшифровку.", title: "Отправляем и расшифровываем" }
-            : { description: "Приложение открыто и в сети: отправляем сохранённые заметки.", title: "Отправляем сохранённые заметки" }
+            ? { description: "Отправляем голос и ждём расшифровку.", title: "Отправляем и расшифровываем" }
+            : { description: "Отправляем сохранённые заметки.", title: "Отправляем заметки" }
           : voiceReceiptState === "waiting"
-            ? { description: "Откройте приложение снова при интернете — тогда запись отправится.", title: "Сохранено на устройстве" }
+            ? { description: "Когда появится интернет, откройте приложение снова — запись отправится на расшифровку.", title: "Запись сохранена" }
             : voiceReceiptState === "synced"
               ? { description: "Запись отправлена, расшифрована и добавлена в блокнот.", title: "Готово" }
               : voiceReceiptState === "saved"
-                ? { description: "Локальная копия уже есть; начинаем отправку.", title: "Сохранено на устройстве" }
+                ? { description: "Запись уже сохранена; начинаем отправку.", title: "Запись сохранена" }
                 : voiceReceiptState === "error"
                   ? { description: "Проверьте разрешение микрофона или повторите запись.", title: "Запись не завершена" }
                   : null;
@@ -778,12 +778,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       </section>
 
       <Card className="grid gap-3 p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
-          <Badge tone={isOnline && !serverUnavailable ? "success" : "warning"}>
-            {isOnline && !serverUnavailable ? "связь есть" : "сохраняем на устройстве"}
-          </Badge>
-        </div>
+        <label className="text-sm font-semibold text-foreground" htmlFor="quick-note">Быстрая заметка</label>
         <textarea
           className="min-h-28 w-full resize-y rounded-lg border border-border bg-background p-3 text-base leading-6 outline-none focus:border-primary"
           id="quick-note"
@@ -822,9 +817,9 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 text-xs text-muted">
-            {draftLocalState === "saving" ? <><Loader2 className="animate-spin" size={13} />Сохраняю черновик на устройстве…</>
-              : draftLocalState === "saved" ? <><CheckCircle2 className="text-success" size={14} />Черновик сохранён на этом устройстве</>
-                : "Текст сохраняется на этом устройстве автоматически."}
+            {draftLocalState === "saving" ? <><Loader2 className="animate-spin" size={13} />Сохраняю черновик…</>
+              : draftLocalState === "saved" ? <><CheckCircle2 className="text-success" size={14} />Черновик сохранён</>
+                : "Текст сохранится автоматически. Кнопка добавит его в блокнот."}
           </span>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -840,7 +835,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                 : quickVoiceState === "requesting"
                   ? "Подключаем микрофон…"
                 : quickVoiceState === "saving"
-                  ? "Сохраняю на устройстве…"
+                  ? "Сохраняю запись…"
                   : "Надиктовать заметку"}
             </Button>
             <Button
@@ -848,7 +843,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
               onClick={() => void createNote()}
               type="button"
             >
-              <Lightbulb size={16} /> Сохранить идею
+              <Lightbulb size={16} /> Добавить в блокнот
             </Button>
           </div>
         </div>
@@ -860,10 +855,10 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
             <div className="grid gap-1">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 {isOnline && !serverUnavailable ? <CloudUpload className="text-primary" size={19} /> : <HardDrive className="text-primary" size={19} />}
-                Сохранено на этом устройстве: {offlineEntries.length}
+                Ожидают отправки: {offlineEntries.length}
               </div>
               <p className="text-sm leading-5 text-muted">
-                После остановки записи текст и голос хранятся здесь до успешной отправки. На iPhone откройте приложение снова, когда появится интернет.
+                Записи не потерялись. Когда появится интернет, откройте приложение снова, чтобы отправить их.
               </p>
             </div>
             <Button
@@ -884,7 +879,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                     {entry.audioBlob?.size ? "Голосовая заметка" : "Текстовая заметка"}
                     {entry.status === "syncing" ? <Badge tone="info">отправляется</Badge>
                       : entry.status === "error" ? <Badge tone="warning">не отправлено</Badge>
-                        : <Badge tone={isOnline ? "neutral" : "success"}>{isOnline ? "готово к отправке" : "на устройстве"}</Badge>}
+                        : <Badge tone={isOnline ? "neutral" : "success"}>{isOnline ? "готово к отправке" : "сохранено"}</Badge>}
                   </div>
                   <p className="mt-1 truncate text-sm text-muted">
                     {entry.body || "Аудио расшифруется после появления связи."}
@@ -895,7 +890,7 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
                 <Button
                   disabled={isSyncing || entry.status === "syncing"}
                   onClick={async () => {
-                    if (!window.confirm("Удалить эту ещё не отправленную заметку с устройства?")) return;
+                    if (!window.confirm("Удалить эту ещё не отправленную заметку?")) return;
                     await deleteOfflineNotebookEntry(entry.id);
                     if (entry.id === quickVoiceEntryIdRef.current) {
                       quickVoiceEntryIdRef.current = null;
@@ -916,20 +911,20 @@ export function NotebookView({ viewModel }: { viewModel: NotebookViewModel }) {
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => void loadMode("active")} variant={mode === "active" ? "primary" : "secondary"}>Заметки</Button>
-          <Button onClick={() => void loadMode("archived")} variant={mode === "archived" ? "primary" : "secondary"}>Архив</Button>
-          <Button onClick={() => void loadMode("deleted")} variant={mode === "deleted" ? "primary" : "secondary"}>Корзина</Button>
+        <div aria-label="Разделы блокнота" className="flex flex-wrap gap-2" role="tablist">
+          <Button aria-selected={mode === "active"} onClick={() => void loadMode("active")} role="tab" variant={mode === "active" ? "primary" : "secondary"}>Заметки</Button>
+          <Button aria-selected={mode === "archived"} onClick={() => void loadMode("archived")} role="tab" variant={mode === "archived" ? "primary" : "secondary"}>Архив</Button>
+          <Button aria-selected={mode === "deleted"} onClick={() => void loadMode("deleted")} role="tab" variant={mode === "deleted" ? "primary" : "secondary"}>Корзина</Button>
         </div>
         <label className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3">
           <Search className="shrink-0 text-muted" size={16} />
-          <input className="h-10 min-w-0 bg-transparent text-sm outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по заметкам" value={query} />
+          <input aria-label="Поиск по заметкам" className="h-10 min-w-0 bg-transparent text-sm outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по заметкам" value={query} />
         </label>
       </div>
 
       {message ? <p aria-live="polite" className="text-sm text-muted">{message}</p> : null}
       {!isOnline || serverUnavailable ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> История с сервера пока не обновляется. Новые заметки остаются на устройстве; откройте блокнот снова при интернете для отправки.</p>
+        <p className="flex items-center gap-2 text-sm text-muted"><WifiOff size={16} /> Общая история пока не обновляется. Новые заметки не потеряются; откройте блокнот снова, когда появится интернет.</p>
       ) : null}
       <section className="grid gap-4">
         {visible.length && viewModel.workspaceId ? visible.map((note) => (

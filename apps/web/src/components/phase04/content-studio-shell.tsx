@@ -258,7 +258,7 @@ function GuidedFormPanel({
       </div>
       <div className="flex flex-wrap gap-2">
         {viewModel.generatedFields.map((field) => (
-          <Badge key={field} tone="neutral">ИИ позже: {field}</Badge>
+          <Badge key={field} tone="neutral">Будет добавлено при сборке: {field}</Badge>
         ))}
       </div>
       <div className="grid gap-3">
@@ -268,9 +268,9 @@ function GuidedFormPanel({
       </div>
       <div className="flex flex-wrap gap-2">
         <Badge tone={viewModel.canMutate ? "success" : "neutral"}>
-          {viewModel.canMutate ? "API-сохранение включено" : "Сохранение доступно в API-режиме"}
+          {viewModel.canMutate ? "Изменения можно сохранять" : "Только просмотр"}
         </Badge>
-        <Badge>Версия: {viewModel.itemVersion ?? "fixture"}</Badge>
+        {viewModel.itemVersion ? <Badge>Версия {viewModel.itemVersion}</Badge> : null}
       </div>
     </Card>
   );
@@ -279,23 +279,22 @@ function GuidedFormPanel({
 export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewModel }) {
   return (
     <div className="grid gap-4">
-      <StudioHeader title="История" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-ink">Ваши публикации</h1>
+            <h1 className="text-3xl font-semibold text-ink">Черновики и публикации</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               Здесь сохраняются только ваши черновики и готовые материалы по всем проектам.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          {viewModel.items.length ? <div className="flex flex-wrap gap-2">
             <Button asChild>
               <Link href="/app/content/new">
                 <Plus size={16} />
                 Новая публикация
               </Link>
             </Button>
-          </div>
+          </div> : null}
         </div>
 
         {viewModel.notice ? (
@@ -337,7 +336,7 @@ export function ContentIndexShell({ viewModel }: { viewModel: ContentIndexViewMo
               <div>
                 <h2 className="text-lg font-semibold text-foreground">История пока пуста</h2>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Здесь появятся только ваши реальные материалы. Демо-публикации в рабочем кабинете не показываются.
+                  Созданные материалы появятся здесь — от первого черновика до готовой публикации.
                 </p>
               </div>
               <Button asChild>
@@ -596,7 +595,7 @@ function MaterialWizardCard({ flow }: { flow: MaterialCaptureFlowViewModel }) {
             Шаблон: {flow.templateName}
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Сначала собираем материал по блокам, потом ИИ готовит мастер и отдельные версии для площадок.
+            Сначала собираем материал по блокам, затем редактор готовит цельный текст и отдельные версии для площадок.
           </p>
         </div>
         <Badge className="max-w-full whitespace-normal text-left" tone="success">{flow.primaryOutput}</Badge>

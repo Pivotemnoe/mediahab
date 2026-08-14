@@ -88,6 +88,20 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class PilotAccessInvite(Base):
+    __tablename__ = "pilot_access_invites"
+
+    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    token_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    created_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    consumed_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
 class Workspace(Base):
     __tablename__ = "workspaces"
 

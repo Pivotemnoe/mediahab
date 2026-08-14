@@ -30,6 +30,7 @@ export function MobileNav() {
             )}
             href={item.href}
             key={item.href}
+            data-tour-target={item.href === "/app/content/new" ? "create" : item.href === "/app/notebook" ? "notebook" : item.href === "/app/style" ? "style" : undefined}
           >
             <Icon size={18} />
             <span className="max-w-full truncate px-0.5">{item.label}</span>

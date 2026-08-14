@@ -1,8 +1,12 @@
-import { PublicationCoreShell } from "@/components/phase06/publication-core-shell";
-import { getPublicationOpsViewModel } from "@/services/publications";
+import { PilotUnavailable } from "@/components/layout/pilot-unavailable";
 
-export default async function PublicationsPage() {
-  const viewModel = await getPublicationOpsViewModel();
-
-  return <PublicationCoreShell viewModel={viewModel} />;
+export default function PublicationsPage() {
+  return (
+    <PilotUnavailable
+      backHref="/app/content"
+      backLabel="Открыть историю"
+      description="Проверка и отправка доступны внутри готового материала. Отдельный журнал публикаций появится после первой тестовой группы."
+      title="Журнал публикаций готовится"
+    />
+  );
 }

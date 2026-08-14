@@ -28,14 +28,12 @@ import {
   readGuidedQueueJob,
   writeGuidedQueueJob,
 } from "@/services/guided-queue-store";
-import { buildGuidedQueueReplayRequestDraft } from "@/services/guided-queue-replay";
 
 type GuidedField = ContentStudioViewModel["guidedForm"]["fields"][number];
 type AutosaveStatus = "disabled" | "failed" | "idle" | "pending" | "queued" | "synced";
 type DraftStatus = "cleared" | "empty" | "restored" | "saved";
 type QueueStatus = "blocked" | "empty" | "queued" | "retrying" | "synced" | "unavailable";
 type DraftValues = GuidedQueueValues;
-type ReplayPreflightRoute = "field_block" | "field_item" | "incomplete" | "repeatable_group";
 
 type DraftControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -455,7 +453,6 @@ function ActionStatus({ canRetry, state }: { canRetry: boolean; state: GuidedAct
         <Icon className="mt-0.5 shrink-0" size={14} />
         <span className="min-w-0 break-words">
           {state.message}
-          {state.requestId ? <span className="block">ID запроса: {state.requestId}</span> : null}
         </span>
       </div>
       {showRefresh ? (
@@ -479,10 +476,10 @@ function ActionStatus({ canRetry, state }: { canRetry: boolean; state: GuidedAct
 
 function DraftStatusLine({ status }: { status: DraftStatus }) {
   const labels: Record<DraftStatus, string> = {
-    cleared: "Локальный черновик очищен после успешного сохранения.",
-    empty: "Локальный черновик появится здесь после ввода.",
-    restored: "Восстановлен локальный черновик из этого браузера.",
-    saved: "Локальный черновик сохранён в этом браузере.",
+    cleared: "Черновик очищен после успешного сохранения.",
+    empty: "Черновик появится здесь после ввода.",
+    restored: "Черновик восстановлен.",
+    saved: "Черновик сохранён.",
   };
 
   return (
@@ -494,12 +491,12 @@ function DraftStatusLine({ status }: { status: DraftStatus }) {
 
 function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
   const labels: Record<AutosaveStatus, string> = {
-    disabled: "Автосохранение включится в API-режиме для изменяемых полей.",
-    failed: "Автосохранение не прошло. Локальный черновик сохранён в браузере.",
+    disabled: "Автосохранение недоступно для этого поля.",
+    failed: "Автосохранение не прошло, но черновик не потерян.",
     idle: "Автосохранение ждёт ввода.",
-    pending: "Автосохраняем через сервер...",
+    pending: "Сохраняем...",
     queued: "Автосохранение запланировано.",
-    synced: "Автосохранено через сервер.",
+    synced: "Сохранено.",
   };
 
   const tone: GuidedActionState["tone"] =
@@ -515,13 +512,11 @@ function AutosaveStatusLine({ status }: { status: AutosaveStatus }) {
 function QueueStatusLine({
   canRetry,
   job,
-  onClear,
   onRetry,
   status,
 }: {
   canRetry: boolean;
   job: GuidedQueueJob | null;
-  onClear: () => void;
   onRetry: () => void;
   status: QueueStatus;
 }) {
@@ -534,8 +529,6 @@ function QueueStatusLine({
         : "idle";
   const canRetryJob = canRetry && job?.recoveryAction !== "refresh" && (status === "queued" || status === "blocked");
   const canRefreshJob = status === "blocked" && job?.recoveryAction === "refresh";
-  const replayReadiness = job ? manualReplayReadinessLabel(job) : null;
-  const replayPreflight = job ? manualReplayPreflight(job) : null;
   const retryShellStatus = retryShellOpen && canRetryJob ? "confirm" : "closed";
 
   useEffect(() => {
@@ -550,8 +543,6 @@ function QueueStatusLine({
   return (
     <div
       className={`grid gap-2 rounded-md border px-3 py-2 text-xs leading-5 ${statusClassName(tone)}`}
-      data-guided-queue-preflight={replayPreflight?.status ?? "none"}
-      data-guided-queue-preflight-route={replayPreflight?.route ?? "none"}
       data-guided-queue-kind={job?.metadata?.kind ?? "none"}
       data-guided-queue-recovery={job?.recoveryAction ?? "none"}
       data-guided-queue-retry-shell={retryShellStatus}
@@ -560,14 +551,6 @@ function QueueStatusLine({
     >
       <div>
         {queueStatusLabel(status, job)}
-        {job?.code ? <span className="block">Код: {job.code}</span> : null}
-        {job?.requestId ? <span className="block">ID запроса: {job.requestId}</span> : null}
-        {replayReadiness ? <span className="block">{replayReadiness}</span> : null}
-        {replayPreflight ? (
-          <span className="block" data-testid="guided-queue-preflight">
-            {replayPreflight.label}
-          </span>
-        ) : null}
       </div>
       {job ? (
         <div className="flex flex-wrap gap-2">
@@ -580,24 +563,20 @@ function QueueStatusLine({
           {canRetryJob ? (
             <Button data-testid="guided-queue-retry-arm" onClick={() => setRetryShellOpen(true)} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
-              Повторить из очереди
+              Повторить сохранение
             </Button>
           ) : null}
-          <Button data-testid="guided-queue-clear" onClick={onClear} size="sm" type="button" variant="ghost">
-            Очистить локальную очередь
-          </Button>
         </div>
       ) : null}
       {retryShellOpen && canRetryJob ? (
         <div className="grid gap-2 rounded-md border border-warning bg-background px-3 py-2" data-testid="guided-queue-retry-shell">
           <div className="text-foreground">
-            Подтвердите повтор: форма отправит текущие значения через безопасное сохранение. Сохранённые значения очереди не показываются.
+            Проверьте текущие значения и повторите сохранение.
           </div>
-          {replayPreflight ? <div className="text-muted">{replayPreflight.label}</div> : null}
           <div className="flex flex-wrap gap-2">
             <Button data-testid="guided-queue-retry-confirm" onClick={confirmRetry} size="sm" type="button" variant="secondary">
               <RotateCcw size={14} />
-              Подтвердить повтор
+              Повторить
             </Button>
             <Button data-testid="guided-queue-retry-cancel" onClick={() => setRetryShellOpen(false)} size="sm" type="button" variant="ghost">
               Отмена
@@ -612,91 +591,30 @@ function QueueStatusLine({
 function queueStatusLabel(status: QueueStatus, job: GuidedQueueJob | null): string {
   if (status === "blocked") {
     if (job?.metadata?.kind === "repeatable_group") {
-      return "В очереди есть несинхронизированное добавление позиции. Сначала обновите страницу, затем повторите действие.";
+      return "Одно изменение ещё не сохранено. Обновите страницу и повторите действие.";
     }
     if (job?.metadata?.kind === "field") {
-      return "В очереди есть несинхронизированное поле. Сначала обновите страницу, затем повторите сохранение.";
+      return "Одно поле ещё не сохранено. Обновите страницу и повторите сохранение.";
     }
-    return "В очереди есть несинхронизированное изменение. Сначала обновите страницу, затем повторите действие.";
+    return "Одно изменение ещё не сохранено. Обновите страницу и повторите действие.";
   }
   if (status === "queued") {
     if (job?.metadata?.kind === "repeatable_group") {
-      return "Есть несинхронизированное добавление позиции в этом браузере.";
+      return "Добавление позиции ещё не сохранено.";
     }
     if (job?.metadata?.kind === "field") {
-      return "Есть несинхронизированное поле в этом браузере.";
+      return "Одно поле ещё не сохранено.";
     }
-    return "Есть несинхронизированное автосохранение в этом браузере.";
+    return "Одно изменение ещё не сохранено.";
   }
 
   const labels: Record<Exclude<QueueStatus, "blocked" | "queued">, string> = {
-    empty: "Очередь автосохранения пуста.",
-    retrying: "Повторяем сохранение из локальной очереди...",
-    synced: "Локальная очередь синхронизирована.",
-    unavailable: "Очередь автосохранения включится в API-режиме.",
+    empty: "Все изменения сохранены.",
+    retrying: "Повторяем сохранение...",
+    synced: "Все изменения сохранены.",
+    unavailable: "Автосохранение сейчас недоступно.",
   };
   return labels[status];
-}
-
-function manualReplayReadinessLabel(job: GuidedQueueJob): string {
-  const draft = buildGuidedQueueReplayRequestDraft(job);
-  if (draft.status === "ready") {
-    return "Ручной повтор подготовлен: запрос собран локально, автоматическая отправка выключена.";
-  }
-
-  return `Ручной повтор не готов: не хватает ${draft.missing.map(manualReplayMissingLabel).join(", ")}.`;
-}
-
-function manualReplayPreflight(job: GuidedQueueJob): {
-  label: string;
-  route: ReplayPreflightRoute;
-  status: "incomplete" | "ready";
-} {
-  const draft = buildGuidedQueueReplayRequestDraft(job);
-  if (draft.status === "incomplete") {
-    return {
-      label: `Проверка повтора: запрос не собран, не хватает ${draft.missing.map(manualReplayMissingLabel).join(", ")}.`,
-      route: "incomplete",
-      status: "incomplete",
-    };
-  }
-
-  return {
-    label: `Проверка повтора: ${draft.request.method} ${manualReplayRouteLabel(draft.request.path)} подготовлен локально, значения скрыты и запрос не отправлен.`,
-    route: manualReplayRoute(draft.request.path),
-    status: "ready",
-  };
-}
-
-function manualReplayRoute(path: string): ReplayPreflightRoute {
-  if (path.includes("/repeatable-groups/")) {
-    return "repeatable_group";
-  }
-  if (path.includes("/content-blocks/")) {
-    return "field_block";
-  }
-  return "field_item";
-}
-
-function manualReplayRouteLabel(path: string): string {
-  const route = manualReplayRoute(path);
-  if (route === "repeatable_group") {
-    return "/content-items/{id}/repeatable-groups/{key}";
-  }
-  if (route === "field_block") {
-    return "/content-blocks/{id}";
-  }
-  return "/content-items/{id}/blocks/{key}";
-}
-
-function manualReplayMissingLabel(key: string): string {
-  const labels: Record<string, string> = {
-    metadata: "данных формы",
-    "metadata.intent": "действия сохранения",
-    "values.fields": "полей позиции",
-    "values.value": "значения поля",
-  };
-  return labels[key] ?? key;
 }
 
 function GuidedFieldControl({
@@ -830,7 +748,6 @@ export function GuidedFieldActionForm({
       <QueueStatusLine
         canRetry={canSubmit}
         job={queue.queueJob}
-        onClear={queue.clearQueue}
         onRetry={retryQueuedSave}
         status={queue.queueStatus}
       />
@@ -943,7 +860,6 @@ export function AddRepeatableGroupActionForm({
       <QueueStatusLine
         canRetry={canMutate}
         job={queue.queueJob}
-        onClear={queue.clearQueue}
         onRetry={retryQueuedAdd}
         status={queue.queueStatus}
       />

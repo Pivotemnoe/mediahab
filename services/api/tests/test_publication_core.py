@@ -31,6 +31,7 @@ from app.db.base import (  # noqa: E402
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.modules.ai.service import retrieve_examples  # noqa: E402
+from app.modules.publications.service import process_publication_outbox  # noqa: E402
 
 
 class Phase06PublicationCoreTest(unittest.TestCase):
@@ -194,6 +195,18 @@ class Phase06PublicationCoreTest(unittest.TestCase):
                 )
                 or 0
             )
+
+    async def _process_publication(self, publication_id: str) -> str:
+        async with self.SessionLocal() as session:
+            publication = await session.get(Publication, UUID(publication_id))
+            assert publication is not None
+            publication = await process_publication_outbox(
+                session,
+                publication,
+                worker_id="test-worker",
+            )
+            await session.commit()
+            return publication.status
 
     async def _outbox_events(self, publication_id: str) -> list[dict[str, object]]:
         async with self.SessionLocal() as session:
@@ -747,6 +760,43 @@ class Phase06PublicationCoreTest(unittest.TestCase):
         )
         self.assertEqual(retried.status_code, 200, retried.text)
         self.assertEqual(retried.json()["status"], "published")
+        self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
+
+    def test_worker_mode_returns_queued_until_outbox_worker_processes_it(self) -> None:
+        self.app.dependency_overrides[get_settings] = lambda: Settings(
+            ai_text_provider="mock",
+            embedding_provider="mock",
+            publication_execution_mode_raw="worker",
+        )
+        auth = self.register(email="worker06@example.com", workspace_name="Worker Workspace")
+        project, _, content, _ = self.create_content_with_master(auth)
+        variants = self.generate_variants(auth, content["id"], ["generic_webhook"])
+        approved = self.approve_variant(auth, variants["generic_webhook"]["id"])
+        destination = self.create_destination(
+            auth,
+            project["id"],
+            "Webhook worker",
+            "generic_webhook",
+            "generic_webhook",
+            {"endpoint_url": "https://example.com/worker", "simulate_status": 202},
+        )
+        publication = self.create_publication(
+            auth,
+            approved["id"],
+            destination["id"],
+            "phase12n-worker",
+        )
+
+        queued = self.client.post(
+            f"/api/v1/publications/{publication['id']}/publish-now",
+            headers=self.csrf_headers(auth),
+        )
+        self.assertEqual(queued.status_code, 200, queued.text)
+        self.assertEqual(queued.json()["status"], "queued")
+        self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 0)
+
+        status = asyncio.run(self._process_publication(publication["id"]))
+        self.assertEqual(status, "published")
         self.assertEqual(asyncio.run(self._external_post_count(publication["id"])), 1)
 
     def test_worker_restart_probe_does_not_duplicate_external_posts(self) -> None:

@@ -356,7 +356,7 @@ export function StandaloneIdeaGenerator({
           <span className="text-xs font-normal leading-5 text-muted">Одной фразы достаточно. Например: как владельцу маленькой кофейни рассказывать о команде.</span>
           <textarea
             className="min-h-32 w-full min-w-0 resize-y rounded-xl border border-border bg-background p-4 text-base font-normal leading-7 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            disabled={!workspaceId || isGenerating || voiceActive}
+            disabled={!workspaceId || isGenerating || voiceActive || unavailable}
             id="standalone-idea-topic"
             maxLength={1000}
             onChange={(event) => {
@@ -400,7 +400,7 @@ export function StandaloneIdeaGenerator({
 
         {!workspaceId ? (
           <p className="rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted">Идеи станут доступны, когда в кабинете появится рабочее пространство.</p>
-        ) : capabilityState === "ready" && capability ? (
+        ) : capabilityState === "ready" && capability && !unavailable ? (
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted">Осталось подборок сегодня: {capability.remaining_today} из {capability.daily_limit}</span>
             <Button

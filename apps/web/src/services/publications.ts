@@ -99,6 +99,24 @@ function fixturePublications(): PublicationOpsViewModel {
   };
 }
 
+function emptyPublications(notice?: string): PublicationOpsViewModel {
+  return {
+    attempts: [],
+    destinations: [],
+    modeLabel: "api",
+    notice,
+    operationStates: [],
+    queue: [],
+    schedulePosture: {
+      date: "—",
+      retry: "—",
+      time: "—",
+      timezone: "Europe/Moscow",
+    },
+    variants: [],
+  };
+}
+
 function destinationLabel(key: string): string {
   const labels: Record<string, string> = {
     generic_webhook: "Вебхук",
@@ -175,15 +193,10 @@ async function getFirstProjectDestinations() {
 }
 
 async function apiPublications(): Promise<PublicationOpsViewModel> {
-  const fallback = fixturePublications();
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "Рабочее пространство ещё не найдено. Ниже показан пример проверки перед публикацией.",
-    };
+    return emptyPublications("Рабочее пространство не найдено. Обновите страницу или войдите заново.");
   }
   const [publicationsResponse, destinationsResponse] = await Promise.all([
     safeApiGet<PublicationsResponse>(`/api/v1/publications?workspace_id=${workspace.id}`),
@@ -202,35 +215,26 @@ async function apiPublications(): Promise<PublicationOpsViewModel> {
   );
 
   return {
-    ...fallback,
-    attempts: attempts.length
-      ? attempts.map((attempt) => ({
+    ...emptyPublications(),
+    attempts: attempts.map((attempt) => ({
           connector: destinationLabel(attempt.connector_key),
           latency: attempt.completed_at ? "завершено" : "в процессе",
           number: `#${attempt.attempt_number}`,
           result: attempt.error_code ?? attempt.status,
           status: statusLabel(attempt.status),
-        }))
-      : fallback.attempts,
-    destinations: destinations.length
-      ? destinations.map((destination) => ({
+        })),
+    destinations: destinations.map((destination) => ({
           name: destination.name,
           text: `${statusLabel(destination.status)} · ${destination.publication_mode}`,
           title: destinationLabel(destination.platform_key),
-        }))
-      : fallback.destinations,
-    modeLabel: "api",
-    notice: publicationsResponse
-      ? undefined
-      : "Список публикаций сейчас не загрузился. Ниже показан безопасный пример проверки.",
-    queue: publications.length
-      ? publications.slice(0, 5).map((publication) => ({
+        })),
+    notice: publicationsResponse ? undefined : "Список публикаций сейчас не загрузился. Попробуйте обновить страницу.",
+    queue: publications.slice(0, 5).map((publication) => ({
           destination: destinationNameById.get(publication.destination_id) ?? "Публикация",
           note: publicationNote(publication),
           status: statusLabel(publication.status),
           tone: toneForStatus(publication.status),
-        }))
-      : fallback.queue,
+        })),
   };
 }
 
@@ -242,10 +246,6 @@ export async function getPublicationOpsViewModel(): Promise<PublicationOpsViewMo
   try {
     return await apiPublications();
   } catch {
-    return {
-      ...fixturePublications(),
-      modeLabel: "пример после ошибки загрузки",
-      notice: "Данные публикаций сейчас не загрузились. Ниже показан безопасный пример проверки.",
-    };
+    return emptyPublications("Данные публикаций сейчас не загрузились. Попробуйте обновить страницу.");
   }
 }

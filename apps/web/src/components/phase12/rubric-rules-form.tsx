@@ -81,7 +81,7 @@ export function RubricRulesForm({ projectId, rubric }: { projectId: string; rubr
         <label className="grid gap-1.5 text-sm">
           <span className="font-semibold text-foreground">Правила рубрики</span>
           <textarea className="min-h-72 rounded-lg border border-border bg-background px-3 py-3 leading-6 outline-none focus:border-primary" defaultValue={rubric.description ?? ""} name="rules" placeholder="Опишите цель, исходные факты, тон, структуру, обязательные и запрещённые элементы." />
-          <span className="text-xs leading-5 text-muted">Пишите обычным языком. Эти правила попадут в контекст ИИ при сборке публикации.</span>
+          <span className="text-xs leading-5 text-muted">Пишите обычным языком. Эти правила будут учтены при сборке публикации.</span>
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm"><span className="font-semibold text-foreground">Минимум знаков</span><input className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary" defaultValue={rubric.editorial_min_chars ?? ""} min={1} name="min_chars" type="number" /></label>

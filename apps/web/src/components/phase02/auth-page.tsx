@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, LockKeyhole } from "lucide-react";
+import { ArrowRight, CheckCircle2, LockKeyhole } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/layout/shells";
@@ -16,13 +16,18 @@ type AuthField = {
   name: string;
   placeholder: string;
   type?: string;
+  value?: string;
 };
 
+type AuthAction = "forgot-password" | "login" | "register" | "reset-password" | "verify-email";
+
 type AuthPageProps = {
-  action?: "login" | "register";
+  action: AuthAction;
+  consentRequired?: boolean;
   description: string;
   eyebrow?: string;
   fields: AuthField[];
+  hiddenFields?: Record<string, string>;
   redirectTo?: string;
   secondaryHref: string;
   secondaryLabel: string;
@@ -34,9 +39,11 @@ type AuthPageProps = {
 
 export function AuthPage({
   action,
+  consentRequired = false,
   description,
   eyebrow = "Безопасный доступ",
   fields,
+  hiddenFields,
   redirectTo,
   secondaryHref,
   secondaryLabel,
@@ -48,6 +55,7 @@ export function AuthPage({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,13 +63,16 @@ export function AuthPage({
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
-    if (!action) {
-      setError("Этот сценарий ещё не подключён к серверу в пилотной версии.");
-      setIsSubmitting(false);
-      return;
+    const payload: Record<string, FormDataEntryValue | boolean> = Object.fromEntries(formData.entries());
+    if (action === "register") {
+      payload.accept_pilot_terms = formData.get("accept_pilot_terms") === "yes";
+      payload.accept_data_notice = formData.get("accept_data_notice") === "yes";
     }
-    const path = action === "register" ? "/api/v1/auth/register" : "/api/v1/auth/login";
+    if (action === "reset-password") {
+      payload.new_password = payload.password;
+      delete payload.password;
+    }
+    const path = `/api/v1/auth/${action}`;
 
     try {
       const response = await fetch(path, {
@@ -79,13 +90,42 @@ export function AuthPage({
         return;
       }
 
-      router.push(redirectTo ?? "/app");
-      router.refresh();
+      if (action === "login" || action === "register") {
+        router.push(redirectTo ?? "/app");
+        router.refresh();
+        return;
+      }
+      if (action === "verify-email") {
+        setSuccess("Почта подтверждена. Теперь можно войти в кабинет.");
+      } else if (action === "reset-password") {
+        setSuccess("Пароль изменён. Все прежние входы завершены — войдите с новым паролем.");
+      } else {
+        setSuccess("Запрос принят. Проверьте дальнейшие инструкции по доступу.");
+      }
     } catch {
-      setError("Не удалось связаться с сервером. Проверьте соединение и попробуйте ещё раз.");
+      setError("Не удалось продолжить. Проверьте соединение и попробуйте ещё раз.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (success) {
+    return (
+      <AuthShell>
+        <div className="grid gap-5">
+          <span className="grid size-12 place-items-center rounded-full bg-success/15 text-success">
+            <CheckCircle2 size={24} />
+          </span>
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Готово</h1>
+            <p className="mt-2 text-sm leading-6 text-muted" role="status">{success}</p>
+          </div>
+          <Button asChild>
+            <Link href="/login">Перейти ко входу</Link>
+          </Button>
+        </div>
+      </AuthShell>
+    );
   }
 
   return (
@@ -102,6 +142,9 @@ export function AuthPage({
           <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
         </div>
         <form className="grid gap-3" onSubmit={onSubmit}>
+          {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
+            <input key={name} name={name} type="hidden" value={value} />
+          ))}
           {fields.map((field) => (
             <label className="grid gap-1.5 text-sm" key={field.name}>
               <span className="font-medium text-foreground">{field.label}</span>
@@ -112,10 +155,23 @@ export function AuthPage({
                 placeholder={field.placeholder}
                 required
                 type={field.type ?? "text"}
+                defaultValue={field.value}
               />
               {field.helper ? <span className="text-xs leading-5 text-muted">{field.helper}</span> : null}
             </label>
           ))}
+          {consentRequired ? (
+            <div className="grid gap-3 rounded-lg border border-border bg-background p-3 text-sm leading-5 text-muted">
+              <label className="flex items-start gap-3">
+                <input className="mt-1 size-4 accent-primary" name="accept_pilot_terms" required type="checkbox" value="yes" />
+                <span>Я принимаю <Link className="text-primary underline" href="/terms" target="_blank">условия закрытого тестирования</Link>.</span>
+              </label>
+              <label className="flex items-start gap-3">
+                <input className="mt-1 size-4 accent-primary" name="accept_data_notice" required type="checkbox" value="yes" />
+                <span>Я прочитал(а), <Link className="text-primary underline" href="/privacy" target="_blank">как обрабатываются данные пилота</Link>.</span>
+              </label>
+            </div>
+          ) : null}
           {error ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
               {error}
@@ -139,6 +195,25 @@ export function AuthPage({
   );
 }
 
+export function AccessLinkRequired({ description, title }: { description: string; title: string }) {
+  return (
+    <AuthShell>
+      <div className="grid gap-5">
+        <span className="grid size-12 place-items-center rounded-full bg-warning/15 text-warning">
+          <LockKeyhole size={24} />
+        </span>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
+        </div>
+        <Button asChild>
+          <Link href="/login">Вернуться ко входу</Link>
+        </Button>
+      </div>
+    </AuthShell>
+  );
+}
+
 async function authErrorMessage(response: Response): Promise<string> {
   try {
     const payload = await response.json() as {
@@ -154,11 +229,23 @@ async function authErrorMessage(response: Response): Promise<string> {
     if (code === "registration_failed") {
       return "Не удалось создать аккаунт. Возможно, такая почта уже используется.";
     }
+    if (code === "pilot_invite_required") {
+      return "Регистрация доступна только по персональному приглашению.";
+    }
+    if (code === "pilot_invite_invalid") {
+      return "Приглашение не подходит к этой почте, уже использовано или просрочено.";
+    }
+    if (code === "pilot_consent_required") {
+      return "Для участия нужно принять условия тестирования и информацию о данных.";
+    }
+    if (code === "token_invalid") {
+      return "Ссылка недействительна или уже использована. Запросите новую у владельца пилота.";
+    }
     if (code === "rate_limited") {
       return "Слишком много попыток. Подождите немного и попробуйте снова.";
     }
     if (code === "catalog_missing") {
-      return "На сервере не загружен каталог тарифов. Нужно проверить seed.";
+      return "Сервис временно не готов создать кабинет. Напишите владельцу пилота.";
     }
   } catch {
     // Non-JSON responses fall through to a generic message.

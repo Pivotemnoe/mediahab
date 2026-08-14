@@ -335,6 +335,15 @@ function placeReviewMaterialFlow(sourceLabel: string): MaterialCaptureFlowViewMo
   };
 }
 
+function neutralMaterialFlow(sourceLabel: string): MaterialCaptureFlowViewModel {
+  return {
+    primaryOutput: "Версии для выбранных площадок",
+    sourceLabel,
+    templateName: "Публикация",
+    steps: [],
+  };
+}
+
 type GuidedBlockSource = Pick<
   BlockOut,
   "field_key" | "group_index" | "group_key" | "id" | "is_locked" | "source_type" | "transcript_text" | "value_json"
@@ -812,7 +821,7 @@ function guidedFormView(
     canMutate: params.canMutate,
     description:
       params.canMutate
-        ? "Поля построены из активной версии рубрики. Сохранение идёт через сервер с проверкой версии материала."
+        ? "Заполните факты публикации и сохраните изменения перед сборкой текста."
         : "Поля построены из активной версии рубрики. В демо-режиме сохранение отключено.",
     fields: params.fields.map((field) => guidedFieldView(field, params.blocks)),
     generatedFields: params.generatedFields.map(generatedFieldLabel),
@@ -1001,6 +1010,84 @@ function fixtureNewContent(): NewContentViewModel {
   };
 }
 
+function emptyGuidedForm(): ContentStudioViewModel["guidedForm"] {
+  return {
+    canMutate: false,
+    description: "Форма материала недоступна.",
+    fields: [],
+    generatedFields: [],
+    itemVersion: null,
+    limits: "—",
+    title: "Материал",
+  };
+}
+
+function emptyContentStudio(contentId: string, notice: string): ContentStudioViewModel {
+  return {
+    available: false,
+    aiSuggestions: [],
+    checks: [],
+    factLocks: [],
+    guidedForm: emptyGuidedForm(),
+    inputBlocks: [],
+    materialFlow: neutralMaterialFlow("Материал"),
+    masterBudget: "—",
+    masterDraftParagraphs: [],
+    materialLabel: contentId,
+    modeLabel: "api",
+    notice,
+    platformPreviews: [],
+    projectId: null,
+    revisionEvents: [],
+    summary: {
+      autosave: "—",
+      lockedFacts: "—",
+      project: "Проект",
+      range: "—",
+      revision: "—",
+      rubric: "Без рубрики",
+      status: "недоступен",
+      title: "Материал",
+    },
+    transcriptReview: {
+      confidence: "—",
+      duration: "—",
+      provider: "—",
+      status: "недоступен",
+      text: "",
+    },
+    workspaceId: null,
+  };
+}
+
+function emptyNewContent(notice?: string, workspaceId: string | null = null): NewContentViewModel {
+  return {
+    activeCaptureBlock: {
+      duration: "00:00",
+      progress: "0%",
+      prompt: "Расскажите главное своими словами.",
+      title: "Новая публикация",
+      transcript: "",
+    },
+    captureSteps: [],
+    compactPreviews: [],
+    contextLabel: "Создание публикации",
+    materialFlow: neutralMaterialFlow("Без рубрики — общие правила проекта"),
+    modeLabel: "api",
+    notice,
+    offlineDraft: {
+      queue: "нет ожидающих изменений",
+      saved: "—",
+      status: "готово",
+    },
+    projects: [],
+    recordingStates: [],
+    resumeItems: [],
+    reviewBlocks: [],
+    workspaceId,
+  };
+}
+
 async function firstWorkspaceProject(): Promise<ProjectOut | null> {
   const projects = await workspaceProjects();
   return projects[0] ?? null;
@@ -1073,16 +1160,10 @@ async function apiContentIndex(): Promise<ContentIndexViewModel> {
 }
 
 async function apiContentStudio(contentId: string): Promise<ContentStudioViewModel> {
-  const fallback = fixtureContentStudio(contentId);
   const item = await safeApiGet<ContentItemOut>(`/api/v1/content-items/${contentId}`);
 
   if (!item) {
-    return {
-      ...fallback,
-      available: false,
-      modeLabel: "api",
-      notice: "Материал не найден или у вас нет к нему доступа.",
-    };
+    return emptyContentStudio(contentId, "Материал не найден или у вас нет к нему доступа.");
   }
 
   const [projects, rubricNames, guidedFormResponse, blocksResponse, variantsResponse] = await Promise.all([
@@ -1110,9 +1191,9 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     return count + (Array.isArray(warnings) ? warnings.length : 0);
   }, 0);
   const notices = [
-    guidedFormResponse ? null : "Форма рубрики из API недоступна.",
-    blocksResponse ? null : "Блоки материала из API недоступны.",
-    variantsResponse ? null : "Платформенные превью из API недоступны.",
+    guidedFormResponse ? null : "Форма материала сейчас не загрузилась.",
+    blocksResponse ? null : "Исходные данные материала сейчас не загрузились.",
+    variantsResponse ? null : "Версии для площадок сейчас не загрузились.",
   ].filter(Boolean);
   const rubricLabel = rubricNames.get(item.rubric_id) ?? "Без рубрики";
 
@@ -1134,7 +1215,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
       ? lockedBlocks.map((block) => ({
           fact: truncateText(valueText(block.value_json) || fieldLabel(block.field_key), 120),
           source: sourceLabel(block.source_type),
-          status: "locked",
+          status: "зафиксировано",
         }))
       : [],
     guidedForm: guidedFormResponse
@@ -1164,12 +1245,7 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
         }))
       : [],
     materialLabel: item.id,
-    materialFlow: {
-      primaryOutput: "Версии для выбранных площадок",
-      sourceLabel: rubricLabel,
-      templateName: "Публикация",
-      steps: [],
-    },
+    materialFlow: neutralMaterialFlow(rubricLabel),
     masterBudget: variants[0] ? `${variants[0].character_count} знаков` : "версии не собраны",
     masterDraftParagraphs: textBlocks,
     modeLabel: "api",
@@ -1197,11 +1273,10 @@ async function apiContentStudio(contentId: string): Promise<ContentStudioViewMod
     projectId: item.project_id,
     revisionEvents: [],
     summary: {
-      ...fallback.summary,
       autosave: formatUpdatedAt(item.updated_at),
       range: guidedFormResponse
         ? editorialLimitsLabel(guidedFormResponse.editorial_limits)
-        : fallback.summary.range,
+        : "без заданного диапазона",
       project: project?.name ?? "Проект",
       revision: `v${item.version}`,
       rubric: rubricLabel,
@@ -1287,16 +1362,10 @@ async function resumeContentDraft(
 }
 
 async function apiNewContent(resumeContentId?: string): Promise<NewContentViewModel> {
-  const fallback = fixtureNewContent();
   const me = await safeApiGet<MeResponse>("/api/v1/me");
   const workspace = me?.workspaces[0];
   if (!workspace) {
-    return {
-      ...fallback,
-      modeLabel: "api",
-      notice: "Рабочее пространство пока не найдено. Войдите заново или завершите первоначальную настройку.",
-      projects: [],
-    };
+    return emptyNewContent("Рабочее пространство пока не найдено. Войдите заново или завершите первоначальную настройку.");
   }
 
   const projectsResponse = await safeApiGet<ProjectListResponse>(`/api/v1/workspaces/${workspace.id}/projects`);
@@ -1329,10 +1398,9 @@ async function apiNewContent(resumeContentId?: string): Promise<NewContentViewMo
   const rubricName = "Без рубрики — общие правила проекта";
   const resumeDraft = resumeContentId ? await resumeContentDraft(resumeContentId, projects) : undefined;
   return {
-    ...fallback,
+    ...emptyNewContent(undefined, workspace.id),
     contextLabel: `${firstProject?.name ?? "Проект"} · ${rubricName}`,
-    materialFlow: placeReviewMaterialFlow(rubricName),
-    modeLabel: "api",
+    materialFlow: neutralMaterialFlow(rubricName),
     notice: projects.length ? undefined : "Сначала создайте свой проект или канал.",
     projects,
     resumeDraft,
@@ -1364,12 +1432,7 @@ export async function getContentStudioViewModel(contentId: string): Promise<Cont
   try {
     return await apiContentStudio(contentId);
   } catch {
-    return {
-      ...fixtureContentStudio(contentId),
-      available: false,
-      modeLabel: "api",
-      notice: "Материал сейчас не загрузился. Попробуйте вернуться в историю и открыть его снова.",
-    };
+    return emptyContentStudio(contentId, "Материал сейчас не загрузился. Попробуйте вернуться в историю и открыть его снова.");
   }
 }
 
@@ -1381,10 +1444,6 @@ export async function getNewContentViewModel(resumeContentId?: string): Promise<
   try {
     return await apiNewContent(resumeContentId);
   } catch {
-    return {
-      ...fixtureNewContent(),
-      modeLabel: "пример",
-      notice: "Сейчас показан пример рабочего экрана. Создание материала станет доступно после восстановления соединения.",
-    };
+    return emptyNewContent("Создание публикации сейчас недоступно. Попробуйте обновить страницу.");
   }
 }

@@ -9,7 +9,6 @@ import {
   Clipboard,
   FileText,
   Images,
-  Lightbulb,
   Loader2,
   Mic,
   Pause,
@@ -17,7 +16,6 @@ import {
   Play,
   Plus,
   RotateCcw,
-  Sparkles,
   Upload,
   WandSparkles,
   X,
@@ -43,6 +41,7 @@ import {
   richTextLinkCount,
   richTextPlain,
 } from "@/lib/rich-text";
+import { userFacingApiError } from "@/lib/user-facing-api-error";
 import {
   type BlockOut,
   type ContentCreateRequest,
@@ -389,14 +388,7 @@ async function apiRequest<T>(
     method: options.method,
   });
   if (!response.ok) {
-    let message = `Сервер вернул ошибку ${response.status}.`;
-    try {
-      const payload = (await response.json()) as { error?: { message?: string } };
-      message = payload.error?.message || message;
-    } catch {
-      // Keep the normalized fallback.
-    }
-    throw new Error(message);
+    throw new Error(await userFacingApiError(response));
   }
   return response.json() as Promise<T>;
 }
@@ -601,7 +593,7 @@ export function SimpleVoiceComposer({
   const [rubricLocked, setRubricLocked] = useState(Boolean(resumeDraft?.latestVariants.length));
   const [isRefining, setIsRefining] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
-  const [latestAiUsage, setLatestAiUsage] = useState<AiUsageSummary | null>(null);
+  const [, setLatestAiUsage] = useState<AiUsageSummary | null>(null);
   const [feedbackByVariant, setFeedbackByVariant] = useState<Record<string, PlatformVariantFeedbackOut | null>>({});
   const [lengthMode, setLengthMode] = useState<LengthMode>("auto");
   const [lengthSheetOpen, setLengthSheetOpen] = useState(false);
@@ -939,7 +931,7 @@ export function SimpleVoiceComposer({
       return { contentId: contentIdRef.current, fieldKey };
     }
     if (viewModel.modeLabel !== "api" || !viewModel.workspaceId) {
-      throw new Error("Для создания материала нужен доступный API и проект.");
+      throw new Error("Сейчас нельзя создать материал. Обновите страницу и проверьте, что проект доступен.");
     }
     let createHandoff = handoff;
     let createProject = project;
@@ -1258,7 +1250,7 @@ export function SimpleVoiceComposer({
     const supportedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime"]);
     const media = selected.filter((file) => supportedTypes.has(file.type));
     if (media.length !== selected.length) {
-      setMessage("Поддерживаются фото JPEG, PNG, WebP и видео MP4/MOV.");
+      setMessage("Этот формат не поддерживается. Выберите другое фото или видео.");
       return;
     }
     if (media.some((file) => file.size > (file.type.startsWith("video/") ? 100 : 8) * 1024 * 1024)) {
@@ -1334,7 +1326,7 @@ export function SimpleVoiceComposer({
       setMediaKinds((current) => [...current, ...uploadedKinds]);
       setMediaRetentionDates((current) => [...current, ...uploadedRetentionDates]);
       setMessage(
-        `Медиа прикреплены: ${attached.media.length}. Первые ${Math.min(attached.media.length, 3)} ИИ использует при сборке.`,
+        `Медиа прикреплены: ${attached.media.length}. Самые важные файлы поставьте первыми.`,
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось загрузить медиа.");
@@ -1398,7 +1390,7 @@ export function SimpleVoiceComposer({
         },
       );
       let variant = generated.variants.find((item) => item.platform_key === key);
-      if (!variant) throw new Error("Сервер не вернул вариант.");
+      if (!variant) throw new Error("Версия не была подготовлена.");
       let adaptationUsage: AiUsageSummary | null = null;
       const needsFormatAdaptation = key === "instagram" && requestedInstagramFormat !== null;
       if (missesLengthTarget(variant) || needsFormatAdaptation) {
@@ -1580,7 +1572,7 @@ export function SimpleVoiceComposer({
       setLatestAiUsage(totalUsage);
       setMessage(
         usedProviderFallback
-          ? "ИИ-сервис не ответил: показан безопасный черновик из вашей расшифровки. Проверьте его перед доработкой."
+          ? "Не удалось подготовить текст автоматически. Показан черновик из вашей расшифровки — проверьте его перед доработкой."
           : options?.rebuildFromSource
             ? "Новый текст собран из вашей диктовки. Предыдущие редакции сохранены в истории."
             : "Готовые версии можно проверить, отредактировать и скопировать.",
@@ -1768,7 +1760,7 @@ export function SimpleVoiceComposer({
       return;
     }
     setIsRefining(true);
-    setMessage(`${label}: ИИ дорабатывает ${readyKeys.length === 1 ? "открытую версию" : "выбранные версии"}…`);
+    setMessage(`${label}: редактор дорабатывает ${readyKeys.length === 1 ? "открытую версию" : "выбранные версии"}…`);
     try {
       const usageParts: Array<AiUsageSummary | null> = [];
       const warnings: string[] = [];
@@ -1791,14 +1783,14 @@ export function SimpleVoiceComposer({
       setInstruction("");
       setMessage(
         warnings.length
-          ? `${label}: версия готова, но ИИ оставил предупреждение: ${warnings[0]}`
-          : `${label}: новая версия готова. Предыдущая сохранена в истории ревизий.`,
+          ? `${label}: версия готова, но редактор оставил предупреждение: ${warnings[0]}`
+          : `${label}: новая версия готова. Предыдущая сохранена в истории изменений.`,
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "ИИ не смог доработать текст. Последняя хорошая версия сохранена.",
+          : "Редактор не смог доработать текст. Последняя хорошая версия сохранена.",
       );
     } finally {
       setIsRefining(false);
@@ -1890,7 +1882,7 @@ export function SimpleVoiceComposer({
 
       {resumeDraft ? (
         <div className="rounded-lg border border-primary bg-[color-mix(in_srgb,var(--primary),transparent_94%)] p-3 text-sm leading-6 text-foreground lg:col-start-1" data-testid="resume-history-notice">
-          Вы продолжаете сохранённый материал. Исходник, фотографии и готовые версии уже на месте; новая доработка сохранится как следующая ревизия того же материала.
+          Вы продолжаете сохранённый материал. Исходник, фотографии и готовые версии уже на месте; новая доработка сохранится в этом же материале.
         </div>
       ) : null}
 
@@ -1921,7 +1913,7 @@ export function SimpleVoiceComposer({
                 value={selectedRubricId}
                 onChange={(event) => void updateRubric(event.currentTarget.value)}
               >
-                <option value="">Без рубрики — общие правила проекта</option>
+                <option value="">Без рубрики</option>
                 {(project?.rubrics ?? []).map((item) => (
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
@@ -1937,12 +1929,9 @@ export function SimpleVoiceComposer({
 
         {rubric ? (
           <div className="flex min-w-0 flex-wrap gap-2 text-xs text-muted">
-            <Badge tone={rubric.approvedExampleCount >= 3 ? "success" : "warning"}>
-              Примеры рубрики: {rubric.approvedExampleCount}
+            <Badge tone={rubric.approvedExampleCount + rubric.projectFallbackExampleCount >= 3 ? "success" : "warning"}>
+              Стиль: {rubric.approvedExampleCount + rubric.projectFallbackExampleCount} примеров
             </Badge>
-            {rubric.approvedExampleCount < 3 ? (
-              <Badge tone="info">запасные примеры проекта: {rubric.projectFallbackExampleCount}</Badge>
-            ) : null}
             {targetMin || targetMax ? (
               <Badge>
                 цель: {targetMin ? targetMin.toLocaleString("ru-RU") : "—"}–{targetMax ? targetMax.toLocaleString("ru-RU") : "—"} знаков
@@ -1952,11 +1941,11 @@ export function SimpleVoiceComposer({
         ) : null}
         {project?.hasFixedBoilerplate ? project.footerLinkCount > 0 ? (
           <Badge className="w-fit" tone="success">
-            Постоянный подвал: {project.footerLinkCount} {project.footerLinkCount === 1 ? "ссылка" : project.footerLinkCount < 5 ? "ссылки" : "ссылок"}
+            Ссылки в конце поста: {project.footerLinkCount}
           </Badge>
         ) : (
           <Link className="w-fit" href={`/app/projects/${project.id}/settings`}>
-            <Badge tone="warning">Подвал добавлен, но ссылки не настроены</Badge>
+            <Badge tone="warning">Ссылки в конце поста добавлены, но не настроены</Badge>
           </Link>
         ) : null}
 
@@ -2138,27 +2127,29 @@ export function SimpleVoiceComposer({
             )}
           </button>
         </div>
-        {!contentId && !ideaBrief ? (
-          <div className="order-3 flex min-w-0 justify-center lg:order-4">
-            <Button asChild className="min-h-11 w-full sm:w-auto" variant="secondary">
-              <Link href="/app/ideas"><Lightbulb size={17} />Не знаю, о чём рассказать</Link>
+        {captureState === "recording" ? (
+          <div className="order-4 flex flex-wrap justify-center gap-2">
+            <Button className="min-h-11" size="sm" type="button" variant="secondary" onClick={pauseRecording}>
+              <Pause size={15} />
+              Пауза
+            </Button>
+            <Button className="min-h-11" size="sm" type="button" onClick={finishSegment}>
+              <CheckCircle2 size={15} />
+              Закончить фрагмент
+            </Button>
+          </div>
+        ) : captureState === "paused" ? (
+          <div className="order-4 flex flex-wrap justify-center gap-2">
+            <Button className="min-h-11" size="sm" type="button" variant="secondary" onClick={continueRecording}>
+              <Play size={15} />
+              Продолжить
+            </Button>
+            <Button className="min-h-11" size="sm" type="button" onClick={finishSegment}>
+              <CheckCircle2 size={15} />
+              Закончить фрагмент
             </Button>
           </div>
         ) : null}
-        <div className="order-4 flex flex-wrap justify-center gap-2">
-          <Button className="min-h-11" disabled={captureState !== "recording"} size="sm" type="button" variant="secondary" onClick={pauseRecording}>
-            <Pause size={15} />
-            Пауза
-          </Button>
-          <Button className="min-h-11" disabled={captureState !== "paused"} size="sm" type="button" variant="secondary" onClick={continueRecording}>
-            <Play size={15} />
-            Продолжить
-          </Button>
-          <Button className="min-h-11" disabled={!["recording", "paused"].includes(captureState)} size="sm" type="button" onClick={finishSegment}>
-            <CheckCircle2 size={15} />
-            Закончить фрагмент
-          </Button>
-        </div>
         <div
           aria-live="polite"
           className={
@@ -2211,7 +2202,7 @@ export function SimpleVoiceComposer({
                 </ol>
               )}
             </div>
-            <p className="text-xs leading-5 text-muted">Идея не добавлена в расшифровку и не станет текстом поста сама. Здесь звучат ваши слова; ИИ подключится позже как редактор.</p>
+            <p className="text-xs leading-5 text-muted">Идея не добавлена в расшифровку и не станет текстом поста сама. Здесь звучат ваши слова; редактура подключится позже.</p>
           </section>
         ) : null}
 
@@ -2270,7 +2261,7 @@ export function SimpleVoiceComposer({
                 {mediaCount ? <Badge tone="success">добавлено: {mediaCount}</Badge> : null}
               </div>
               <p className="mt-1 text-xs leading-5 text-muted">
-                Добавьте фотографии или видео, если они нужны выбранному формату. До 10 файлов; первые 3 помогают ИИ понять контекст. Надписи и факты обязательно проверьте.
+                Добавьте фотографии или видео, если они нужны выбранному формату. До 10 файлов; сначала добавьте три самых важных. Надписи и факты обязательно проверьте.
               </p>
             </div>
           </div>
@@ -2289,7 +2280,7 @@ export function SimpleVoiceComposer({
             />
           </label>
           <div className="text-xs leading-5 text-muted">
-            Фото JPEG, PNG, WebP до 8 МБ; видео MP4 или MOV до 100 МБ. Оригиналы хранятся 30 дней.
+            Фото до 8 МБ, видео до 100 МБ. Оригиналы хранятся 30 дней.
             {mediaRetentionDates.length ? (
               <> Ближайшая дата окончания хранения: {retentionDateLabel([...mediaRetentionDates].sort()[0])}.</>
             ) : null}
@@ -2439,7 +2430,7 @@ export function SimpleVoiceComposer({
               ) : null}
               {hasMechanicalPlatformTruncation(activeResult.variant) ? (
                 <div className="rounded-lg border border-warning bg-[color-mix(in_srgb,var(--warning),transparent_92%)] p-3 text-sm leading-6 text-foreground">
-                  Эта старая версия была механически обрезана. Нажмите «Пересобрать»: ИИ напишет для Instagram отдельный цельный текст по полному исходнику.
+                  Эта старая версия была механически обрезана. Нажмите «Пересобрать»: редактор подготовит для Instagram отдельный цельный текст по полному исходнику.
                 </div>
               ) : null}
               {editingPlatform === activePlatform ? (
@@ -2594,39 +2585,14 @@ export function SimpleVoiceComposer({
                   </details>
                 </div>
               </section>
-              {latestAiUsage ? (
-                <details className="group rounded-lg border border-border bg-surface-muted" data-testid="ai-usage-meter">
-                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                    <span>Технические сведения об ИИ</span><ChevronDown className="transition group-open:rotate-180 motion-reduce:transition-none" size={17} />
-                  </summary>
-                  <div className="grid gap-2 border-t border-border p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-foreground">Расход ИИ на последнюю операцию</div>
-                    <Badge tone={latestAiUsage.estimatedTokens ? "warning" : "info"}>
-                      {latestAiUsage.estimatedTokens ? "примерно" : "по данным провайдера"}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-md bg-background p-2"><div className="text-[10px] uppercase tracking-wide text-muted">Вход</div><div className="mt-1 text-sm font-semibold text-foreground">{latestAiUsage.inputTokens.toLocaleString("ru-RU")}</div></div>
-                    <div className="rounded-md bg-background p-2"><div className="text-[10px] uppercase tracking-wide text-muted">Выход</div><div className="mt-1 text-sm font-semibold text-foreground">{latestAiUsage.outputTokens.toLocaleString("ru-RU")}</div></div>
-                    <div className="rounded-md bg-background p-2"><div className="text-[10px] uppercase tracking-wide text-muted">Всего</div><div className="mt-1 text-sm font-semibold text-foreground">{(latestAiUsage.inputTokens + latestAiUsage.outputTokens).toLocaleString("ru-RU")}</div></div>
-                  </div>
-                  <div className="text-xs leading-5 text-muted">
-                    Стоимость текста: {latestAiUsage.costComplete ? `≈ $${(latestAiUsage.costMicroUsd / 1_000_000).toFixed(4)}` : "провайдер не вернул полные данные для расчёта"}.
-                    Расшифровка аудио и будущий анализ изображений считаются отдельно. Это оценка себестоимости, не счёт клиенту.
-                  </div>
-                  </div>
-                </details>
-              ) : null}
             </div>
           ) : null}
         </Card>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs leading-5 text-muted">
-        <span>Публикация не запускается автоматически. Каждая версия требует проверки человеком.</span>
-        <span className="flex items-center gap-1"><Sparkles size={13} />Источник: проект → рубрика → площадка</span>
-      </div>
+      <p className="text-xs leading-5 text-muted">
+        После сборки проверьте каждую версию перед отправкой.
+      </p>
     </div>
   );
 }

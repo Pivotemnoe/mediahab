@@ -11,7 +11,7 @@ EVAL_CONTENT_IDEAS_ARGS ?=
 EVAL_CONTENT_IDEAS_RAW_RESULTS ?=
 EVAL_CONTENT_IDEAS_HUMAN_REVIEW ?=
 
-.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening eval-content-ideas-validate eval-content-ideas eval-content-ideas-gate eval-standalone-ideas-validate migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
+.PHONY: deps dev down lint typecheck test test-e2e test-ui-hardening test-ui-contracts eval-content-ideas-validate eval-content-ideas eval-content-ideas-gate eval-standalone-ideas-validate migrate seed openapi validate-spec phase00-spikes deps-phase00 clean
 
 deps: node_modules/.pnpm $(VENV)/.deps-installed
 
@@ -45,7 +45,9 @@ test: deps test-ui-hardening
 test-e2e: deps
 	$(PY) tools/e2e_smoke.py
 
-test-ui-hardening: deps
+test-ui-hardening: deps test-ui-contracts
+
+test-ui-contracts:
 	node tools/check_sw_capabilities.mjs
 	node tools/check_offline_notebook_contract.mjs
 	node tools/check_examples_first_contract.mjs
@@ -55,6 +57,8 @@ test-ui-hardening: deps
 	node tools/check_standalone_idea_eval_fixture.mjs
 	node tools/check_phase12k_recording_rubric_contract.mjs
 	node tools/check_phase12l_source_rebuild_links_contract.mjs
+	node tools/check_phase12m_pilot_ui_contract.mjs
+	node tools/check_phase12n_closed_pilot_contract.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs

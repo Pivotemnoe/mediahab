@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { userFacingApiError } from "@/lib/user-facing-api-error";
 import type {
   PlatformVariantFeedbackOut,
   PlatformVariantFeedbackResponse,
@@ -27,8 +28,7 @@ async function request<T>(path: string, method: "DELETE" | "GET" | "PUT", body?:
     method,
   });
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
-    throw new Error(payload?.error?.message || `Ошибка сервера ${response.status}.`);
+    throw new Error(await userFacingApiError(response));
   }
   return response.json() as Promise<T>;
 }

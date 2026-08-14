@@ -192,24 +192,28 @@ export function ExamplesLibraryShell({
 }) {
   return (
     <div className="grid gap-4">
-      <AiHeader title="Удачные посты" />
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap gap-2">
               <Badge>Стиль по примерам</Badge>
             </div>
-            <h2 className="mt-3 break-words text-3xl font-semibold text-ink">{viewModel.projectLabel}</h2>
+            <h1 className="mt-3 break-words text-3xl font-semibold text-ink">{viewModel.projectLabel}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               Общие примеры задают голос всего канала. Рубрику выбирайте только тогда, когда отдельный повторяемый формат действительно звучит иначе.
             </p>
           </div>
-          <Button asChild>
-            <Link href={`/app/content/new?project=${viewModel.projectId}`}>
-              <Mic size={16} />
-              Создать публикацию
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href={`/app/projects/${viewModel.projectId}`}><ArrowLeft size={16} />К проекту</Link>
+            </Button>
+            <Button asChild>
+              <Link href={`/app/content/new?project=${viewModel.projectId}`}>
+                <Mic size={16} />
+                Создать публикацию
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {viewModel.notice ? (
@@ -226,7 +230,7 @@ export function ExamplesLibraryShell({
           rubrics={viewModel.rubrics}
         />
 
-        <div className="grid gap-4 md:grid-cols-3">
+        {viewModel.examples.length ? <div className="grid gap-4 md:grid-cols-3">
           {viewModel.metrics.map((metric) => (
             <Card key={metric.label}>
               <div className="flex items-center gap-2 text-sm font-medium">
@@ -238,7 +242,7 @@ export function ExamplesLibraryShell({
               </div>
             </Card>
           ))}
-        </div>
+        </div> : null}
 
         <Card className="grid gap-3">
           {viewModel.examples.length ? viewModel.examples.map((example) => (
@@ -246,9 +250,7 @@ export function ExamplesLibraryShell({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-medium text-ink">{example.title}</div>
-                  <div className="mt-1 text-xs text-muted">
-                    {example.rubric} · ручная оценка {example.score} · {example.fragments}
-                  </div>
+                  <div className="mt-1 text-xs text-muted">{example.rubric}</div>
                 </div>
                 <Badge tone={toneForStatus(example.status)}>{example.status}</Badge>
               </div>

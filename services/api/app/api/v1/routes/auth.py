@@ -15,6 +15,7 @@ from app.db.base import (
     EmailVerificationToken,
     Membership,
     PasswordResetToken,
+    PilotAccessInvite,
     Session as DbSession,
     Subscription,
     User,
@@ -65,9 +66,12 @@ class AuthResponse(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: str = Field(min_length=3, max_length=320)
-    password: str = Field(min_length=10, max_length=256)
+    password: str = Field(min_length=12, max_length=256)
     display_name: str = Field(min_length=1, max_length=160)
     workspace_name: str = Field(min_length=1, max_length=180)
+    invite_token: str | None = Field(default=None, min_length=16, max_length=256)
+    accept_pilot_terms: bool = False
+    accept_data_notice: bool = False
 
 
 class LoginRequest(BaseModel):
@@ -85,7 +89,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str = Field(min_length=16, max_length=256)
-    new_password: str = Field(min_length=10, max_length=256)
+    new_password: str = Field(min_length=12, max_length=256)
 
 
 class MessageResponse(BaseModel):
@@ -214,6 +218,52 @@ async def create_browser_session(
     return session_token, csrf_token, db_session
 
 
+async def pilot_invite_for_registration(
+    session: AsyncSession,
+    payload: RegisterRequest,
+    email: str,
+    request: Request,
+    settings: Settings,
+) -> PilotAccessInvite | None:
+    raw_token = payload.invite_token.strip() if payload.invite_token else ""
+    if not raw_token:
+        if settings.pilot_registration_mode == "closed":
+            raise api_error(
+                403,
+                "pilot_invite_required",
+                "A valid pilot invitation is required.",
+                request=request,
+            )
+        return None
+
+    invite = await session.scalar(
+        select(PilotAccessInvite)
+        .where(PilotAccessInvite.token_hash == hash_secret(raw_token))
+        .with_for_update()
+    )
+    if (
+        invite is None
+        or invite.email != email
+        or invite.consumed_at is not None
+        or invite.revoked_at is not None
+        or is_past(invite.expires_at)
+    ):
+        raise api_error(
+            403,
+            "pilot_invite_invalid",
+            "The pilot invitation is invalid or expired.",
+            request=request,
+        )
+    if not payload.accept_pilot_terms or not payload.accept_data_notice:
+        raise api_error(
+            422,
+            "pilot_consent_required",
+            "Pilot terms and the data notice must be accepted.",
+            request=request,
+        )
+    return invite
+
+
 @router.post("/register", response_model=AuthResponse)
 async def register(
     payload: RegisterRequest,
@@ -226,6 +276,14 @@ async def register(
     apply_auth_rate_limit(request, settings, "register", email)
     await ensure_catalog(db)
 
+    pilot_invite = await pilot_invite_for_registration(
+        db,
+        payload,
+        email,
+        request,
+        settings,
+    )
+
     if await db.scalar(select(User.id).where(User.email == email)):
         raise api_error(409, "registration_failed", "Unable to register this account.", request=request)
 
@@ -234,6 +292,7 @@ async def register(
         email=email,
         password_hash=hash_password(payload.password),
         display_name=payload.display_name.strip(),
+        email_verified_at=utc_now() if pilot_invite is not None else None,
         locale="ru",
         status="active",
         created_at=utc_now(),
@@ -242,6 +301,10 @@ async def register(
     )
     db.add(user)
     await db.flush()
+
+    if pilot_invite is not None:
+        pilot_invite.consumed_by_user_id = user.id
+        pilot_invite.consumed_at = utc_now()
 
     workspace = Workspace(
         id=uuid4(),
@@ -292,11 +355,20 @@ async def register(
             action="auth.register",
             resource_type="user",
             resource_id=str(user.id),
-            metadata_json={"workspace_id": str(workspace.id)},
+            metadata_json={
+                "workspace_id": str(workspace.id),
+                "pilot_invite_id": str(pilot_invite.id) if pilot_invite is not None else None,
+                "accepted_pilot_terms": bool(payload.accept_pilot_terms),
+                "accepted_data_notice": bool(payload.accept_data_notice),
+            },
             created_at=utc_now(),
         )
     )
-    verification_token = await create_email_verification_token(db, user.id)
+    verification_token = (
+        None
+        if pilot_invite is not None
+        else await create_email_verification_token(db, user.id)
+    )
     session_token, csrf_token, _ = await create_browser_session(db, user.id, request, settings)
 
     try:
@@ -310,8 +382,12 @@ async def register(
         user=user_out(user),
         workspace=workspace_out(workspace, "owner"),
         csrf_token=csrf_token,
-        email_verification_required=True,
-        mock_email_verification_token=verification_token if settings.app_env != "production" else None,
+        email_verification_required=pilot_invite is None,
+        mock_email_verification_token=(
+            verification_token
+            if verification_token is not None and settings.app_env != "production"
+            else None
+        ),
     )
 
 
@@ -326,7 +402,11 @@ async def login(
     email = normalize_email(payload.email)
     apply_auth_rate_limit(request, settings, "login", email)
     user = await db.scalar(select(User).where(User.email == email))
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if (
+        user is None
+        or user.status != "active"
+        or not verify_password(payload.password, user.password_hash)
+    ):
         raise api_error(401, "invalid_credentials", "Invalid email or password.", request=request)
 
     session_token, csrf_token, _ = await create_browser_session(db, user.id, request, settings)
@@ -507,4 +587,3 @@ async def reset_password(
         session.revoked_at = now
     await db.commit()
     return MessageResponse(status="ok", message="Password reset.")
-

@@ -4,6 +4,7 @@ import asyncio
 import sys
 import tempfile
 import unittest
+from datetime import timedelta
 from pathlib import Path
 from uuid import UUID
 
@@ -23,12 +24,15 @@ from app.db.base import (  # noqa: E402
     Payment,
     PaymentCustomer,
     PaymentWebhookInbox,
+    PilotAccessInvite,
     SubscriptionEvent,
     User,
     utc_now,
 )
+from app.core.config import Settings, get_settings  # noqa: E402
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.modules.auth.security import hash_secret  # noqa: E402
 
 
 class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
@@ -74,6 +78,24 @@ class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
                     created_at=utc_now(),
                     updated_at=utc_now(),
                     version=1,
+                )
+            )
+            await session.commit()
+
+    async def _add_pilot_invite(
+        self,
+        email: str,
+        token: str,
+        *,
+        expired: bool = False,
+    ) -> None:
+        async with self.SessionLocal() as session:
+            session.add(
+                PilotAccessInvite(
+                    email=email,
+                    token_hash=hash_secret(token),
+                    expires_at=utc_now() + timedelta(hours=-1 if expired else 24),
+                    created_at=utc_now(),
                 )
             )
             await session.commit()
@@ -142,6 +164,109 @@ class Phase02AuthWorkspaceBillingTest(unittest.TestCase):
         user = asyncio.run(self._user_by_email("owner@example.com"))
         self.assertTrue(user.password_hash.startswith("$argon2id$"))
         self.assertNotIn("strong-password-123", user.password_hash)
+
+    def test_closed_pilot_registration_requires_one_time_email_bound_invite(self) -> None:
+        self.app.dependency_overrides[get_settings] = lambda: Settings(app_env="production")
+        token = "pilot-invite-token-1234567890"
+        asyncio.run(self._add_pilot_invite("invited@example.com", token))
+
+        missing = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "invited@example.com",
+                "password": "strong-password-123",
+                "display_name": "Invited Tester",
+                "workspace_name": "Pilot Workspace",
+                "accept_pilot_terms": True,
+                "accept_data_notice": True,
+            },
+        )
+        self.assertEqual(missing.status_code, 403, missing.text)
+        self.assertEqual(missing.json()["error"]["code"], "pilot_invite_required")
+
+        mismatch = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other@example.com",
+                "password": "strong-password-123",
+                "display_name": "Other Tester",
+                "workspace_name": "Other Workspace",
+                "invite_token": token,
+                "accept_pilot_terms": True,
+                "accept_data_notice": True,
+            },
+        )
+        self.assertEqual(mismatch.status_code, 403, mismatch.text)
+        self.assertEqual(mismatch.json()["error"]["code"], "pilot_invite_invalid")
+
+        accepted = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "Invited@Example.com",
+                "password": "strong-password-123",
+                "display_name": "Invited Tester",
+                "workspace_name": "Pilot Workspace",
+                "invite_token": token,
+                "accept_pilot_terms": True,
+                "accept_data_notice": True,
+            },
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        self.assertFalse(accepted.json()["email_verification_required"])
+        self.assertTrue(accepted.json()["user"]["email_verified"])
+
+        replay = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "invited@example.com",
+                "password": "another-password-123",
+                "display_name": "Replay",
+                "workspace_name": "Replay Workspace",
+                "invite_token": token,
+                "accept_pilot_terms": True,
+                "accept_data_notice": True,
+            },
+        )
+        self.assertEqual(replay.status_code, 403, replay.text)
+
+    def test_closed_pilot_invite_requires_both_consents(self) -> None:
+        self.app.dependency_overrides[get_settings] = lambda: Settings(app_env="production")
+        token = "pilot-consent-token-123456789"
+        asyncio.run(self._add_pilot_invite("consent@example.com", token))
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "consent@example.com",
+                "password": "strong-password-123",
+                "display_name": "Consent Tester",
+                "workspace_name": "Consent Workspace",
+                "invite_token": token,
+                "accept_pilot_terms": True,
+                "accept_data_notice": False,
+            },
+        )
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error"]["code"], "pilot_consent_required")
+
+    def test_closed_pilot_registration_rejects_expired_invite(self) -> None:
+        self.app.dependency_overrides[get_settings] = lambda: Settings(app_env="production")
+        token = "expired-pilot-token-123456789"
+        asyncio.run(self._add_pilot_invite("expired@example.com", token, expired=True))
+
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "expired@example.com",
+                "password": "strong-password-123",
+                "display_name": "Expired Tester",
+                "workspace_name": "Expired Workspace",
+                "invite_token": token,
+                "accept_pilot_terms": True,
+                "accept_data_notice": True,
+            },
+        )
+        self.assertEqual(response.status_code, 403, response.text)
+        self.assertEqual(response.json()["error"]["code"], "pilot_invite_invalid")
 
     def test_csrf_required_for_cookie_authenticated_mutation(self) -> None:
         self.register(self.client)

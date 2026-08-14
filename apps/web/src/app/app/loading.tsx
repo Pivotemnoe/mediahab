@@ -9,7 +9,7 @@ export default function AppLoading() {
         <Loader2 className="animate-spin text-primary" size={24} />
         <div className="text-sm font-medium text-foreground">Загружаем кабинет</div>
         <div className="text-xs leading-5 text-muted">
-          Черновики и локальные состояния остаются в PWA shell.
+          Черновики, сохранённые на этом устройстве, останутся на месте.
         </div>
       </Card>
     </div>

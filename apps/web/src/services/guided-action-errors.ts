@@ -24,8 +24,8 @@ export function guidedActionMessageForCode(code: string, status: number): string
     return explicitMessage;
   }
   return status >= 500
-    ? "Сервер сейчас недоступен для сохранения. Повторите позже."
-    : "Сервер отклонил сохранение. Проверьте поле и повторите действие.";
+    ? "Сейчас не удаётся сохранить изменение. Повторите позже."
+    : "Изменение не сохранено. Проверьте поле и повторите действие.";
 }
 
 export function guidedActionStateFromApiError(error: GuidedActionApiError): GuidedActionState {

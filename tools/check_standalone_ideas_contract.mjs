@@ -133,17 +133,14 @@ assert.match(projectCreateFormSource, /Материал появится, ког
 assert.doesNotMatch(projectCreateFormSource, /\/content-items/);
 
 const mobileBlock = navigationSource.match(/export const mobileNavItems[\s\S]*?\n\];/)?.[0] ?? "";
-assert.match(navigationSource, /href: "\/app\/ideas"[\s\S]*label: "Идеи"/);
-assert.match(mobileBlock, /"\/app"[\s\S]*"\/app\/content\/new"[\s\S]*"\/app\/ideas"[\s\S]*"\/app\/content"[\s\S]*"\/app\/notebook"/);
-assert.doesNotMatch(mobileBlock, /"\/app\/style"/);
-assert.equal((mobileBlock.match(/mobile: true/g) ?? []).length, 5);
+assert.doesNotMatch(navigationSource, /href: "\/app\/ideas"[\s\S]*label: "Идеи"/);
+assert.match(mobileBlock, /"\/app\/content\/new"[\s\S]*"\/app\/content"[\s\S]*"\/app\/notebook"[\s\S]*"\/app\/style"/);
+assert.doesNotMatch(mobileBlock, /href: "\/app"/);
+assert.equal((mobileBlock.match(/mobile: true/g) ?? []).length, 4);
 assert.match(mobileNavigationSource, /aria-label="Главное меню"/);
 assert.match(mobileNavigationSource, /aria-current=\{active \? "page"/);
 assert.match(mobileNavigationSource, /pathname !== "\/app\/content\/new"/);
-assert.match(quickCreateSource, /href: "\/app\/ideas"/);
-assert.match(quickCreateSource, /Придумать идею/);
-assert.match(publicFeaturesSource, /Напишите или надиктуйте тему/);
-assert.match(publicFeaturesSource, /пять разных направлений/);
-assert.doesNotMatch(publicFeaturesSource, /Идеи для постов · пилот/);
+assert.doesNotMatch(quickCreateSource, /href: "\/app\/ideas"|Придумать идею/);
+assert.doesNotMatch(publicFeaturesSource, /Идеи для постов|пять разных направлений/);
 
 console.log("standalone ideas frontend contract checks passed");

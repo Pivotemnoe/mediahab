@@ -32,17 +32,17 @@ assert.match(formSource, /groupKey: field\.fieldKey/);
 assert.match(formSource, /recordSubmitIntent\(event\)/);
 assert.match(formSource, /<QueueStatusLine/);
 assert.match(formSource, /job=\{queue\.queueJob\}/);
-assert.match(formSource, /onClear=\{queue\.clearQueue\}/);
+assert.doesNotMatch(formSource, /onClear=\{queue\.clearQueue\}/);
 assert.match(formSource, /onRetry=\{retryQueuedAdd\}/);
 assert.match(formSource, /status=\{queue\.queueStatus\}/);
 
 const queueStatusLabelSource = functionBody(source, "queueStatusLabel");
 assert.match(queueStatusLabelSource, /status === "blocked"/);
 assert.match(queueStatusLabelSource, /job\?\.metadata\?\.kind === "repeatable_group"/);
-assert.match(queueStatusLabelSource, /несинхронизированное добавление позиции/);
+assert.match(queueStatusLabelSource, /изменение ещё не сохранено/);
 assert.match(queueStatusLabelSource, /status === "queued"/);
-assert.match(queueStatusLabelSource, /Есть несинхронизированное добавление позиции в этом браузере/);
-assert.match(queueStatusLabelSource, /несинхронизированное поле/);
+assert.match(queueStatusLabelSource, /Добавление позиции ещё не сохранено/);
+assert.match(queueStatusLabelSource, /поле ещё не сохранено/);
 for (const privateValue of ["Черновик", "secret", "legacy", "unclassified"]) {
   assert.equal(
     queueStatusLabelSource.includes(privateValue),
@@ -68,12 +68,12 @@ assert.match(queueStatusSource, /data-testid="guided-queue-retry-arm"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-shell"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-confirm"/);
 assert.match(queueStatusSource, /data-testid="guided-queue-retry-cancel"/);
-assert.match(queueStatusSource, /data-testid="guided-queue-clear"/);
+assert.doesNotMatch(queueStatusSource, /data-testid="guided-queue-clear"|ID запроса|Код:/);
 assert.match(queueStatusSource, /onClick=\{refreshPage\}/);
 assert.match(queueStatusSource, /onClick=\{confirmRetry\}/);
 assert.match(queueStatusSource, /Обновить страницу/);
-assert.match(queueStatusSource, /Повторить из очереди/);
-assert.match(queueStatusSource, /Подтвердить повтор/);
+assert.match(queueStatusSource, /Повторить сохранение/);
+assert.match(queueStatusSource, /data-testid="guided-queue-retry-confirm"[\s\S]*?\n\s+Повторить\n/);
 for (const privateValue of ["Черновик", "secret", "legacy", "unclassified"]) {
   assert.equal(
     queueStatusSource.includes(privateValue),

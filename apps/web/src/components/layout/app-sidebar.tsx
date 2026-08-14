@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronUp, LogOut, MoreHorizontal, UserRound } from "lucide-react";
+import { ChevronUp, MoreHorizontal, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { BrandMark } from "@/components/layout/brand-mark";
@@ -54,6 +54,7 @@ export function AppSidebar() {
               )}
               href={item.href}
               key={item.href}
+              data-tour-target={item.href === "/app/content/new" ? "create" : item.href === "/app/notebook" ? "notebook" : item.href === "/app/style" ? "style" : undefined}
             >
               <Icon className={active ? "text-success" : "text-muted group-hover:text-primary"} size={19} />
               <span>{item.label}</span>
@@ -86,7 +87,7 @@ export function AppSidebar() {
               })}
             </div>
             <div className="border-t border-border pt-2 text-xs leading-5 text-muted">
-              Начните с «Идеи», «Создать» или «Блокнот» — остальное можно настроить позже.
+              Начните с «Создать» или «Блокнот» — остальное можно настроить позже.
             </div>
           </section>
         ) : null}
@@ -105,12 +106,11 @@ export function AppSidebar() {
           <ChevronUp className={cn("transition", moreOpen ? "rotate-180" : "")} size={15} />
         </button>
 
-        <div className="mt-3 flex items-center justify-between border-t border-border px-2 pt-4">
+        <div className="mt-3 border-t border-border px-2 pt-4">
           <Link className="flex min-w-0 items-center gap-2 text-xs text-muted hover:text-foreground" href="/app/account">
             <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border bg-surface text-success"><UserRound size={15} /></span>
             <span className="truncate">Мой кабинет</span>
           </Link>
-          <Link aria-label="Выйти" className="rounded-md p-2 text-muted hover:bg-surface hover:text-foreground" href="/login"><LogOut size={16} /></Link>
         </div>
       </div>
     </aside>

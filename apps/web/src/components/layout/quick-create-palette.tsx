@@ -4,25 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   BookOpenCheck,
-  CheckCircle2,
   FileText,
-  Lightbulb,
   Mic,
   Plus,
   Search,
-  Upload,
   X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 const actions = [
-  {
-    description: "Назвать тему и получить пять направлений для будущей диктовки.",
-    href: "/app/ideas",
-    icon: Lightbulb,
-    title: "Придумать идею",
-  },
   {
     description: "Открыть мастер материала и начать с голосового сценария.",
     href: "/app/content/new",
@@ -40,18 +31,6 @@ const actions = [
     href: "/app/projects",
     icon: BookOpenCheck,
     title: "Создать рубрику",
-  },
-  {
-    description: "Проверить версии площадок и ручное подтверждение.",
-    href: "/app/publications",
-    icon: CheckCircle2,
-    title: "Проверить публикации",
-  },
-  {
-    description: "Перейти к медиатеке для фото, видео и аудио.",
-    href: "/app/media",
-    icon: Upload,
-    title: "Добавить медиа",
   },
 ];
 
@@ -97,7 +76,7 @@ export function QuickCreatePalette() {
               <Search className="shrink-0 text-muted" size={18} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-foreground">Быстрое действие</div>
-                <div className="truncate text-xs text-muted">Идеи, диктовка, медиа и публикации</div>
+                <div className="truncate text-xs text-muted">Диктовка, готовый текст и рубрики</div>
               </div>
               <Button
                 aria-label="Закрыть быстрые действия"

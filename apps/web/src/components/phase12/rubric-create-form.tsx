@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpenCheck, Loader2, Mic, Save } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Loader2, Mic } from "lucide-react";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -88,15 +89,20 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
 
   return (
     <form className="mx-auto grid w-full max-w-4xl gap-5" onSubmit={submit}>
-      <div>
-        <div className="flex flex-wrap gap-2">
-          <Badge tone="info">{projectLabel}</Badge>
-          <Badge>необязательно</Badge>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="info">{projectLabel}</Badge>
+            <Badge>необязательно</Badge>
+          </div>
+          <h1 className="mt-3 text-3xl font-semibold text-foreground">Новая рубрика</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+            Рубрика нужна для повторяемого формата со своими правилами и примерами. Обычные публикации продолжают работать по общим правилам проекта.
+          </p>
         </div>
-        <h1 className="mt-3 text-3xl font-semibold text-foreground">Новая рубрика</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          Рубрика нужна для повторяемого формата со своими правилами и примерами. Обычные публикации продолжают работать по общим правилам проекта.
-        </p>
+        <Button asChild variant="secondary">
+          <Link href={`/app/projects/${projectId}/rubrics`}><ArrowLeft size={16} />К рубрикам</Link>
+        </Button>
       </div>
 
       <Card className="grid gap-4 p-5 sm:p-6">
@@ -165,7 +171,7 @@ export function RubricCreateForm({ projectId, projectLabel }: { projectId: strin
           Создать и добавить примеры
         </Button>
         <p className="text-xs leading-5 text-muted sm:col-span-2">
-          После создания правила сохранятся как версия рубрики. Их можно будет менять, не переписывая старые материалы.
+          Правила можно менять позже; уже созданные материалы сохранят прежние настройки.
         </p>
       </Card>
     </form>

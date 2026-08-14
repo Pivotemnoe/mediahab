@@ -15,7 +15,7 @@ assert.doesNotMatch(
   /refineVariants\([\s\S]{0,400}Пересобрать из диктовки/,
   "source rebuild must not call platform refinement",
 );
-assert.match(composer, /Подвал добавлен, но ссылки не настроены/);
+assert.match(composer, /Ссылки в конце поста добавлены, но не настроены/);
 assert.match(composer, /\/app\/projects\/\$\{project\.id\}\/settings/);
 assert.doesNotMatch(composer, /\/app\/projects\/\$\{project\.id\}\/rules/);
 assert.match(composer, /richTextLinkCount\(richText\)/);
@@ -26,7 +26,8 @@ assert.match(contentService, /projectFooterLinkCount/);
 assert.match(richText, /export function richTextLinkCount/);
 assert.match(richText, /href !== previousHref/);
 assert.doesNotMatch(richText, /new Set<string>\(\)/);
-assert.match(projectRules, /Ссылок: \{richTextLinkCount\(footerRichText\)\}/);
+assert.match(projectRules, /const linkCount = richTextLinkCount\(footerRichText\)/);
+assert.doesNotMatch(projectRules, /Ссылок: \{richTextLinkCount\(footerRichText\)\}/);
 assert.match(projectRules, /humor_config: \{ \.\.\.project\.humor_config, guidance:/);
 assert.match(projectRules, /\{ \.\.\.project\.tone_config, voice: toneRules \}/);
 

@@ -215,7 +215,7 @@ async function apiDashboard(): Promise<DashboardViewModel> {
       },
       {
         label: "Черновики",
-        note: "по данным API",
+        note: "актуальные материалы",
         value: String(contentItems.length),
       },
       {

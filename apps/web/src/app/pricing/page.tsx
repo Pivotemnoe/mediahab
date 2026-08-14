@@ -1,9 +1,7 @@
-import Link from "next/link";
-import { ArrowRight, BadgeRussianRuble, ShieldAlert } from "lucide-react";
+import { BadgeRussianRuble, ShieldAlert } from "lucide-react";
 
 import { MarketingShell } from "@/components/layout/shells";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const plans = [
@@ -40,24 +38,16 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+        <div className="grid gap-4">
           <Card className="grid gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ShieldAlert size={18} className="text-warning" />
               Оплата не включена
             </div>
             <p className="text-sm leading-6 text-muted">
-              «Наговори» не будет показывать фиктивную покупку. Подписка появится после готовности оплаты, чеков, возвратов и прозрачных условий отмены.
+              В закрытом тестировании оплаты нет. Подписка появится только вместе с понятными ценами, чеками, возвратами и условиями отмены.
             </p>
           </Card>
-          <div className="flex items-center">
-            <Button asChild>
-              <Link href="/app/billing">
-                Мой текущий тариф
-                <ArrowRight size={16} />
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
     </MarketingShell>
