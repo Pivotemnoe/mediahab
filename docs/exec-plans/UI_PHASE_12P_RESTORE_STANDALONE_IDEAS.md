@@ -2,7 +2,7 @@
 
 ## Status
 
-Local release gate passed on 2026-08-15. Ready for a Web-only production rollout.
+Released to production on 2026-08-15 as a Web-only rollout. Local, CI, backup, cutover, and post-release gates passed.
 
 ## Goal
 
@@ -64,3 +64,14 @@ Phase 12P supersedes only the Phase 12N decision to hide the Ideas entry. All ot
 - Browser acceptance at `390 x 844` showed all five mobile destinations. Every label's rendered width equalled its scroll width, and both body and document scroll widths remained exactly 390 px.
 - Browser acceptance at `1440 x 1000` showed the Ideas entry in the desktop sidebar and no horizontal overflow.
 - Production read-only preflight confirmed that the standalone generator is enabled, exactly one workspace is allowlisted, and the original owner workspace remains allowed.
+
+## Production release — 2026-08-15
+
+- Application commit: `f1da95796eca9d0aae3e96dc439fa880e4e6dcc5`.
+- Release: `20260815-075603-phase12p-ideas-restored`.
+- GitHub Actions quality gate `31865207163` passed before rollout.
+- Fresh backup: `/var/backups/media-hub/20260815-075603-phase12p-ideas-restored`; the PostgreSQL custom-format dump, restore listing, source archive, release archive, environment snapshot, service identities, and before-state checks passed SHA-256 verification. `LATEST` points to this backup.
+- Only the production Web image and container were replaced. PostgreSQL, Redis, API, and worker retained their exact container IDs; Caddy retained its PID; the neighboring service on port 3010 retained its existing `401` response.
+- The released image contains both desktop and mobile `/app/ideas` entries and the standalone route. The public route returns `307` to `/login` without a session, preserving authentication protection.
+- API readiness remained healthy with database, Redis, and migrations all `ok`. Database row counts, outbox status totals, and Alembic version were identical before and after the cutover. The new Web container logged no errors during the release check.
+- Rollback is limited to the preserved prior Web image `sha256:5b84fa3beaae7d7a72931a10efd8f4427b831577517243202c7f696f03ef873b`; no data or backend rollback is required.
