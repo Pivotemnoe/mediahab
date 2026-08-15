@@ -60,6 +60,7 @@ test-ui-contracts:
 	node tools/check_phase12m_pilot_ui_contract.mjs
 	node tools/check_phase12n_closed_pilot_contract.mjs
 	node tools/check_phase12o_human_copy_contract.mjs
+	node tools/check_phase12p_restore_standalone_ideas_contract.mjs
 	node tools/check_guided_queue_contract.mjs
 	node tools/check_guided_queue_store.mjs
 	node tools/check_guided_queue_diagnostics.mjs

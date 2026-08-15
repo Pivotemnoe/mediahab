@@ -31,10 +31,10 @@ assert.match(replay, /Повторить знакомство/);
 assert.match(shells, /<FirstRunTour \/>/);
 
 assert.doesNotMatch(topbar, /QuickCreatePalette/);
-for (const label of ["Наговорить", "Тексты", "Блокнот", "Мой стиль"]) {
+for (const label of ["Наговорить", "Идеи", "Тексты", "Блокнот", "Мой стиль"]) {
   assert.match(navigation, new RegExp(`label: "${label}"`));
 }
-assert.doesNotMatch(navigation, /label: "Идеи"/);
+assert.match(navigation, /href: "\/app\/ideas", icon: Lightbulb, label: "Идеи"/);
 for (const hiddenRoute of ["publications", "integrations", "calendar", "workspace", "billing"]) {
   assert.doesNotMatch(navigation, new RegExp(`/app/${hiddenRoute}`));
 }

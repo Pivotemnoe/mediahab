@@ -26,10 +26,10 @@ assert.match(homepage, /Твои мысли/);
 assert.match(homepage, /«Наговори» соберёт из твоих слов цельную публикацию/);
 assert.match(features, /Всё, чтобы превратить мысль в готовые публикации/);
 
-for (const label of ["Наговорить", "Тексты", "Блокнот", "Мой стиль", "Каналы"]) {
+for (const label of ["Наговорить", "Идеи", "Тексты", "Блокнот", "Мой стиль", "Каналы"]) {
   assert.match(navigation, new RegExp(`label: "${label}"`), label);
 }
-assert.doesNotMatch(navigation, /Публикации|Интеграции|Биллинг|Workspace|Идеи/);
+assert.doesNotMatch(navigation, /Публикации|Интеграции|Биллинг|Workspace/);
 
 for (const phrase of [
   "Наговорить публикацию",

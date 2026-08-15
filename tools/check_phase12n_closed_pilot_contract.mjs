@@ -102,7 +102,7 @@ assert.match(workflow, /pnpm --filter @temichev\/web build/);
 assert.match(workflow, /alembic -c alembic\.ini upgrade head/);
 assert.doesNotMatch(userFacingErrors, /error\?\.message|error\.message/);
 assert.doesNotMatch(clientApi, /payload\.error\?\.message|Сервер вернул ошибку/);
-assert.doesNotMatch(navigation, /href: "\/app\/ideas"|label: "Идеи"/);
+assert.match(navigation, /href: "\/app\/ideas", icon: Lightbulb, label: "Идеи"/);
 assert.doesNotMatch(tour, /Найти тему|откройте «Идеи»/);
 assert.doesNotMatch(notebook, /связь есть|Локальная копия/);
 assert.match(notebook, /Сохранены на этом устройстве/);

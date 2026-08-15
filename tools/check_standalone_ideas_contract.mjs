@@ -133,10 +133,10 @@ assert.match(projectCreateFormSource, /Публикация появится п�
 assert.doesNotMatch(projectCreateFormSource, /\/content-items/);
 
 const mobileBlock = navigationSource.match(/export const mobileNavItems[\s\S]*?\n\];/)?.[0] ?? "";
-assert.doesNotMatch(navigationSource, /href: "\/app\/ideas"[\s\S]*label: "Идеи"/);
-assert.match(mobileBlock, /"\/app\/content\/new"[\s\S]*"\/app\/content"[\s\S]*"\/app\/notebook"[\s\S]*"\/app\/style"/);
+assert.match(navigationSource, /href: "\/app\/ideas", icon: Lightbulb, label: "Идеи"/);
+assert.match(mobileBlock, /"\/app\/content\/new"[\s\S]*"\/app\/ideas"[\s\S]*"\/app\/content"[\s\S]*"\/app\/notebook"[\s\S]*"\/app\/style"/);
 assert.doesNotMatch(mobileBlock, /href: "\/app"/);
-assert.equal((mobileBlock.match(/mobile: true/g) ?? []).length, 4);
+assert.equal((mobileBlock.match(/mobile: true/g) ?? []).length, 5);
 assert.match(mobileNavigationSource, /aria-label="Главное меню"/);
 assert.match(mobileNavigationSource, /aria-current=\{active \? "page"/);
 assert.match(mobileNavigationSource, /pathname !== "\/app\/content\/new"/);
